@@ -1,25 +1,144 @@
 "use client";
 
-export default function Home() {
-  const handleLogin = () => {
-    window.location.href = "http://127.0.0.1:8000/auth/login";
-  };
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+export default function HomePage() {
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Simulation de la vérification de session (à lier à ton API /auth/me plus tard)
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/auth/me", {method: "GET",credentials: "include"});
+        if (response.ok) {
+          const data = await response.json();
+          if (data.is_logged_in) setIsLoggedIn(true);
+          else setIsLoggedIn(false);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification de l'auth:", error);
+        setIsLoggedIn(false);
+      } finally { setLoading(false); }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (loading) return <header className="h-20 bg-background" />;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-center font-mono text-sm flex flex-col gap-8">
-        <h1 className="text-4xl font-bold text-white">MyStats Web</h1>
-        <p className="text-gray-400 text-center">
-          Visualisez vos habitudes d'écoute Spotify en temps réel.
-        </p>
-        
-        <button
-          onClick={handleLogin}
-          className="bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold py-3 px-8 rounded-full transition-all duration-200"
-        >
-          Se connecter avec Spotify
-        </button>
+    <main className="min-h-screen text-white font-jost">
+      {/* --- ANIMATION DE FOND --- */}
+      <div className="absolute inset-0 -z-10 pointer-events-none">
+        <div className="absolute top-[30%] left-[15%] h-80 w-80 animate-blob rounded-full bg-vert opacity-20 blur-[120px] filter"></div>
+        <div className="absolute top-[45%] right-[15%] h-80 w-80 animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-20 blur-[120px] filter"></div>
       </div>
+
+      <section className="relative flex flex-col items-center justify-center pt-20 pb-24 px-6 text-center overflow-hidden">
+        {/* --- SECTION STATS AVANT-GOÛT (Conditionnelle) --- */}
+        {isLoggedIn && (
+          <div className="relative z-20 mb-12 w-full max-w-5xl animate-in fade-in slide-in-from-top-4 duration-1000">
+            <h2 className="text-ss-titre font-hias mb-6 opacity-80">Un avant-goût de vos stats...</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <StatPreviewCard title="Top Titre" value="Blinding Lights" detail="The Weeknd" type="song" />
+              <StatPreviewCard title="Genre Préféré" value="Synthwave" detail="80% de vos écoutes" type="genre" />
+              <StatPreviewCard title="Artiste du Moment" value="Daft Punk" detail="12h d'écoute cette semaine" type="artist" />
+            </div>
+          </div>
+        )}
+
+        {/* --- CONTENU HERO --- */}
+        <div className="relative z-10">
+          <h1 className="text-titre font-hias leading-none tracking-tighter mb-6 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
+            Vos statistiques <br />
+            <span className="text-vert">Spotify</span> en temps réel.
+          </h1>
+          <p className="text-ss-titre max-w-2xl text-gray-400 mb-10 leading-relaxed mx-auto">
+            Découvrez vos habitudes d'écoute, explorez vos artistes favoris et 
+            plongez dans l'historique détaillé de votre bibliothèque musicale.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button 
+              onClick={() => router.push("/musiques")}
+              className="bg-vert text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform cursor-pointer shadow-[0_0_20px_rgba(29,208,93,0.3)]"
+            >
+              Commencer l'expérience
+            </button>
+            <button 
+              className="border border-gray-700 px-8 py-4 rounded-full font-bold text-lg hover:bg-white/5 transition-colors cursor-pointer backdrop-blur-sm"
+            >
+              En savoir plus
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Grille des fonctionnalités */}
+      <section className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <FeatureCard 
+          title="Top Musiques" 
+          description="Analysez les titres qui tournent en boucle dans vos oreilles ce mois-ci."
+          icon="🎵"
+        />
+        <FeatureCard 
+          title="Artistes Favoris" 
+          description="Le classement de ceux qui définissent votre univers musical."
+          icon="👨‍🎤"
+        />
+        <FeatureCard 
+          title="Historique Local" 
+          description="Une base de données PostgreSQL dédiée pour ne jamais oublier un morceau."
+          icon="💾"
+        />
+      </section>
+
+      {/* Section Technique / "About" */}
+      <section className="bg-bg2 py-5">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-s-titre font-hias mb-8">Le Projet MyStats</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm opacity-70">
+            <div className="p-4 border border-white/10 rounded-lg">Next.js</div>
+            <div className="p-4 border border-white/10 rounded-lg">FastAPI</div>
+            <div className="p-4 border border-white/10 rounded-lg">SQLModel</div>
+            <div className="p-4 border border-white/10 rounded-lg">PostgreSQL</div>
+          </div>
+          <p className="mt-10 text-gray-400 leading-relaxed italic">
+            Tous droits réservés.
+          </p>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function FeatureCard({ title, description, icon }: { title: string, description: string, icon: string }) {
+  return (
+    <div className="bg-bg2 p-8 rounded-2xl border border-white/5 hover:border-vert/30 transition-colors group">
+      <div className="text-4xl mb-4 group-hover:scale-110 transition-transform inline-block">
+        {icon}
+      </div>
+      <h3 className="text-ss-titre font-hias mb-3">{title}</h3>
+      <p className="text-gray-400 leading-snug font-light">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function StatPreviewCard({ title, value, detail, type }: { title: string, value: string, detail: string, type: string }) {
+  return (
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl text-left hover:border-vert/40 transition-all hover:scale-[1.02] cursor-default group">
+      <p className="text-xs font-bold uppercase tracking-widest text-vert mb-4">{title}</p>
+      <h3 className="text-xl font-hias mb-1 group-hover:text-vert transition-colors">{value}</h3>
+      <p className="text-sm text-gray-400 font-light">{detail}</p>
+      
+      {/* Déco subtile en bas à droite */}
+      <div className="flex justify-end mt-2 opacity-20 group-hover:opacity-100 transition-opacity">
+         <div className="h-1 w-12 bg-vert rounded-full"></div>
+      </div>
+    </div>
   );
 }

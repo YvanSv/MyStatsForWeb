@@ -7,7 +7,10 @@ class User(SQLModel, table=True):
     spotify_id: str = Field(index=True, unique=True)
     display_name: str
     email: str
+    session_id: Optional[str] = Field(default=None, index=True)
     refresh_token: str
+    access_token: Optional[str] = None
+    expires_at: Optional[datetime] = None
 
 class Track(SQLModel, table=True):
     spotify_id: str = Field(primary_key=True) # URI Spotify

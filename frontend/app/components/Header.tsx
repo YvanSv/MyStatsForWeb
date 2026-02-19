@@ -45,13 +45,13 @@ export default function Header() {
   if (loading) return <header className="h-20 bg-background" />;
 
   return (
-    <header className="flex items-center justify-between py-4 bg-bg1 sticky top-0">
+    <header className="flex items-center justify-between py-4 px-6 sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl border-b border-white/5">
       {/* Logo + Titre */}
       <div 
         className="flex items-center gap-4 cursor-pointer group"
-        onClick={() => navigate("/dashboard")}
+        onClick={() => navigate("/")}
       >
-        <Image src="/logo.png" alt="Logo" width={80} height={80} className="rounded-md transition-transform group-hover:scale-105"/>
+        <Image src="/logo.png" alt="Logo" width={80} height={80} style={{ width: 80, height: 'auto' }} priority className="rounded-md transition-transform group-hover:scale-105"/>
         <span className="text-titre font-jost text-white tracking-tighter group-hover:text-vert transition-colors transition-transform group-hover:scale-105">MyStats</span>
       </div>
 
