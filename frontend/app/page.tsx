@@ -8,7 +8,6 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Simulation de la vérification de session (à lier à ton API /auth/me plus tard)
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -38,17 +37,36 @@ export default function HomePage() {
       </div>
 
       <section className="relative flex flex-col items-center justify-center pt-20 pb-24 px-6 text-center overflow-hidden">
-        {/* --- SECTION STATS AVANT-GOÛT (Conditionnelle) --- */}
-        {isLoggedIn && (
-          <div className="relative z-20 mb-12 w-full max-w-5xl animate-in fade-in slide-in-from-top-4 duration-1000">
-            <h2 className="text-ss-titre font-hias mb-6 opacity-80">Un avant-goût de vos stats...</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* --- SECTION STATS AVANT-GOÛT --- */}
+        <div className="relative z-20 mb-12 w-full max-w-5xl animate-in fade-in slide-in-from-top-4 duration-1000 pb-20">
+          <h2 className="text-ss-titre font-hias mb-6 opacity-80 pb-10">Un avant-goût de vos stats...</h2>
+          
+          {/* Conteneur Parent du Teasing */}
+          <div className="relative"> 
+            {/* 1. La Grille (On applique le flou ici si non connecté) */}
+            <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-700 ${!isLoggedIn ? 'blur-md pointer-events-none select-none opacity-50' : ''}`}>
               <StatPreviewCard title="Top Titre" value="Blinding Lights" detail="The Weeknd" type="song" />
               <StatPreviewCard title="Genre Préféré" value="Synthwave" detail="80% de vos écoutes" type="genre" />
               <StatPreviewCard title="Artiste du Moment" value="Daft Punk" detail="12h d'écoute cette semaine" type="artist" />
             </div>
+
+            {/* 2. L'Overlay d'incitation */}
+            {!isLoggedIn && (
+              <div className="absolute inset-0 flex items-center justify-center z-30">
+                <div className="bg-bg1/60 backdrop-blur-xl border border-white/10 px-10 py-8 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5">
+                  <p className="text-ss-titre font-hias text-white flex flex-col items-center gap-3">
+                    <span className="text-vert text-4xl mb-2">🔒</span>
+                    Connectez-vous pour voir vos vraies stats
+                  </p>
+                  <button 
+                    onClick={() => window.location.href = "http://127.0.0.1:8000/auth/login"}
+                    className="mt-6 w-full bg-vert text-black py-3 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_20px_rgba(29,208,93,0.4)] cursor-pointer"
+                  >Se connecter avec Spotify</button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* --- CONTENU HERO --- */}
         <div className="relative z-10">
