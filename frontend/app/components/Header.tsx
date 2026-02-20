@@ -42,6 +42,7 @@ export default function Header() {
   const handleLogin = () => {window.location.href = "http://127.0.0.1:8000/auth/login";};
   const handleLogout = () => {window.location.href = "http://127.0.0.1:8000/auth/logout";};
 
+  console.log(loading)
   if (loading) return <header className="h-20 bg-background" />;
 
   return (
@@ -51,7 +52,7 @@ export default function Header() {
         className="flex items-center gap-4 cursor-pointer group"
         onClick={() => navigate("/")}
       >
-        <Image src="/logo.png" alt="Logo" width={80} height={80} style={{ width: 80, height: 'auto' }} priority className="rounded-md transition-transform group-hover:scale-105"/>
+        <Image src="/logo.png" alt="Logo" width={80} height={80} style={{ width: '80px', height: 'auto' }} priority className="rounded-md transition-transform group-hover:scale-105"/>
         <span className="text-titre font-jost text-white tracking-tighter group-hover:text-vert transition-colors transition-transform group-hover:scale-105">MyStats</span>
       </div>
 
@@ -73,11 +74,11 @@ export default function Header() {
 
       {/* Bouton de connexion */}
       {isLoggedIn ? (
-        <button onClick={handleLogout} className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium cursor-pointer hover:text-vert hover:scale-105 transition">
+        <button onClick={handleLogout} className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:text-vert hover:scale-105 transition">
           Connecté en tant que <span className="font-bold">{userName}</span>
         </button>
       ) : (
-        <button onClick={handleLogin} className="bg-vert px-4 py-2 rounded-full text-sm font-bold cursor-pointer text-black hover:scale-105 transition">
+        <button onClick={handleLogin} className="bg-vert px-4 py-2 rounded-full text-sm font-bold border border-white/10 cursor-pointer text-black hover:scale-105 transition">
           Se connecter avec Spotify
         </button>
       )}

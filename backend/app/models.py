@@ -33,3 +33,14 @@ class PlayHistory(SQLModel, table=True):
     track_id: str = Field(foreign_key="track.spotify_id")
     
     track: Track = Relationship(back_populates="history")
+
+class TrackHistory(SQLModel, table=True):
+    # Clé primaire composée de l'ID utilisateur et du timestamp d'écoute (played_at)
+    # car un même morceau peut être écouté plusieurs fois.
+    spotify_id: str = Field(primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    played_at: datetime = Field(primary_key=True)
+    title: str
+    artist: str
+    album: str
+    cover: str

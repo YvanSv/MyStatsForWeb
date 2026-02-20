@@ -10,8 +10,6 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User
 from dotenv import load_dotenv
-from .database import get_session
-from .models import User
 
 load_dotenv()
 
@@ -151,7 +149,7 @@ async def get_me(session_id: Optional[str] = Cookie(None), db: Session = Depends
 
 async def get_valid_access_token(user: User, db: Session):
     # Si le token expire dans moins de 60 secondes, on rafraîchit
-    if datetime.now() >= (user.expires_at - timedelta(seconds=60)):
+    if not user.expires_at or datetime.now() >= (user.expires_at - timedelta(seconds=60)):
         return await refresh_spotify_token(user, db, CLIENT_ID, CLIENT_SECRET)
     return user.access_token
 
