@@ -175,7 +175,7 @@ function ListView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
             </div>
           </div>
           <div className="text-center font-hias font-bold text-vert">{album.play_count}</div>
-          <div className="text-center font-bold text-vert">{album.rating}</div>
+          <div className={`${album.rating > 2 ? 'text-vert' : album.rating > 1 ? 'text-jaune' : 'text-rouge'} text-center font-bold`}>{album.rating}</div>
         </div>
       ))}
     </div>
@@ -198,7 +198,7 @@ function GridView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
             <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl shadow-2xl">
               {album.cover && <Image src={album.cover} alt={album.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />}
               <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
-                <span className="text-vert font-bold text-xs">{album.rating}</span>
+                <span className={`${album.rating > 2 ? 'text-vert' : album.rating > 1 ? 'text-jaune' : 'text-rouge'} font-bold text-xs`}>{album.rating}</span>
               </div>
             </div>
             <h3 className="font-bold truncate text-sm mb-1">{album.name}</h3>

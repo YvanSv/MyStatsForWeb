@@ -1,8 +1,10 @@
 import json
 import hashlib
+import random
+import time
 from typing import List, Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException, UploadFile, File, BackgroundTasks
-from sqlmodel import Session, select, or_
+from sqlmodel import Session, select, or_, update
 from app.database import get_session, engine
 from app.models import User, Track, TrackHistory, Artist, Album
 from app.utils.spotify_api import get_spotify_client
@@ -162,3 +164,57 @@ async def upload_spotify_json(
         "status": "success", 
         "message": f"Importation réussie : {stats['added']} écoutes ajoutées."
     }
+
+@router.post("/fix-missing-covers")
+async def fix_missing_covers(background_tasks: BackgroundTasks):
+    """Endpoint pour lancer le rattrapage en arrière-plan"""
+    background_tasks.add_task(catch_up_album_images)
+    return {"status": "started", "message": "Le rattrapage des images a commencé."}
+
+def catch_up_album_images():
+    sp = get_spotify_client()
+    with Session(engine) as db:
+        # 1. On cherche les tracks dont l'album n'a pas d'image
+        # On fait une jointure pour récupérer les vrais IDs de tracks à envoyer à Spotify
+        query = (
+            select(Track.spotify_id, Track.album_id)
+            .join(Album, Track.album_id == Album.spotify_id)
+            .where(Album.image_url == None)
+            .where(~Track.spotify_id.contains("gen_")) # Uniquement les vrais IDs
+            .limit(500) # On traite par paquets de 500 pour ne pas saturer
+        )
+        results = db.exec(query).all()
+        
+        # 2. On regroupe par paquets de 50 pour Spotify
+        track_ids = [r[0] for r in results]
+        for i in range(0, len(track_ids), 50):
+            batch = track_ids[i:i+50]
+            try:
+                sp_tracks = sp.tracks(batch)['tracks']
+                
+                for t_info in sp_tracks:
+                    if not t_info: continue
+                    
+                    # Récupération de l'image
+                    images = t_info['album'].get('images', [])
+                    if images:
+                        url = images[0]['url']
+                        # Mise à jour de TOUS les albums qui ont cet ID (qu'il soit gen_ ou réel)
+                        # car on récupère l'album_id directement depuis la base
+                        actual_album_id = next(r[1] for r in results if r[0] == t_info['id'])
+                        db.execute(
+                            update(Album)
+                            .where(Album.spotify_id == actual_album_id)
+                            .values(image_url=url)
+                        )
+                db.commit()
+                print(f"Batch {i//50 + 1} traité. Pause de sécurité...")
+                # Ajoute une pause entre 1 et 3 secondes entre chaque appel de 50 tracks
+                time.sleep(random.uniform(1.0, 3.0))
+            except Exception as e:
+                # Si on détecte un Rate Limit dans l'exception, on s'arrête proprement
+                if "429" in str(e):
+                    print("Rate limit atteint. Arrêt du script.")
+                    return
+                print(f"Erreur: {e}")
+                db.rollback()
