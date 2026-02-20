@@ -1,100 +1,84 @@
-from fastapi import APIRouter, Cookie, Depends, HTTPException
-import httpx
-from sqlmodel import Session, select, func, desc, asc
+from fastapi import APIRouter, Depends, Cookie, HTTPException
+from sqlmodel import Session, select, func
 from typing import Optional
 from app.database import get_session
-from app.models import User, Track, TrackHistory, Artist
-from app.auth import get_valid_access_token
+from app.models import User, Artist, Track, TrackHistory
 
 router = APIRouter()
 
 @router.get("/")
-async def get_user_artists(
+async def get_artists(
     offset: int = 0,
-    limit: int = 20,
-    sort_by: str = "play_count", # play_count, name, total_minutes, engagement, rating
-    direction: str = "desc",    # desc, asc
+    limit: int = 50,
+    sort_by: str = "play_count",
+    direction: str = "desc",
     session_id: Optional[str] = Cookie(None),
     db: Session = Depends(get_session)
 ):
-    # 1. Authentification
-    if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
+    # 1. Récupération de l'utilisateur via la session
     user = db.exec(select(User).where(User.session_id == session_id)).first()
-    if not user: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    if not user:
+        raise HTTPException(status_code=401, detail="Non connecté")
 
-    # 2. Construction de la requête SQL
+    # 2. Construction de la requête ultra-optimisée
+    # On définit les colonnes de calcul
+    plays_col = func.count(TrackHistory.id).label("play_count")
+    duration_col = func.sum(Track.duration_ms).label("total_ms")
+
+    # Requête de base avec jointures
     statement = (
         select(
-            Artist,
-            func.count(TrackHistory.id).label("plays"),
-            func.sum(Track.duration_ms).label("duration")
+            Artist.spotify_id,
+            Artist.name,
+            Artist.image_url,
+            plays_col,
+            duration_col
         )
         .join(Track, Artist.spotify_id == Track.artist_id)
         .join(TrackHistory, Track.spotify_id == TrackHistory.spotify_id)
         .where(TrackHistory.user_id == user.id)
-        .group_by(Artist.spotify_id)
+        .group_by(Artist.spotify_id, Artist.name, Artist.image_url)
     )
 
-    # 3. Application du tri SQL pour les champs natifs
-    if sort_by == "play_count": statement = statement.order_by(desc("plays") if direction == "desc" else asc("plays"))
-    elif sort_by == "total_minutes": statement = statement.order_by(desc("duration") if direction == "desc" else asc("duration"))
-    elif sort_by == "name": statement = statement.order_by(desc(Artist.name) if direction == "desc" else asc(Artist.name))
+    # 3. Gestion du tri dynamique
+    if sort_by == "play_count":
+        order_col = plays_col
+    elif sort_by == "total_minutes":
+        order_col = duration_col
+    else:
+        order_col = plays_col # Par défaut
 
+    if direction == "desc":
+        statement = statement.order_by(order_col.desc())
+    else:
+        statement = statement.order_by(order_col.asc())
+
+    # Exécution
     results = db.exec(statement).all()
 
-    access_token = None
-    all_artists = []
-
-    # 4. Traitement des données et calculs (Rating & Engagement)
+    # 5. Formatage de la réponse
+    formatted_artists = []
     for row in results:
-        artist_obj, play_count, total_ms_real = row
-        total_minutes = (total_ms_real or 0) / 60000
-        
-        # --- Calcul de l'engagement ---
-        duration_theorique_ms = total_ms_real 
-        engagement = 100
-        if duration_theorique_ms > 0:
-            engagement = round(min(total_ms_real, duration_theorique_ms) / duration_theorique_ms * 100)
+        avg_minutes_per_play = (row.total_ms / 60000) / row.play_count if row.play_count > 0 else 0
 
-        # --- Calcul du Rating ---
-        if play_count > 0:
-            part1 = int(1.0 * total_minutes / play_count * 100) / 100.0
-            part2 = (int(total_minutes / 100.0) / 100.0) * (2/3)
+        if row.play_count > 0:
+            part1 = int(((row.total_ms or 0) / 60000) / row.play_count * 100) / 100.0
+            part2 = (int((row.total_ms or 0) / 60000 / 100.0) / 100.0) * (2/3)
             rating = round((part1 + part2) * (2/3), 2)
         else: rating = 0
 
-        # --- Lazy loading de l'image si nécessaire ---
-        if not artist_obj.image_url:
-            if not access_token: access_token = await get_valid_access_token(user, db)
-            try:
-                async with httpx.AsyncClient() as client:
-                    res = await client.get(
-                        f"https://api.spotify.com/v1/artists/{artist_obj.spotify_id}",
-                        headers={"Authorization": f"Bearer {access_token}"},
-                        timeout=2.0
-                    )
-                    if res.status_code == 200:
-                        imgs = res.json().get("images", [])
-                        if imgs:
-                            artist_obj.image_url = imgs[0]["url"]
-                            db.add(artist_obj)
-                            db.commit()
-                            db.refresh(artist_obj)
-            except: pass
+        engagement = min(round((avg_minutes_per_play / 3.5) * 100), 100)
 
-        all_artists.append({
-            "id": artist_obj.spotify_id,
-            "name": artist_obj.name,
-            "image_url": artist_obj.image_url,
-            "play_count": play_count,
-            "total_minutes": round(total_minutes, 1),
-            "engagement": engagement,
-            "rating": rating
+        formatted_artists.append({
+            "id": row.spotify_id,
+            "name": row.name,
+            "image_url": row.image_url,
+            "play_count": row.play_count,
+            "total_minutes": (row.total_ms or 0) / 60000,
+            "rating": rating,
+            "engagement": engagement
         })
 
-    # 5. Tri Python pour les champs calculés (Rating et Engagement)
     if sort_by in ["rating", "engagement"]:
-        all_artists.sort(key=lambda x: x[sort_by], reverse=(direction == "desc"))
-
-    # 6. Pagination finale
-    return all_artists[offset : offset + limit]
+        formatted_artists.sort(key=lambda x: x[sort_by], reverse=(direction == "desc"))
+    return formatted_artists[offset : offset + limit]

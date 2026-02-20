@@ -1,7 +1,6 @@
 import base64
 from datetime import datetime, timedelta
 import os
-import uuid
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
 from fastapi.responses import RedirectResponse
