@@ -56,6 +56,7 @@ async def callback(code: str, session: Session = Depends(get_session)):
     access_token = token_data["access_token"]
     refresh_token = token_data.get("refresh_token")
     expires_in = token_data.get("expires_in", 3600)
+    expiration_date = datetime.now() + timedelta(seconds=expires_in)
 
     # 2. On demande à Spotify qui est l'utilisateur actuel
     async with httpx.AsyncClient() as client:
@@ -82,14 +83,14 @@ async def callback(code: str, session: Session = Depends(get_session)):
             email=user_info.get("email", "no-email"),
             refresh_token=token_data["refresh_token"],
             access_token=access_token,
-            expires_at=expires_in
+            expires_at=expiration_date
         )
         session.add(user)
     else:
         # Si l'utilisateur existe, on met juste à jour son refresh_token
         user.access_token = access_token
         user.refresh_token = refresh_token
-        user.expires_at = expires_in
+        user.expires_at = expiration_date
     
     if not user.session_id:
         user.session_id = str(uuid.uuid4())
