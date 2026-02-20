@@ -1,6 +1,6 @@
 "use client";
-import { useState, useCallback } from "react";
-import { useApi } from "../hooks/useApi";
+import { useState } from "react";
+import { ENDPOINTS } from "../config";
 
 export default function SettingsPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -21,7 +21,7 @@ export default function SettingsPage() {
     files.forEach(file => formData.append("files", file));
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/spotify/upload-json", {
+      const response = await fetch(ENDPOINTS.UPLOAD_JSON, {
         method: "POST",
         body: formData,
         credentials: "include",

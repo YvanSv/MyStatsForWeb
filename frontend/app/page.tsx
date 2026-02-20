@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
+import { ENDPOINTS } from "./config";
 
 
 export default function HomePage() {
@@ -14,12 +14,12 @@ export default function HomePage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/auth/me", {method: "GET",credentials: "include"});
+        const response = await fetch(ENDPOINTS.ME, {method: "GET",credentials: "include"});
         if (response.ok) {
           const data = await response.json();
           if (data.is_logged_in) {
             setIsLoggedIn(true);
-            fetch("http://127.0.0.1:8000/stats/overview", { 
+            fetch(ENDPOINTS.STATS_OVERVIEW, { 
               method: "GET",
               headers: {"Content-Type": "application/json"},
               credentials: "include" 

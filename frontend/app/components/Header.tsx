@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
+import { ENDPOINTS } from "../config";
 
 export default function Header() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function Header() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/auth/me", {
+        const response = await fetch(ENDPOINTS.ME, {
           method: "GET",
           credentials: "include",
         });
@@ -53,8 +54,8 @@ export default function Header() {
     checkAuth();
   }, []);
 
-  const handleLogin = () => {window.location.href = "http://127.0.0.1:8000/auth/login";};
-  const handleLogout = () => {window.location.href = "http://127.0.0.1:8000/auth/logout";};
+  const handleLogin = () => {window.location.href = ENDPOINTS.LOGIN;};
+  const handleLogout = () => {window.location.href = ENDPOINTS.LOGOUT;};
 
   return (
     <header className="flex items-center justify-between py-4 px-6 sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl border-b border-white/5">
