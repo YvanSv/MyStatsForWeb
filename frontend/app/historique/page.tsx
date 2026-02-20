@@ -1,21 +1,21 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useApi } from "../hooks/useApi";
 
 interface Track {
   spotify_id: string;
   played_at: string;
   title: string;
-  artist: string;
-  album: string;
-  cover: string;
+  artist_name: string;
+  album_name: string;
+  image_url: string;
 }
 
 export default function HistoryPage() {
-  const [showFilters, setShowFilters] = useState(true);
   const [history, setHistory] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { getRecentlyPlayed } = useApi();
 
   // Fonction pour formater la date (ex: 2023-10-27T10:00 -> 27/10 à 10:00)
   const formatDate = (dateStr: string) => {
@@ -29,18 +29,14 @@ export default function HistoryPage() {
   };
 
   useEffect(() => {
-    const fetchHistory = async (currentOffset: number) => {
-      setLoading(true);
+    const fetchMusics = async (currentOffset: number) => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/spotify/recently-played?offset=${currentOffset}&limit=50`, {credentials: "include"});
-        if (response.ok) {
-          const newData = await response.json();
-          setHistory(prev => (currentOffset === 0 ? newData : [...prev, ...newData]));
-        }
-      } catch (error) {console.error("Erreur historique:", error);}
-      finally {setLoading(false);}
+        const newData = await getRecentlyPlayed(currentOffset);
+        setHistory(prev => (currentOffset === 0 ? newData : [...prev, ...newData]));
+      } catch (err) {}
     };
-    fetchHistory(0);
+    fetchMusics(0);
+    setLoading(false);
   }, []);
 
   return (
@@ -66,12 +62,12 @@ export default function HistoryPage() {
                 {history.map((track) => (
                   <div key={`${track.spotify_id}-${track.played_at}`} className="group flex items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
                     <div className="relative h-16 w-16 overflow-hidden rounded-lg shadow-lg">
-                      <Image src={track.cover} alt={track.title} fill sizes="64px" className="object-cover" />
+                      <Image src={track.image_url} alt={track.title} fill sizes="64px" className="object-cover" />
                     </div>
                     
                     <div className="flex-1">
                       <h3 className="font-bold text-lg leading-tight group-hover:text-vert transition-colors">{track.title}</h3>
-                      <p className="text-gray-400 text-sm">{track.artist} • <span className="italic">{track.album}</span></p>
+                      <p className="text-gray-400 text-sm">{track.artist_name} • <span className="italic">{track.album_name}</span></p>
                     </div>
 
                     <div className="text-right">
@@ -86,18 +82,5 @@ export default function HistoryPage() {
         </div>
       </div>
     </main>
-  );
-}
-
-// Petit composant interne pour les groupes de filtres dépliables
-function FilterGroup({ title, children }: { title: string, children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(true);
-  return (
-    <div>
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70">
-        {title} <span>{isOpen ? '−' : '+'}</span>
-      </button>
-      {isOpen && <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-300">{children}</div>}
-    </div>
   );
 }

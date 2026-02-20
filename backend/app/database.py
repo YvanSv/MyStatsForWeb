@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Session, create_engine
 import os
 
 # On importe les modèles pour que SQLModel sache qu'ils existent
-from app.models import User, Track, PlayHistory 
+from app.models import User, Track, TrackHistory 
 
 DATABASE_URL = "postgresql://yvan:password123@localhost:5432/mystatsdb"
 

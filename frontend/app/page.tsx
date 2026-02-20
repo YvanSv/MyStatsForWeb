@@ -26,8 +26,6 @@ export default function HomePage() {
     checkAuth();
   }, []);
 
-  if (loading) return <header className="h-20 bg-background" />;
-
   return (
     <main className="min-h-screen text-white font-jost">
       {/* --- ANIMATION DE FOND --- */}
@@ -49,7 +47,7 @@ export default function HomePage() {
             </div>
 
             {/* L'Overlay d'incitation */}
-            {!isLoggedIn && (
+            {loading ? (<header className="h-20 bg-background" />) : !isLoggedIn && (
               <div className="absolute inset-0 flex items-center justify-center z-30">
                 <div className="bg-bg1/60 backdrop-blur-xl border border-white/10 px-10 py-8 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5">
                   <p className="text-ss-titre font-hias text-white flex flex-col items-center gap-3">

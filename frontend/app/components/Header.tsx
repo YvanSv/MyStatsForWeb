@@ -42,9 +42,6 @@ export default function Header() {
   const handleLogin = () => {window.location.href = "http://127.0.0.1:8000/auth/login";};
   const handleLogout = () => {window.location.href = "http://127.0.0.1:8000/auth/logout";};
 
-  console.log(loading)
-  if (loading) return <header className="h-20 bg-background" />;
-
   return (
     <header className="flex items-center justify-between py-4 px-6 sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl border-b border-white/5">
       {/* Logo + Titre */}
@@ -77,7 +74,7 @@ export default function Header() {
         <button onClick={handleLogout} className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:text-vert hover:scale-105 transition">
           Connecté en tant que <span className="font-bold">{userName}</span>
         </button>
-      ) : (
+      ) : loading ? (<header className="h-20 bg-background" />) : (
         <button onClick={handleLogin} className="bg-vert px-4 py-2 rounded-full text-sm font-bold border border-white/10 cursor-pointer text-black hover:scale-105 transition">
           Se connecter avec Spotify
         </button>
