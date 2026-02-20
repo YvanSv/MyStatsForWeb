@@ -89,7 +89,7 @@ export default function HomePage() {
                     Connectez-vous pour voir vos vraies stats
                   </p>
                   <button 
-                    onClick={() => window.location.href = "http://127.0.0.1:8000/auth/login"}
+                    onClick={() => window.location.href = ENDPOINTS.LOGIN}
                     className="mt-6 w-full bg-vert text-black py-3 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_20px_rgba(29,208,93,0.4)] cursor-pointer"
                   >Se connecter avec Spotify</button>
                 </div>
