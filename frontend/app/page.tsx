@@ -3,10 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+
+
 export default function HomePage() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [randomStats, setRandomStats] = useState<any[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -14,8 +17,20 @@ export default function HomePage() {
         const response = await fetch("http://127.0.0.1:8000/auth/me", {method: "GET",credentials: "include"});
         if (response.ok) {
           const data = await response.json();
-          if (data.is_logged_in) setIsLoggedIn(true);
-          else setIsLoggedIn(false);
+          if (data.is_logged_in) {
+            setIsLoggedIn(true);
+            fetch("http://127.0.0.1:8000/stats/overview", { 
+              method: "GET",
+              headers: {"Content-Type": "application/json"},
+              credentials: "include" 
+            })
+            .then((res) => {
+              if (!res.ok) throw new Error("Erreur lors de la récupération");
+              return res.json();
+            })
+            .then((data) => {setRandomStats(data);})
+            .catch((err) => {console.error(err);});
+          } else setIsLoggedIn(false);
         }
       } catch (error) {
         console.error("Erreur lors de la vérification de l'auth:", error);
@@ -41,9 +56,28 @@ export default function HomePage() {
           <div className="relative"> 
             {/* La Grille (flou ici si non connecté) */}
             <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-700 ${!isLoggedIn ? 'blur-md pointer-events-none select-none opacity-50' : ''}`}>
-              <StatPreviewCard title="Top Titre" value="Blinding Lights" detail="The Weeknd" type="song" />
-              <StatPreviewCard title="Genre Préféré" value="Synthwave" detail="80% de vos écoutes" type="genre" />
-              <StatPreviewCard title="Artiste du Moment" value="Daft Punk" detail="12h d'écoute cette semaine" type="artist" />
+              {/* SI CONNECTÉ MAIS PAS ENCORE DE DATA : Afficher 3 Skeletons */}
+              {isLoggedIn && randomStats.length === 0 ? (
+                <>
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                </>
+              ) : (
+                (randomStats.length > 0 ? randomStats : [
+                  {title: "Top Titre", value: "Blinding Lights", detail: "The Weeknd", type: "song"},
+                  {title: "Genre Préféré", value: "Synthwave", detail: "80% de vos écoutes", type: "genre"},
+                  {title: "Artiste du Moment", value: "Daft Punk", detail: "12h d'écoute", type: "artist"}
+                ]).map((s, index) => (
+                  <StatPreviewCard 
+                    key={index}
+                    title={s.title} 
+                    value={s.value} 
+                    detail={s.detail} 
+                    type={s.type} 
+                  />
+                ))
+              )}
             </div>
 
             {/* L'Overlay d'incitation */}
@@ -153,6 +187,15 @@ function StatPreviewCard({ title, value, detail, type }: { title: string, value:
       <div className="flex justify-end mt-2 opacity-20 group-hover:opacity-100 transition-opacity">
          <div className="h-1 w-12 bg-vert rounded-full"></div>
       </div>
+    </div>
+  );
+}
+
+function StatCardSkeleton() {
+  return (
+    <div className="bg-white/5 backdrop-blur-xl border border-white/5 p-6 rounded-3xl h-[160px] flex flex-col justify-center items-center">
+      <div className="w-8 h-8 border-4 border-vert/20 border-t-vert rounded-full animate-spin"></div>
+      <p className="mt-4 text-xs text-gray-500 animate-pulse">Chargement des stats...</p>
     </div>
   );
 }
