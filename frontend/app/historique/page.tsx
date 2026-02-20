@@ -9,13 +9,13 @@ interface Track {
   title: string;
   artist_name: string;
   album_name: string;
-  image_url: string;
+  cover: string;
 }
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  const { getRecentlyPlayed } = useApi();
+  const { getHistory } = useApi();
 
   // Fonction pour formater la date (ex: 2023-10-27T10:00 -> 27/10 à 10:00)
   const formatDate = (dateStr: string) => {
@@ -31,7 +31,7 @@ export default function HistoryPage() {
   useEffect(() => {
     const fetchMusics = async (currentOffset: number) => {
       try {
-        const newData = await getRecentlyPlayed(currentOffset);
+        const newData = await getHistory(currentOffset);
         setHistory(prev => (currentOffset === 0 ? newData : [...prev, ...newData]));
       } catch (err) {}
     };
@@ -62,7 +62,7 @@ export default function HistoryPage() {
                 {history.map((track) => (
                   <div key={`${track.spotify_id}-${track.played_at}`} className="group flex items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
                     <div className="relative h-16 w-16 overflow-hidden rounded-lg shadow-lg">
-                      <Image src={track.image_url} alt={track.title} fill sizes="64px" className="object-cover" />
+                      <Image src={track.cover} alt={track.title} fill sizes="64px" className="object-cover" />
                     </div>
                     
                     <div className="flex-1">

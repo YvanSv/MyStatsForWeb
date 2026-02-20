@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo } from "react";
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -11,7 +11,7 @@ export const useApi = () => {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         credentials: 'include',
-        headers: {'Content-Type': 'application/json',...options.headers},
+        headers: { 'Content-Type': 'application/json', ...options.headers },
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -22,17 +22,20 @@ export const useApi = () => {
     finally { setLoading(false); }
   }, []);
 
-  // Définition de tes méthodes spécifiques
-  const getRecentlyPlayed = (offset: number, limit: number = 50) => 
-    request(`/spotify/recently-played?offset=${offset}&limit=${limit}`);
+  // Stabilisation des méthodes individuelles
+  const getMe = useCallback(() => request('/auth/me'), [request]);
 
-  const getMe = () => request('/auth/me');
+  const getHistory = useCallback((offset: number, limit: number = 50) => 
+    request(`/spotify/history?offset=${offset}&limit=${limit}`), [request]);
 
-  const getMusics = (offset: number, limit: number = 50) =>
-    request(`/spotify/musics?offset=${offset}&limit=${limit}`);
+  const getMusics = useCallback(async ({ offset = 0, limit = 50, sort_by = 'play_count', direction = 'desc' }) =>
+    request(`/spotify/musics?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
 
-  // Tu pourras ajouter plus tard :
-  // const getTopArtists = () => request('/spotify/top-artists');
+  const getArtists = useCallback(({ offset = 0, limit = 50, sort_by = 'play_count', direction = 'desc' }) =>
+    request(`/spotify/artists?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
 
-  return { loading, getRecentlyPlayed, getMe, getMusics };
+  // On mémoïse l'objet de retour pour éviter que la déstructuration { getMusics } change
+  return useMemo(() => ({ 
+    loading, getMe, getHistory, getMusics, getArtists 
+  }), [loading, getMe, getHistory, getMusics, getArtists]);
 };
