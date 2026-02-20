@@ -46,6 +46,7 @@ class Track(SQLModel, table=True):
 class TrackHistory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     played_at: datetime = Field(index=True)
+    ms_played: int
     
     user_id: int = Field(foreign_key="user.id")
     spotify_id: str = Field(foreign_key="track.spotify_id")

@@ -84,7 +84,7 @@ export default function HistoryPage() {
                     /* --- MODE LIGNE --- */
                     <div key={`${track.spotify_id}-${track.played_at}`} className="group flex items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
                       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg shadow-lg">
-                        <Image src={track.cover} alt={track.title} fill sizes="64px" className="object-cover" />
+                        <Image src={track.cover || "/logo.png"} alt={track.title} fill sizes="64px" className="object-cover" />
                       </div>
                       
                       <div className="flex-1 min-w-0">
@@ -101,7 +101,7 @@ export default function HistoryPage() {
                     /* --- MODE CASES (GRID) --- */
                     <div key={`${track.spotify_id}-${track.played_at}`} className="group bg-bg2/20 backdrop-blur-md p-4 rounded-[2rem] border border-white/5 hover:border-vert/30 transition-all hover:-translate-y-1">
                       <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl shadow-xl">
-                        <Image src={track.cover} alt={track.title} fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <Image src={track.cover || "/logo.png"} alt={track.title} fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
                            <p className="text-[9px] text-vert font-bold">{formatDate(track.played_at)}</p>
                         </div>

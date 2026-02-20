@@ -83,7 +83,7 @@ async def upload_spotify_json(
             played_at = entry.get("ts")
 
             # Filtrage de base (ignore les podcasts ou écoutes trop courtes)
-            if not track_name or not track_uri or ms_played < 10000:
+            if not track_name or not track_uri or ms_played < 3000:
                 stats["skipped"] += 1
                 continue
 
@@ -141,7 +141,8 @@ async def upload_spotify_json(
                 db.add(TrackHistory(
                     user_id=user.id,
                     spotify_id=spotify_id,
-                    played_at=played_at
+                    played_at=played_at,
+                    ms_played=ms_played
                 ))
                 stats["added"] += 1
 

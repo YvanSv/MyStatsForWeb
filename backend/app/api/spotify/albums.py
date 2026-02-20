@@ -56,15 +56,11 @@ async def get_user_albums(
         album_obj, artist_name, play_count, total_ms_real = row
         total_minutes = (total_ms_real or 0) / 60000
         
-        # Le ratio (engagement) est nécessaire pour ta formule de rating
-        # Pour l'instant, comme on n'a pas de skips partiels, ratio = 100
-        ratio = 100.0 
+        avg_minutes_per_play = total_minutes / play_count if play_count > 0 else 0
+        engagement = min(round((avg_minutes_per_play / 3.5) * 100), 100)
 
-        # --- TRANSCRIPTION DE TA FORMULE JAVA ---
-        # Java: ((int)(getRatio() / 100.0 * getTempsEcoute() / getNbEcoutes() * 100) / (float)100 
-        #       + (int)(getTempsEcoute() / (float)100) / (float)100.0) * 2 / 3
         if play_count > 0:
-            part1 = int((ratio / 100.0) * (total_minutes / play_count) * 100) / 100.0
+            part1 = int((engagement / 100.0) * (total_minutes / play_count) * 100) / 100.0
             part2 = int(total_minutes / 100.0) / 100.0
             rating = round((part1 + part2) * 2 / 3, 2)
         else:
@@ -77,7 +73,7 @@ async def get_user_albums(
             "cover": album_obj.image_url,
             "play_count": play_count,
             "total_minutes": round(total_minutes, 1),
-            "engagement": ratio,
+            "engagement": engagement,
             "rating": rating
         })
 
