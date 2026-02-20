@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useViewMode } from "../context/viewModeContext";
 
 export default function Header() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
   const [userName, setUserName] = useState("null");
   const [loading, setLoading] = useState(true);
+  const { viewMode, toggleViewMode } = useViewMode();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -69,16 +71,34 @@ export default function Header() {
         </button>
       </nav>
 
-      {/* Bouton de connexion */}
-      {isLoggedIn ? (
-        <button onClick={handleLogout} className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:text-vert hover:scale-105 transition">
-          Connecté en tant que <span className="font-bold">{userName}</span>
-        </button>
-      ) : loading ? (<header className="h-20 bg-background" />) : (
-        <button onClick={handleLogin} className="bg-vert px-4 py-2 rounded-full text-sm font-bold border border-white/10 cursor-pointer text-black hover:scale-105 transition">
-          Se connecter avec Spotify
-        </button>
-      )}
+      <div className="flex">
+        <div className="flex bg-bg2/50 p-1 rounded-xl border border-white/5 backdrop-blur-sm mr-1">
+          <button 
+            onClick={() => toggleViewMode('grid')}
+            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white/10 text-vert' : 'text-gray-500 hover:text-white'}`}
+            title="Vue en cases"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+          </button>
+          <button 
+            onClick={() => toggleViewMode('list')}
+            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white/10 text-vert' : 'text-gray-500 hover:text-white'}`}
+            title="Vue en ligne"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+          </button>
+        </div>
+        {/* Bouton de connexion */}
+        {isLoggedIn ? (
+          <button onClick={handleLogout} className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:text-vert hover:scale-105 transition">
+            Connecté en tant que <span className="font-bold">{userName}</span>
+          </button>
+        ) : loading ? (<header className="h-20 bg-background" />) : (
+          <button onClick={handleLogin} className="bg-vert px-4 py-2 rounded-full text-sm font-bold border border-white/10 cursor-pointer text-black hover:scale-105 transition">
+            Se connecter avec Spotify
+          </button>
+        )}
+      </div>
     </header>
   );
 }

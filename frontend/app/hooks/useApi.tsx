@@ -34,8 +34,11 @@ export const useApi = () => {
   const getArtists = useCallback(({ offset = 0, limit = 50, sort_by = 'play_count', direction = 'desc' }) =>
     request(`/spotify/artists?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
 
+  const getAlbums = useCallback(({ offset = 0, limit = 50, sort_by = 'play_count', direction = 'desc' }) =>
+    request(`/spotify/albums?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
+
   // On mémoïse l'objet de retour pour éviter que la déstructuration { getMusics } change
   return useMemo(() => ({ 
-    loading, getMe, getHistory, getMusics, getArtists 
-  }), [loading, getMe, getHistory, getMusics, getArtists]);
+    loading, getMe, getHistory, getMusics, getArtists, getAlbums
+  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums]);
 };
