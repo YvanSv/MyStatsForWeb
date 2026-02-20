@@ -104,15 +104,13 @@ async def callback(code: str, session: Session = Depends(get_session)):
 
     # 2. On crée la réponse de redirection
     response = RedirectResponse(url=FRONTEND_URL)
-
-    # 3. On fixe le cookie
     response.set_cookie(
         key="session_id",
         value=user.session_id,
-        httponly=True,   # Sécurité : empêche le JS de lire le cookie
-        samesite="lax",  # Permet le fonctionnement entre 8000 et 3001
-        secure=False,
-        max_age=3600 * 24 * 7, # Expire dans 7 jours
+        httponly=True,
+        samesite="none",
+        secure=True,
+        max_age=3600 * 24 * 7,
         path="/"
     )
     return response
