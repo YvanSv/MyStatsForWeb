@@ -190,9 +190,10 @@ function GridView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
               <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
             </div>
             <h3 className="font-bold text-center text-base truncate w-full group-hover:text-vert transition-colors mb-1">{artist.name}</h3>
+            <span className="text-[10px] text-vert font-bold tracking-tighter">{artist.rating} ★</span>
             <div className="flex gap-3 mt-2">
-                <span className="text-[10px] uppercase text-gray-500 font-black">{artist.play_count} streams</span>
-                <span className="text-[10px] text-vert font-bold tracking-tighter">{artist.rating} ★</span>
+                <span className="text-[11px] uppercase text-gray-500 font-black">{artist.play_count} streams</span>
+                <span className="text-[11px] font-bold text-vert">{artist.engagement}%</span>
             </div>
           </div>
         ))}

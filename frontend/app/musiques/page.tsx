@@ -201,10 +201,13 @@ function GridView({ musics, sortConfig, onSort }: { musics: Track[], sortConfig:
               </div>
             </div>
             <h3 className="font-bold truncate text-sm mb-1 group-hover:text-vert transition-colors">{track.title}</h3>
-            <p className="text-gray-400 text-[11px] truncate">{track.artist}</p>
+            <div className="flex justify-between">
+              <p className="text-gray-400 text-[11px] truncate">{track.artist}</p>
+              <span className="text-xs font-bold text-vert">{track.engagement}%</span>
+            </div>
             <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/5">
               <span className="text-[10px] uppercase text-gray-500 font-bold">{track.play_count} streams</span>
-              <span className="text-xs font-bold text-vert">{track.engagement}%</span>
+              <span className="text-[10px] uppercase text-gray-500 font-bold">{track.total_minutes} min</span>
             </div>
           </div>
         ))}

@@ -85,7 +85,7 @@ async def get_user_musics(
             "cover": cover_url,        
             "duration_ms": track_obj.duration_ms,
             "play_count": play_count,
-            "total_minutes": round(total_minutes, 1),
+            "total_minutes": round(total_minutes),
             "engagement": engagement,
             "rating": rating
         })

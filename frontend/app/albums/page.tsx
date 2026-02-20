@@ -202,7 +202,10 @@ function GridView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
               </div>
             </div>
             <h3 className="font-bold truncate text-sm mb-1">{album.name}</h3>
-            <p className="text-gray-400 text-xs truncate mb-3">{album.artist}</p>
+            <div className="flex justify-between">
+              <p className="text-gray-400 text-xs truncate mb-3">{album.artist}</p>
+              <span className="text-xs font-bold text-vert">{album.engagement}%</span>
+            </div>
             <div className="flex justify-between items-center pt-3 border-t border-white/5">
               <span className="text-[10px] uppercase text-gray-500 font-bold">{album.play_count} streams</span>
               <span className="text-[10px] uppercase text-gray-500 font-bold">{Math.round(album.total_minutes)} min</span>
