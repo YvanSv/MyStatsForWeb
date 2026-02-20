@@ -5,3 +5,4 @@ psycopg2-binary
 spotipy
 httpx
 python-multipart
+python-dotenv
