@@ -30,13 +30,10 @@ def login():
         f"https://accounts.spotify.com/authorize?response_type=code"
         f"&client_id={CLIENT_ID}&scope={scope}&redirect_uri={REDIRECT_URI}"
     )
-
-    print("LOGIN")
     return RedirectResponse(url)
 
 @router.get("/callback")
 async def callback(code: str, session: Session = Depends(get_session)):
-    # 1. On échange le 'code' reçu contre des Tokens (Access et Refresh)
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://accounts.spotify.com/api/token",
@@ -49,24 +46,29 @@ async def callback(code: str, session: Session = Depends(get_session)):
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-    
+        
+    # Vérifie si Spotify a répondu une erreur ici
+    if response.status_code != 200:
+        print(f"Erreur Token Spotify: {response.text}")
+        raise HTTPException(status_code=400, detail="Impossible de récupérer le token Spotify")
+
     token_data = response.json()
-    if "error" in token_data:
-        raise HTTPException(status_code=400, detail=token_data.get("error_description", "Erreur Token"))
+    access_token = token_data["access_token"]
+    refresh_token = token_data.get("refresh_token")
+    expires_in = token_data.get("expires_in", 3600)
 
     # 2. On demande à Spotify qui est l'utilisateur actuel
-    access_token = token_data["access_token"]
-    refresh_token = token_data["refresh_token"]
-    expires_in = token_data["expires_in"] # Souvent 3600
-    
-    # Calculer la date précise d'expiration
-    expiration_date = datetime.now() + timedelta(seconds=expires_in)
-
     async with httpx.AsyncClient() as client:
         user_res = await client.get(
             "https://api.spotify.com/v1/me",
             headers={"Authorization": f"Bearer {access_token}"}
         )
+
+    # Vérifie que user_res est correct avant le .json()
+    if user_res.status_code != 200:
+        print(f"Erreur Profil Spotify: {user_res.text}")
+        raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Spotify")
+
     user_info = user_res.json()
 
     # 3. On enregistre dans PostgreSQL
@@ -80,14 +82,14 @@ async def callback(code: str, session: Session = Depends(get_session)):
             email=user_info.get("email", "no-email"),
             refresh_token=token_data["refresh_token"],
             access_token=access_token,
-            expires_at=expiration_date
+            expires_at=expires_in
         )
         session.add(user)
     else:
         # Si l'utilisateur existe, on met juste à jour son refresh_token
         user.access_token = access_token
         user.refresh_token = refresh_token
-        user.expires_at = expiration_date
+        user.expires_at = expires_in
     
     if not user.session_id:
         user.session_id = str(uuid.uuid4())
