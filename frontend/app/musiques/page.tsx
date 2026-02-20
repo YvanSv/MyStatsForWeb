@@ -24,6 +24,14 @@ export default function MusiquesPage() {
   const [hasMore, setHasMore] = useState(false);
   const { getMusics } = useApi();
 
+  // Type pour les colonnes possibles
+  type SortKey = 'title' | 'total_minutes' | 'engagement' | 'play_count' | 'rating';
+
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
+    key: 'play_count', // Tri par défaut
+    direction: 'desc'
+  });
+
   const fetchMusics = async (currentOffset: number) => {
     try {
       const newData = await getMusics(currentOffset);
@@ -39,6 +47,33 @@ export default function MusiquesPage() {
     setOffset(nextOffset);
     fetchMusics(nextOffset);
   };
+
+  const handleSort = (key: SortKey) => {
+    let direction: 'asc' | 'desc' = 'desc';
+    
+    // Si on clique sur la même colonne, on inverse la direction
+    if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    
+    setSortConfig({ key, direction });
+  };
+
+  // Logique de tri appliquée aux données
+  const sortedMusics = [...musics].sort((a, b) => {
+    let aValue: any = a[sortConfig.key];
+    let bValue: any = b[sortConfig.key];
+
+    // Cas particulier pour le titre (ordre alphabétique)
+    if (sortConfig.key === 'title') {
+      return sortConfig.direction === 'asc' 
+        ? aValue.localeCompare(bValue) 
+        : bValue.localeCompare(aValue);
+    }
+
+    // Pour les chiffres (streams, rating, etc.)
+    return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+  });
 
   return (
     <main className="min-h-screen text-white font-jost relative overflow-hidden">
@@ -82,16 +117,16 @@ export default function MusiquesPage() {
 
             {/* --- EN-TÊTE FIXE --- */}
             <div className="grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
-              <div className="pl-16">Titre / Artiste</div> {/* On décale pour aligner avec le texte après l'image */}
-              <div className="hidden lg:block text-center">Temps total</div>
-              <div className="hidden md:block text-center">Engagement</div>
-              <div className="text-center">Streams</div>
-              <div className="text-center">Rating</div>
-              <div></div> {/* Colonne vide pour le bouton play */}
+              <div className="pl-16"><button onClick={() => handleSort('title')} className="uppercase cursor-pointer hover:text-white">Titre / Artiste{sortConfig.key === 'title' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</button></div>
+              <div className="hidden lg:block text-center"><button className="uppercase">Temps total</button></div>
+              <div className="hidden md:block text-center"><button className="uppercase">Engagement</button></div>
+              <div className="text-center"><button onClick={() => handleSort('play_count')} className="uppercase cursor-pointer hover:text-white">Streams{sortConfig.key === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</button></div>
+              <div className="text-center"><button onClick={() => handleSort('rating')} className="uppercase cursor-pointer hover:text-white">Rating{sortConfig.key === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</button></div>
+              <div></div>
             </div>
 
             <div className="space-y-4">
-              {musics.map((track) => (
+              {sortedMusics.map((track) => (
                 <div key={track.spotify_id} className="group grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
                   {/* Image & Titre (Identique) */}
                   <div className="flex items-center gap-4 min-w-0">
