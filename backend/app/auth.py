@@ -1,6 +1,7 @@
 import base64
 from datetime import datetime, timedelta
 import os
+import uuid
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
 from fastapi.responses import RedirectResponse
@@ -54,7 +55,6 @@ async def callback(code: str, session: Session = Depends(get_session)):
         raise HTTPException(status_code=400, detail=token_data.get("error_description", "Erreur Token"))
 
     # 2. On demande à Spotify qui est l'utilisateur actuel
-    token_data = response.json()
     access_token = token_data["access_token"]
     refresh_token = token_data["refresh_token"]
     expires_in = token_data["expires_in"] # Souvent 3600
@@ -90,7 +90,6 @@ async def callback(code: str, session: Session = Depends(get_session)):
         user.expires_at = expiration_date
     
     if not user.session_id:
-        import uuid
         user.session_id = str(uuid.uuid4())
 
     session.add(user)
