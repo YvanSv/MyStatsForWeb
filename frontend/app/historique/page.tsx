@@ -53,35 +53,10 @@ export default function HistoryPage() {
 
       <div className="max-w-[1400px] mx-auto py-12">
         <div className="flex flex-col md:flex-row gap-8">
-          
-          {/* --- SIDEBAR FILTRES --- */}
-          <aside className={`transition-all duration-300 ${showFilters ? 'w-full md:w-64' : 'w-0 overflow-hidden opacity-0 invisible md:w-0'}`}>
-            <div className="sticky top-24 bg-bg2/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6">
-              <h2 className="text-xl font-hias mb-6 text-vert">Filtres</h2>
-              
-              <div className="space-y-6">
-                <FilterGroup title="Période">
-                  <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" className="accent-vert"/> Aujourd'hui</label>
-                  <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" className="accent-vert"/> 7 derniers jours</label>
-                </FilterGroup>
-
-                <FilterGroup title="Genre">
-                  <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" className="accent-vert"/> Synthwave</label>
-                  <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" className="accent-vert"/> Pop</label>
-                </FilterGroup>
-              </div>
-            </div>
-          </aside>
-
           {/* --- LISTE DES ÉLÉMENTS --- */}
           <section className="flex-1">
-            <div className="flex items-center justify-between mb-8">
-              <button onClick={() => setShowFilters(!showFilters)}
-                className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:border-vert/50 transition-colors"
-              > {showFilters ? "Masquer les filtres" : "Afficher les filtres"} </button>
+            <div className="flex items-center justify-center mb-8">
               <h1 className="text-titre font-hias tracking-tighter">Historique <span className="text-vert">récent</span></h1>
-              <p></p>
-              <p></p>
             </div>
 
             {loading ? (
