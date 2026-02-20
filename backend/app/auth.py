@@ -17,6 +17,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 @router.get("/login")
 def login():
@@ -102,7 +103,7 @@ async def callback(code: str, session: Session = Depends(get_session)):
         session.commit()
 
     # 2. On crée la réponse de redirection
-    response = RedirectResponse(url="http://127.0.0.1:3001")
+    response = RedirectResponse(url=FRONTEND_URL)
 
     # 3. On fixe le cookie
     response.set_cookie(
@@ -118,7 +119,7 @@ async def callback(code: str, session: Session = Depends(get_session)):
 
 @router.get("/logout")
 async def logout():
-    response = RedirectResponse(url="http://127.0.0.1:3001")
+    response = RedirectResponse(url=FRONTEND_URL)
     # On supprime le cookie de session
     # On utilise 'delete_cookie' avec le même nom que lors de la création
     response.delete_cookie(
