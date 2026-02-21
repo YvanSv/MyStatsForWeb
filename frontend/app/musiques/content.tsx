@@ -96,46 +96,36 @@ export default function MusiquesContent() {
   };
 
   return (
-    <main className="min-h-screen text-white font-jost relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] h-[600px] w-[600px] animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-10 blur-[120px]" />
-      </div>
+      <div className="flex flex-col md:flex-row gap-8">
+        <SidebarFilters config={musicFilters} loading={loading} isVisible={showFilters}/>
 
-      <div className="max-w-[1400px] mx-auto py-12 px-6">
-        <div className="flex flex-col md:flex-row gap-8">
-          <SidebarFilters config={musicFilters} loading={loading} isVisible={showFilters}/>
+        <section className="flex-1">
+          <div className="flex items-center justify-between mb-8">
+            <button onClick={() => toggleShowFilters()}
+              className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:border-vert/50 transition-colors"
+            >{showFilters ? "Masquer les filtres" : "Afficher les filtres"}</button>
+            <h1 className="text-titre font-hias tracking-tighter text-right">Toutes mes <span className="text-vert">musiques</span></h1>
+          </div>
 
-          <section className="flex-1">
-            <div className="flex items-center justify-between mb-8">
-              <button onClick={() => toggleShowFilters()}
-                className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:border-vert/50 transition-colors"
-              >{showFilters ? "Masquer les filtres" : "Afficher les filtres"}</button>
-              <h1 className="text-titre font-hias tracking-tighter text-right">Toutes mes <span className="text-vert">musiques</span></h1>
+          {viewMode === 'list' ? (
+            <ListView musics={musics} sortConfig={currentSort} onSort={() => {}} />
+          ) : (
+            <GridView musics={musics} sortConfig={currentSort} onSort={() => {}} />
+          )}
+
+          {hasMore && (
+            <div className="mt-12 flex justify-center pb-12">
+              <button
+                onClick={loadMore}
+                disabled={loading}
+                className="bg-bg2 border border-white/10 px-8 py-4 rounded-full font-bold hover:border-vert/50 transition-all disabled:opacity-50"
+              >
+                {loading ? "Chargement..." : "Charger plus"}
+              </button>
             </div>
-
-            {viewMode === 'list' ? (
-              <ListView musics={musics} sortConfig={currentSort} onSort={() => {}} />
-            ) : (
-              <GridView musics={musics} sortConfig={currentSort} onSort={() => {}} />
-            )}
-
-            {hasMore && (
-              <div className="mt-12 flex justify-center pb-12">
-                <button
-                  onClick={loadMore}
-                  disabled={loading}
-                  className="bg-bg2 border border-white/10 px-8 py-4 rounded-full font-bold hover:border-vert/50 transition-all disabled:opacity-50"
-                >
-                  {loading ? "Chargement..." : "Charger plus"}
-                </button>
-              </div>
-            )}
-          </section>
-        </div>
+          )}
+        </section>
       </div>
-    </main>
   );
 }
 

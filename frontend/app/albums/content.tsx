@@ -101,54 +101,44 @@ export default function AlbumsContent() {
   };
 
   return (
-    <main className="min-h-screen text-white font-jost relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] h-[600px] w-[600px] animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-10 blur-[120px]" />
-      </div>
+    <div className="flex flex-col md:flex-row gap-8">
+      <SidebarFilters config={albumFilters} loading={loading} isVisible={showFilters}/>
 
-      <div className="max-w-[1400px] mx-auto py-12 px-6">
-        <div className="flex flex-col md:flex-row gap-8">
-          <SidebarFilters config={albumFilters} loading={loading} isVisible={showFilters}/>
-
-          <section className="flex-1">
-            {/* Header de la section */}
-            <div className="flex items-center justify-between mb-8">
-              <button 
-                onClick={() => toggleShowFilters()}
-                className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 hover:border-vert/50 transition-colors"
-              >
-                {showFilters ? "Masquer les filtres" : "Afficher les filtres"}
-              </button>
-              <h1 className="text-titre font-hias tracking-tighter">
-                Tous mes <span className="text-vert">albums</span>
-              </h1>
-            </div>
-
-            {/* Contenu dynamique selon ViewMode */}
-            {viewMode === 'list' ? (
-              <ListView albums={albums} sortConfig={sortConfig} onSort={handleSort} />
-            ) : (
-              <GridView albums={albums} sortConfig={sortConfig} onSort={handleSort} />
-            )}
-
-            {/* Pagination */}
-            {hasMore && (
-              <div className="mt-12 flex justify-center pb-12">
-                <button
-                  onClick={loadMore}
-                  disabled={loading}
-                  className="bg-bg2 border border-white/10 px-8 py-4 rounded-full font-bold hover:border-vert/50 transition-all disabled:opacity-50"
-                >
-                  {loading ? "Chargement..." : "Charger plus d'albums"}
-                </button>
-              </div>
-            )}
-          </section>
+      <section className="flex-1">
+        {/* Header de la section */}
+        <div className="flex items-center justify-between mb-8">
+          <button 
+            onClick={() => toggleShowFilters()}
+            className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 hover:border-vert/50 transition-colors"
+          >
+            {showFilters ? "Masquer les filtres" : "Afficher les filtres"}
+          </button>
+          <h1 className="text-titre font-hias tracking-tighter">
+            Tous mes <span className="text-vert">albums</span>
+          </h1>
         </div>
-      </div>
-    </main>
+
+        {/* Contenu dynamique selon ViewMode */}
+        {viewMode === 'list' ? (
+          <ListView albums={albums} sortConfig={sortConfig} onSort={handleSort} />
+        ) : (
+          <GridView albums={albums} sortConfig={sortConfig} onSort={handleSort} />
+        )}
+
+        {/* Pagination */}
+        {hasMore && (
+          <div className="mt-12 flex justify-center pb-12">
+            <button
+              onClick={loadMore}
+              disabled={loading}
+              className="bg-bg2 border border-white/10 px-8 py-4 rounded-full font-bold hover:border-vert/50 transition-all disabled:opacity-50"
+            >
+              {loading ? "Chargement..." : "Charger plus d'albums"}
+            </button>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 

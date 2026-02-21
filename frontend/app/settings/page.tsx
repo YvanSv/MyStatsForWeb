@@ -34,9 +34,15 @@ export default function SettingsPage() {
 
       <div className="bg-bg2/40 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-xl">
         <h2 className="text-xl font-bold mb-2">Importer l'archive Spotify</h2>
+        <p className="text-gray-400 text-sm">
+          Rendez-vous sur la page de téléchargement de vos données sur Spotify, en cliquant sur le lien suivant :
+          <code className="text-vert">
+            <a href="https://www.spotify.com/fr/account/privacy/"> https://www.spotify.com/fr/account/privacy/</a>
+          </code>
+        </p>
         <p className="text-gray-400 text-sm mb-8">
-          Allez dans vos paramètres Spotify {">"} Confidentialité et téléchargez vos "Données d'utilisation étendue". 
-          Une fois reçues, importez tous les fichiers <code className="text-vert">endsong.json</code> ici.
+          puis sélectionnez <code className="text-vert">historique de streaming étendu</code>, vous le recevrez très rapidement.
+          Une fois reçu, importez tous les fichiers <code className="text-vert">Streaming_History_Audio_xxxx_y.json</code> ici.
         </p>
 
         <div className="border-2 border-dashed border-white/10 rounded-3xl p-12 text-center hover:border-vert/50 transition-colors relative">
