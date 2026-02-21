@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
 import { ENDPOINTS } from "../config";
 import { useApi } from "../hooks/useApi";
+import { ApiStatusBadge } from "./StatusBadge";
 
 export default function Header() {
   const router = useRouter();
@@ -56,6 +57,7 @@ export default function Header() {
       >
         <Image src="/logo.png" alt="Logo" width={80} height={80} style={{ width: '80px', height: 'auto' }} priority className="rounded-md transition-transform group-hover:scale-105"/>
         <span className="text-titre font-jost text-white tracking-tighter group-hover:text-vert transition-colors transition-transform group-hover:scale-105">MyStats</span>
+        <ApiStatusBadge/>
       </div>
 
       {/* Navigation */}

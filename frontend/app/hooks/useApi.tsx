@@ -88,7 +88,9 @@ export const useApi = () => {
   const getArtistsMetadata = useCallback(async () => request(`${ENDPOINTS.ARTISTS_METADATA}`), [request]);
   const getAlbumsMetadata = useCallback(async () => request(`${ENDPOINTS.ALBUMS_METADATA}`), [request]);
 
+  const getStatus = useCallback(async () => request(`${ENDPOINTS.STATUS}`), [request]);
+
   return useMemo(() => ({ 
-    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata
-  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata]);
+    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus
+  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus]);
 };
