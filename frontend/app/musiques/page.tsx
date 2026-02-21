@@ -148,7 +148,7 @@ export default function MusiquesPage() {
                       placeholder="Titre..."
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-vert/50 outline-none transition-all"
                       onChange={(e) => handleLocalChange("track", e.target.value)}
-                      value={searchParams.get("track") || ""}
+                      value={localFilters.track ?? searchParams.get("track") ?? ""}
                     />
                   </div>
                   <input
@@ -156,14 +156,14 @@ export default function MusiquesPage() {
                     placeholder="Artiste..."
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-vert/50 outline-none transition-all"
                     onChange={(e) => handleLocalChange("artist", e.target.value)}
-                    value={searchParams.get("artist") || ""}
+                    value={localFilters.artist ?? searchParams.get("artist") ?? ""}
                   />
                   <input
                     type="text"
                     placeholder="Album..."
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-vert/50 outline-none transition-all"
                     onChange={(e) => handleLocalChange("album", e.target.value)}
-                    value={searchParams.get("album") || ""}
+                    value={localFilters.album ?? searchParams.get("album") ?? ""}
                   />
                 </div>
               </FilterGroup>
