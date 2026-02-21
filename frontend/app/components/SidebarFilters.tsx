@@ -106,9 +106,9 @@ export default function SidebarFilters({ config, loading, isVisible }: SidebarFi
                   onChange={handleLocalChange} />
               )}
               {config.stats.engagement && (
-                <RangeFilter label="Engagement" param="%" step={1} {...config.stats.engagement}
-                  valueMin={localFilters.engagement_min ?? searchParams.get("engagement_min") ?? config.stats.engagement.min}
-                  valueMax={localFilters.engagement_max ?? searchParams.get("engagement_max") ?? config.stats.engagement.max}
+                <RangeFilter label="Engagement" param="engagement" unit="%" step={0.1} {...config.stats.engagement}
+                  valueMin={Number(localFilters.engagement_min ?? searchParams.get("engagement_min") ?? config.stats.engagement.min)}
+                  valueMax={Number(localFilters.engagement_max ?? searchParams.get("engagement_max") ?? config.stats.engagement.max)}
                   onChange={handleLocalChange} />
               )}
               {config.stats.rating && (
