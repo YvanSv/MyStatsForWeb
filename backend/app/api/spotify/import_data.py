@@ -1,3 +1,4 @@
+import datetime
 import json
 import hashlib
 from typing import List, Optional
@@ -63,15 +64,21 @@ async def upload_spotify_json(
             played_at = entry.get("ts")
             if not track_uri or not isinstance(track_uri, str): continue
             spotify_id = track_uri.split(":")[-1]
-
+            
             # Filtrage de base (ignore les podcasts ou écoutes trop courtes)
             if not track_name or not track_uri or ms_played < 10000:
                 stats["skipped"] += 1
                 continue
 
-            # 1. Vérification Historique (Anti-doublon immédiat)
-            if (played_at, spotify_id) in all_history:
-                continue
+            # 1. Conversion de la string JSON en objet datetime Python
+            # On remplace le 'Z' par '+00:00' pour que fromisoformat le comprenne comme UTC
+            try:
+                played_at_obj = datetime.datetime.fromisoformat(played_at.replace("Z", "+00:00"))
+                played_at_obj = played_at_obj.replace(tzinfo=None) 
+            except ValueError: continue
+
+            # 2. Vérification Historique avec le type identique au cache
+            if (played_at_obj, spotify_id) in all_history: continue
 
             # 2. Gestion Artiste
             art_norm = artist_name.strip().lower()
