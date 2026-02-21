@@ -22,7 +22,6 @@ def catch_up_maintenance():
     sp = get_spotify_client()
     with Session(engine) as db:
         # --- PHASE 1 : TRACKS & ALBUMS (Durée + Covers) ---
-        # On cherche tout ce qui est incomplet
         query_tracks = (
             select(Track)
             .join(Album, Track.album_id == Album.spotify_id)
@@ -47,12 +46,10 @@ def catch_up_maintenance():
                         t_id = t_info['id']
                         duration = t_info['duration_ms']
                         
-                        # Update Track Duration
                         if duration:
                             db.execute(update(Track).where(Track.spotify_id == t_id)
                                 .values(duration_ms=duration))
                         
-                        # Update Album Cover
                         album_info = t_info.get('album', {})
                         images = album_info.get('images', [])
                         album_id = album_info.get('id')
@@ -66,45 +63,55 @@ def catch_up_maintenance():
                             )
 
                     db.commit()
+                    print(f"✅ Phase 1 : Batch {i//50 + 1} commit avec succès.")
                     time.sleep(random.uniform(1.0, 3.0))
                 except Exception as e:
                     handle_exception(e)
                     return
 
-        # --- PHASE 3 : ARTISTES "GEN_" (Search API) ---
+        # --- PHASE 3 : ARTISTES "GEN_" (Search API + Cascade Update) ---
         query_gen_artists = (
             select(Artist)
             .where(Artist.image_url == None)
             .where(Artist.spotify_id.contains("gen_"))
-            .limit(20) # Très lent, donc on en fait peu à la fois
+            .limit(20)
         )
         gen_artists = db.exec(query_gen_artists).all()
 
         if gen_artists:
-            print(f"Tentative de récupération via recherche pour {len(gen_artists)} artistes...")
+            print(f"Phase 3 : Tentative pour {len(gen_artists)} artistes...")
             for artist in gen_artists:
                 if spotify_status.get_status()["is_rate_limited"]: return
                 
                 try:
-                    # Recherche de l'artiste par son nom exact
                     search_results = sp.search(q=f"artist:{artist.name}", type="artist", limit=1)
                     items = search_results.get('artists', {}).get('items', [])
                     
                     if items:
                         sp_artist = items[0]
                         real_id = sp_artist['id']
+                        old_id = artist.spotify_id
                         img_url = sp_artist['images'][0]['url'] if sp_artist.get('images') else None
                         
-                        # Mise à jour de l'ID et de l'image
+                        # 1. Mise à jour manuelle de la cascade (Foreign Keys)
+                        # On met à jour les références dans Album et Track avant de changer l'ID de l'Artiste
+                        db.execute(update(Album).where(Album.artist_id == old_id).values(artist_id=real_id))
+                        db.execute(update(Track).where(Track.artist_id == old_id).values(artist_id=real_id))
+                        
+                        # 2. Mise à jour de l'artiste
                         artist.spotify_id = real_id
                         artist.image_url = img_url
                         db.add(artist)
+                        
                         db.commit()
-                        print(f"✅ Artiste trouvé : {artist.name} -> {real_id}")
+                        print(f"✅ Artiste migré : {artist.name} ({old_id} -> {real_id})")
+                    else:
+                        print(f"⚠️ Aucun résultat pour l'artiste : {artist.name}")
                     
-                    time.sleep(random.uniform(1.0, 1.5)) # Pause pour éviter le 429
+                    time.sleep(random.uniform(1.5, 2.5))
                     
                 except Exception as e:
+                    db.rollback()
                     handle_exception(e)
                     return
 
@@ -115,5 +122,6 @@ def handle_exception(e):
         match = re.search(r'in (\d+) seconds', error_str)
         if match: retry_seconds = int(match.group(1))
         spotify_status.set_rate_limited(seconds=retry_seconds)
+        print(f"🛑 Rate limit atteint. Pause de {retry_seconds}s.")
     else:
-        print(f"Erreur maintenance: {e}")
+        print(f"❌ Erreur maintenance: {e}")
