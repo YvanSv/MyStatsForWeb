@@ -43,14 +43,14 @@ export default function MusiquesPage() {
     track: searchParams.get("track") || "",
     artist: searchParams.get("artist") || "",
     album: searchParams.get("album") || "",
-    s_min: searchParams.get("streams_min") || "0",
-    s_max: searchParams.get("streams_max") || "2000",
-    m_min: searchParams.get("minutes_min") || "0",
-    m_max: searchParams.get("minutes_max") || "5000",
-    e_min: searchParams.get("engagement_min") || "0",
-    e_max: searchParams.get("engagement_max") || "100",
-    r_min: searchParams.get("rating_min") || "0",
-    r_max: searchParams.get("rating_max") || "10",
+    streams_min: searchParams.get("streams_min") || "0",
+    streams_max: searchParams.get("streams_max") || "2000",
+    minutes_min: searchParams.get("minutes_min") || "0",
+    minutes_max: searchParams.get("minutes_max") || "5000",
+    engagement_min: searchParams.get("engagement_min") || "0",
+    engagement_max: searchParams.get("engagement_max") || "100",
+    rating_min: searchParams.get("rating_min") || "0",
+    rating_max: searchParams.get("rating_max") || "10",
   }), [searchParams]);
 
   // --- FONCTION DE MISE À JOUR DE L'URL ---
@@ -86,8 +86,7 @@ export default function MusiquesPage() {
         offset: currentOffset,
         limit: 50,
         sort_by: currentSort.key === 'title' ? 'name' : currentSort.key,
-        direction: currentSort.direction,
-        // period: currentSort.period // Ajoute-le à ton backend plus tard !
+        ...currentSort
       });
 
       setHasMore(newData.length === 50);
@@ -172,9 +171,9 @@ export default function MusiquesPage() {
               {/* --- CATÉGORIE : STATISTIQUES --- */}
               <FilterGroup title="Statistiques">
                 <div className="space-y-6 pt-2">
-                  <RangeFilter label="Écoutes" param="streams" step={1} min={0} max = {2000}
+                  <RangeFilter label="Écoutes" param="streams" step={1} min={0} max = {1000}
                     valueMin={localFilters.streams_min ?? searchParams.get("streams_min") ?? 0}
-                    valueMax={localFilters.streams_max ?? searchParams.get("streams_max") ?? 2000}
+                    valueMax={localFilters.streams_max ?? searchParams.get("streams_max") ?? 1000}
                     onChange={handleLocalChange}
                   />
                   <RangeFilter label="Minutes" param="minutes" step={1} min={0} max = {5000}

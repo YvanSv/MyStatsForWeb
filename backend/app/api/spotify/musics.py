@@ -2,19 +2,33 @@ from app.database import get_session
 from app.models import TrackHistory, User, Track, Artist, Album
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from sqlalchemy import desc, asc, func, select
+from sqlalchemy import desc, asc, func, select, text
 from sqlmodel import Session
 
 router = APIRouter()
 
 @router.get("/")
 async def get_user_musics(
+    *,
+    session_id: Optional[str] = Cookie(None),
+    db: Session = Depends(get_session),
     offset: int = 0,
     limit: int = 50,
     sort_by: str = "play_count",
     direction: str = "desc",
-    session_id: Optional[str] = Cookie(None),
-    db: Session = Depends(get_session)
+    # Paramètres de recherche
+    track: Optional[str] = None,
+    artist: Optional[str] = None,
+    album: Optional[str] = None,
+    # Filtres de stats
+    streams_min: Optional[int] = None,
+    streams_max: Optional[int] = None,
+    minutes_min: Optional[float] = None,
+    minutes_max: Optional[float] = None,
+    rating_min: Optional[float] = None,
+    rating_max: Optional[float] = None,
+    engagement_min: Optional[float] = None,
+    engagement_max: Optional[float] = None
 ):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     user_result = db.exec(select(User).where(User.session_id == session_id)).first()
@@ -22,34 +36,43 @@ async def get_user_musics(
     if isinstance(user_result, User): current_user_id = user_result.id
     else: current_user_id = user_result[0].id
 
-    # 2. Construction de la requête
-    statement = (
-        select(
+    play_count = func.count(TrackHistory.id).label("play_count")
+    total_minutes = (func.sum(TrackHistory.ms_played) / 60000).label("total_minutes")
+
+    query = (select(
             Track,
-            Artist.name.label("artist_name"),
-            Album.name.label("album_name"),
-            Album.image_url.label("cover_url"),
-            func.count(TrackHistory.id).label("play_count"),
-            func.sum(TrackHistory.ms_played).label("total_ms_real")
+            Artist.name.label("artist"),
+            Album.name.label("album"),
+            Album.image_url.label("cover"),
+            play_count,
+            total_minutes
         )
-        .join(TrackHistory, Track.spotify_id == TrackHistory.spotify_id)
-        .join(Artist, Track.artist_id == Artist.spotify_id)
         .join(Album, Track.album_id == Album.spotify_id)
+        .join(Artist, Track.artist_id == Artist.spotify_id)
+        .join(TrackHistory, Track.spotify_id == TrackHistory.spotify_id)
         .where(TrackHistory.user_id == current_user_id)
-        .group_by(
-            Track.spotify_id, 
-            Artist.name, 
-            Album.name, 
-            Album.image_url
-        )
+    )
+    if track: query = query.where(Track.title.ilike(f"%{track}%"))
+    if artist: query = query.where(Artist.name.ilike(f"%{artist}%"))
+    if album: query = query.where(Album.name.ilike(f"%{album}%"))
+        
+
+    query = query.group_by(
+        Track.spotify_id, 
+        Track.title, 
+        Artist.name, 
+        Album.name, 
+        Album.image_url
     )
 
-    # 3. Tri SQL
-    if sort_by == "play_count": statement = statement.order_by(desc("play_count") if direction == "desc" else asc("play_count"))
-    elif sort_by == "total_minutes": statement = statement.order_by(desc("total_ms_real") if direction == "desc" else asc("total_ms_real"))
-    elif sort_by == "name": statement = statement.order_by(desc(Track.title) if direction == "desc" else asc(Track.title))
-    else: statement = statement.order_by(desc("play_count"))
-    results = db.exec(statement).all()
+    if streams_min is not None: query = query.having(play_count >= streams_min)
+    if streams_max is not None: query = query.having(play_count <= streams_max)
+    if minutes_min is not None: query = query.having(total_minutes >= minutes_min)
+    if minutes_max is not None: query = query.having(total_minutes <= minutes_max)
+    
+    order = text(f"{sort_by} {direction}")
+    query = query.order_by(order)
+    results = db.exec(query).all()
 
     all_musics = []
     for row in results:
@@ -58,23 +81,25 @@ async def get_user_musics(
         album_name = row[2]
         cover_url = row[3]
         play_count = row[4]
-        total_ms_real = row[5] or 0
+        temps_total = row[5] or 0
         
-        total_minutes = total_ms_real / 60000
-        
+        duration_theorique_min = play_count * track_obj.duration_ms / 60000
+
         # Engagement
-        duration_theorique_ms = play_count * track_obj.duration_ms
         engagement = 0
-        if duration_theorique_ms > 0:
-            engagement = round(min(total_ms_real, duration_theorique_ms) / duration_theorique_ms * 100)
+        if duration_theorique_min > 0:
+            engagement = round(min(temps_total, duration_theorique_min) / duration_theorique_min * 100)
+        
+        if engagement < engagement_min or engagement > engagement_max: continue
 
         # Rating
+        rating = 0
         if play_count > 0:
-            part1 = (1.0 * total_minutes / play_count)
-            part2 = (total_minutes / 10.0) / 10.0
-            rating = round((part1 + part2) / 2, 2)
-        else:
-            rating = 0
+            part1 = temps_total / play_count
+            part2 = (float(temps_total) / 10.0) / 10.0
+            rating = round((float(part1) + part2) / 2, 2)
+
+        if rating < rating_min or rating > rating_max: continue
 
         all_musics.append({
             "spotify_id": track_obj.spotify_id,
@@ -84,7 +109,7 @@ async def get_user_musics(
             "cover": cover_url,        
             "duration_ms": track_obj.duration_ms,
             "play_count": play_count,
-            "total_minutes": round(total_minutes),
+            "total_minutes": round(temps_total),
             "engagement": engagement,
             "rating": rating
         })
@@ -92,5 +117,8 @@ async def get_user_musics(
     # 4. Tri Python pour les colonnes calculées
     if sort_by in ["rating", "engagement"]:
         all_musics.sort(key=lambda x: x[sort_by], reverse=(direction == "desc"))
+
+    #if rating_min is not None: query = query.having(Track.rating >= rating_min)
+    #if rating_max is not None: query = query.having(Track.rating <= rating_max)
 
     return all_musics[offset : offset + limit]
