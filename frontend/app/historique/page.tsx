@@ -18,10 +18,7 @@ export default function HistoryPage() {
   const [history, setHistory] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const { getHistory } = useApi();
-  
-  // On récupère le viewMode global (partagé avec le Header)
   const { viewMode } = useViewMode();
-
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleString("fr-FR", {

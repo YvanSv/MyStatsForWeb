@@ -1,40 +1,30 @@
 "use client";
 import { useState } from "react";
-import { ENDPOINTS } from "../config";
+import { useApi } from "../hooks/useApi";
 
 export default function SettingsPage() {
   const [files, setFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const { uploadJson, loading: uploading } = useApi();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));
+      setMessage("");
     }
   };
 
   const startImport = async () => {
     if (files.length === 0) return;
-    setUploading(true);
     
     const formData = new FormData();
     files.forEach(file => formData.append("files", file));
 
     try {
-      const response = await fetch(ENDPOINTS.UPLOAD_JSON, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-      
-      const data = await response.json();
-      setMessage(data.message);
+      const data = await uploadJson(formData);
+      setMessage(data.message || "Importation réussie !");
       setFiles([]);
-    } catch (err) {
-      setMessage("Erreur lors de l'importation");
-    } finally {
-      setUploading(false);
-    }
+    } catch (err: any) {setMessage(err.message || "Erreur lors de l'importation");}
   };
 
   return (
@@ -55,7 +45,8 @@ export default function SettingsPage() {
             multiple 
             accept=".json" 
             onChange={handleFileChange}
-            className="absolute inset-0 opacity-0 cursor-pointer"
+            className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+            disabled={uploading}
           />
           <div className="space-y-4">
             <div className="text-4xl">📁</div>
@@ -71,13 +62,26 @@ export default function SettingsPage() {
           <button 
             onClick={startImport}
             disabled={uploading}
-            className="w-full mt-6 bg-vert text-black py-4 rounded-2xl font-bold hover:scale-[1.02] transition disabled:opacity-50"
+            className="w-full mt-6 bg-vert text-black py-4 rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition disabled:opacity-50 disabled:hover:scale-100"
           >
-            {uploading ? "Analyse des données..." : `Importer les ${files.length} fichiers`}
+            {uploading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                Analyse des données en cours...
+              </span>
+            ) : (
+              `Importer les ${files.length} fichiers`
+            )}
           </button>
         )}
 
-        {message && <p className="mt-4 text-center text-vert text-sm font-bold">{message}</p>}
+        {message && (
+          <div className={`mt-6 p-4 rounded-xl text-center text-sm font-bold ${
+            message.includes("Erreur") ? "bg-red-500/10 text-red-400" : "bg-vert/10 text-vert"
+          }`}>
+            {message}
+          </div>
+        )}
       </div>
     </main>
   );

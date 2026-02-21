@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export const ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/auth/login`,
@@ -6,4 +6,9 @@ export const ENDPOINTS = {
   ME: `${API_BASE_URL}/auth/me`,
   STATS_OVERVIEW: `${API_BASE_URL}/stats/overview`,
   UPLOAD_JSON:`${API_BASE_URL}/spotify/upload-json`,
+  HISTORY:`${API_BASE_URL}/spotify/history`,
+  TRACKS:`${API_BASE_URL}/spotify/musics`,
+  ARTISTS:`${API_BASE_URL}/spotify/artists`,
+  ALBUMS:`${API_BASE_URL}/spotify/albums`,
+  IMPORT_DATA:`${API_BASE_URL}/spotify/upload-json`,
 };

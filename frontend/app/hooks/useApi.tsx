@@ -1,5 +1,5 @@
 import { useCallback, useState, useMemo } from "react";
-import { API_BASE_URL } from "../config";
+import { ENDPOINTS } from "../config";
 
 export const useApi = () => {
   const [loading, setLoading] = useState(false);
@@ -7,7 +7,7 @@ export const useApi = () => {
   const request = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(`${endpoint}`, {
         ...options,
         credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...options.headers },
@@ -22,22 +22,26 @@ export const useApi = () => {
   }, []);
 
   // Stabilisation des méthodes individuelles
-  const getMe = useCallback(() => request('/auth/me'), [request]);
+  const getMe = useCallback(() => request(ENDPOINTS.ME), [request]);
 
   const getHistory = useCallback((offset: number, limit: number = 50) => 
-    request(`/spotify/history?offset=${offset}&limit=${limit}`), [request]);
+    request(`${ENDPOINTS.HISTORY}?offset=${offset}&limit=${limit}`), [request]);
 
   const getMusics = useCallback(async ({ offset = 0, limit = 50, sort_by = 'play_count', direction = 'desc' }) =>
-    request(`/spotify/musics?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
+    request(`${ENDPOINTS.TRACKS}?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
 
   const getArtists = useCallback(({ offset = 0, limit = 50, sort_by = 'play_count', direction = 'desc' }) =>
-    request(`/spotify/artists?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
+    request(`${ENDPOINTS.ARTISTS}?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
 
   const getAlbums = useCallback(({ offset = 0, limit = 50, sort_by = 'play_count', direction = 'desc' }) =>
-    request(`/spotify/albums?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
+    request(`${ENDPOINTS.ALBUMS}?offset=${offset}&limit=${limit}&sort_by=${sort_by}&direction=${direction}`), [request]);
 
-  // On mémoïse l'objet de retour pour éviter que la déstructuration { getMusics } change
+  const getOverview = useCallback(() => request(ENDPOINTS.STATS_OVERVIEW), [request]);
+
+  const uploadJson = useCallback((formData: FormData) =>
+    request(ENDPOINTS.IMPORT_DATA, {method: 'POST', body: formData, headers: {},}), [request]);
+
   return useMemo(() => ({ 
-    loading, getMe, getHistory, getMusics, getArtists, getAlbums
-  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums]);
+    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson
+  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson]);
 };

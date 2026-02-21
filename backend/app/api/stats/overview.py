@@ -112,11 +112,11 @@ async def get_stats_overview(session_id: str = Cookie(None), db: Session = Depen
     top_album_time_res = db.exec(top_album_time_stmt).first()
 
     pool = [
-        {"title": "Nombre d'écoutes", "value": f"{total_listenings}", "detail": "titres streamés", "type": "stat"},
-        {"title": "Temps d'écoute", "value": f"{int(total_minutes)}", "detail": "minutes au total", "type": "stat"},
-        {"title": "Artistes découverts", "value": f"{total_artistes}", "detail": "artistes différents", "type": "stat"},
-        {"title": "Discothèque", "value": f"{total_albums}", "detail": "albums explorés", "type": "stat"},
-        {"title": "Bibliothèque", "value": f"{total_musics_diff}", "detail": "musiques uniques", "type": "stat"}
+        {"title": "Nombre d'écoutes", "value": f"{total_listenings}", "detail": "titres streamés"},
+        {"title": "Temps d'écoute", "value": f"{int(total_minutes)}", "detail": "minutes au total"},
+        {"title": "Artistes découverts", "value": f"{total_artistes}", "detail": "artistes différents"},
+        {"title": "Discothèque", "value": f"{total_albums}", "detail": "albums explorés"},
+        {"title": "Bibliothèque", "value": f"{total_musics_diff}", "detail": "musiques uniques"}
     ]
 
     # Ajout des Tops (si les résultats existent)
@@ -124,24 +124,21 @@ async def get_stats_overview(session_id: str = Cookie(None), db: Session = Depen
         pool.append({
             "title": "Titre le plus écouté", 
             "value": top_track_ecoutes_totales_res[0].title, 
-            "detail": f"{top_track_ecoutes_totales_res[1]} fois", 
-            "type": "song"
+            "detail": f"{top_track_ecoutes_totales_res[1]} fois"
         })
 
     if top_track_duree_res and top_track_duree_res[1] is not None:
         pool.append({
             "title": "Plus gros temps d'écoute", 
             "value": top_track_duree_res[0].title, 
-            "detail": f"{int(top_track_duree_res[1]/60000)} min", 
-            "type": "song"
+            "detail": f"{int(top_track_duree_res[1]/60000)} min"
         })
 
     if top_album_count_res:
         pool.append({
             "title": "Album favori (Volume)", 
             "value": top_album_count_res[0].name, 
-            "detail": f"{top_album_count_res[1]} écoutes", 
-            "type": "album"
+            "detail": f"{top_album_count_res[1]} écoutes"
         })
 
     if top_album_time_res and top_album_time_res[1] is not None:
@@ -150,16 +147,14 @@ async def get_stats_overview(session_id: str = Cookie(None), db: Session = Depen
         pool.append({
             "title": "Album favori (Temps)", 
             "value": top_album_time_res[0].name, 
-            "detail": f"{minutes_album} min", 
-            "type": "album"
+            "detail": f"{minutes_album} min"
         })
 
     if top_artist_ecoutes:
         pool.append({
             "title": "Artiste n°1", 
             "value": top_artist_ecoutes[0].name, 
-            "detail": f"{top_artist_ecoutes[1]} streams", 
-            "type": "artist"
+            "detail": f"{top_artist_ecoutes[1]} streams"
         })
 
     return random.sample(pool, min(len(pool), 3))

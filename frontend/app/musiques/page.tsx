@@ -50,11 +50,8 @@ export default function MusiquesPage() {
 
       setHasMore(newData.length === 50);
       setMusics(prev => (isNewSort || currentOffset === 0 ? newData : [...prev, ...newData]));
-    } catch (err) { 
-      console.error("Erreur lors de la récupération :", err); 
-    } finally { 
-      setLoading(false); 
-    }
+    } catch (err) { console.error("Erreur lors de la récupération :", err); }
+    finally { setLoading(false); }
   }, [getMusics]);
 
   useEffect(() => {

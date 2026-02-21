@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
 import { ENDPOINTS } from "../config";
+import { useApi } from "../hooks/useApi";
 
 export default function Header() {
   const router = useRouter();
@@ -18,13 +19,12 @@ export default function Header() {
   const { viewMode, toggleViewMode } = useViewMode();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { getMe } = useApi();
 
-  // Fermer le menu si on clique ailleurs
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node))
         setMenuOpen(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -33,23 +33,13 @@ export default function Header() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch(ENDPOINTS.ME, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.is_logged_in) {
-            setIsLoggedIn(true);
-            setUserName(data.user_name);
-          }
+        const data = await getMe();
+        if (data.is_logged_in) {
+          setIsLoggedIn(true);
+          setUserName(data.user_name);
         }
-      } catch (error) {
-        console.error("Erreur auth:", error);
-      } finally {
-        setLoading(false);
-      }
+      } catch (error) { console.error("Erreur auth:", error); }
+      finally { setLoading(false); }
     };
     checkAuth();
   }, []);

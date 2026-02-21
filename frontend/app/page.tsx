@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ENDPOINTS } from "./config";
+import { useApi } from "./hooks/useApi";
 
 
 export default function HomePage() {
@@ -10,36 +11,23 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [randomStats, setRandomStats] = useState<any[]>([]);
+  const { getMe, getOverview } = useApi();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const initApp = async () => {
       try {
-        const response = await fetch(ENDPOINTS.ME, {method: "GET",credentials: "include"});
-        if (response.ok) {
-          const data = await response.json();
-          if (data.is_logged_in) {
-            setIsLoggedIn(true);
-            fetch(ENDPOINTS.STATS_OVERVIEW, { 
-              method: "GET",
-              headers: {"Content-Type": "application/json"},
-              credentials: "include" 
-            })
-            .then((res) => {
-              if (!res.ok) throw new Error("Erreur lors de la récupération");
-              return res.json();
-            })
-            .then((data) => {setRandomStats(data);})
-            .catch((err) => {console.error(err);});
-          } else setIsLoggedIn(false);
-        }
+        const userData = await getMe();
+        if (userData.is_logged_in) {
+          setIsLoggedIn(true);
+          setRandomStats(await getOverview());
+        } else { setIsLoggedIn(false); }
       } catch (error) {
-        console.error("Erreur lors de la vérification de l'auth:", error);
+        console.error("Erreur d'initialisation:", error);
         setIsLoggedIn(false);
       } finally { setLoading(false); }
     };
-
-    checkAuth();
-  }, []);
+    initApp();
+  }, [getMe]);
 
   return (
     <main className="min-h-screen text-white font-jost">
@@ -65,16 +53,15 @@ export default function HomePage() {
                 </>
               ) : (
                 (randomStats.length > 0 ? randomStats : [
-                  {title: "Top Titre", value: "Blinding Lights", detail: "The Weeknd", type: "song"},
-                  {title: "Genre Préféré", value: "Synthwave", detail: "80% de vos écoutes", type: "genre"},
-                  {title: "Artiste du Moment", value: "Daft Punk", detail: "12h d'écoute", type: "artist"}
+                  {title: "Top Titre", value: "Blinding Lights", detail: "The Weeknd"},
+                  {title: "Genre Préféré", value: "Synthwave", detail: "80% de vos écoutes"},
+                  {title: "Artiste du Moment", value: "Daft Punk", detail: "12h d'écoute"}
                 ]).map((s, index) => (
                   <StatPreviewCard 
                     key={index}
                     title={s.title} 
                     value={s.value} 
-                    detail={s.detail} 
-                    type={s.type} 
+                    detail={s.detail}
                   />
                 ))
               )}
@@ -176,7 +163,7 @@ function FeatureCard({ title, description, icon }: { title: string, description:
   );
 }
 
-function StatPreviewCard({ title, value, detail, type }: { title: string, value: string, detail: string, type: string }) {
+function StatPreviewCard({ title, value, detail }: { title: string, value: string, detail: string }) {
   return (
     <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl text-left hover:border-vert/40 transition-all hover:scale-[1.02] cursor-default group">
       <p className="text-xs font-bold uppercase tracking-widest text-vert mb-4">{title}</p>
