@@ -24,8 +24,9 @@ type SortKey = 'name' | 'total_minutes' | 'play_count' | 'rating' | 'engagement'
 export default function AlbumsContent() {
   const searchParams = useSearchParams();
   const { viewMode } = useViewMode();
-  const { getAlbums } = useApi();
+  const { getAlbums, getAlbumsMetadata } = useApi();
   const [albums, setAlbums] = useState<Album[]>([]);
+  const [metadata, setMetadata] = useState({ max_streams: 2000, max_minutes: 5000 });
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -55,8 +56,8 @@ export default function AlbumsContent() {
   const albumFilters = {
     search: { album: true, artist: true },
     stats: {
-      streams: { min: 0, max: 20000 },
-      minutes: { min: 0, max: 50000 },
+      streams: { min: 0, max: metadata.max_streams },
+      minutes: { min: 0, max: metadata.max_minutes },
       engagement: { min: 0, max: 100 },
       rating: { min: 0, max: 10 }
     }
@@ -76,6 +77,10 @@ export default function AlbumsContent() {
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, [getAlbums, currentSort]);
+  
+  useEffect(() => {
+    getAlbumsMetadata().then(setMetadata);
+  }, []);
 
   useEffect(() => {
     setOffset(0);

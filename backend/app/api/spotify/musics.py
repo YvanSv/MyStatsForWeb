@@ -118,3 +118,32 @@ async def get_user_musics(
         all_musics.sort(key=lambda x: x[sort_by], reverse=(direction == "desc"))
 
     return all_musics[offset : offset + limit]
+
+@router.get("/metadata")
+async def get_musics_metadata(db: Session = Depends(get_session),session_id: Optional[str] = Cookie(None)):
+    if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
+    user_result = db.exec(select(User).where(User.session_id == session_id)).first()
+    if not user_result: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    if isinstance(user_result, User): current_user_id = user_result.id
+    else: current_user_id = user_result[0].id
+    
+    # On cherche le max d'écoutes et le max de minutes via TrackHistory
+    # Groupé par track pour trouver le record absolu de l'utilisateur
+    stats = db.exec(
+        select(
+            func.count(TrackHistory.id).label("max_streams"),
+            func.sum(TrackHistory.ms_played).label("max_ms")
+        )
+        .where(TrackHistory.user_id == current_user_id)
+        .group_by(TrackHistory.spotify_id)
+        .order_by(text("max_streams DESC"))
+        .limit(1)
+    ).first()
+
+    if not stats:
+        return {"max_streams": 100, "max_minutes": 100}
+
+    return {
+        "max_streams": stats[0],
+        "max_minutes": round(stats[1] / 60000)
+    }

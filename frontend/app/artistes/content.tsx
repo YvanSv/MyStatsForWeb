@@ -23,8 +23,9 @@ type SortKey = 'name' | 'total_minutes' | 'engagement' | 'play_count' | 'rating'
 export default function ArtistesContent() {
   const searchParams = useSearchParams();
   const { viewMode } = useViewMode();
-  const { getArtists } = useApi();
+  const { getArtists, getArtistsMetadata } = useApi();
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [metadata, setMetadata] = useState({ max_streams: 2000, max_minutes: 5000 });
   const { showFilters, toggleShowFilters } = useShowFilters();
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -52,8 +53,8 @@ export default function ArtistesContent() {
   const artistFilters = {
     search: { artist: true },
     stats: {
-      streams: { min: 0, max: 20000 },
-      minutes: { min: 0, max: 50000 },
+      streams: { min: 0, max: metadata.max_streams },
+      minutes: { min: 0, max: metadata.max_minutes },
       engagement: { min: 0, max: 100 },
       rating: { min: 0, max: 10 }
     }
@@ -74,6 +75,10 @@ export default function ArtistesContent() {
     } catch (err) { console.error("Erreur fetch artists:", err); }
     finally { setLoading(false); }
   }, [getArtists, currentSort]);
+  
+  useEffect(() => {
+    getArtistsMetadata().then(setMetadata);
+  }, []);
 
   useEffect(() => {
     setOffset(0);

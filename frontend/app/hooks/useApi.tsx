@@ -84,7 +84,11 @@ export const useApi = () => {
   const uploadJson = useCallback((formData: FormData) =>
     request(ENDPOINTS.IMPORT_DATA, {method: 'POST', body: formData}), [request]);
 
+  const getMusicsMetadata = useCallback(async () => request(`${ENDPOINTS.MUSICS_METADATA}`), [request]);
+  const getArtistsMetadata = useCallback(async () => request(`${ENDPOINTS.ARTISTS_METADATA}`), [request]);
+  const getAlbumsMetadata = useCallback(async () => request(`${ENDPOINTS.ALBUMS_METADATA}`), [request]);
+
   return useMemo(() => ({ 
-    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson
-  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson]);
+    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata
+  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata]);
 };

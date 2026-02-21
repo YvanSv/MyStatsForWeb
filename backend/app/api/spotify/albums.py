@@ -108,61 +108,32 @@ async def get_user_albums(
 
     return all_albums[offset : offset + limit]
 
-    ################################################################################
-
-    statement = (
+@router.get("/metadata")
+async def get_albums_metadata(db: Session = Depends(get_session),session_id: Optional[str] = Cookie(None)):
+    if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
+    user_result = db.exec(select(User).where(User.session_id == session_id)).first()
+    if not user_result: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    if isinstance(user_result, User): current_user_id = user_result.id
+    else: current_user_id = user_result[0].id
+    
+    # On cherche le max d'écoutes et le max de minutes via TrackHistory
+    # Groupé par album pour trouver le record absolu de l'utilisateur
+    stats = db.exec(
         select(
-            Album,
-            Artist.name.label("artist_name"),
-            func.count(TrackHistory.id).label("play_count"),
-            func.sum(TrackHistory.ms_played).label("total_ms_real")
+            func.count(TrackHistory.id).label("max_streams"),
+            func.sum(TrackHistory.ms_played).label("max_ms")
         )
-        .join(Track, Album.spotify_id == Track.album_id)
-        .join(Artist, Album.artist_id == Artist.spotify_id)
-        .join(TrackHistory, Track.spotify_id == TrackHistory.spotify_id)
+        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
+        .join(Album, Album.spotify_id == Track.album_id)
         .where(TrackHistory.user_id == current_user_id)
-        .group_by(Album.spotify_id, Artist.name)
-    )
+        .group_by(Album.spotify_id)
+        .order_by(text("max_streams DESC"))
+        .limit(1)
+    ).first()
 
-    # Tri SQL pour les colonnes natives
-    if sort_by == "play_count":
-        statement = statement.order_by(desc("play_count") if direction == "desc" else asc("play_count"))
-    elif sort_by == "total_minutes":
-        statement = statement.order_by(desc("total_ms_real") if direction == "desc" else asc("total_ms_real"))
-    elif sort_by == "name":
-        statement = statement.order_by(desc(Album.name) if direction == "desc" else asc(Album.name))
+    if not stats: return {"max_streams": 100, "max_minutes": 100}
 
-    results = db.exec(statement).all()
-
-    all_albums = []
-    for row in results:
-        album_obj, artist_name, play_count, total_ms_real = row
-        total_minutes = (total_ms_real or 0) / 60000
-        
-        avg_minutes_per_play = total_minutes / play_count if play_count > 0 else 0
-        #engagement = min(round((avg_minutes_per_play / 3.5) * 100), 100)
-        engagement = 0
-
-        if play_count > 0:
-            part1 = int((engagement / 100.0) * (total_minutes / play_count) * 100) / 100.0
-            part2 = int(total_minutes / 100.0) / 100.0
-            rating = round((part1 + part2) * 2 / 3, 2)
-        else:
-            rating = 0
-
-        all_albums.append({
-            "id": album_obj.spotify_id,
-            "name": album_obj.name,
-            "artist": artist_name,
-            "cover": album_obj.image_url,
-            "play_count": play_count,
-            "total_minutes": round(total_minutes, 1),
-            "engagement": engagement,
-            "rating": rating
-        })
-
-    # Tri Python pour les colonnes calculées
-    if sort_by == "rating":
-        all_albums.sort(key=lambda x: x["rating"], reverse=(direction == "desc"))
-
-    return all_albums[offset : offset + limit]
+    return {
+        "max_streams": stats[0],
+        "max_minutes": round(stats[1] / 60000)
+    }

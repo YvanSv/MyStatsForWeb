@@ -26,8 +26,9 @@ type SortKey = 'title' | 'total_minutes' | 'engagement' | 'play_count' | 'rating
 export default function MusiquesContent() {
   const searchParams = useSearchParams();
   const { viewMode } = useViewMode();
-  const { getMusics } = useApi();
+  const { getMusics, getMusicsMetadata } = useApi();
   const [musics, setMusics] = useState<Track[]>([]);
+  const [metadata, setMetadata] = useState({ max_streams: 2000, max_minutes: 5000 });
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -52,15 +53,15 @@ export default function MusiquesContent() {
     rating_max: searchParams.get("rating_max") || "10",
   }), [searchParams]);
 
-  const musicFilters = {
+  const musicFilters = useMemo(() => ({
     search: { track: true, artist: true, album: true },
     stats: {
-      streams: { min: 0, max: 2000 },
-      minutes: { min: 0, max: 5000 },
+      streams: { min: 0, max: metadata.max_streams },
+      minutes: { min: 0, max: metadata.max_minutes },
       engagement: { min: 0, max: 100 },
       rating: { min: 0, max: 10 }
     }
-  };
+  }), [metadata]);
 
   const fetchMusics = useCallback(async (currentOffset: number, isNewRequest: boolean) => {
     setLoading(true); 
@@ -83,6 +84,10 @@ export default function MusiquesContent() {
     setOffset(0);
     fetchMusics(0, true);
   }, [currentSort, fetchMusics]);
+
+  useEffect(() => {
+    getMusicsMetadata().then(setMetadata);
+  }, []);
 
   const loadMore = () => {
     const nextOffset = offset + 50;

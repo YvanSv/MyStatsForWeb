@@ -7,8 +7,11 @@ export const ENDPOINTS = {
   STATS_OVERVIEW: `${API_BASE_URL}/stats/overview`,
   HISTORY:`${API_BASE_URL}/spotify/history`,
   TRACKS:`${API_BASE_URL}/spotify/musics/`,
+  MUSICS_METADATA:`${API_BASE_URL}/spotify/musics/metadata`,
   ARTISTS:`${API_BASE_URL}/spotify/artists/`,
+  ARTISTS_METADATA:`${API_BASE_URL}/spotify/artists/metadata`,
   ALBUMS:`${API_BASE_URL}/spotify/albums/`,
+  ALBUMS_METADATA:`${API_BASE_URL}/spotify/albums/metadata`,
   UPLOAD_JSON:`${API_BASE_URL}/spotify/upload-json`,
   IMPORT_DATA:`${API_BASE_URL}/spotify/upload-json`,
 };
