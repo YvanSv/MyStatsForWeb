@@ -34,6 +34,7 @@ def catch_up_maintenance():
         
         if tracks_to_fix:
             track_ids = [t.spotify_id for t in tracks_to_fix]
+            random.shuffle(track_ids)
             for i in range(0, len(track_ids), 50):
                 if spotify_status.get_status()["is_rate_limited"]: return
                 
@@ -42,15 +43,28 @@ def catch_up_maintenance():
                     sp_tracks = sp.tracks(batch)['tracks']
                     for t_info in sp_tracks:
                         if not t_info: continue
+
+                        t_id = t_info['id']
+                        duration = t_info['duration_ms']
                         
                         # Update Track Duration
-                        db.execute(update(Track).where(Track.spotify_id == t_info['id'])
-                                  .values(duration_ms=t_info['duration_ms']))
+                        if duration:
+                            db.execute(update(Track).where(Track.spotify_id == t_id)
+                                .values(duration_ms=duration))
                         
                         # Update Album Cover
-                        if t_info['album'].get('images'):
-                            db.execute(update(Album).where(Album.spotify_id == t_info['album']['id'])
-                                      .values(image_url=t_info['album']['images'][0]['url']))
+                        album_info = t_info.get('album', {})
+                        images = album_info.get('images', [])
+                        album_id = album_info.get('id')
+
+                        if images and album_id:
+                            url = images[0]['url']
+                            db.execute(
+                                update(Album)
+                                .where(Album.spotify_id == album_id)
+                                .values(image_url=url)
+                            )
+
                     db.commit()
                     time.sleep(random.uniform(1.0, 2.0))
                 except Exception as e:
@@ -68,6 +82,7 @@ def catch_up_maintenance():
 
         if artists_to_fix:
             artist_ids = [a.spotify_id for a in artists_to_fix]
+            random.shuffle(artist_ids)
             for i in range(0, len(artist_ids), 50):
                 if spotify_status.get_status()["is_rate_limited"]: return
                 
