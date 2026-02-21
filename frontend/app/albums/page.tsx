@@ -4,9 +4,12 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useApi } from "../hooks/useApi";
 import { useViewMode } from "../context/viewModeContext";
+import SidebarFilters from "../components/SidebarFilters";
+import { useShowFilters } from "../context/showFiltersContext";
+import { useSearchParams } from "next/navigation";
 
 interface Album {
-  id: string;
+  spotify_id: string;
   name: string;
   artist: string;
   cover: string;
@@ -19,18 +22,45 @@ interface Album {
 type SortKey = 'name' | 'total_minutes' | 'play_count' | 'rating' | 'engagement';
 
 export default function AlbumsPage() {
+  const searchParams = useSearchParams();
   const { viewMode } = useViewMode();
   const { getAlbums } = useApi();
-
   const [albums, setAlbums] = useState<Album[]>([]);
-  const [showFilters, setShowFilters] = useState(true);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const { showFilters, toggleShowFilters } = useShowFilters();
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
     key: 'play_count',
     direction: 'desc'
   });
+
+
+  const currentSort = useMemo(() => ({
+    key: (searchParams.get("sort") as SortKey) || "play_count",
+    direction: (searchParams.get("dir") as "asc" | "desc") || "desc",
+    period: searchParams.get("period") || "all",
+    artist: searchParams.get("artist") || "",
+    album: searchParams.get("album") || "",
+    streams_min: searchParams.get("streams_min") || "0",
+    streams_max: searchParams.get("streams_max") || "2000",
+    minutes_min: searchParams.get("minutes_min") || "0",
+    minutes_max: searchParams.get("minutes_max") || "5000",
+    engagement_min: searchParams.get("engagement_min") || "0",
+    engagement_max: searchParams.get("engagement_max") || "100",
+    rating_min: searchParams.get("rating_min") || "0",
+    rating_max: searchParams.get("rating_max") || "10",
+  }), [searchParams]);
+
+  const albumFilters = {
+    search: { album: true, artist: true },
+    stats: {
+      streams: { min: 0, max: 20000 },
+      minutes: { min: 0, max: 50000 },
+      engagement: { min: 0, max: 100 },
+      rating: { min: 0, max: 10 }
+    }
+  };
 
   const fetchAlbums = useCallback(async (currentOffset: number, isNewSort: boolean) => {
     setLoading(true);
@@ -39,16 +69,13 @@ export default function AlbumsPage() {
         offset: currentOffset,
         limit: 50,
         sort_by: sortConfig.key,
-        direction: sortConfig.direction
+        ...currentSort
       });
       setHasMore(newData.length === 50);
       setAlbums(prev => (isNewSort || currentOffset === 0 ? newData : [...prev, ...newData]));
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [getAlbums, sortConfig]);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  }, [getAlbums, currentSort]);
 
   useEffect(() => {
     setOffset(0);
@@ -78,27 +105,13 @@ export default function AlbumsPage() {
 
       <div className="max-w-[1400px] mx-auto py-12 px-6">
         <div className="flex flex-col md:flex-row gap-8">
-          
-          {/* Sidebar Filtres (Toujours affichée si showFilters est vrai) */}
-          <aside className={`transition-all duration-300 ${showFilters ? 'w-full md:w-64' : 'w-0 overflow-hidden opacity-0 invisible md:w-0'}`}>
-            <div className="sticky top-24 bg-bg2/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6">
-              <h2 className="text-xl font-hias mb-6 text-vert">Filtres</h2>
-              <FilterGroup title="Période">
-                <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer">
-                  <input type="checkbox" className="accent-vert" /> Aujourd'hui
-                </label>
-                <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer">
-                  <input type="checkbox" className="accent-vert" /> 7 derniers jours
-                </label>
-              </FilterGroup>
-            </div>
-          </aside>
+          <SidebarFilters config={albumFilters} loading={loading} isVisible={showFilters}/>
 
           <section className="flex-1">
             {/* Header de la section */}
             <div className="flex items-center justify-between mb-8">
               <button 
-                onClick={() => setShowFilters(!showFilters)}
+                onClick={() => toggleShowFilters()}
                 className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 hover:border-vert/50 transition-colors"
               >
                 {showFilters ? "Masquer les filtres" : "Afficher les filtres"}
@@ -158,7 +171,7 @@ function ListView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
       </div>
 
       {albums.map((album) => (
-        <div key={album.id} className="group grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
+        <div key={album.spotify_id} className="group grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
           <div className="flex items-center gap-4 min-w-0">
             <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full shadow-lg bg-bg2 border border-white/10">
               {album.cover ? <Image src={album.cover} alt={album.name} fill sizes="56px" className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-600">?</div>}
@@ -194,7 +207,7 @@ function GridView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {albums.map((album) => (
-          <div key={album.id} className="group bg-bg2/30 backdrop-blur-md rounded-3xl border border-white/5 p-4 hover:border-vert/40 transition-all hover:-translate-y-1">
+          <div key={album.spotify_id} className="group bg-bg2/30 backdrop-blur-md rounded-3xl border border-white/5 p-4 hover:border-vert/40 transition-all hover:-translate-y-1">
             <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl shadow-2xl">
               {album.cover && <Image src={album.cover} alt={album.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />}
               <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">

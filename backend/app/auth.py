@@ -33,7 +33,6 @@ def login():
         "show_dialog": "true" 
     }
     auth_url = f"{base_url}?{urlencode(params)}"
-    print(f"DEBUG: URL envoyée à Spotify -> {auth_url}")
     return RedirectResponse(auth_url)
 
 @router.get("/callback")
@@ -53,7 +52,6 @@ async def callback(code: str, session: Session = Depends(get_session)):
         
     # Vérifie si Spotify a répondu une erreur ici
     if response.status_code != 200:
-        print(f"Erreur Token Spotify: {response.text}")
         raise HTTPException(status_code=400, detail="Impossible de récupérer le token Spotify")
 
     token_data = response.json()
@@ -71,7 +69,6 @@ async def callback(code: str, session: Session = Depends(get_session)):
 
     # Vérifie que user_res est correct avant le .json()
     if user_res.status_code != 200:
-        print(f"Erreur Profil Spotify: {user_res.text}")
         raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Spotify")
 
     user_info = user_res.json()

@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useApi } from "../hooks/useApi";
 import { useViewMode } from "../context/viewModeContext";
+import SidebarFilters from "../components/SidebarFilters";
+import { useShowFilters } from "../context/showFiltersContext";
+import { useSearchParams } from "next/navigation";
 
 interface Artist {
   id: string;
@@ -18,11 +21,11 @@ interface Artist {
 type SortKey = 'name' | 'total_minutes' | 'engagement' | 'play_count' | 'rating';
 
 export default function ArtistesPage() {
+  const searchParams = useSearchParams();
   const { viewMode } = useViewMode();
   const { getArtists } = useApi();
-
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [showFilters, setShowFilters] = useState(true);
+  const { showFilters, toggleShowFilters } = useShowFilters();
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -31,24 +34,46 @@ export default function ArtistesPage() {
     direction: 'desc'
   });
 
-  const fetchArtistsData = useCallback(async (currentOffset: number, isNewSort: boolean = false) => {
+  const currentSort = useMemo(() => ({
+    key: (searchParams.get("sort") as SortKey) || "play_count",
+    direction: (searchParams.get("dir") as "asc" | "desc") || "desc",
+    period: searchParams.get("period") || "all",
+    artist: searchParams.get("artist") || "",
+    streams_min: searchParams.get("streams_min") || "0",
+    streams_max: searchParams.get("streams_max") || "2000",
+    minutes_min: searchParams.get("minutes_min") || "0",
+    minutes_max: searchParams.get("minutes_max") || "5000",
+    engagement_min: searchParams.get("engagement_min") || "0",
+    engagement_max: searchParams.get("engagement_max") || "100",
+    rating_min: searchParams.get("rating_min") || "0",
+    rating_max: searchParams.get("rating_max") || "10",
+  }), [searchParams]);
+
+  const artistFilters = {
+    search: { artist: true },
+    stats: {
+      streams: { min: 0, max: 20000 },
+      minutes: { min: 0, max: 50000 },
+      engagement: { min: 0, max: 100 },
+      rating: { min: 0, max: 10 }
+    }
+  };
+
+  const fetchArtistsData = useCallback(async (currentOffset: number, isNewRequest: boolean = false) => {
     setLoading(true);
     try {
       const newData = await getArtists({
         offset: currentOffset,
         limit: 50,
         sort_by: sortConfig.key,
-        direction: sortConfig.direction
+        ...currentSort
       });
 
       setHasMore(newData.length === 50);
-      setArtists(prev => (isNewSort || currentOffset === 0 ? newData : [...prev, ...newData]));
-    } catch (err) {
-      console.error("Erreur fetch artists:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [getArtists, sortConfig]);
+      setArtists(prev => (isNewRequest ? newData : [...prev, ...newData]));
+    } catch (err) { console.error("Erreur fetch artists:", err); }
+    finally { setLoading(false); }
+  }, [getArtists, currentSort]);
 
   useEffect(() => {
     setOffset(0);
@@ -78,26 +103,14 @@ export default function ArtistesPage() {
 
       <div className="max-w-[1400px] mx-auto py-12 px-6">
         <div className="flex flex-col md:flex-row gap-8">
-          
-          {/* Sidebar Filtres */}
-          <aside className={`transition-all duration-300 ${showFilters ? 'w-full md:w-64' : 'w-0 overflow-hidden opacity-0 invisible md:w-0'}`}>
-            <div className="sticky top-24 bg-bg2/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6">
-              <h2 className="text-xl font-hias mb-6 text-vert">Filtres</h2>
-              <FilterGroup title="Période">
-                <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" className="accent-vert"/> Aujourd'hui</label>
-                <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" className="accent-vert"/> 7 derniers jours</label>
-              </FilterGroup>
-            </div>
-          </aside>
+          <SidebarFilters config={artistFilters} loading={loading} isVisible={showFilters}/>
 
           <section className="flex-1">
             {/* Header Section */}
             <div className="flex items-center justify-between mb-8">
-              <button onClick={() => setShowFilters(!showFilters)}
+              <button onClick={() => toggleShowFilters()}
                 className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:border-vert/50 transition-colors"
-              > 
-                {showFilters ? "Masquer les filtres" : "Afficher les filtres"} 
-              </button>
+              >{showFilters ? "Masquer les filtres" : "Afficher les filtres"}</button>
               <h1 className="text-titre font-hias tracking-tighter text-right">Tous mes <span className="text-vert">artistes</span></h1>
             </div>
 
@@ -199,17 +212,5 @@ function GridView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
         ))}
       </div>
     </>
-  );
-}
-
-function FilterGroup({ title, children }: { title: string, children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(true);
-  return (
-    <div className="mb-4">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70">
-        {title} <span>{isOpen ? '−' : '+'}</span>
-      </button>
-      {isOpen && <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-300">{children}</div>}
-    </div>
   );
 }

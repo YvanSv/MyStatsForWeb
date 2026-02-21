@@ -2,7 +2,7 @@ from app.database import get_session
 from app.models import TrackHistory, User, Track, Artist, Album
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from sqlalchemy import desc, asc, func, select, text
+from sqlalchemy import Float, cast, desc, asc, func, select, text
 from sqlmodel import Session
 
 router = APIRouter()
@@ -37,7 +37,7 @@ async def get_user_musics(
     else: current_user_id = user_result[0].id
 
     play_count = func.count(TrackHistory.id).label("play_count")
-    total_minutes = (func.sum(TrackHistory.ms_played) / 60000).label("total_minutes")
+    total_minutes = (cast(func.sum(TrackHistory.ms_played), Float) / 60000).label("total_minutes")
 
     query = (select(
             Track,
@@ -55,7 +55,6 @@ async def get_user_musics(
     if track: query = query.where(Track.title.ilike(f"%{track}%"))
     if artist: query = query.where(Artist.name.ilike(f"%{artist}%"))
     if album: query = query.where(Album.name.ilike(f"%{album}%"))
-        
 
     query = query.group_by(
         Track.spotify_id, 
@@ -96,8 +95,8 @@ async def get_user_musics(
         rating = 0
         if play_count > 0:
             part1 = temps_total / play_count
-            part2 = (float(temps_total) / 10.0) / 10.0
-            rating = round((float(part1) + part2) / 2, 2)
+            part2 = temps_total / 100
+            rating = round((part1 + part2) / 2, 2)
 
         if rating < rating_min or rating > rating_max: continue
 
@@ -117,8 +116,5 @@ async def get_user_musics(
     # 4. Tri Python pour les colonnes calculées
     if sort_by in ["rating", "engagement"]:
         all_musics.sort(key=lambda x: x[sort_by], reverse=(direction == "desc"))
-
-    #if rating_min is not None: query = query.having(Track.rating >= rating_min)
-    #if rating_max is not None: query = query.having(Track.rating <= rating_max)
 
     return all_musics[offset : offset + limit]
