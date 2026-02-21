@@ -66,52 +66,47 @@ def catch_up_maintenance():
                             )
 
                     db.commit()
-                    time.sleep(random.uniform(1.0, 2.0))
+                    time.sleep(random.uniform(1.0, 3.0))
                 except Exception as e:
                     handle_exception(e)
                     return
 
-        # --- PHASE 2 : ARTISTES (Images) ---
-        query_artists = (
+        # --- PHASE 3 : ARTISTES "GEN_" (Search API) ---
+        query_gen_artists = (
             select(Artist)
             .where(Artist.image_url == None)
-            .where(~Artist.spotify_id.contains("gen_"))
-            .limit(400)
+            .where(Artist.spotify_id.contains("gen_"))
+            .limit(20) # Très lent, donc on en fait peu à la fois
         )
-        artists_to_fix = db.exec(query_artists).all()
+        gen_artists = db.exec(query_gen_artists).all()
 
-        if artists_to_fix:
-            print(f"Correction de {len(artists_to_fix)} artistes...")
-            artist_ids = [a.spotify_id for a in artists_to_fix]
-            
-            for i in range(0, len(artist_ids), 50):
+        if gen_artists:
+            print(f"Tentative de récupération via recherche pour {len(gen_artists)} artistes...")
+            for artist in gen_artists:
                 if spotify_status.get_status()["is_rate_limited"]: return
                 
-                batch = artist_ids[i:i+50]
                 try:
-                    # Note : sp.artists() accepte max 50 IDs
-                    sp_artists = sp.artists(batch)['artists']
+                    # Recherche de l'artiste par son nom exact
+                    search_results = sp.search(q=f"artist:{artist.name}", type="artist", limit=1)
+                    items = search_results.get('artists', {}).get('items', [])
                     
-                    for a_info in sp_artists:
-                        if a_info and a_info.get('images'):
-                            # On prend l'image (souvent la première est la plus grande)
-                            img_url = a_info['images'][0]['url']
-                            db.execute(
-                                update(Artist)
-                                .where(Artist.spotify_id == a_info['id'])
-                                .values(image_url=img_url)
-                            )
-                    db.commit() # On commit après chaque batch de 50
-                    print(f"Batch Artistes {i//50 + 1} traité.")
-                    time.sleep(random.uniform(1.0, 2.0))
+                    if items:
+                        sp_artist = items[0]
+                        real_id = sp_artist['id']
+                        img_url = sp_artist['images'][0]['url'] if sp_artist.get('images') else None
+                        
+                        # Mise à jour de l'ID et de l'image
+                        artist.spotify_id = real_id
+                        artist.image_url = img_url
+                        db.add(artist)
+                        db.commit()
+                        print(f"✅ Artiste trouvé : {artist.name} -> {real_id}")
+                    
+                    time.sleep(random.uniform(1.0, 1.5)) # Pause pour éviter le 429
                     
                 except Exception as e:
-                    handle_exception(e) # Utilise la fonction de gestion 429 qu'on a faite
+                    handle_exception(e)
                     return
-        else:
-            # Si on est ici, c'est que la requête n'a rien trouvé
-            db.rollback() # On ferme proprement la transaction vide
-            print("Aucun artiste à traiter (IDs réels avec image manquante).")
 
 def handle_exception(e):
     error_str = str(e)

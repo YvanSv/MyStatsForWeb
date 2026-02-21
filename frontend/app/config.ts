@@ -14,5 +14,5 @@ export const ENDPOINTS = {
   ALBUMS_METADATA:`${API_BASE_URL}/spotify/albums/metadata`,
   UPLOAD_JSON:`${API_BASE_URL}/spotify/upload-json`,
   IMPORT_DATA:`${API_BASE_URL}/spotify/upload-json`,
-  STATUS:`${API_BASE_URL}/spotify/status/`,
+  STATUS:`${API_BASE_URL}/spotify/status`,
 };
