@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useApi } from "../hooks/useApi";
 import { useViewMode } from "../context/viewModeContext";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface Track {
   spotify_id: string;
@@ -21,23 +22,63 @@ interface Track {
 type SortKey = 'title' | 'total_minutes' | 'engagement' | 'play_count' | 'rating';
 
 export default function MusiquesPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { viewMode } = useViewMode();
   const { getMusics } = useApi();
-
   const [musics, setMusics] = useState<Track[]>([]);
-  const [showFilters, setShowFilters] = useState(true);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
-    key: 'play_count',
-    direction: 'desc'
-  });
+  const [showFilters, setShowFilters] = useState(true);
+  const [localFilters, setLocalFilters] = useState<Record<string, string>>({});
+
+  // --- LECTURE DES FILTRES DEPUIS L'URL ---
+  // On utilise useMemo pour éviter de recalculer l'objet à chaque render
+  const currentSort = useMemo(() => ({
+    key: (searchParams.get("sort") as SortKey) || "play_count",
+    direction: (searchParams.get("dir") as "asc" | "desc") || "desc",
+    period: searchParams.get("period") || "all",
+    track: searchParams.get("track") || "",
+    artist: searchParams.get("artist") || "",
+    album: searchParams.get("album") || "",
+    s_min: searchParams.get("streams_min") || "0",
+    s_max: searchParams.get("streams_max") || "2000",
+    m_min: searchParams.get("minutes_min") || "0",
+    m_max: searchParams.get("minutes_max") || "5000",
+    e_min: searchParams.get("engagement_min") || "0",
+    e_max: searchParams.get("engagement_max") || "100",
+    r_min: searchParams.get("rating_min") || "0",
+    r_max: searchParams.get("rating_max") || "10",
+  }), [searchParams]);
+
+  // --- FONCTION DE MISE À JOUR DE L'URL ---
+  const applyFilters = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(localFilters).forEach(([key, value]) => {
+      if (value === "" || value === null) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+    
+    params.set("offset", "0"); // Toujours reset l'offset à 0 lors d'un nouveau filtre
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleLocalChange = (key: string, value: string | null) => {
+    setLocalFilters(prev => ({
+      ...prev,
+      [key]: value || ""
+    }));
+  };
 
   const fetchMusics = useCallback(async (
     currentOffset: number, 
-    isNewSort: boolean, 
-    currentSort: { key: SortKey; direction: 'asc' | 'desc' }
+    isNewRequest: boolean,
   ) => {
     setLoading(true); 
     try {
@@ -45,31 +86,29 @@ export default function MusiquesPage() {
         offset: currentOffset,
         limit: 50,
         sort_by: currentSort.key === 'title' ? 'name' : currentSort.key,
-        direction: currentSort.direction
+        direction: currentSort.direction,
+        // period: currentSort.period // Ajoute-le à ton backend plus tard !
       });
 
       setHasMore(newData.length === 50);
-      setMusics(prev => (isNewSort || currentOffset === 0 ? newData : [...prev, ...newData]));
-    } catch (err) { console.error("Erreur lors de la récupération :", err); }
-    finally { setLoading(false); }
-  }, [getMusics]);
+      setMusics(prev => (isNewRequest ? newData : [...prev, ...newData]));
+    } catch (err) { 
+      console.error("Erreur API :", err); 
+    } finally { 
+      setLoading(false); 
+    }
+  }, [getMusics, currentSort]);
 
+  // --- EFFET : RÉACTION AUX CHANGEMENTS D'URL ---
   useEffect(() => {
     setOffset(0);
-    fetchMusics(0, true, sortConfig);
-  }, [sortConfig, fetchMusics]);
-
-  const handleSort = (key: SortKey) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
-    }));
-  };
+    fetchMusics(0, true);
+  }, [currentSort, fetchMusics]);
 
   const loadMore = () => {
     const nextOffset = offset + 50;
     setOffset(nextOffset);
-    fetchMusics(nextOffset, false, sortConfig);
+    fetchMusics(nextOffset, false);
   };
 
   return (
@@ -83,12 +122,77 @@ export default function MusiquesPage() {
       <div className="max-w-[1400px] mx-auto py-12 px-6">
         <div className="flex flex-col md:flex-row gap-8">
           
-          <aside className={`transition-all duration-300 ${showFilters ? 'w-full md:w-64' : 'w-0 overflow-hidden opacity-0 invisible md:w-0'}`}>
-            <div className="sticky top-24 bg-bg2/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6">
-              <h2 className="text-xl font-hias mb-6 text-vert">Filtres</h2>
-              <FilterGroup title="Période">
-                 <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" className="accent-vert"/> Aujourd'hui</label>
-                 <label className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" className="accent-vert"/> 7 derniers jours</label>
+          <aside className={`transition-all duration-300 ${showFilters ? 'w-full md:w-80' : 'w-0 overflow-hidden opacity-0 invisible'}`}>
+            <div className="sticky top-24 bg-bg2/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6 max-h-[calc(100vh-100px)] overflow-y-auto custom-scrollbar">
+              <div className="pb-4 mb-2 border-b border-white/5">
+                <button
+                  onClick={applyFilters}
+                  className="w-full bg-vert text-black py-3 rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(30,215,96,0.2)]"
+                >{loading ? 'Chargement...' : 'Appliquer les filtres'}</button>
+              </div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-hias text-vert">Filtres</h2>
+                <button 
+                  onClick={() => router.push(pathname)} // Reset rapide
+                  className="text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+
+              {/* --- CATÉGORIE : NOMS --- */}
+              <FilterGroup title="Recherche">
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Titre..."
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-vert/50 outline-none transition-all"
+                      onChange={(e) => handleLocalChange("track", e.target.value)}
+                      value={searchParams.get("track") || ""}
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Artiste..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-vert/50 outline-none transition-all"
+                    onChange={(e) => handleLocalChange("artist", e.target.value)}
+                    value={searchParams.get("artist") || ""}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Album..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-vert/50 outline-none transition-all"
+                    onChange={(e) => handleLocalChange("album", e.target.value)}
+                    value={searchParams.get("album") || ""}
+                  />
+                </div>
+              </FilterGroup>
+
+              {/* --- CATÉGORIE : STATISTIQUES --- */}
+              <FilterGroup title="Statistiques">
+                <div className="space-y-6 pt-2">
+                  <RangeFilter label="Écoutes" param="streams" step={1} min={0} max = {2000}
+                    valueMin={localFilters.streams_min ?? searchParams.get("streams_min") ?? 0}
+                    valueMax={localFilters.streams_max ?? searchParams.get("streams_max") ?? 2000}
+                    onChange={handleLocalChange}
+                  />
+                  <RangeFilter label="Minutes" param="minutes" step={1} min={0} max = {5000}
+                    valueMin={localFilters.minutes_min ?? searchParams.get("minutes_min") ?? 0}
+                    valueMax={localFilters.minutes_max ?? searchParams.get("minutes_max") ?? 5000}
+                    onChange={handleLocalChange}
+                  />
+                  <RangeFilter label="Engagement" param="engagement" unit="%" step={1} min={0} max = {100}
+                    valueMin={localFilters.engagement_min ?? searchParams.get("engagement_min") ?? 0}
+                    valueMax={localFilters.engagement_max ?? searchParams.get("engagement_max") ?? 100}
+                    onChange={handleLocalChange}
+                  />
+                  <RangeFilter label="Rating" param="rating" step={0.1} min={0} max = {10}
+                    valueMin={localFilters.rating_min ?? searchParams.get("rating_min") ?? 0}
+                    valueMax={localFilters.rating_max ?? searchParams.get("rating_max") ?? 10}
+                    onChange={handleLocalChange}
+                  />
+                </div>
               </FilterGroup>
             </div>
           </aside>
@@ -97,16 +201,14 @@ export default function MusiquesPage() {
             <div className="flex items-center justify-between mb-8">
               <button onClick={() => setShowFilters(!showFilters)}
                 className="bg-bg2 px-4 py-2 rounded-full text-sm font-medium border border-white/10 cursor-pointer hover:border-vert/50 transition-colors"
-              > 
-                {showFilters ? "Masquer les filtres" : "Afficher les filtres"} 
-              </button>
+              >{showFilters ? "Masquer les filtres" : "Afficher les filtres"}</button>
               <h1 className="text-titre font-hias tracking-tighter text-right">Toutes mes <span className="text-vert">musiques</span></h1>
             </div>
 
             {viewMode === 'list' ? (
-              <ListView musics={musics} sortConfig={sortConfig} onSort={handleSort} />
+              <ListView musics={musics} sortConfig={currentSort} onSort={() => {}} />
             ) : (
-              <GridView musics={musics} sortConfig={sortConfig} onSort={handleSort} />
+              <GridView musics={musics} sortConfig={currentSort} onSort={() => {}} />
             )}
 
             {hasMore && (
@@ -221,6 +323,35 @@ function FilterGroup({ title, children }: { title: string, children: React.React
         {title} <span>{isOpen ? '−' : '+'}</span>
       </button>
       {isOpen && <div className="flex flex-col gap-2">{children}</div>}
+    </div>
+  );
+}
+
+function RangeFilter({ label, param, min, max, valueMin, valueMax, step = 1, unit = "", onChange }: any) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-between items-center">
+        <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">{label}</span>
+        <span className="text-[10px] text-vert font-mono">{valueMin}-{valueMax}{unit}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="range" min={min} max={max} step={step} value={valueMin}
+          onChange={(e) => {
+            const val = Math.min(Number(e.target.value), Number(valueMax));
+            onChange(`${param}_min`, val.toString());
+          }}
+          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert"
+        />
+        <input
+          type="range" min={min} max={max} step={step} value={valueMax}
+          onChange={(e) => {
+            const val = Math.max(Number(e.target.value), Number(valueMin));
+            onChange(`${param}_max`, val.toString());
+          }}
+          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert"
+        />
+      </div>
     </div>
   );
 }

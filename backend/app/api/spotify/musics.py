@@ -53,7 +53,6 @@ async def get_user_musics(
 
     all_musics = []
     for row in results:
-        # Déballage précis du tuple de résultat
         track_obj = row[0]
         artist_name = row[1]
         album_name = row[2]
