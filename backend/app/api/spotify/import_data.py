@@ -27,7 +27,28 @@ async def upload_spotify_json(
     new_tracks_to_enrich = []
     stats = {"added": 0, "skipped": 0}
 
+    # 2. CACHE : On charge les IDs existants pour éviter les SELECT dans la boucle
+    # Artistes
+    # On crée un dictionnaire { "nom_normalisé": "spotify_id" }
+    all_artists = db.exec(select(Artist.name, Artist.spotify_id)).all()
+    artist_cache = {name.strip().lower(): sid for name, sid in all_artists}
+    # Albums
+    all_albums = db.exec(select(Album.name, Artist.name, Album.spotify_id)
+        .join(Artist, Album.artist_id == Artist.spotify_id)).all()
+    album_cache = {(alb.lower().strip(), art.lower().strip()): sid for alb, art, sid in all_albums}
+    # Tracks
+    all_tracks_ids = set(db.exec(select(Track.spotify_id)).all())
+    # TrackHistory
+    all_history = set(db.exec(select(TrackHistory.played_at, TrackHistory.spotify_id)
+        .where(TrackHistory.user_id == user.id)).all())
+
+    to_add_artists = {}
+    to_add_albums = {}
+    to_add_tracks = {}
+    to_add_history = []
+
     for file in files:
+        print(f"Computing file {file.filename}")
         content = await file.read()
         try: data = json.loads(content)
         except json.JSONDecodeError: continue
@@ -40,75 +61,67 @@ async def upload_spotify_json(
             track_uri = entry.get("spotify_track_uri")
             ms_played = entry.get("ms_played") or 0
             played_at = entry.get("ts")
+            if not track_uri or not isinstance(track_uri, str): continue
+            spotify_id = track_uri.split(":")[-1]
 
             # Filtrage de base (ignore les podcasts ou écoutes trop courtes)
-            if not track_name or not track_uri or ms_played == 0:
+            if not track_name or not track_uri or ms_played < 10000:
                 stats["skipped"] += 1
                 continue
 
-            # Extraction de l'ID Spotify
-            spotify_id = track_uri.split(":")[-1]
-            if not spotify_id or len(spotify_id) < 15:
+            # 1. Vérification Historique (Anti-doublon immédiat)
+            if (played_at, spotify_id) in all_history:
                 continue
 
-            try:
-                # --- ANTI-DOUBLON HISTORIQUE ---
-                existing_h = db.exec(select(TrackHistory).where(
-                    TrackHistory.user_id == user.id,
-                    TrackHistory.played_at == played_at,
-                    TrackHistory.spotify_id == spotify_id
-                )).first()
-                if existing_h: continue
+            # 2. Gestion Artiste
+            art_norm = artist_name.strip().lower()
+            if art_norm in artist_cache:
+                art_id = artist_cache[art_norm]
+            else:
+                art_id = stable_hash(artist_name)
+                if art_id not in to_add_artists:
+                    to_add_artists[art_id] = Artist(name=artist_name, spotify_id=art_id)
+                artist_cache[art_norm] = art_id # On met à jour le cache pour les lignes suivantes
 
-                # --- CRÉATION / RÉCUPÉRATION HIÉRARCHIQUE ---
-                # 1. Artiste (Recherche par ID stable ou Nom ILIKE)
-                artist_id_stable = stable_hash(artist_name)
-                artist = db.exec(select(Artist).where(
-                    or_(Artist.spotify_id == artist_id_stable, Artist.name.ilike(artist_name.strip()))
-                )).first()
-                
-                if not artist:
-                    artist = Artist(name=artist_name, spotify_id=artist_id_stable)
-                    db.add(artist)
-                    db.flush()
+            # 3. Gestion Album
+            alb_norm = album_name.strip().lower()
+            if (alb_norm, art_norm) in album_cache:
+                alb_id = album_cache[(alb_norm, art_norm)]
+            else:
+                alb_id = stable_hash(f"{album_name}_{artist_name}")
+                if alb_id not in to_add_albums:
+                    to_add_albums[alb_id] = Album(name=album_name, artist_id=art_id, spotify_id=alb_id)
+                album_cache[(alb_norm, art_norm)] = alb_id
 
-                # 2. Album (Hash combiné pour éviter les collisions entre artistes différents)
-                album_id_stable = stable_hash(f"{album_name}_{artist.name}")
-                album = db.exec(select(Album).where(Album.spotify_id == album_id_stable)).first()
-                if not album:
-                    album = Album(name=album_name, artist_id=artist.spotify_id, spotify_id=album_id_stable)
-                    db.add(album)
-                    db.flush()
+            # 4. Gestion Track
+            if spotify_id not in all_tracks_ids and spotify_id not in to_add_tracks:
+                to_add_tracks[spotify_id] = Track(
+                    spotify_id=spotify_id, 
+                    title=track_name, 
+                    artist_id=art_id, 
+                    album_id=alb_id, 
+                    duration_ms=0
+                )
+                # Pas besoin de mettre à jour all_tracks_ids ici car le spotify_id est unique dans le JSON
 
-                # 3. Track
-                track = db.exec(select(Track).where(Track.spotify_id == spotify_id)).first()
-                if not track:
-                    track = Track(
-                        spotify_id=spotify_id,
-                        title=track_name,
-                        artist_id=artist.spotify_id,
-                        album_id=album.spotify_id,
-                        duration_ms=0 # Sera complété par la Background Task
-                    )
-                    db.add(track)
-                    new_tracks_to_enrich.append(spotify_id)
-                    db.flush()
+            # 5. Ajout à l'historique
+            to_add_history.append(TrackHistory(
+                user_id=user.id, 
+                spotify_id=spotify_id, 
+                played_at=played_at, 
+                ms_played=ms_played
+            ))
+            all_history.add((played_at, spotify_id))
+            stats["added"] += 1
 
-                # 4. Historique
-                db.add(TrackHistory(
-                    user_id=user.id,
-                    spotify_id=spotify_id,
-                    played_at=played_at,
-                    ms_played=ms_played
-                ))
-                stats["added"] += 1
-
-            except Exception as e:
-                db.rollback()
-                print(f"Erreur lors du traitement d'une ligne : {e}")
-                continue
-
-        # Commit par fichier pour garantir la persistance et libérer la mémoire
-        db.commit()
+    # 3. INSERTION MASSIVE (Bulk)
+    # On ajoute tout d'un coup. SQLModel/SQLAlchemy gérera ça en très peu de requêtes.
+    db.add_all(to_add_artists.values())
+    db.add_all(to_add_albums.values())
+    db.add_all(to_add_tracks.values())
+    db.flush() # Pour lier les IDs avant l'historique
+    
+    db.add_all(to_add_history)
+    db.commit()
 
     return {"status": "success", "message": f"Importation réussie : {stats['added']} écoutes ajoutées ({len(new_tracks_to_enrich)} à enrichir). {stats["skipped"]} skippées."}

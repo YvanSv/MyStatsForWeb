@@ -1,6 +1,7 @@
 import base64
 from datetime import datetime, timedelta
 import os
+from urllib.parse import urlencode
 import uuid
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
@@ -22,15 +23,18 @@ FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 @router.get("/login")
 def login():
-    # Les permissions (scopes) pour lire ton historique
     scope = "user-read-recently-played user-top-read user-read-private user-read-email"
-    
-    # On construit l'URL de connexion Spotify
-    url = (
-        f"https://accounts.spotify.com/authorize?response_type=code"
-        f"&client_id={CLIENT_ID}&scope={scope}&redirect_uri={REDIRECT_URI}"
-    )
-    return RedirectResponse(url)
+    base_url = "https://accounts.spotify.com/authorize"
+    params = {
+        "client_id": CLIENT_ID,
+        "response_type": "code",
+        "scope": scope,
+        "redirect_uri": REDIRECT_URI,
+        "show_dialog": "true" 
+    }
+    auth_url = f"{base_url}?{urlencode(params)}"
+    print(f"DEBUG: URL envoyée à Spotify -> {auth_url}")
+    return RedirectResponse(auth_url)
 
 @router.get("/callback")
 async def callback(code: str, session: Session = Depends(get_session)):
