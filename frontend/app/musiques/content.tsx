@@ -173,7 +173,7 @@ function ListView({ musics, sortConfig, onSort }: { musics: Track[], sortConfig:
             </div>
           </div>
           <div className="text-center font-hias font-bold text-vert">{track.play_count}</div>
-          <div className={`text-center font-bold ${track.rating > 2 ? 'text-vert' : track.rating > 1 ? 'text-jaune' : 'text-rouge'}`}>{track.rating}</div>
+          <div className={`text-center font-bold ${track.rating >= 1.35 ? 'text-vert' : track.rating >= 0.8 ? 'text-jaune' : 'text-rouge'}`}>{track.rating}</div>
         </div>
       ))}
     </div>
@@ -196,7 +196,7 @@ function GridView({ musics, sortConfig, onSort }: { musics: Track[], sortConfig:
             <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl shadow-2xl">
               {track.cover && <Image src={track.cover} alt={track.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />}
               <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
-                <span className={`${track.rating > 2 ? 'text-vert' : track.rating > 1 ? 'text-jaune' : 'text-rouge'} font-bold text-xs`}>{track.rating}</span>
+                <span className={`${track.rating >= 1.35 ? 'text-vert' : track.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} font-bold text-xs`}>{track.rating}</span>
               </div>
             </div>
             <h3 className="font-bold truncate text-sm mb-1 group-hover:text-vert transition-colors">{track.title}</h3>

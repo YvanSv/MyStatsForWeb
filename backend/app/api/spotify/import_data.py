@@ -34,9 +34,8 @@ async def upload_spotify_json(
     all_artists = db.exec(select(Artist.name, Artist.spotify_id)).all()
     artist_cache = {name.strip().lower(): sid for name, sid in all_artists}
     # Albums
-    all_albums = db.exec(select(Album.name, Artist.name, Album.spotify_id)
-        .join(Artist, Album.artist_id == Artist.spotify_id)).all()
-    album_cache = {(alb.lower().strip(), art.lower().strip()): sid for alb, art, sid in all_albums}
+    all_albums_raw = db.exec(select(Album.name, Album.artist_id, Album.spotify_id)).all()
+    album_cache = {(alb.strip().lower(), aid): sid for alb, aid, sid in all_albums_raw}
     # Tracks
     all_tracks_ids = set(db.exec(select(Track.spotify_id)).all())
     # TrackHistory
@@ -88,17 +87,19 @@ async def upload_spotify_json(
                 art_id = stable_hash(artist_name)
                 if art_id not in to_add_artists:
                     to_add_artists[art_id] = Artist(name=artist_name, spotify_id=art_id)
-                artist_cache[art_norm] = art_id # On met à jour le cache pour les lignes suivantes
+                artist_cache[art_norm] = art_id
 
-            # 3. Gestion Album
+            # 3. Gestion Album (Nom + Artist_ID -> ID)
             alb_norm = album_name.strip().lower()
-            if (alb_norm, art_norm) in album_cache:
-                alb_id = album_cache[(alb_norm, art_norm)]
+            cache_key = (alb_norm, art_id)
+
+            if cache_key in album_cache:
+                alb_id = album_cache[cache_key]
             else:
-                alb_id = stable_hash(f"{album_name}_{artist_name}")
+                alb_id = stable_hash(f"{album_name}_{art_id}")
                 if alb_id not in to_add_albums:
                     to_add_albums[alb_id] = Album(name=album_name, artist_id=art_id, spotify_id=alb_id)
-                album_cache[(alb_norm, art_norm)] = alb_id
+                album_cache[cache_key] = alb_id
 
             # 4. Gestion Track
             if spotify_id not in all_tracks_ids and spotify_id not in to_add_tracks:
@@ -131,4 +132,4 @@ async def upload_spotify_json(
     db.add_all(to_add_history)
     db.commit()
 
-    return {"status": "success", "message": f"Importation réussie : {stats['added']} écoutes ajoutées ({len(new_tracks_to_enrich)} à enrichir). {stats["skipped"]} skippées."}
+    return {"status": "success", "message": f"Importation réussie : {stats['added']} écoutes ajoutées. {stats["skipped"]} skippées."}

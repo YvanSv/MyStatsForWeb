@@ -183,7 +183,7 @@ function ListView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
             </div>
           </div>
           <div className="text-center font-hias font-bold text-vert">{album.play_count}</div>
-          <div className={`${album.rating > 2 ? 'text-vert' : album.rating > 1 ? 'text-jaune' : 'text-rouge'} text-center font-bold`}>{album.rating}</div>
+          <div className={`${album.rating >= 1.35 ? 'text-vert' : album.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-center font-bold`}>{album.rating}</div>
         </div>
       ))}
     </div>
@@ -206,7 +206,7 @@ function GridView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
             <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl shadow-2xl">
               {album.cover && <Image src={album.cover} alt={album.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />}
               <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
-                <span className={`${album.rating > 2 ? 'text-vert' : album.rating > 1 ? 'text-jaune' : 'text-rouge'} font-bold text-xs`}>{album.rating}</span>
+                <span className={`${album.rating >= 1.35 ? 'text-vert' : album.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} font-bold text-xs`}>{album.rating}</span>
               </div>
             </div>
             <h3 className="font-bold truncate text-sm mb-1">{album.name}</h3>
@@ -222,17 +222,5 @@ function GridView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
         ))}
       </div>
     </>
-  );
-}
-
-function FilterGroup({ title, children }: { title: string, children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(true);
-  return (
-    <div className="mb-4">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70">
-        {title} <span>{isOpen ? '−' : '+'}</span>
-      </button>
-      {isOpen && <div className="flex flex-col gap-2">{children}</div>}
-    </div>
   );
 }

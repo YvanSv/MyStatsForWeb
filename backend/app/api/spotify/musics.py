@@ -1,3 +1,5 @@
+import math
+
 from app.database import get_session
 from app.models import TrackHistory, User, Track, Artist, Album
 from typing import Optional
@@ -38,6 +40,9 @@ async def get_user_musics(
 
     play_count = func.count(TrackHistory.id).label("play_count")
     total_minutes = (cast(func.sum(TrackHistory.ms_played), Float) / 60000).label("total_minutes")
+    sum_played = func.sum(TrackHistory.ms_played)
+    sum_duration = func.sum(Track.duration_ms)
+    engagement_sql = (cast(sum_played, Float) / func.nullif(cast(sum_duration, Float), 0)).label("engagement")
 
     query = (select(
             Track,
@@ -45,7 +50,8 @@ async def get_user_musics(
             Album.name.label("album"),
             Album.image_url.label("cover"),
             play_count,
-            total_minutes
+            total_minutes,
+            engagement_sql
         )
         .join(Album, Track.album_id == Album.spotify_id)
         .join(Artist, Track.artist_id == Artist.spotify_id)
@@ -55,19 +61,19 @@ async def get_user_musics(
     if track: query = query.where(Track.title.ilike(f"%{track}%"))
     if artist: query = query.where(Artist.name.ilike(f"%{artist}%"))
     if album: query = query.where(Album.name.ilike(f"%{album}%"))
-
     query = query.group_by(
-        Track.spotify_id, 
-        Track.title, 
-        Artist.name, 
-        Album.name, 
+        Track.spotify_id,
+        Track.title,
+        Artist.name,
+        Album.name,
         Album.image_url
     )
-
     if streams_min is not None: query = query.having(play_count >= streams_min)
     if streams_max is not None: query = query.having(play_count <= streams_max)
     if minutes_min is not None: query = query.having(total_minutes >= minutes_min)
     if minutes_max is not None: query = query.having(total_minutes <= minutes_max)
+    if engagement_min is not None: query = query.having(engagement_sql >= engagement_min / 100)
+    if engagement_max is not None: query = query.having(engagement_sql <= engagement_max / 100)
     
     order = text(f"{sort_by} {direction}")
     query = query.order_by(order)
@@ -75,30 +81,11 @@ async def get_user_musics(
 
     all_musics = []
     for row in results:
-        track_obj = row[0]
-        artist_name = row[1]
-        album_name = row[2]
-        cover_url = row[3]
-        play_count = row[4]
-        temps_total = row[5] or 0
-        
-        duration_theorique_min = play_count * track_obj.duration_ms / 60000
-
-        # Engagement
-        engagement = 0
-        if duration_theorique_min > 0:
-            engagement = round(min(temps_total, duration_theorique_min) / duration_theorique_min * 100)
-        
-        if engagement < engagement_min or engagement > engagement_max: continue
-
-        # Rating
-        rating = 0
-        if play_count > 0:
-            part1 = temps_total / play_count
-            part2 = temps_total / 100
-            rating = round((part1 + part2) / 2, 2)
-
-        if rating < rating_min or rating > rating_max: continue
+        track_obj, artist_name, album_name, cover_url, count, mins, eng = row
+        eng = min(eng or 0.0, 1.0)
+        rating = round((eng * .55) + (math.log10(count + 1) * .18) + (math.log10(mins + 1) * .18), 2)
+        if rating_min and rating < rating_min: continue
+        if rating_max and rating > rating_max: continue
 
         all_musics.append({
             "spotify_id": track_obj.spotify_id,
@@ -107,16 +94,13 @@ async def get_user_musics(
             "album": album_name,
             "cover": cover_url,        
             "duration_ms": track_obj.duration_ms,
-            "play_count": play_count,
-            "total_minutes": round(temps_total),
-            "engagement": engagement,
-            "rating": rating
+            "play_count": count,
+            "total_minutes": round(mins),
+            "engagement": round(eng * 100, 2),
+            "rating": rating or 0
         })
-
-    # 4. Tri Python pour les colonnes calculées
-    if sort_by in ["rating", "engagement"]:
+    if sort_by in ["play_count", "total_minutes", "engagement", "rating"]:
         all_musics.sort(key=lambda x: x[sort_by], reverse=(direction == "desc"))
-
     return all_musics[offset : offset + limit]
 
 @router.get("/metadata")
@@ -145,5 +129,5 @@ async def get_musics_metadata(db: Session = Depends(get_session),session_id: Opt
 
     return {
         "max_streams": stats[0],
-        "max_minutes": round(stats[1] / 60000)
+        "max_minutes": round((stats[1] or 0) / 60000)
     }

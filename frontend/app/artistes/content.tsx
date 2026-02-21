@@ -167,9 +167,16 @@ function ListView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
             <h3 className="font-bold text-base group-hover:text-vert transition-colors truncate">{artist.name}</h3>
           </div>
           <div className="text-center text-sm text-gray-200">{Math.round(artist.total_minutes)} min</div>
-          <div className="text-center text-xs text-vert">{artist.engagement}%</div>
+          <div className="flex justify-center">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-vert">{artist.engagement}%</span>
+              <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div className="bg-vert h-full" style={{ width: `${artist.engagement}%` }} />
+              </div>
+            </div>
+          </div>
           <div className="text-center font-hias font-bold text-vert">{artist.play_count}</div>
-          <div className={`${artist.rating > 2 ? 'text-vert' : artist.rating > 1 ? 'text-jaune' : 'text-rouge'} text-center font-bold`}>{artist.rating}</div>
+          <div className={`${artist.rating >= 1.35 ? 'text-vert' : artist.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-center font-bold`}>{artist.rating}</div>
         </div>
       ))}
     </div>
@@ -198,7 +205,7 @@ function GridView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
               <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
             </div>
             <h3 className="font-bold text-center text-base truncate w-full group-hover:text-vert transition-colors mb-1">{artist.name}</h3>
-            <span className={`${artist.rating > 2 ? 'text-vert' : artist.rating > 1 ? 'text-jaune' : 'text-rouge'} text-[10px] font-bold tracking-tighter`}>{artist.rating} ★</span>
+            <span className={`${artist.rating >= 1.35 ? 'text-vert' : artist.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-[10px] font-bold tracking-tighter`}>{artist.rating} ★</span>
             <div className="flex gap-3 mt-2">
                 <span className="text-[11px] uppercase text-gray-500 font-black">{artist.play_count} streams</span>
                 <span className="text-[11px] font-bold text-vert">{artist.engagement}%</span>

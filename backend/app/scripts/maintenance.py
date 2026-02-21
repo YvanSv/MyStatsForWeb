@@ -27,7 +27,7 @@ def catch_up_maintenance():
             .join(Album, Track.album_id == Album.spotify_id)
             .where((Album.image_url == None) | (Track.duration_ms == 0) | (Track.duration_ms == None))
             .where(~Track.spotify_id.contains("gen_"))
-            .limit(400)
+            .limit(2500)
         )
         tracks_to_fix = db.exec(query_tracks).all()
         
@@ -63,27 +63,27 @@ def catch_up_maintenance():
                             )
 
                     db.commit()
-                    print(f"✅ Phase 1 : Batch {i//50 + 1} commit avec succès.")
                     time.sleep(random.uniform(1.0, 3.0))
                 except Exception as e:
                     handle_exception(e)
                     return
 
-        # --- PHASE 3 : ARTISTES "GEN_" (Search API + Cascade Update) ---
+        # --- PHASE 3 : ARTISTES "GEN_" (Optimisée - Commit Global) ---
         query_gen_artists = (
             select(Artist)
             .where(Artist.image_url == None)
             .where(Artist.spotify_id.contains("gen_"))
-            .limit(20)
+            .limit(200) 
         )
         gen_artists = db.exec(query_gen_artists).all()
 
         if gen_artists:
-            print(f"Phase 3 : Tentative pour {len(gen_artists)} artistes...")
-            for artist in gen_artists:
-                if spotify_status.get_status()["is_rate_limited"]: return
-                
-                try:
+            try:
+                for artist in gen_artists:
+                    if spotify_status.get_status()["is_rate_limited"]: 
+                        db.commit()
+                        return
+
                     search_results = sp.search(q=f"artist:{artist.name}", type="artist", limit=1)
                     items = search_results.get('artists', {}).get('items', [])
                     
@@ -93,37 +93,26 @@ def catch_up_maintenance():
                         old_id = artist.spotify_id
                         img_url = sp_artist['images'][0]['url'] if sp_artist.get('images') else None
                         
-                        # ÉTAPE 1 : On vérifie si le real_id existe déjà en base (doublon possible)
                         existing_artist = db.exec(select(Artist).where(Artist.spotify_id == real_id)).first()
                         
                         if existing_artist:
-                            # Si l'artiste réel existe déjà, on redirige juste les albums/tracks vers lui
                             db.execute(update(Album).where(Album.artist_id == old_id).values(artist_id=real_id))
                             db.execute(update(Track).where(Track.artist_id == old_id).values(artist_id=real_id))
-                            # Et on supprime l'ancien gen_ devenu inutile
                             db.delete(artist)
                         else:
-                            # Si c'est un nouvel ID, on met à jour l'ID de l'artiste actuel
-                            # Note: Dans bcp de DB, changer la PK est complexe. 
-                            # On va plutôt créer le nouveau et supprimer l'ancien.
                             new_artist = Artist(spotify_id=real_id, name=artist.name, image_url=img_url)
                             db.add(new_artist)
-                            db.flush() # On l'envoie à la DB pour qu'il existe
-                            
-                            # On redirige les liens
+                            db.flush()
                             db.execute(update(Album).where(Album.artist_id == old_id).values(artist_id=real_id))
                             db.execute(update(Track).where(Track.artist_id == old_id).values(artist_id=real_id))
-                            
                             db.delete(artist)
+                    time.sleep(random.uniform(1.5, 3.0))
+                db.commit()
 
-                        db.commit()
-                        print(f"✅ Artiste migré : {artist.name}")
-                    
-                    time.sleep(random.uniform(1.5, 2.5))
-                except Exception as e:
-                    db.rollback()
-                    handle_exception(e)
-                    return
+            except Exception as e:
+                db.rollback()
+                handle_exception(e)
+                return
 
 def handle_exception(e):
     error_str = str(e)
