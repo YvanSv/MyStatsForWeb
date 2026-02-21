@@ -30,12 +30,12 @@ async def get_user_musics(
             Album.name.label("album_name"),
             Album.image_url.label("cover_url"),
             func.count(TrackHistory.id).label("play_count"),
-            func.sum(Track.duration_ms).label("total_ms_sql")
+            func.sum(TrackHistory.ms_played).label("total_ms_real")
         )
         .join(TrackHistory, Track.spotify_id == TrackHistory.spotify_id)
         .join(Artist, Track.artist_id == Artist.spotify_id)
         .join(Album, Track.album_id == Album.spotify_id)
-        .where(TrackHistory.user_id == current_user_id) # Utilisation de l'ID extrait
+        .where(TrackHistory.user_id == current_user_id)
         .group_by(
             Track.spotify_id, 
             Artist.name, 
@@ -46,7 +46,7 @@ async def get_user_musics(
 
     # 3. Tri SQL
     if sort_by == "play_count": statement = statement.order_by(desc("play_count") if direction == "desc" else asc("play_count"))
-    elif sort_by == "total_minutes": statement = statement.order_by(desc("total_ms_sql") if direction == "desc" else asc("total_ms_sql"))
+    elif sort_by == "total_minutes": statement = statement.order_by(desc("total_ms_real") if direction == "desc" else asc("total_ms_real"))
     elif sort_by == "name": statement = statement.order_by(desc(Track.title) if direction == "desc" else asc(Track.title))
     else: statement = statement.order_by(desc("play_count"))
     results = db.exec(statement).all()
@@ -65,7 +65,7 @@ async def get_user_musics(
         
         # Engagement
         duration_theorique_ms = play_count * track_obj.duration_ms
-        engagement = 100
+        engagement = 0
         if duration_theorique_ms > 0:
             engagement = round(min(total_ms_real, duration_theorique_ms) / duration_theorique_ms * 100)
 

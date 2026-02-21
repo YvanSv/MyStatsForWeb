@@ -24,15 +24,12 @@ async def get_user_albums(
     if not user_obj: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
     current_user_id = user_obj.id
 
-    # On récupère les données agrégées
-    # total_ms_real = temps d'écoute effectif
-    # total_ms_theorique = play_count * duration (si tout était écouté en entier)
     statement = (
         select(
             Album,
             Artist.name.label("artist_name"),
             func.count(TrackHistory.id).label("play_count"),
-            func.sum(Track.duration_ms).label("total_ms_real") 
+            func.sum(TrackHistory.ms_played).label("total_ms_real")
         )
         .join(Track, Album.spotify_id == Track.album_id)
         .join(Artist, Album.artist_id == Artist.spotify_id)
@@ -57,7 +54,8 @@ async def get_user_albums(
         total_minutes = (total_ms_real or 0) / 60000
         
         avg_minutes_per_play = total_minutes / play_count if play_count > 0 else 0
-        engagement = min(round((avg_minutes_per_play / 3.5) * 100), 100)
+        #engagement = min(round((avg_minutes_per_play / 3.5) * 100), 100)
+        engagement = 0
 
         if play_count > 0:
             part1 = int((engagement / 100.0) * (total_minutes / play_count) * 100) / 100.0
