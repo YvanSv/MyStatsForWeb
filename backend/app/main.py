@@ -5,6 +5,7 @@ from app.database import create_db_and_tables
 from app.auth import router as auth_router
 from app.api.spotify import router as spotify_router
 from app.api.stats.overview import router as overview_router
+from app.scripts.maintenance import router as fix_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,6 +25,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(spotify_router)
 app.include_router(overview_router)
+app.include_router(fix_router)
 
 @app.get("/")
 def read_root():
