@@ -93,23 +93,33 @@ def catch_up_maintenance():
                         old_id = artist.spotify_id
                         img_url = sp_artist['images'][0]['url'] if sp_artist.get('images') else None
                         
-                        # 1. Mise à jour manuelle de la cascade (Foreign Keys)
-                        # On met à jour les références dans Album et Track avant de changer l'ID de l'Artiste
-                        db.execute(update(Album).where(Album.artist_id == old_id).values(artist_id=real_id))
-                        db.execute(update(Track).where(Track.artist_id == old_id).values(artist_id=real_id))
+                        # ÉTAPE 1 : On vérifie si le real_id existe déjà en base (doublon possible)
+                        existing_artist = db.exec(select(Artist).where(Artist.spotify_id == real_id)).first()
                         
-                        # 2. Mise à jour de l'artiste
-                        artist.spotify_id = real_id
-                        artist.image_url = img_url
-                        db.add(artist)
-                        
+                        if existing_artist:
+                            # Si l'artiste réel existe déjà, on redirige juste les albums/tracks vers lui
+                            db.execute(update(Album).where(Album.artist_id == old_id).values(artist_id=real_id))
+                            db.execute(update(Track).where(Track.artist_id == old_id).values(artist_id=real_id))
+                            # Et on supprime l'ancien gen_ devenu inutile
+                            db.delete(artist)
+                        else:
+                            # Si c'est un nouvel ID, on met à jour l'ID de l'artiste actuel
+                            # Note: Dans bcp de DB, changer la PK est complexe. 
+                            # On va plutôt créer le nouveau et supprimer l'ancien.
+                            new_artist = Artist(spotify_id=real_id, name=artist.name, image_url=img_url)
+                            db.add(new_artist)
+                            db.flush() # On l'envoie à la DB pour qu'il existe
+                            
+                            # On redirige les liens
+                            db.execute(update(Album).where(Album.artist_id == old_id).values(artist_id=real_id))
+                            db.execute(update(Track).where(Track.artist_id == old_id).values(artist_id=real_id))
+                            
+                            db.delete(artist)
+
                         db.commit()
-                        print(f"✅ Artiste migré : {artist.name} ({old_id} -> {real_id})")
-                    else:
-                        print(f"⚠️ Aucun résultat pour l'artiste : {artist.name}")
+                        print(f"✅ Artiste migré : {artist.name}")
                     
                     time.sleep(random.uniform(1.5, 2.5))
-                    
                 except Exception as e:
                     db.rollback()
                     handle_exception(e)
