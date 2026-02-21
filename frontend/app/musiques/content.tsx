@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useApi } from "../hooks/useApi";
 import { useViewMode } from "../context/viewModeContext";
-import { useSearchParams } from "next/navigation";
 import SidebarFilters from "../components/SidebarFilters";
 import { useShowFilters } from "../context/showFiltersContext";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface Track {
   spotify_id: string;
@@ -33,13 +33,12 @@ export default function MusiquesContent() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const { showFilters, toggleShowFilters } = useShowFilters();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // --- LECTURE DES FILTRES DEPUIS L'URL ---
-  // On utilise useMemo pour éviter de recalculer l'objet à chaque render
   const currentSort = useMemo(() => ({
-    key: (searchParams.get("sort") as SortKey) || "play_count",
-    direction: (searchParams.get("dir") as "asc" | "desc") || "desc",
-    period: searchParams.get("period") || "all",
+    sort: (searchParams.get("sort") as SortKey) || "play_count",
+    direction: (searchParams.get("direction") as "asc" | "desc") || "desc",
     track: searchParams.get("track") || "",
     artist: searchParams.get("artist") || "",
     album: searchParams.get("album") || "",
@@ -63,31 +62,41 @@ export default function MusiquesContent() {
     }
   }), [metadata]);
 
-  const fetchMusics = useCallback(async (currentOffset: number, isNewRequest: boolean) => {
+  const fetchMusics = useCallback(async (currentOffset: number, isNewSort: boolean) => {
     setLoading(true); 
     try {
       const newData = await getMusics({
         offset: currentOffset,
         limit: 50,
-        sort_by: currentSort.key === 'title' ? 'name' : currentSort.key,
         ...currentSort
       });
 
       setHasMore(newData.length === 50);
-      setMusics(prev => (isNewRequest ? newData : [...prev, ...newData]));
+      setMusics(prev => (isNewSort || currentOffset === 0 ? newData : [...prev, ...newData]));
     } catch (err) { console.error("Erreur API :", err); }
     finally { setLoading(false); }
   }, [getMusics, currentSort]);
 
-  // --- EFFET : RÉACTION AUX CHANGEMENTS D'URL ---
-  useEffect(() => {
-    setOffset(0);
-    fetchMusics(0, true);
-  }, [currentSort, fetchMusics]);
-
   useEffect(() => {
     getMusicsMetadata().then(setMetadata);
   }, []);
+
+  useEffect(() => {
+    setOffset(0);
+    fetchMusics(0, true);
+  }, [searchParams, fetchMusics]);
+  
+  const handleSort = (key: SortKey) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (currentSort.sort === key) {
+      params.set("direction", currentSort.direction === "desc" ? "asc" : "desc");
+    } else {
+      params.set("sort", key);
+      params.set("direction", "desc");
+    }
+    params.set("offset", "0");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const loadMore = () => {
     const nextOffset = offset + 50;
@@ -108,9 +117,9 @@ export default function MusiquesContent() {
           </div>
 
           {viewMode === 'list' ? (
-            <ListView musics={musics} sortConfig={currentSort} onSort={() => {}} />
+            <ListView musics={musics} sortConfig={currentSort} onSort={handleSort} />
           ) : (
-            <GridView musics={musics} sortConfig={currentSort} onSort={() => {}} />
+            <GridView musics={musics} sortConfig={currentSort} onSort={handleSort} />
           )}
 
           {hasMore && (
@@ -136,19 +145,19 @@ function ListView({ musics, sortConfig, onSort }: { musics: Track[], sortConfig:
     <div className="space-y-4">
       <div className="grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
         <div className="pl-16 cursor-pointer hover:text-white" onClick={() => onSort('title')}>
-          Titre {sortConfig.key === 'title' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Titre {sortConfig.sort === 'title' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('total_minutes')}>
-          Temps {sortConfig.key === 'total_minutes' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Temps {sortConfig.sort === 'total_minutes' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('engagement')}>
-          Engagement {sortConfig.key === 'engagement' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Engagement {sortConfig.sort === 'engagement' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('play_count')}>
-          Streams {sortConfig.key === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Streams {sortConfig.sort === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('rating')}>
-          Rating {sortConfig.key === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Rating {sortConfig.sort === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
       </div>
 
@@ -185,8 +194,8 @@ function GridView({ musics, sortConfig, onSort }: { musics: Track[], sortConfig:
     <>
       <div className="flex justify-end gap-6 mb-8 text-[10px] uppercase font-bold tracking-widest text-gray-500">
         {(['name', 'total_minutes', 'engagement', 'play_count', 'rating'] as SortKey[]).map(key => (
-          <button key={key} onClick={() => onSort(key)} className={`uppercase hover:text-white ${sortConfig.key === key ? 'text-vert' : ''}`}>
-            {key === 'title' ? 'Nom' : key.replace('_', ' ')} {sortConfig.key === key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          <button key={key} onClick={() => onSort(key)} className={`uppercase hover:text-white ${sortConfig.sort === key ? 'text-vert' : ''}`}>
+            {key === 'title' ? 'Nom' : key.replace('_', ' ')} {sortConfig.sort === key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
           </button>
         ))}
       </div>

@@ -35,8 +35,6 @@ export const useApi = () => {
     const params = new URLSearchParams();
     params.set('offset', '0');
     params.set('limit', '50');
-    params.set('sort_by', 'play_count');
-    params.set('direction', 'desc');
     if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== "") {
@@ -44,6 +42,8 @@ export const useApi = () => {
             }
         });
     }
+    if (!params.has('sort')) params.set('sort', 'play_count');
+    if (!params.has('direction')) params.set('direction', 'desc');
     return request(`${ENDPOINTS.TRACKS}?${params.toString()}`);
   }, [request]);
 
@@ -51,8 +51,6 @@ export const useApi = () => {
     const params = new URLSearchParams();
     params.set('offset', '0');
     params.set('limit', '50');
-    params.set('sort_by', 'play_count');
-    params.set('direction', 'desc');
     if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== "") {
@@ -60,6 +58,8 @@ export const useApi = () => {
             }
         });
     }
+    if (!params.has('sort')) params.set('sort', 'play_count');
+    if (!params.has('direction')) params.set('direction', 'desc');
     return request(`${ENDPOINTS.ARTISTS}?${params.toString()}`);
   }, [request]);
 
@@ -67,8 +67,6 @@ export const useApi = () => {
     const params = new URLSearchParams();
     params.set('offset', '0');
     params.set('limit', '50');
-    params.set('sort_by', 'play_count');
-    params.set('direction', 'desc');
     if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== "") {
@@ -76,6 +74,8 @@ export const useApi = () => {
             }
         });
     }
+    if (!params.has('sort')) params.set('sort', 'play_count');
+    if (!params.has('direction')) params.set('direction', 'desc');
     return request(`${ENDPOINTS.ALBUMS}?${params.toString()}`);
   }, [request]);
 

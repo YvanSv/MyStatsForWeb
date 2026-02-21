@@ -15,7 +15,7 @@ async def get_user_albums(
     db: Session = Depends(get_session),
     offset: int = 0,
     limit: int = 50,
-    sort_by: str = "play_count",
+    sort: str = "play_count",
     direction: str = "desc",
     artist: Optional[str] = None,
     album: Optional[str] = None,
@@ -81,9 +81,8 @@ async def get_user_albums(
             "engagement": round(eng * 100, 2),
             "rating": rating or 0
         })
-    reverse = (direction == "desc")
-    if sort_by in ["play_count", "total_minutes", "engagement", "rating"]:
-        final_list.sort(key=lambda x: x[sort_by], reverse=reverse)
+    if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:
+        final_list.sort(key=lambda x: x[sort], reverse=(direction == "desc"))
     return final_list[offset : offset + limit]
 
 @router.get("/metadata")

@@ -6,7 +6,7 @@ import { useApi } from "../hooks/useApi";
 import { useViewMode } from "../context/viewModeContext";
 import SidebarFilters from "../components/SidebarFilters";
 import { useShowFilters } from "../context/showFiltersContext";
-import { useSearchParams } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface Artist {
   id: string;
@@ -30,15 +30,12 @@ export default function ArtistesContent() {
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
-    key: 'play_count',
-    direction: 'desc'
-  });
+  const router = useRouter();
+  const pathname = usePathname();
 
   const currentSort = useMemo(() => ({
-    key: (searchParams.get("sort") as SortKey) || "play_count",
-    direction: (searchParams.get("dir") as "asc" | "desc") || "desc",
-    period: searchParams.get("period") || "all",
+    sort: (searchParams.get("sort") as SortKey) || "play_count",
+    direction: (searchParams.get("direction") as "asc" | "desc") || "desc",
     artist: searchParams.get("artist") || "",
     streams_min: searchParams.get("streams_min") || "0",
     streams_max: searchParams.get("streams_max") || "2000",
@@ -60,19 +57,17 @@ export default function ArtistesContent() {
     }
   };
 
-  const fetchArtistsData = useCallback(async (currentOffset: number, isNewRequest: boolean = false) => {
+  const fetchArtists = useCallback(async (currentOffset: number, isNewSort: boolean = false) => {
     setLoading(true);
     try {
       const newData = await getArtists({
         offset: currentOffset,
         limit: 50,
-        sort_by: sortConfig.key,
         ...currentSort
       });
-
       setHasMore(newData.length === 50);
-      setArtists(prev => (isNewRequest ? newData : [...prev, ...newData]));
-    } catch (err) { console.error("Erreur fetch artists:", err); }
+      setArtists(prev => (isNewSort || currentOffset === 0 ? newData : [...prev, ...newData]));
+    } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, [getArtists, currentSort]);
   
@@ -82,20 +77,25 @@ export default function ArtistesContent() {
 
   useEffect(() => {
     setOffset(0);
-    fetchArtistsData(0, true);
-  }, [sortConfig, fetchArtistsData]);
+    fetchArtists(0, true);
+  }, [searchParams, fetchArtists]);
+
+  const handleSort = (key: SortKey) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (currentSort.sort === key) {
+      params.set("direction", currentSort.direction === "desc" ? "asc" : "desc");
+    } else {
+      params.set("sort", key);
+      params.set("direction", "desc");
+    }
+    params.set("offset", "0");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const loadMore = () => {
     const nextOffset = offset + 50;
     setOffset(nextOffset);
-    fetchArtistsData(nextOffset);
-  };
-
-  const handleSort = (key: SortKey) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
-    }));
+    fetchArtists(nextOffset);
   };
 
   return (
@@ -113,9 +113,9 @@ export default function ArtistesContent() {
 
         {/* Switch de Vue */}
         {viewMode === 'list' ? (
-          <ListView artists={artists} sortConfig={sortConfig} onSort={handleSort} />
+          <ListView artists={artists} sortConfig={currentSort} onSort={handleSort} />
         ) : (
-          <GridView artists={artists} sortConfig={sortConfig} onSort={handleSort} />
+          <GridView artists={artists} sortConfig={currentSort} onSort={handleSort} />
         )}
 
         {/* Pagination */}
@@ -125,9 +125,7 @@ export default function ArtistesContent() {
               onClick={loadMore}
               disabled={loading}
               className="bg-bg2 border border-white/10 px-8 py-4 rounded-full font-bold hover:border-vert/50 transition-all disabled:opacity-50"
-            >
-              {loading ? "Chargement..." : "Charger plus d'artistes"}
-            </button>
+            >{loading ? "Chargement..." : "Charger plus d'artistes"}</button>
           </div>
         )}
       </section>
@@ -142,19 +140,19 @@ function ListView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
     <div className="space-y-4">
       <div className="grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
         <div className="pl-16 cursor-pointer hover:text-white" onClick={() => onSort('name')}>
-          Artiste {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Artiste {sortConfig.sort === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('total_minutes')}>
-          Temps {sortConfig.key === 'total_minutes' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Temps {sortConfig.sort === 'total_minutes' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('engagement')}>
-          Engagement {sortConfig.key === 'engagement' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Engagement {sortConfig.sort === 'engagement' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('play_count')}>
-          Streams {sortConfig.key === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Streams {sortConfig.sort === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('rating')}>
-          Rating {sortConfig.key === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Rating {sortConfig.sort === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
       </div>
 
@@ -188,8 +186,8 @@ function GridView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
     <>
       <div className="flex justify-end gap-6 mb-8 text-[10px] uppercase font-bold tracking-widest text-gray-500">
         {(['name', 'total_minutes', 'engagement', 'play_count', 'rating'] as SortKey[]).map(key => (
-          <button key={key} onClick={() => onSort(key)} className={`uppercase hover:text-white transition-colors ${sortConfig.key === key ? 'text-vert' : ''}`}>
-            {key === 'name' ? 'Nom' : key.replace('_', ' ')} {sortConfig.key === key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          <button key={key} onClick={() => onSort(key)} className={`uppercase hover:text-white transition-colors ${sortConfig.sort === key ? 'text-vert' : ''}`}>
+            {key === 'name' ? 'Nom' : key.replace('_', ' ')} {sortConfig.sort === key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
           </button>
         ))}
       </div>

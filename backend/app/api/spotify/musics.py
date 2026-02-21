@@ -16,13 +16,11 @@ async def get_user_musics(
     db: Session = Depends(get_session),
     offset: int = 0,
     limit: int = 50,
-    sort_by: str = "play_count",
+    sort: str = "play_count",
     direction: str = "desc",
-    # Paramètres de recherche
     track: Optional[str] = None,
     artist: Optional[str] = None,
     album: Optional[str] = None,
-    # Filtres de stats
     streams_min: Optional[int] = None,
     streams_max: Optional[int] = None,
     minutes_min: Optional[float] = None,
@@ -74,9 +72,6 @@ async def get_user_musics(
     if minutes_max is not None: query = query.having(total_minutes <= minutes_max)
     if engagement_min is not None: query = query.having(engagement_sql >= engagement_min / 100)
     if engagement_max is not None: query = query.having(engagement_sql <= engagement_max / 100)
-    
-    order = text(f"{sort_by} {direction}")
-    query = query.order_by(order)
     results = db.exec(query).all()
 
     all_musics = []
@@ -99,8 +94,8 @@ async def get_user_musics(
             "engagement": round(eng * 100, 2),
             "rating": rating or 0
         })
-    if sort_by in ["play_count", "total_minutes", "engagement", "rating"]:
-        all_musics.sort(key=lambda x: x[sort_by], reverse=(direction == "desc"))
+    if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:
+        all_musics.sort(key=lambda x: x["title" if sort == "name" else sort], reverse=(direction == "desc"))
     return all_musics[offset : offset + limit]
 
 @router.get("/metadata")

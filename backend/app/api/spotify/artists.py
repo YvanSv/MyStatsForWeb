@@ -15,7 +15,7 @@ async def get_artists(
     db: Session = Depends(get_session),
     offset: int = 0,
     limit: int = 50,
-    sort_by: str = "play_count",
+    sort: str = "play_count",
     direction: str = "desc",
     artist: Optional[str] = None,
     streams_min: Optional[int] = None,
@@ -75,9 +75,8 @@ async def get_artists(
             "engagement": round(eng * 100, 2),
             "rating": rating or 0
         })
-    reverse = (direction == "desc")
-    if sort_by in ["play_count", "total_minutes", "engagement", "rating"]:
-        all_artists.sort(key=lambda x: x[sort_by], reverse=reverse)
+    if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:
+        all_artists.sort(key=lambda x: x[sort], reverse=(direction == "desc"))
     return all_artists[offset : offset + limit]
 
 @router.get("/metadata")

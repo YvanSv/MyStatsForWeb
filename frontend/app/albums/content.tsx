@@ -6,7 +6,7 @@ import { useApi } from "../hooks/useApi";
 import { useViewMode } from "../context/viewModeContext";
 import SidebarFilters from "../components/SidebarFilters";
 import { useShowFilters } from "../context/showFiltersContext";
-import { useSearchParams } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface Album {
   spotify_id: string;
@@ -31,16 +31,12 @@ export default function AlbumsContent() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const { showFilters, toggleShowFilters } = useShowFilters();
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
-    key: 'play_count',
-    direction: 'desc'
-  });
-
+  const router = useRouter();
+  const pathname = usePathname();
 
   const currentSort = useMemo(() => ({
-    key: (searchParams.get("sort") as SortKey) || "play_count",
-    direction: (searchParams.get("dir") as "asc" | "desc") || "desc",
-    period: searchParams.get("period") || "all",
+    sort: (searchParams.get("sort") as SortKey) || "play_count",
+    direction: (searchParams.get("direction") as "asc" | "desc") || "desc",
     artist: searchParams.get("artist") || "",
     album: searchParams.get("album") || "",
     streams_min: searchParams.get("streams_min") || "0",
@@ -69,7 +65,6 @@ export default function AlbumsContent() {
       const newData = await getAlbums({
         offset: currentOffset,
         limit: 50,
-        sort_by: sortConfig.key,
         ...currentSort
       });
       setHasMore(newData.length === 50);
@@ -85,13 +80,18 @@ export default function AlbumsContent() {
   useEffect(() => {
     setOffset(0);
     fetchAlbums(0, true);
-  }, [sortConfig, fetchAlbums]);
+  }, [searchParams, fetchAlbums]);
 
   const handleSort = (key: SortKey) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
-    }));
+    const params = new URLSearchParams(searchParams.toString());
+    if (currentSort.sort === key) {
+      params.set("direction", currentSort.direction === "desc" ? "asc" : "desc");
+    } else {
+      params.set("sort", key);
+      params.set("direction", "desc");
+    }
+    params.set("offset", "0");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const loadMore = () => {
@@ -120,9 +120,9 @@ export default function AlbumsContent() {
 
         {/* Contenu dynamique selon ViewMode */}
         {viewMode === 'list' ? (
-          <ListView albums={albums} sortConfig={sortConfig} onSort={handleSort} />
+          <ListView albums={albums} sortConfig={currentSort} onSort={handleSort} />
         ) : (
-          <GridView albums={albums} sortConfig={sortConfig} onSort={handleSort} />
+          <GridView albums={albums} sortConfig={currentSort} onSort={handleSort} />
         )}
 
         {/* Pagination */}
@@ -149,19 +149,19 @@ function ListView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
     <div className="space-y-4">
       <div className="grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
         <div className="pl-16 cursor-pointer hover:text-white" onClick={() => onSort('name')}>
-          Album {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Album {sortConfig.sort === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('total_minutes')}>
-          Temps {sortConfig.key === 'total_minutes' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Temps {sortConfig.sort === 'total_minutes' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('engagement')}>
-          Engagement {sortConfig.key === 'engagement' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Engagement {sortConfig.sort === 'engagement' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('play_count')}>
-          Streams {sortConfig.key === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Streams {sortConfig.sort === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
         <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('rating')}>
-          Rating {sortConfig.key === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          Rating {sortConfig.sort === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
       </div>
 
@@ -195,8 +195,8 @@ function GridView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
     <>
       <div className="flex justify-end gap-6 mb-8 text-[10px] uppercase font-bold tracking-widest text-gray-500">
         {(['name', 'total_minutes', 'engagement', 'play_count', 'rating'] as SortKey[]).map(key => (
-          <button key={key} onClick={() => onSort(key)} className={`uppercase hover:text-white ${sortConfig.key === key ? 'text-vert' : ''}`}>
-            {key.replace('_', ' ')} {sortConfig.key === key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+          <button key={key} onClick={() => onSort(key)} className={`uppercase hover:text-white ${sortConfig.sort === key ? 'text-vert' : ''}`}>
+            {key.replace('_', ' ')} {sortConfig.sort === key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
           </button>
         ))}
       </div>
