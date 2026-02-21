@@ -81,23 +81,37 @@ def catch_up_maintenance():
         artists_to_fix = db.exec(query_artists).all()
 
         if artists_to_fix:
+            print(f"Correction de {len(artists_to_fix)} artistes...")
             artist_ids = [a.spotify_id for a in artists_to_fix]
-            random.shuffle(artist_ids)
+            
             for i in range(0, len(artist_ids), 50):
                 if spotify_status.get_status()["is_rate_limited"]: return
                 
                 batch = artist_ids[i:i+50]
                 try:
+                    # Note : sp.artists() accepte max 50 IDs
                     sp_artists = sp.artists(batch)['artists']
+                    
                     for a_info in sp_artists:
                         if a_info and a_info.get('images'):
-                            db.execute(update(Artist).where(Artist.spotify_id == a_info['id'])
-                                      .values(image_url=a_info['images'][0]['url']))
-                    db.commit()
+                            # On prend l'image (souvent la première est la plus grande)
+                            img_url = a_info['images'][0]['url']
+                            db.execute(
+                                update(Artist)
+                                .where(Artist.spotify_id == a_info['id'])
+                                .values(image_url=img_url)
+                            )
+                    db.commit() # On commit après chaque batch de 50
+                    print(f"Batch Artistes {i//50 + 1} traité.")
                     time.sleep(random.uniform(1.0, 2.0))
+                    
                 except Exception as e:
-                    handle_exception(e)
+                    handle_exception(e) # Utilise la fonction de gestion 429 qu'on a faite
                     return
+        else:
+            # Si on est ici, c'est que la requête n'a rien trouvé
+            db.rollback() # On ferme proprement la transaction vide
+            print("Aucun artiste à traiter (IDs réels avec image manquante).")
 
 def handle_exception(e):
     error_str = str(e)
