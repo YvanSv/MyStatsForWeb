@@ -13,6 +13,7 @@ export default function Header() {
   const navigate = (path: string) => {
     router.push(path);
     setMenuOpen(false);
+    setIsMobileNavOpen(false);
   }
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
   const [userName, setUserName] = useState("null");
@@ -39,15 +40,25 @@ export default function Header() {
         if (data.is_logged_in) {
           setIsLoggedIn(true);
           setUserName(data.user_name);
-        }
-      } catch (error) { console.error("Erreur auth:", error); }
+        } else setIsLoggedIn(false);
+      } catch (error) { console.error("Erreur auth:", error); setIsLoggedIn(false); }
       finally { setLoading(false); }
     };
     checkAuth();
   }, []);
 
   const handleLogin = () => {window.location.href = ENDPOINTS.LOGIN;};
-  const handleLogout = () => {window.location.href = ENDPOINTS.LOGOUT;};
+  const handleLogout = () => {
+    // 1. Mise à jour immédiate de l'UI pour éviter le lag visuel
+    setIsLoggedIn(false);
+    setUserName("null");
+    setMenuOpen(false);
+    // 2. Nettoyage local
+    localStorage.clear(); 
+    sessionStorage.clear();
+    // 3. Redirection vers l'endpoint de logout de l'API
+    window.location.replace(ENDPOINTS.LOGOUT);
+  };
 
   return (
     <header className="flex items-center justify-between py-3 md:py-4 px-4 md:px-6 sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl border-b border-white/5">
@@ -102,7 +113,7 @@ export default function Header() {
             </button>
           ) : (
             !loading && (
-              <button onClick={handleLogin} className="bg-vert px-4 md:px-6 py-2 rounded-full text-xs md:sm font-bold text-black transition active:scale-95">
+              <button onClick={handleLogin} className="bg-vert px-4 md:px-6 py-2 rounded-full text-xs md:sm font-bold text-black transition active:scale-95 hover:scale-105 transition-transform">
                 Login
               </button>
             )
