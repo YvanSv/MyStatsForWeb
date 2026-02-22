@@ -91,9 +91,7 @@ export default function GridCell({ element, sort }: GridCellProps) {
               </span>
               <span className="text-[9px] uppercase tracking-widest text-gray-500 font-medium">min</span>
             </>
-          ) : (
-            <span className="text-gray-400 font-bold">-</span>
-          )}
+          ) : (<span className="text-gray-400 font-bold">-</span>)}
         </div>
 
         {/* Bloc Engagement */}

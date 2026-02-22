@@ -145,8 +145,8 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
                 )}
                 {config.stats.rating && (
                   <RangeFilter label="Rating" param="rating" step={0.05} {...config.stats.rating}
-                    valueMin={localFilters.rating_min ?? searchParams.get("rating_min") ?? config.stats.rating.min}
-                    valueMax={localFilters.rating_max ?? searchParams.get("rating_max") ?? config.stats.rating.max}
+                    valueMin={localFilters.rating_min ?? searchParams.get("rating_min") ?? config.stats.rating.min.toLocaleString('fr-FR')}
+                    valueMax={localFilters.rating_max ?? searchParams.get("rating_max") ?? config.stats.rating.max.toLocaleString('fr-FR')}
                     onChange={handleLocalChange} />
                 )}
               </div>
@@ -188,7 +188,7 @@ function RangeFilter({ label, param, min, max, valueMin, valueMax, step = 1, uni
     <div className="flex flex-col gap-3 group">
       <div className="flex justify-between items-center">
         <span className="text-xs text-gray-400 font-bold uppercase tracking-wider group-hover:text-gray-200 transition-colors">{label}</span>
-        <span className="text-[10px] text-vert font-mono bg-vert/10 px-2 py-0.5 rounded-md">{valueMin}-{valueMax}{unit}</span>
+        <span className="text-[10px] text-vert font-mono bg-vert/10 px-2 py-0.5 rounded-md">{valueMin.toLocaleString('fr-FR')} ⟷ {valueMax.toLocaleString('fr-FR')}{unit}</span>
       </div>
       <div className="flex items-center gap-2">
         <input

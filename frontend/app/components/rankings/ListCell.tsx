@@ -82,16 +82,16 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
 
       {/* COLONNES DESKTOP */}
       <div className={`hidden lg:block text-center ${sort !== 'play_count' ? 'text-sm text-gray-400' : 'text-medium font-bold text-vert'}`}>
-        {element.play_count} <span className="font-medium text-[10px]">str</span>
+        {element.play_count.toLocaleString('fr-FR')} <span className="font-medium text-[10px]">str</span>
       </div>
 
       <div className={`hidden lg:block text-center ${sort !== 'total_minutes' ? 'text-sm text-gray-400' : 'text-medium font-bold text-vert'}`}>
-        {Math.round(element.total_minutes || 0)} <span className="font-medium text-[10px]">min</span>
+        {Math.round(element.total_minutes || 0).toLocaleString('fr-FR')} <span className="font-medium text-[10px]">min</span>
       </div>
 
       <div className="hidden lg:flex justify-center">
         <div className="flex items-center gap-2">
-          <span className={`${sort !== 'engagement' ? 'text-sm text-gray-400' : 'font-bold text-vert'}`}>{element.engagement}%</span>
+          <span className={`${sort !== 'engagement' ? 'text-sm text-gray-400' : 'font-bold text-vert'}`}>{element.engagement.toLocaleString('fr-FR')}%</span>
           <div className="w-12 h-1 bg-rouge/50 rounded-full overflow-hidden">
             <div className={`h-full ${sort !== 'engagement' ? 'bg-gray-400' : 'bg-vert'}`} style={{ width: `${element.engagement}%` }} />
           </div>
@@ -104,7 +104,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
           {renderMobileStat()}
         </div>
         <div className={`text-xs text-right md:text-base w-full lg:text-center ${sort !== 'rating' ? 'text-sm' : 'font-bold'} ${element.rating >= 1.35 ? 'text-vert' : element.rating >= 0.8 ? 'text-jaune' : 'text-rouge'}`}>
-          {element.rating}★
+          {element.rating.toLocaleString('fr-FR')}★
         </div>
       </div>
     </div>
