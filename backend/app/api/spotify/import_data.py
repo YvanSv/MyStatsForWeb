@@ -1,11 +1,15 @@
 import datetime
 import json
 import hashlib
+from math import ceil
+import random
+import time
 from typing import List, Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException, UploadFile, File, BackgroundTasks
-from sqlmodel import Session, select, or_
+from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User, Track, TrackHistory, Artist, Album
+from app.utils.spotify_api import get_spotify_client
 
 router = APIRouter()
 
@@ -25,111 +29,118 @@ async def upload_spotify_json(
     user = db.exec(select(User).where(User.session_id == session_id)).first()
     if not user: raise HTTPException(status_code=401, detail="Non connecté")
 
-    new_tracks_to_enrich = []
-    stats = {"added": 0, "skipped": 0}
+    sp = get_spotify_client()
+    valid_entries = []
+    needed_track_ids = set()
 
-    # 2. CACHE : On charge les IDs existants pour éviter les SELECT dans la boucle
-    # Artistes
-    # On crée un dictionnaire { "nom_normalisé": "spotify_id" }
-    all_artists = db.exec(select(Artist.name, Artist.spotify_id)).all()
-    artist_cache = {name.strip().lower(): sid for name, sid in all_artists}
-    # Albums
-    all_albums_raw = db.exec(select(Album.name, Album.artist_id, Album.spotify_id)).all()
-    album_cache = {(alb.strip().lower(), aid): sid for alb, aid, sid in all_albums_raw}
-    # Tracks
-    all_tracks_ids = set(db.exec(select(Track.spotify_id)).all())
-    # TrackHistory
-    all_history = set(db.exec(select(TrackHistory.played_at, TrackHistory.spotify_id)
-        .where(TrackHistory.user_id == user.id)).all())
+    # Charger l'historique existant immédiatement
+    all_history = set(
+        db.exec(
+            select(TrackHistory.played_at, TrackHistory.spotify_id)
+            .where(TrackHistory.user_id == user.id)
+        ).all()
+    )
+
+    print(f"👂 {len(all_history)} écoutes dans l'historique")
+
+    # 1. PRE-SCAN & FILTRAGE IMMEDIAT
+    for file in files:
+        content = await file.read()
+        try: data = json.loads(content)
+        except: continue
+        for entry in data:
+            uri = entry.get("spotify_track_uri")
+            played_at = entry.get("ts")
+            ms_played = entry.get("ms_played") or 0
+            if uri and ":" in uri and played_at:
+                sid = uri.split(":")[-1]
+                # On filtre : si c'est déjà en base, on ignore complètement l'entrée
+                try: dt_obj = datetime.datetime.fromisoformat(played_at.replace("Z", "+00:00")).replace(tzinfo=None)
+                except ValueError: continue
+                if (dt_obj, sid) in all_history: continue
+                # On ignore aussi les écoutes trop courtes (moins de 10s)
+                if ms_played < 10000: continue
+                valid_entries.append(entry)
+                needed_track_ids.add(sid)
+    print(f"🆕 {len(valid_entries)} nouvelles écoutes à ajouter.")
+    if not valid_entries: return {"status": "success", "message": "Aucune nouvelle écoute à ajouter."}
+
+    # 2. ENRICHISSEMENT API : On récupère les vrais IDs d'artistes/albums
+    # On crée un dictionnaire de mapping : { track_id: {real_album_id, real_artist_id, etc.} }
+    track_metadata_map = {}
+    id_list = list(needed_track_ids)
+    
+    print(f"📦 Enrichissement de {len(id_list)} tracks via l'API...")
+    for i in range(0, len(id_list), 50):
+        batch = id_list[i:i+50]
+        sp_results = sp.tracks(batch)['tracks']
+        for t in sp_results:
+            if not t: continue
+            track_metadata_map[t['id']] = {
+                "album_id": t['album']['id'],
+                "album_name": t['album']['name'],
+                "album_img": t['album']['images'][0]['url'] if t['album']['images'] else None,
+                "artist_id": t['artists'][0]['id'],
+                "artist_name": t['artists'][0]['name'],
+                "duration_ms": t['duration_ms']
+            }
+        print(f"✅ Batch numéro {round(i/50+1)}/{ceil(len(id_list)/50)} terminé")
+        time.sleep(random.uniform(1.5, 3.0))
+
+    # 3. CACHE DB (Pour éviter les doublons lors de l'insertion)
+    # On charge ce qu'on a déjà pour ne pas réinsérer
+    existing_artists = {sid for sid in db.exec(select(Artist.spotify_id)).all()}
+    existing_albums = {sid for sid in db.exec(select(Album.spotify_id)).all()}
+    existing_tracks = {sid for sid in db.exec(select(Track.spotify_id)).all()}
 
     to_add_artists = {}
     to_add_albums = {}
     to_add_tracks = {}
     to_add_history = []
 
-    for file in files:
-        print(f"Computing file {file.filename}")
-        content = await file.read()
-        try: data = json.loads(content)
-        except json.JSONDecodeError: continue
+    # 4. TRAITEMENT FINAL
+    for entry in valid_entries:
+        sid = entry["spotify_track_uri"].split(":")[-1]
+        meta = track_metadata_map.get(sid)
+        if not meta: continue # Track non trouvée sur Spotify
 
-        for entry in data:
-            # Extraction des données du format "Account Data"
-            track_name = entry.get("master_metadata_track_name")
-            artist_name = entry.get("master_metadata_album_artist_name")
-            album_name = entry.get("master_metadata_album_album_name")
-            track_uri = entry.get("spotify_track_uri")
-            ms_played = entry.get("ms_played") or 0
-            played_at = entry.get("ts")
-            if not track_uri or not isinstance(track_uri, str): continue
-            spotify_id = track_uri.split(":")[-1]
-            
-            # Filtrage de base (ignore les podcasts ou écoutes trop courtes)
-            if not track_name or not track_uri or ms_played < 10000:
-                stats["skipped"] += 1
-                continue
+        # Gestion Artiste (VRAI ID)
+        if meta["artist_id"] not in existing_artists and meta["artist_id"] not in to_add_artists:
+            to_add_artists[meta["artist_id"]] = Artist(spotify_id=meta["artist_id"], name=meta["artist_name"])
 
-            # 1. Conversion de la string JSON en objet datetime Python
-            # On remplace le 'Z' par '+00:00' pour que fromisoformat le comprenne comme UTC
-            try:
-                played_at_obj = datetime.datetime.fromisoformat(played_at.replace("Z", "+00:00"))
-                played_at_obj = played_at_obj.replace(tzinfo=None) 
-            except ValueError: continue
+        # Gestion Album (VRAI ID)
+        if meta["album_id"] not in existing_albums and meta["album_id"] not in to_add_albums:
+            to_add_albums[meta["album_id"]] = Album(
+                spotify_id=meta["album_id"], 
+                name=meta["album_name"], 
+                artist_id=meta["artist_id"],
+                image_url=meta["album_img"]
+            )
 
-            # 2. Vérification Historique avec le type identique au cache
-            if (played_at_obj, spotify_id) in all_history: continue
+        # Gestion Track (VRAI ID)
+        if sid not in existing_tracks and sid not in to_add_tracks:
+            to_add_tracks[sid] = Track(
+                spotify_id=sid,
+                title=entry.get("master_metadata_track_name"),
+                artist_id=meta["artist_id"],
+                album_id=meta["album_id"],
+                duration_ms=meta["duration_ms"]
+            )
 
-            # 2. Gestion Artiste
-            art_norm = artist_name.strip().lower()
-            if art_norm in artist_cache:
-                art_id = artist_cache[art_norm]
-            else:
-                art_id = stable_hash(artist_name)
-                if art_id not in to_add_artists:
-                    to_add_artists[art_id] = Artist(name=artist_name, spotify_id=art_id)
-                artist_cache[art_norm] = art_id
+        # Historique
+        to_add_history.append(TrackHistory(
+            user_id=user.id,
+            spotify_id=sid,
+            played_at=entry.get("ts"),
+            ms_played=entry.get("ms_played") or 0
+        ))
 
-            # 3. Gestion Album (Nom + Artist_ID -> ID)
-            alb_norm = album_name.strip().lower()
-            cache_key = (alb_norm, art_id)
-
-            if cache_key in album_cache:
-                alb_id = album_cache[cache_key]
-            else:
-                alb_id = stable_hash(f"{album_name}_{art_id}")
-                if alb_id not in to_add_albums:
-                    to_add_albums[alb_id] = Album(name=album_name, artist_id=art_id, spotify_id=alb_id)
-                album_cache[cache_key] = alb_id
-
-            # 4. Gestion Track
-            if spotify_id not in all_tracks_ids and spotify_id not in to_add_tracks:
-                to_add_tracks[spotify_id] = Track(
-                    spotify_id=spotify_id, 
-                    title=track_name, 
-                    artist_id=art_id, 
-                    album_id=alb_id, 
-                    duration_ms=0
-                )
-                # Pas besoin de mettre à jour all_tracks_ids ici car le spotify_id est unique dans le JSON
-
-            # 5. Ajout à l'historique
-            to_add_history.append(TrackHistory(
-                user_id=user.id, 
-                spotify_id=spotify_id, 
-                played_at=played_at, 
-                ms_played=ms_played
-            ))
-            all_history.add((played_at, spotify_id))
-            stats["added"] += 1
-
-    # 3. INSERTION MASSIVE (Bulk)
-    # On ajoute tout d'un coup. SQLModel/SQLAlchemy gérera ça en très peu de requêtes.
+    # 5. COMMIT
     db.add_all(to_add_artists.values())
     db.add_all(to_add_albums.values())
     db.add_all(to_add_tracks.values())
-    db.flush() # Pour lier les IDs avant l'historique
-    
+    db.flush()
     db.add_all(to_add_history)
     db.commit()
 
-    return {"status": "success", "message": f"Importation réussie : {stats['added']} écoutes ajoutées. {stats["skipped"]} skippées."}
+    return {"status": "success", "added": len(to_add_history)}

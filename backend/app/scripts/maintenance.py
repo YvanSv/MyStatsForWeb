@@ -231,7 +231,7 @@ def deep_clean_orphan_tracks():
     sp = get_spotify_client()
     with Session(engine) as db:
         # On cherche les tracks qui ont un artist_id "gen_"
-        orphans = db.exec(select(Track).where(Track.artist_id.contains("gen_")).limit(2500)).all()
+        orphans = db.exec(select(Track).where(Track.artist_id.contains("gen_"))).all()
         if not orphans:
             print("Aucune track orpheline trouvée !")
             return

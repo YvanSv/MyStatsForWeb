@@ -22,7 +22,7 @@ export default function SettingsPage() {
 
     try {
       const data = await uploadJson(formData);
-      setMessage(data.message || "Importation réussie !");
+      setMessage(data.message || `Importation réussie ! ${data.message}`);
       setFiles([]);
     } catch (err: any) {setMessage(err.message || "Erreur lors de l'importation");}
   };
