@@ -72,7 +72,7 @@ async def get_artists(
             "image_url": artist_obj.image_url,
             "play_count": count,
             "total_minutes": round(mins),
-            "engagement": round(eng * 100, 2),
+            "engagement": round(eng * 100, 1),
             "rating": rating or 0
         })
     if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:

@@ -149,19 +149,19 @@ function ListView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
     <div className="space-y-4">
       <div className="grid grid-cols-[50px_2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
         <div/>
-        <div className="pl-16 cursor-pointer hover:text-white" onClick={() => onSort('name')}>
+        <div className={`pl-16 cursor-pointer hover:text-white ${sortConfig.sort === "name" ? 'text-vert' : ''}`} onClick={() => onSort('name')}>
           Album {sortConfig.sort === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('total_minutes')}>
+        <div className={`text-center cursor-pointer hover:text-white ${sortConfig.sort === "total_minutes" ? 'text-vert' : ''}`} onClick={() => onSort('total_minutes')}>
           Temps {sortConfig.sort === 'total_minutes' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('engagement')}>
+        <div className={`text-center cursor-pointer hover:text-white ${sortConfig.sort === "engagement" ? 'text-vert' : ''}`} onClick={() => onSort('engagement')}>
           Engagement {sortConfig.sort === 'engagement' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('play_count')}>
+        <div className={`text-center cursor-pointer hover:text-white ${sortConfig.sort === "play_count" ? 'text-vert' : ''}`} onClick={() => onSort('play_count')}>
           Streams {sortConfig.sort === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('rating')}>
+        <div className={`text-center cursor-pointer hover:text-white ${sortConfig.sort === "rating" ? 'text-vert' : ''}`} onClick={() => onSort('rating')}>
           Rating {sortConfig.sort === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
       </div>
@@ -177,16 +177,16 @@ function ListView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
             </div>
             <h3 className="font-bold text-base group-hover:text-vert transition-colors truncate">{album.name}</h3>
           </div>
-          <div className="text-center text-sm text-gray-200">{Math.round(album.total_minutes)} min</div>
+          <div className={`text-center text-sm ${sortConfig.sort !== 'total_minutes' ? 'text-gray-300' : 'text-vert'}`}>{Math.round(album.total_minutes)} min</div>
           <div className="flex justify-center">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-vert">{album.engagement}%</span>
+              <span className={`text-xs ${sortConfig.sort !== 'engagement' ? 'text-gray-300' : 'text-vert'}`}>{album.engagement}%</span>
               <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
-                <div className="bg-vert h-full" style={{ width: `${album.engagement}%` }} />
+                <div className={`h-full ${sortConfig.sort !== 'engagement' ? 'bg-gray-300' : 'bg-vert'}`} style={{ width: `${album.engagement}%` }} />
               </div>
             </div>
           </div>
-          <div className="text-center font-hias font-bold text-vert">{album.play_count}</div>
+          <div className={`text-center font-hias font-bold ${sortConfig.sort !== 'play_count' ? 'text-gray-300' : 'text-vert'}`}>{album.play_count}</div>
           <div className={`${album.rating >= 1.35 ? 'text-vert' : album.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-center font-bold`}>{album.rating}</div>
         </div>
       ))}
@@ -216,11 +216,11 @@ function GridView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
             <h3 className="font-bold truncate text-sm mb-1">{album.name}</h3>
             <div className="flex justify-between">
               <p className="text-gray-400 text-xs truncate mb-3">{album.artist}</p>
-              <span className="text-xs font-bold text-vert">{album.engagement}%</span>
+              <span className={`text-xs font-bold ${sortConfig.sort !== 'engagement' ? 'text-gray-500' : 'text-vert'}`}>{album.engagement}%</span>
             </div>
             <div className="flex justify-between items-center pt-3 border-t border-white/5">
-              <span className="text-[10px] uppercase text-gray-500 font-bold">{album.play_count} streams</span>
-              <span className="text-[10px] uppercase text-gray-500 font-bold">{Math.round(album.total_minutes)} min</span>
+              <span className={`text-[10px] uppercase font-bold ${sortConfig.sort !== 'play_count' ? 'text-gray-500' : 'text-vert'}`}>{album.play_count} streams</span>
+              <span className={`text-[10px] uppercase font-bold ${sortConfig.sort !== 'total_minutes' ? 'text-gray-500' : 'text-vert'}`}>{Math.round(album.total_minutes)} min</span>
             </div>
           </div>
         ))}

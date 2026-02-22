@@ -140,19 +140,19 @@ function ListView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
     <div className="space-y-4">
       <div className="grid grid-cols-[50px_2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
         <div/>
-        <div className="pl-16 cursor-pointer hover:text-white" onClick={() => onSort('name')}>
+        <div className={`pl-16 cursor-pointer hover:text-white ${sortConfig.sort !== 'name' ? 'text-gray-500' : 'text-vert'}`} onClick={() => onSort('name')}>
           Artiste {sortConfig.sort === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('total_minutes')}>
+        <div className={`text-center cursor-pointer hover:text-white ${sortConfig.sort !== 'total_minutes' ? 'text-gray-500' : 'text-vert'}`} onClick={() => onSort('total_minutes')}>
           Temps {sortConfig.sort === 'total_minutes' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('engagement')}>
+        <div className={`text-center cursor-pointer hover:text-white ${sortConfig.sort !== 'engagement' ? 'text-gray-500' : 'text-vert'}`} onClick={() => onSort('engagement')}>
           Engagement {sortConfig.sort === 'engagement' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('play_count')}>
+        <div className={`text-center cursor-pointer hover:text-white ${sortConfig.sort !== 'play_count' ? 'text-gray-500' : 'text-vert'}`} onClick={() => onSort('play_count')}>
           Streams {sortConfig.sort === 'play_count' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-center cursor-pointer hover:text-white" onClick={() => onSort('rating')}>
+        <div className={`text-center cursor-pointer hover:text-white ${sortConfig.sort !== 'rating' ? 'text-gray-500' : 'text-vert'}`} onClick={() => onSort('rating')}>
           Rating {sortConfig.sort === 'rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
       </div>
@@ -168,16 +168,16 @@ function ListView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
             </div>
             <h3 className="font-bold text-base group-hover:text-vert transition-colors truncate">{artist.name}</h3>
           </div>
-          <div className="text-center text-sm text-gray-200">{Math.round(artist.total_minutes)} min</div>
+          <div className={`text-center text-sm ${sortConfig.sort !== 'total_minutes' ? 'text-gray-300' : 'text-vert'}`}>{Math.round(artist.total_minutes)} min</div>
           <div className="flex justify-center">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-vert">{artist.engagement}%</span>
+              <span className={`text-xs ${sortConfig.sort !== 'engagement' ? 'text-gray-300' : 'text-vert'}`}>{artist.engagement}%</span>
               <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
-                <div className="bg-vert h-full" style={{ width: `${artist.engagement}%` }} />
+                <div className={`h-full ${sortConfig.sort !== 'engagement' ? 'bg-gray-300' : 'bg-vert'}`} style={{ width: `${artist.engagement}%` }} />
               </div>
             </div>
           </div>
-          <div className="text-center font-hias font-bold text-vert">{artist.play_count}</div>
+          <div className={`text-center font-hias font-bold ${sortConfig.sort !== 'play_count' ? 'text-gray-300' : 'text-vert'}`}>{artist.play_count}</div>
           <div className={`${artist.rating >= 1.35 ? 'text-vert' : artist.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-center font-bold`}>{artist.rating}</div>
         </div>
       ))}
@@ -209,8 +209,8 @@ function GridView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
             <h3 className="font-bold text-center text-base truncate w-full group-hover:text-vert transition-colors mb-1">{artist.name}</h3>
             <span className={`${artist.rating >= 1.35 ? 'text-vert' : artist.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-[10px] font-bold tracking-tighter`}>{artist.rating} ★</span>
             <div className="flex gap-3 mt-2">
-                <span className="text-[11px] uppercase text-gray-500 font-black">{artist.play_count} streams</span>
-                <span className="text-[11px] font-bold text-vert">{artist.engagement}%</span>
+                <span className={`text-[10px] uppercase font-bold ${sortConfig.sort !== 'play_count' ? 'text-gray-500' : 'text-vert'}`}>{artist.play_count} streams</span>
+                <span className={`text-[10px] uppercase font-bold ${sortConfig.sort !== 'engagement' ? 'text-gray-500' : 'text-vert'}`}>{artist.engagement}%</span>
             </div>
           </div>
         ))}
