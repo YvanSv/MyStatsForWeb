@@ -59,7 +59,7 @@ async def upload_spotify_json(
                 except ValueError: continue
                 if (dt_obj, sid) in all_history: continue
                 # On ignore aussi les écoutes trop courtes (moins de 10s)
-                if ms_played < 10000: continue
+                if ms_played < 3000: continue
                 valid_entries.append(entry)
                 needed_track_ids.add(sid)
     print(f"🆕 {len(valid_entries)} nouvelles écoutes à ajouter.")
