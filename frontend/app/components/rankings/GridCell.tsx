@@ -27,12 +27,12 @@ export default function GridCell({ element, sort }: GridCellProps) {
 
   return (
     <div className={`group bg-bg2/30 backdrop-blur-md border border-white/5 transition-all hover:border-vert/40 hover:-translate-y-1 flex flex-col h-full
-      ${isArtist ? 'rounded-[2.5rem] p-4 md:p-6 bg-bg2/20' : 'rounded-xl md:rounded-3xl p-2 md:p-4'}
+      ${isArtist ? 'rounded-xl md:rounded-3xl p-1.5 md:p-4 bg-bg2/20' : 'rounded-xl md:rounded-3xl p-2 md:p-4'}
     `}>
       
       {/* SECTION IMAGE */}
-      <div className={`relative aspect-square mb-2 md:mb-4 overflow-hidden shadow-2xl bg-bg2/50
-        ${isArtist ? 'rounded-full border-4 border-transparent group-hover:border-vert/20' : 'rounded-lg md:rounded-2xl'}
+      <div className={`relative aspect-square md:mb-4 overflow-hidden shadow-2xl bg-bg2/50
+        ${isArtist ? 'mb-1 rounded-full border-4 border-transparent group-hover:border-vert/20' : 'mb-2 rounded-lg md:rounded-2xl'}
       `}>
         {displayImage ? (
           <Image 
@@ -46,20 +46,20 @@ export default function GridCell({ element, sort }: GridCellProps) {
           <div className="w-full h-full flex items-center justify-center text-gray-700">?</div>
         )}
 
-        {/* Badge Rating (Optionnel pour artistes ou formaté différemment) */}
-        <div className={`absolute bg-black/60 backdrop-blur-md border border-white/10
-          ${isArtist ? 'bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full' : 'top-1 right-1 md:top-3 md:right-3 px-1 md:px-2 py-0.5 rounded-md'}
+        {/* Badge Rating */}
+        <div className={`absolute
+          ${isArtist ? 'bottom-2 md:bottom-2 left-1/2 -translate-x-1/2 md:px-2 md:py-0.5 md:rounded-full' : 'bg-black/60 backdrop-blur-md border border-white/10 top-1 right-1 md:top-3 md:right-3 px-1 md:px-2 py-0.5 rounded-md'}
         `}>
-          <span className={`${sort === "rating" && 'font-bold'} ${element.rating >= 1.35 ? 'text-vert' : element.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-[8px] md:text-xs`}>
+          <span className={`${sort === "rating" && 'font-bold'} ${element.rating >= 1.35 ? 'text-vert' : element.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-[7px] md:text-xs`}>
             {element.rating} {isArtist && "★"}
           </span>
         </div>
       </div>
 
       {/* SECTION TEXTE */}
-      <div className="flex items-center gap-2"> {/* items-center fait tout le travail ici */}
+      <div className="flex items-center gap-2">
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h3 className={`font-bold truncate group-hover:text-vert transition-colors mb-0.5
+          <h3 className={`font-bold truncate group-hover:text-vert transition-colors md:mb-0.5
             ${isArtist ? 'text-center text-sm md:text-base' : 'text-[10px] md:text-sm'}
           `}>
             {displayName}
