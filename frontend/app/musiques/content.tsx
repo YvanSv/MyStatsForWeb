@@ -203,7 +203,7 @@ function GridView({ musics, sortConfig, onSort }: { musics: Track[], sortConfig:
         {musics.map((track) => (
           <div key={track.spotify_id} className="group bg-bg2/30 backdrop-blur-md rounded-3xl border border-white/5 p-4 hover:border-vert/40 transition-all hover:-translate-y-1">
             <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl shadow-2xl">
-              {track.cover && <Image src={track.cover} alt={track.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />}
+              {track.cover && <Image src={track.cover} alt={track.title} fill sizes="150px" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
               <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
                 <span className={`${track.rating >= 1.35 ? 'text-vert' : track.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} font-bold text-xs`}>{track.rating}</span>
               </div>

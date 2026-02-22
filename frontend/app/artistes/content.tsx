@@ -196,7 +196,7 @@ function GridView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
           <div key={artist.id} className="group flex flex-col items-center bg-bg2/20 p-6 rounded-[2.5rem] border border-white/5 hover:border-vert/30 transition-all hover:-translate-y-2">
             <div className="relative aspect-square w-full mb-4 overflow-hidden rounded-full shadow-2xl border-4 border-transparent group-hover:border-vert/20 transition-all duration-500">
               {artist.image_url ? (
-                <Image src={artist.image_url} alt={artist.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                <Image src={artist.image_url} alt={artist.name} fill sizes="120px" className="object-cover group-hover:scale-110 transition-transform duration-700" />
               ) : (
                 <div className="w-full h-full bg-bg2 flex items-center justify-center text-gray-700">?</div>
               )}

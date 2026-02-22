@@ -168,7 +168,7 @@ function ListView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
       {albums.map((album) => (
         <div key={album.spotify_id} className="group grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full shadow-lg bg-bg2 border border-white/10">
+            <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg shadow-lg bg-bg2">
               {album.cover ? <Image src={album.cover} alt={album.name} fill sizes="56px" className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-600">?</div>}
             </div>
             <h3 className="font-bold text-base group-hover:text-vert transition-colors truncate">{album.name}</h3>
@@ -204,7 +204,7 @@ function GridView({ albums, sortConfig, onSort }: { albums: Album[], sortConfig:
         {albums.map((album) => (
           <div key={album.spotify_id} className="group bg-bg2/30 backdrop-blur-md rounded-3xl border border-white/5 p-4 hover:border-vert/40 transition-all hover:-translate-y-1">
             <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl shadow-2xl">
-              {album.cover && <Image src={album.cover} alt={album.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />}
+              {album.cover && <Image src={album.cover} alt={album.name} fill sizes="150px" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
               <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
                 <span className={`${album.rating >= 1.35 ? 'text-vert' : album.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} font-bold text-xs`}>{album.rating}</span>
               </div>
