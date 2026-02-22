@@ -64,7 +64,6 @@ export default function Header() {
             <span className="text-ss-titre md:text-titre font-jost text-white tracking-tighter group-hover:text-vert lg:transition-colors lg:transition-transform lg:group-hover:scale-105">
               MyStats
             </span>
-            <div className="hidden md:block"><ApiStatusBadge/></div>
         </div>
       </div>
 

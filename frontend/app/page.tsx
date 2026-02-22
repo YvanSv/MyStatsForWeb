@@ -33,10 +33,9 @@ export default function HomePage() {
   return (
     <main className="min-h-screen text-white font-jost overflow-x-hidden">
       {/* --- ANIMATION DE FOND --- */}
-      {/* On réduit la taille des blobs sur mobile pour éviter de surcharger le processeur */}
-      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
-        <div className="absolute top-[10%] md:top-[30%] left-[-10%] md:left-[15%] h-64 w-64 md:h-80 md:w-80 animate-blob rounded-full bg-vert opacity-20 blur-[80px] md:blur-[120px] filter"></div>
-        <div className="absolute top-[40%] md:top-[45%] right-[-10%] md:right-[15%] h-64 w-64 md:h-80 md:w-80 animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-20 blur-[80px] md:blur-[120px] filter"></div>
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        <div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[-5%] h-[600px] w-[600px] animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-10 blur-[120px]" />
       </div>
 
       <section className="relative flex flex-col items-center justify-center pt-12 md:pt-20 pb-16 md:pb-24 px-4 md:px-6 text-center">
@@ -137,7 +136,7 @@ export default function HomePage() {
       </section>
 
       {/* Section Technique / "About" */}
-      <section className="bg-bg2/50 py-6 md:py-6 px-6">
+      <section className="py-6 md:py-6 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl md:text-s-titre font-hias mb-8 md:mb-12">Le Projet MyStats</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-xs md:text-sm opacity-70">
@@ -145,7 +144,6 @@ export default function HomePage() {
               <div key={tech} className="p-3 md:p-4 border border-white/10 rounded-xl bg-white/5">{tech}</div>
             ))}
           </div>
-          <p className="mt-12 text-gray-500 text-xs md:text-sm italic">© 2026 MyStats. Tous droits réservés.</p>
         </div>
       </section>
     </main>
