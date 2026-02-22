@@ -1,5 +1,5 @@
 ### TO DO LIST :
-- Debug cover albums
+- modif style barre de défilement
 - Responsive
 - Compte utilisateur
 - Provider Apple Music
