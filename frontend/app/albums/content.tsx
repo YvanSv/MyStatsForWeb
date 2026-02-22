@@ -26,7 +26,7 @@ export default function AlbumsContent() {
   const { viewMode } = useViewMode();
   const { getAlbums, getAlbumsMetadata } = useApi();
   const [albums, setAlbums] = useState<Album[]>([]);
-  const [metadata, setMetadata] = useState({ max_streams: 2000, max_minutes: 5000 });
+  const [metadata, setMetadata] = useState({ max_streams: 99999999, max_minutes: 99999999, max_rating: 5 });
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -40,9 +40,9 @@ export default function AlbumsContent() {
     artist: searchParams.get("artist") || "",
     album: searchParams.get("album") || "",
     streams_min: searchParams.get("streams_min") || "0",
-    streams_max: searchParams.get("streams_max") || "2000",
+    streams_max: searchParams.get("streams_max") || "99999999",
     minutes_min: searchParams.get("minutes_min") || "0",
-    minutes_max: searchParams.get("minutes_max") || "5000",
+    minutes_max: searchParams.get("minutes_max") || "99999999",
     engagement_min: searchParams.get("engagement_min") || "0",
     engagement_max: searchParams.get("engagement_max") || "100",
     rating_min: searchParams.get("rating_min") || "0",
@@ -55,7 +55,7 @@ export default function AlbumsContent() {
       streams: { min: 0, max: metadata.max_streams },
       minutes: { min: 0, max: metadata.max_minutes },
       engagement: { min: 0, max: 100 },
-      rating: { min: 0, max: 10 }
+      rating: { min: 0, max: metadata.max_rating }
     }
   };
 

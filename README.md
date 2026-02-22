@@ -1,6 +1,4 @@
 ### TO DO LIST :
-- Debug appels DB
-- Debug metadatas filtres
 - Debug cover albums
 - Responsive
 - Compte utilisateur

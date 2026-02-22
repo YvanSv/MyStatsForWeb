@@ -82,24 +82,35 @@ async def get_artists(
 @router.get("/metadata")
 async def get_artists_metadata(db: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
-    user = db.exec(select(User).where(User.session_id == session_id)).first()
-    if not user: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    user_result = db.exec(select(User).where(User.session_id == session_id)).first()
+    if not user_result: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    current_user_id = user_result.id if isinstance(user_result, User) else user_result[0].id
     
+    # On récupère les stats de l'artiste le plus écouté
+    # On doit joindre Track pour grouper par artist_id
     stats = db.exec(
         select(
             func.count(TrackHistory.id).label("max_streams"),
-            func.sum(TrackHistory.ms_played).label("max_ms")
+            func.sum(TrackHistory.ms_played).label("max_ms"),
+            func.sum(Track.duration_ms).label("total_duration")
         )
         .join(Track, Track.spotify_id == TrackHistory.spotify_id)
-        .where(TrackHistory.user_id == user.id)
+        .where(TrackHistory.user_id == current_user_id)
         .group_by(Track.artist_id)
         .order_by(text("max_streams DESC"))
         .limit(1)
     ).first()
 
-    if not stats: return {"max_streams": 100, "max_minutes": 100}
+    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10}
+    count = stats[0]
+    mins = (stats[1] or 0) / 60000
+    total_duration = stats[2] or 0
+    eng = (stats[1] / total_duration) if total_duration > 0 else 0
+    eng = min(eng, 1.0)
+    max_rating = round(min((eng * .5) + (math.log10(count + 1) * .16) + (math.log10(mins + 1) * .16), 10.0), 2)
 
     return {
-        "max_streams": stats[0],
-        "max_minutes": round((stats[1] or 0) / 60000)
+        "max_streams": count,
+        "max_minutes": round(mins),
+        "max_rating": max(max_rating, 4)
     }

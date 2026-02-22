@@ -124,3 +124,77 @@ def handle_exception(e):
         print(f"🛑 Rate limit atteint. Pause de {retry_seconds}s.")
     else:
         print(f"❌ Erreur maintenance: {e}")
+
+def chunk_list(lst, n):
+    """Découpe une liste en morceaux de taille n."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+@router.post("/deep-clean")
+async def trigger_deep_clean(background_tasks: BackgroundTasks):
+    """Lance la réparation des liens cassés (gen_) en arrière-plan"""
+    background_tasks.add_task(deep_clean_orphan_tracks)
+    return {
+        "status": "started", 
+        "message": "La réparation des tracks orphelines a commencé en arrière-plan."
+    }
+
+def deep_clean_orphan_tracks():
+    sp = get_spotify_client()
+    with Session(engine) as db:
+        # On cherche les tracks qui ont un artist_id "gen_"
+        orphans = db.exec(select(Track).where(Track.artist_id.contains("gen_")).limit(2500)).all()
+        if not orphans:
+            print("Aucune track orpheline trouvée !")
+            return
+
+        print(f"Nettoyage de {len(orphans)} tracks...")
+
+        orphan_map = {t.spotify_id: t for t in orphans}
+        all_ids = list(orphan_map.keys())
+
+        # 2. Traitement par lots de 50 (Limite API Spotify pour les tracks)
+        for batch_ids in chunk_list(all_ids, 50):
+            try:
+                sp_data = sp.tracks(batch_ids)['tracks']
+                
+                for track_info in sp_data:
+                    if not track_info: continue
+                    
+                    track_id = track_info['id']
+                    real_artist_id = track_info['artists'][0]['id']
+                    real_artist_name = track_info['artists'][0]['name']
+                    real_album_id = track_info['album']['id']
+                    real_album_name = track_info['album']['name']
+                    real_duration = track_info['duration_ms']
+
+                    track_obj = orphan_map.get(track_id)
+                    if not track_obj: continue
+
+                    artist = db.exec(select(Artist).where(Artist.spotify_id == real_artist_id)).first()
+                    if not artist:
+                        artist = Artist(spotify_id=real_artist_id, name=real_artist_name)
+                        db.add(artist)
+                        db.flush()
+
+                    album = db.exec(select(Album).where(Album.spotify_id == real_album_id)).first()
+                    if not album:
+                        album = Album(spotify_id=real_album_id, name=real_album_name, artist_id=real_artist_id)
+                        db.add(album)
+                        db.flush()
+
+                    track_obj.artist_id = real_artist_id
+                    track_obj.album_id = real_album_id
+                    track_obj.duration_ms = real_duration
+                    db.add(track_obj)
+
+                db.commit()
+                print(f"   ✨ Batch de {len(batch_ids)} tracks traité avec succès.")
+                time.sleep(random.uniform(1.5, 3.0))
+
+            except Exception as e:
+                print(f"   ❌ Erreur lors du batch : {e}")
+                db.rollback()
+                continue
+
+    print("🏁 Fin du nettoyage des orphelins.")

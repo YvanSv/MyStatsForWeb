@@ -86,20 +86,20 @@ async def get_user_albums(
     return final_list[offset : offset + limit]
 
 @router.get("/metadata")
-async def get_albums_metadata(db: Session = Depends(get_session),session_id: Optional[str] = Cookie(None)):
+async def get_albums_metadata(db: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     user_result = db.exec(select(User).where(User.session_id == session_id)).first()
     if not user_result: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
-    if isinstance(user_result, User): current_user_id = user_result.id
-    else: current_user_id = user_result[0].id
+    current_user_id = user_result.id if isinstance(user_result, User) else user_result[0].id
     
-    # On cherche le max d'écoutes et le max de minutes via TrackHistory
-    # Groupé par album pour trouver le record absolu de l'utilisateur
+    # On récupère les stats de l'album recordman
     stats = db.exec(
         select(
             func.count(TrackHistory.id).label("max_streams"),
-            func.sum(TrackHistory.ms_played).label("max_ms")
+            func.sum(TrackHistory.ms_played).label("max_ms"),
+            func.sum(Track.duration_ms).label("total_duration")
         )
+        .select_from(TrackHistory)
         .join(Track, Track.spotify_id == TrackHistory.spotify_id)
         .join(Album, Album.spotify_id == Track.album_id)
         .where(TrackHistory.user_id == current_user_id)
@@ -108,9 +108,16 @@ async def get_albums_metadata(db: Session = Depends(get_session),session_id: Opt
         .limit(1)
     ).first()
 
-    if not stats: return {"max_streams": 100, "max_minutes": 100}
+    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10}
+    count = stats[0]
+    mins = (stats[1] or 0) / 60000
+    total_duration = stats[2] or 0
+    eng = (stats[1] / total_duration) if total_duration > 0 else 0
+    eng = min(eng, 1.0)
+    max_rating = round((eng * .5) + (math.log10(count + 1) * .16) + (math.log10(mins + 1) * .16), 2)
 
     return {
-        "max_streams": stats[0],
-        "max_minutes": round((stats[1] or 0) / 60000)
+        "max_streams": count,
+        "max_minutes": round(mins),
+        "max_rating": max(max_rating, 4)
     }
