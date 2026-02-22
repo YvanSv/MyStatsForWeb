@@ -143,7 +143,8 @@ export default function MusiquesContent() {
 function ListView({ musics, sortConfig, onSort }: { musics: Track[], sortConfig: any, onSort: (key: SortKey) => void }) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+      <div className="grid grid-cols-[50px_2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+        <div/>
         <div className="pl-16 cursor-pointer hover:text-white" onClick={() => onSort('title')}>
           Titre {sortConfig.sort === 'title' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
@@ -161,8 +162,11 @@ function ListView({ musics, sortConfig, onSort }: { musics: Track[], sortConfig:
         </div>
       </div>
 
-      {musics.map((track) => (
-        <div key={track.spotify_id} className="group grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
+      {musics.map((track,i) => (
+        <div key={track.spotify_id} className="group grid grid-cols-[40px_2fr_120px_140px_100px_80px_60px] items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
+          <div className="text-gray-500 font-mono text-lg font-medium">
+            #{i + 1}
+          </div>
           <div className="flex items-center gap-4 min-w-0">
             <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg shadow-lg bg-bg2">
               {track.cover && <Image src={track.cover} alt={track.title} fill sizes="56px" className="object-cover" />}

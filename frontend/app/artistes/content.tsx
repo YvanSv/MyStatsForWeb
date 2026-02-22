@@ -138,7 +138,8 @@ export default function ArtistesContent() {
 function ListView({ artists, sortConfig, onSort }: { artists: Artist[], sortConfig: any, onSort: (key: SortKey) => void }) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+      <div className="grid grid-cols-[50px_2fr_120px_140px_100px_80px_60px] items-center gap-4 px-4 mb-4 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+        <div/>
         <div className="pl-16 cursor-pointer hover:text-white" onClick={() => onSort('name')}>
           Artiste {sortConfig.sort === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
         </div>
@@ -156,8 +157,11 @@ function ListView({ artists, sortConfig, onSort }: { artists: Artist[], sortConf
         </div>
       </div>
 
-      {artists.map((artist) => (
-        <div key={artist.id} className="group grid grid-cols-[2fr_120px_140px_100px_80px_60px] items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
+      {artists.map((artist,i) => (
+        <div key={artist.id} className="group grid grid-cols-[40px_2fr_120px_140px_100px_80px_60px] items-center gap-4 bg-bg2/30 backdrop-blur-sm p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
+          <div className="text-gray-500 font-mono text-lg font-medium">
+            #{i + 1}
+          </div>
           <div className="flex items-center gap-4 min-w-0">
             <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full shadow-lg bg-bg2 border border-white/10">
               {artist.image_url ? <Image src={artist.image_url} alt={artist.name} fill sizes="56px" className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-600">?</div>}
