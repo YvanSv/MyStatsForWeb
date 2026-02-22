@@ -60,3 +60,9 @@ body {
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/* SCROLLBAR */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(30, 224, 95, 0.6) rgba(30, 30, 30, 0.0);
+}
