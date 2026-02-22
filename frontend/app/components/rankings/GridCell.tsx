@@ -51,7 +51,7 @@ export default function GridCell({ element, sort }: GridCellProps) {
           ${isArtist ? 'bottom-2 md:bottom-2 left-1/2 -translate-x-1/2 md:px-2 md:py-0.5 md:rounded-full' : 'bg-black/60 backdrop-blur-md border border-white/10 top-1 right-1 md:top-3 md:right-3 px-1 md:px-2 py-0.5 rounded-md'}
         `}>
           <span className={`${sort === "rating" && 'font-bold'} ${element.rating >= 1.35 ? 'text-vert' : element.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-[7px] md:text-xs`}>
-            {element.rating} {isArtist && "★"}
+            {element.rating.toLocaleString('fr-FR')} {isArtist && "★"}
           </span>
         </div>
       </div>
@@ -73,18 +73,36 @@ export default function GridCell({ element, sort }: GridCellProps) {
       </div>
 
       {/* FOOTER DESKTOP */}
-      <div className="hidden md:flex justify-between items-center pt-3 mt-3 border-t border-white/5">
-        <span className={`text-[11px] uppercase font-bold ${sort === 'play_count' ? 'text-vert' : 'text-gray-500'}`}>
-          {element.play_count} <span className="hidden lg:inline">str</span>
-        </span>
-        {element.total_minutes !== undefined && (
-           <span className={`text-[11px] uppercase font-bold ${sort === 'total_minutes' ? 'text-vert' : 'text-gray-500'}`}>
-            {Math.round(element.total_minutes)} min
+      <div className="hidden md:grid grid-cols-3 pt-3 mt-3 border-t border-white/5">
+        {/* Bloc Streams */}
+        <div className="flex flex-col items-center">
+          <span className={`text-[12px] font-bold leading-tight ${sort === 'play_count' ? 'text-vert' : 'text-gray-400'}`}>
+            {element.play_count.toLocaleString('fr-FR')}
           </span>
-        )}
-        <span className={`text-[11px] uppercase font-bold ${sort === 'engagement' ? 'text-vert' : 'text-gray-500'}`}>
-          {element.engagement} %
-        </span>
+          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-medium">str</span>
+        </div>
+
+        {/* Bloc Minutes */}
+        <div className="flex flex-col items-center">
+          {element.total_minutes !== undefined ? (
+            <>
+              <span className={`text-[12px] font-bold leading-tight ${sort === 'total_minutes' ? 'text-vert' : 'text-gray-400'}`}>
+                {Math.round(element.total_minutes).toLocaleString('fr-FR')}
+              </span>
+              <span className="text-[9px] uppercase tracking-widest text-gray-500 font-medium">min</span>
+            </>
+          ) : (
+            <span className="text-gray-400 font-bold">-</span>
+          )}
+        </div>
+
+        {/* Bloc Engagement */}
+        <div className="flex flex-col items-center">
+          <span className={`text-[12px] font-bold leading-tight ${sort === 'engagement' ? 'text-vert' : 'text-gray-400'}`}>
+            {element.engagement.toLocaleString('fr-FR')}
+          </span>
+          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-medium">%</span>
+        </div>
       </div>
 
       {/* FOOTER MOBILE */}
