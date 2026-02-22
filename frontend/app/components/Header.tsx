@@ -61,7 +61,7 @@ export default function Header() {
           className="w-10 md:w-16 rounded-md transition-transform group-hover:scale-105"
         />
         <div className="flex flex-col md:flex-row md:items-center md:gap-4">
-            <span className="text-xl md:text-titre font-jost text-white tracking-tighter group-hover:text-vert transition-colors">
+            <span className="text-ss-titre md:text-titre font-jost text-white tracking-tighter group-hover:text-vert lg:transition-colors lg:transition-transform lg:group-hover:scale-105">
               MyStats
             </span>
             <div className="hidden md:block"><ApiStatusBadge/></div>
