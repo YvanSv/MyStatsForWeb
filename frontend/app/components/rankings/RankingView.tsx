@@ -105,7 +105,7 @@ export default function RankingView({title, type, items, sortConfig, onSort, loa
             {normalizedItems.map((item, i) => (<ListCell key={item.spotify_id || item.id} element={item} index={i} sort={sortConfig.sort}/>))}
           </div>
         ) : (
-          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-6">
+          <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-6">
             {normalizedItems.map((item) => (<GridCell key={item.spotify_id || item.id} element={item} sort={sortConfig.sort} />))}
           </div>
         )}

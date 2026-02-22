@@ -88,7 +88,7 @@ export default function MusiquesContent() {
   };
   
   return (
-    <RankingView title="Toutes mes" type="track" items={musics}
+    <RankingView title="Tous mes" type="track" items={musics}
       sortConfig={currentSort} onSort={handleSort} loading={loading}
       hasMore={hasMore} loadMore={loadMore} filterConfig={musicFilters}
     />

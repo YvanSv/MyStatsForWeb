@@ -82,11 +82,9 @@ export default function GridCell({ element, sort }: GridCellProps) {
             {Math.round(element.total_minutes)} min
           </span>
         )}
-        {isArtist && (
-           <span className={`text-[11px] uppercase font-bold ${sort === 'engagement' ? 'text-vert' : 'text-gray-500'}`}>
-            {element.engagement} %
-          </span>
-        )}
+        <span className={`text-[11px] uppercase font-bold ${sort === 'engagement' ? 'text-vert' : 'text-gray-500'}`}>
+          {element.engagement} %
+        </span>
       </div>
 
       {/* FOOTER MOBILE */}

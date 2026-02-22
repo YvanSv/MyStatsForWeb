@@ -85,7 +85,7 @@ export default function ArtistesContent() {
   };
 
   return (
-    <RankingView title="Toutes mes" type="artist" items={artists}
+    <RankingView title="Tous mes" type="artist" items={artists}
       sortConfig={currentSort} onSort={handleSort} loading={loading}
       hasMore={hasMore} loadMore={loadMore} filterConfig={artistFilters}
     />

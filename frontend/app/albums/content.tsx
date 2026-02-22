@@ -86,7 +86,7 @@ export default function AlbumsContent() {
   };
 
   return (
-    <RankingView title="Toutes mes" type="album" items={albums}
+    <RankingView title="Tous mes" type="album" items={albums}
       sortConfig={currentSort} onSort={handleSort} loading={loading}
       hasMore={hasMore} loadMore={loadMore} filterConfig={albumFilters}
     />
