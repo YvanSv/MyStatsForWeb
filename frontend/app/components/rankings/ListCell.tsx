@@ -104,7 +104,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
           {renderMobileStat()}
         </div>
         <div className={`text-xs text-right md:text-base w-full lg:text-center ${sort !== 'rating' ? 'text-sm' : 'font-bold'} ${element.rating >= 1.35 ? 'text-vert' : element.rating >= 0.8 ? 'text-jaune' : 'text-rouge'}`}>
-          {element.rating}
+          {element.rating}★
         </div>
       </div>
     </div>

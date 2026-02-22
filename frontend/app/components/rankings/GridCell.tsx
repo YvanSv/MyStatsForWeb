@@ -50,7 +50,7 @@ export default function GridCell({ element, sort }: GridCellProps) {
         <div className={`absolute bg-black/60 backdrop-blur-md border border-white/10
           ${isArtist ? 'bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full' : 'top-1 right-1 md:top-3 md:right-3 px-1 md:px-2 py-0.5 rounded-md'}
         `}>
-          <span className={`font-bold ${element.rating >= 1.35 ? 'text-vert' : element.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-[8px] md:text-xs`}>
+          <span className={`${sort === "rating" && 'font-bold'} ${element.rating >= 1.35 ? 'text-vert' : element.rating >= 0.8 ? 'text-jaune' : 'text-rouge'} text-[8px] md:text-xs`}>
             {element.rating} {isArtist && "★"}
           </span>
         </div>
@@ -70,17 +70,12 @@ export default function GridCell({ element, sort }: GridCellProps) {
             </p>
           )}
         </div>
-
-        {/* Valeur d'engagement centrée verticalement */}
-        <p className={`text-[10px] md:text-xs font-bold shrink-0 ${sort === 'engagement' ? 'text-vert' : 'text-gray-500'}`}>
-          {element.engagement}%
-        </p>
       </div>
 
       {/* FOOTER DESKTOP */}
       <div className="hidden md:flex justify-between items-center pt-3 mt-3 border-t border-white/5">
         <span className={`text-[11px] uppercase font-bold ${sort === 'play_count' ? 'text-vert' : 'text-gray-500'}`}>
-          {element.play_count} <span className="hidden lg:inline">streams</span>
+          {element.play_count} <span className="hidden lg:inline">str</span>
         </span>
         {element.total_minutes !== undefined && (
            <span className={`text-[11px] uppercase font-bold ${sort === 'total_minutes' ? 'text-vert' : 'text-gray-500'}`}>
@@ -89,7 +84,7 @@ export default function GridCell({ element, sort }: GridCellProps) {
         )}
         {isArtist && (
            <span className={`text-[11px] uppercase font-bold ${sort === 'engagement' ? 'text-vert' : 'text-gray-500'}`}>
-            {element.engagement}%
+            {element.engagement} %
           </span>
         )}
       </div>
