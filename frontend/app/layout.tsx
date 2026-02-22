@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${jost.variable} ${hHiasSans.variable} ${boldmarker.variable} ${insanibu.variable} ${insanibc.variable}flex bg-[#121212] min-h-screen`}>
         <ViewModeProvider>
           <ShowFiltersProvider>
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col overflow-x-hidden">
               <Header/>
               {children}
             </div>

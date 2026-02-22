@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ENDPOINTS } from "./config";
 import { useApi } from "./hooks/useApi";
+import { PulseSpinner } from "./components/CustomSpinner";
 
 
 export default function HomePage() {
@@ -30,26 +31,36 @@ export default function HomePage() {
   }, [getMe]);
 
   return (
-    <main className="min-h-screen text-white font-jost">
+    <main className="min-h-screen text-white font-jost overflow-x-hidden">
       {/* --- ANIMATION DE FOND --- */}
-      <div className="absolute inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[30%] left-[15%] h-80 w-80 animate-blob rounded-full bg-vert opacity-20 blur-[120px] filter"></div>
-        <div className="absolute top-[45%] right-[15%] h-80 w-80 animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-20 blur-[120px] filter"></div>
+      {/* On réduit la taille des blobs sur mobile pour éviter de surcharger le processeur */}
+      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
+        <div className="absolute top-[10%] md:top-[30%] left-[-10%] md:left-[15%] h-64 w-64 md:h-80 md:w-80 animate-blob rounded-full bg-vert opacity-20 blur-[80px] md:blur-[120px] filter"></div>
+        <div className="absolute top-[40%] md:top-[45%] right-[-10%] md:right-[15%] h-64 w-64 md:h-80 md:w-80 animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-20 blur-[80px] md:blur-[120px] filter"></div>
       </div>
 
-      <section className="relative flex flex-col items-center justify-center pt-20 pb-24 px-6 text-center overflow-hidden">
+      <section className="relative flex flex-col items-center justify-center pt-12 md:pt-20 pb-16 md:pb-24 px-4 md:px-6 text-center">
+        
         {/* --- SECTION STATS AVANT-GOÛT --- */}
-        <div className="relative z-20 mb-12 w-full max-w-5xl animate-in fade-in slide-in-from-top-4 duration-1000 pb-20">
-          <h2 className="text-ss-titre font-hias mb-6 opacity-80 pb-10">Un avant-goût de vos stats...</h2>
+        <div className="relative z-20 mb-12 w-full max-w-5xl animate-in fade-in slide-in-from-top-4 duration-1000">
+          <h2 className="text-xl md:text-ss-titre font-hias mb-6 md:mb-10 opacity-80">
+            Un avant-goût de vos stats...
+          </h2>
+          
           <div className="relative"> 
-            {/* La Grille (flou ici si non connecté) */}
-            <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-700 ${!isLoggedIn ? 'blur-md pointer-events-none select-none opacity-50' : ''}`}>
-              {/* SI CONNECTÉ MAIS PAS ENCORE DE DATA : Afficher 3 Skeletons */}
+            {/* Grille responsive : 1 col mobile, 2 col tablette, 3 col desktop */}
+            <div className={`flex flex-wrap justify-center gap-4 md:gap-6 transition-all duration-700 ${!isLoggedIn ? 'blur-md pointer-events-none select-none opacity-50' : ''}`}>
               {isLoggedIn && randomStats.length === 0 ? (
                 <>
-                  <StatCardSkeleton />
-                  <StatCardSkeleton />
-                  <StatCardSkeleton />
+                  <div className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]">
+                    <StatCardSkeleton />
+                  </div>
+                  <div className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]">
+                    <StatCardSkeleton />
+                  </div>
+                  <div className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]">
+                    <StatCardSkeleton />
+                  </div>
                 </>
               ) : (
                 (randomStats.length > 0 ? randomStats : [
@@ -57,27 +68,31 @@ export default function HomePage() {
                   {title: "Genre Préféré", value: "Synthwave", detail: "80% de vos écoutes"},
                   {title: "Artiste du Moment", value: "Daft Punk", detail: "12h d'écoute"}
                 ]).map((s, index) => (
-                  <StatPreviewCard 
-                    key={index}
-                    title={s.title} 
-                    value={s.value} 
-                    detail={s.detail}
-                  />
+                  <div 
+                    key={index} 
+                    className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]"
+                  >
+                    <StatPreviewCard 
+                      title={s.title} 
+                      value={s.value} 
+                      detail={s.detail}
+                    />
+                  </div>
                 ))
               )}
             </div>
 
-            {/* L'Overlay d'incitation */}
-            {loading ? (<header className="h-20 bg-background" />) : !isLoggedIn && (
-              <div className="absolute inset-0 flex items-center justify-center z-30">
-                <div className="bg-bg1/60 backdrop-blur-xl border border-white/10 px-10 py-8 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5">
-                  <p className="text-ss-titre font-hias text-white flex flex-col items-center gap-3">
-                    <span className="text-vert text-4xl mb-2">🔒</span>
-                    Connectez-vous pour voir vos vraies stats
+            {/* Overlay d'incitation (Adaptation de la taille de la boîte) */}
+            {!loading && !isLoggedIn && (
+              <div className="absolute inset-0 flex items-center justify-center z-30 px-4">
+                <div className="bg-bg1/80 backdrop-blur-2xl border border-white/10 p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-md">
+                  <p className="text-lg md:text-ss-titre font-hias text-white flex flex-col items-center gap-2">
+                    <span className="text-vert text-3xl md:text-4xl mb-1">🔒</span>
+                    <span className="text-center">Connectez-vous pour voir vos vraies stats</span>
                   </p>
                   <button 
                     onClick={() => window.location.href = ENDPOINTS.LOGIN}
-                    className="mt-6 w-full bg-vert text-black py-3 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_20px_rgba(29,208,93,0.4)] cursor-pointer"
+                    className="mt-6 w-full bg-vert text-black py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition-transform shadow-lg cursor-pointer"
                   >Se connecter avec Spotify</button>
                 </div>
               </div>
@@ -86,24 +101,27 @@ export default function HomePage() {
         </div>
 
         {/* --- CONTENU HERO --- */}
-        <div className="relative z-10">
-          <h1 className="text-titre font-hias leading-none tracking-tighter mb-6 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
-            Vos statistiques <br />
+        <div className="relative z-10 mt-8">
+          {/* Taille de police fluide pour le titre */}
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-titre font-hias leading-tight md:leading-none tracking-tighter mb-6 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
+            Vos statistiques <br className="hidden sm:block" />
             <span className="text-vert">Spotify</span> en temps réel.
           </h1>
-          <p className="text-ss-titre max-w-2xl text-gray-400 mb-10 leading-relaxed mx-auto">
+          <p className="text-sm md:text-ss-titre max-w-2xl text-gray-400 mb-10 leading-relaxed mx-auto px-2">
             Découvrez vos habitudes d'écoute, explorez vos artistes favoris et 
             plongez dans l'historique détaillé de votre bibliothèque musicale.
           </p>
-          <div className="flex gap-4 justify-center">
+          
+          {/* Boutons empilés sur mobile, côte à côte sur desktop */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center px-6 sm:px-0">
             <button 
               onClick={() => router.push("/musiques")}
-              className="bg-vert text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform cursor-pointer shadow-[0_0_20px_rgba(29,208,93,0.3)]"
+              className="bg-vert text-black px-8 py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition-transform shadow-lg"
             >
               Commencer l'expérience
             </button>
             <button 
-              className="border border-gray-700 px-8 py-4 rounded-full font-bold text-lg hover:bg-white/5 transition-colors cursor-pointer backdrop-blur-sm"
+              className="border border-gray-700 px-8 py-4 rounded-full font-bold text-base md:text-lg hover:bg-white/5 transition-colors backdrop-blur-sm"
             >
               En savoir plus
             </button>
@@ -112,37 +130,22 @@ export default function HomePage() {
       </section>
 
       {/* Grille des fonctionnalités */}
-      <section className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <FeatureCard 
-          title="Top Musiques" 
-          description="Analysez les titres qui tournent en boucle dans vos oreilles ce mois-ci."
-          icon="🎵"
-        />
-        <FeatureCard 
-          title="Artistes Favoris" 
-          description="Le classement de ceux qui définissent votre univers musical."
-          icon="👨‍🎤"
-        />
-        <FeatureCard 
-          title="Historique Local" 
-          description="Une base de données PostgreSQL dédiée pour ne jamais oublier un morceau."
-          icon="💾"
-        />
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl px-6 py-16 md:py-24 mx-auto"> 
+        <FeatureCard title="Top Musiques" description="..." icon="🎵" />
+        <FeatureCard title="Artistes Favoris" description="..." icon="👨‍🎤" />
+        <FeatureCard title="Historique Local" description="..." icon="💾" />
       </section>
 
       {/* Section Technique / "About" */}
-      <section className="bg-bg2 py-5">
+      <section className="bg-bg2/50 py-6 md:py-6 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-s-titre font-hias mb-8">Le Projet MyStats</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm opacity-70">
-            <div className="p-4 border border-white/10 rounded-lg">Next.js</div>
-            <div className="p-4 border border-white/10 rounded-lg">FastAPI</div>
-            <div className="p-4 border border-white/10 rounded-lg">SQLModel</div>
-            <div className="p-4 border border-white/10 rounded-lg">PostgreSQL</div>
+          <h2 className="text-2xl md:text-s-titre font-hias mb-8 md:mb-12">Le Projet MyStats</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-xs md:text-sm opacity-70">
+            {["Next.js", "FastAPI", "SQLModel", "PostgreSQL"].map((tech) => (
+              <div key={tech} className="p-3 md:p-4 border border-white/10 rounded-xl bg-white/5">{tech}</div>
+            ))}
           </div>
-          <p className="mt-10 text-gray-400 leading-relaxed italic">
-            Tous droits réservés.
-          </p>
+          <p className="mt-12 text-gray-500 text-xs md:text-sm italic">© 2026 MyStats. Tous droits réservés.</p>
         </div>
       </section>
     </main>
@@ -151,28 +154,24 @@ export default function HomePage() {
 
 function FeatureCard({ title, description, icon }: { title: string, description: string, icon: string }) {
   return (
-    <div className="bg-bg2 p-8 rounded-2xl border border-white/5 hover:border-vert/30 transition-colors group">
-      <div className="text-4xl mb-4 group-hover:scale-110 transition-transform inline-block">
-        {icon}
-      </div>
-      <h3 className="text-ss-titre font-hias mb-3">{title}</h3>
-      <p className="text-gray-400 leading-snug font-light">
-        {description}
-      </p>
+    <div className="bg-bg2 p-6 md:p-8 rounded-2xl border border-white/5 hover:border-vert/30 transition-all group h-full">
+      <div className="text-3xl md:text-4xl mb-4 group-hover:scale-110 transition-transform inline-block">{icon}</div>
+      <h3 className="text-lg md:text-ss-titre font-hias mb-2 md:mb-3 text-white">{title}</h3>
+      <p className="text-sm md:text-base text-gray-400 leading-snug font-light">{description}</p>
     </div>
   );
 }
 
 function StatPreviewCard({ title, value, detail }: { title: string, value: string, detail: string }) {
   return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl text-left hover:border-vert/40 transition-all hover:scale-[1.02] cursor-default group">
-      <p className="text-xs font-bold uppercase tracking-widest text-vert mb-4">{title}</p>
-      <h3 className="text-xl font-hias mb-1 group-hover:text-vert transition-colors">{value}</h3>
-      <p className="text-sm text-gray-400 font-light">{detail}</p>
-      
-      {/* Déco subtile en bas à droite */}
-      <div className="flex justify-end mt-2 opacity-20 group-hover:opacity-100 transition-opacity">
-         <div className="h-1 w-12 bg-vert rounded-full"></div>
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 md:p-6 rounded-2xl md:rounded-3xl text-left hover:border-vert/40 transition-all hover:scale-[1.02] cursor-default group h-full flex flex-col justify-between">
+      <div>
+        <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-vert mb-3 md:mb-4">{title}</p>
+        <h3 className="text-lg md:text-xl font-hias mb-1 group-hover:text-vert transition-colors break-words">{value}</h3>
+        <p className="text-xs md:text-sm text-gray-400 font-light leading-relaxed">{detail}</p>
+      </div>
+      <div className="flex justify-end mt-4 md:mt-2 opacity-100 md:opacity-20 md:group-hover:opacity-100 md:transition-opacity">
+         <div className="h-1 w-8 md:w-12 bg-vert rounded-full"/>
       </div>
     </div>
   );
@@ -180,9 +179,8 @@ function StatPreviewCard({ title, value, detail }: { title: string, value: strin
 
 function StatCardSkeleton() {
   return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/5 p-6 rounded-3xl h-[160px] flex flex-col justify-center items-center">
-      <div className="w-8 h-8 border-4 border-vert/20 border-t-vert rounded-full animate-spin"></div>
-      <p className="mt-4 text-xs text-gray-500 animate-pulse">Chargement des stats...</p>
+    <div className="bg-white/5 backdrop-blur-xl border border-white/5 p-5 md:p-6 rounded-2xl md:rounded-3xl flex flex-col justify-center items-center">
+      <PulseSpinner/><p className="mt-4 text-xs text-gray-500 animate-pulse">Chargement des stats...</p>
     </div>
   );
 }
