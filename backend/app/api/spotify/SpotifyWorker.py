@@ -4,7 +4,7 @@ from typing import List
 import spotipy
 from sqlmodel import Session, select
 from app.database import get_session
-from spotify_api import get_spotify_client
+from app.utils.spotify_api import get_spotify_client
 from app.database import Track,Artist,Album
 from app.utils.spotify_status import spotify_status
 
