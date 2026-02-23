@@ -1,13 +1,15 @@
 import math
 
+from app.api.spotify.metadata import get_date_metadata
 from app.database import get_session
 from app.models import TrackHistory, User, Track, Artist, Album
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from sqlalchemy import Float, cast, func, select, text
+from sqlalchemy import Date, Float, cast, func, select, text
 from sqlmodel import Session
 
 router = APIRouter()
+
 @router.get("/")
 async def get_user_albums(
     *,
@@ -26,7 +28,9 @@ async def get_user_albums(
     rating_min: Optional[float] = None,
     rating_max: Optional[float] = None,
     engagement_min: Optional[float] = None,
-    engagement_max: Optional[float] = None
+    engagement_max: Optional[float] = None,
+    date_min: Optional[str] = None,
+    date_max: Optional[str] = None,
 ):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     user_result = db.exec(select(User).where(User.session_id == session_id)).first()
@@ -55,13 +59,17 @@ async def get_user_albums(
     )
     if artist: query = query.where(Artist.name.ilike(f"%{artist}%"))
     if album: query = query.where(Album.name.ilike(f"%{album}%"))
+    if date_min: query = query.where(cast(TrackHistory.played_at, Date) >= date_min)
+    if date_max: query = query.where(cast(TrackHistory.played_at, Date) <= f"{date_max} 23:59:59")
     query = query.group_by(Album.spotify_id, Artist.name)
-    if streams_min is not None: query = query.having(play_count >= streams_min)
-    if streams_max is not None: query = query.having(play_count <= streams_max)
-    if minutes_min is not None: query = query.having(total_minutes >= minutes_min)
-    if minutes_max is not None: query = query.having(total_minutes <= minutes_max)
-    if engagement_min is not None: query = query.having(engagement_sql >= engagement_min / 100)
-    if engagement_max is not None: query = query.having(engagement_sql <= engagement_max / 100)
+    having_conditions = []
+    if streams_min is not None: having_conditions.append(play_count >= streams_min)
+    if streams_max is not None: having_conditions.append(play_count <= streams_max)
+    if minutes_min is not None: having_conditions.append(total_minutes >= minutes_min)
+    if minutes_max is not None: having_conditions.append(total_minutes <= minutes_max)
+    if engagement_min is not None: having_conditions.append(engagement_sql >= engagement_min / 100)
+    if engagement_max is not None: having_conditions.append(engagement_sql <= engagement_max / 100)
+    if having_conditions: query = query.having(*(having_conditions))
     results = db.exec(query).all()
 
     final_list = []
@@ -108,7 +116,9 @@ async def get_albums_metadata(db: Session = Depends(get_session), session_id: Op
         .limit(1)
     ).first()
 
-    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10}
+    date_min, date_max = get_date_metadata(db,current_user_id)
+    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10, "date_min": date_min, "date_max": date_max}
+
     count = stats[0]
     mins = (stats[1] or 0) / 60000
     total_duration = stats[2] or 0
@@ -119,5 +129,7 @@ async def get_albums_metadata(db: Session = Depends(get_session), session_id: Op
     return {
         "max_streams": count,
         "max_minutes": round(mins),
-        "max_rating": max(max_rating, 4)
+        "max_rating": max(max_rating, 4),
+        "date_min": date_min,
+        "date_max": date_max
     }

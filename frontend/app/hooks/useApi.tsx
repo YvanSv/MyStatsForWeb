@@ -38,7 +38,7 @@ export const useApi = () => {
     if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== "") {
-                params.set(key, String(value));
+              params.set(key, String(value));
             }
         });
     }

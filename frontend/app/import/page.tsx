@@ -173,7 +173,7 @@ export default function ImportPage() {
                 </ul>
                 <p className="pt-2">Après avoir cliqué sur le bouton <code className="text-vert bg-vert/5 px-1 rounded">Lancer l'importation</code>, vous pouvez quitter cette page. L'importation se fait en arrière-plan.</p>
                 <p className="pt-2">Dans le cas de grands volumes de données, la première étape peut prendre jusqu'à <code className="text-jaune bg-jaune/5 px-1 rounded">quelques dizaines de secondes</code> pour traiter l'intégralité de vos statistiques, mais généralement vous avez le résultat instantanément.</p>
-                <p className="pt-2">La deuxième étape, quant à elle, prend plus de temps. Comptez <code className="text-rouge bg-rouge/8 px-1 rounded">2 minutes</code> par fichier.</p>
+                <p className="pt-2">La deuxième étape, quant à elle, prend plus de temps. Comptez <code className="text-rouge bg-rouge/8 px-1 rounded">2 minutes</code> par fichier si aucun artiste et album n'existe déjà dans la base de données.</p>
               </div>
             </div>
           </div>

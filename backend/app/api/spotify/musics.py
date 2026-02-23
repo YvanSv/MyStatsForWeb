@@ -1,10 +1,12 @@
+import datetime
 import math
 
+from app.api.spotify.metadata import get_date_metadata
 from app.database import get_session
 from app.models import TrackHistory, User, Track, Artist, Album
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from sqlalchemy import Float, cast, func, select, text
+from sqlalchemy import Date, Float, cast, func, select, text
 from sqlmodel import Session
 
 router = APIRouter()
@@ -28,7 +30,9 @@ async def get_user_musics(
     rating_min: Optional[float] = None,
     rating_max: Optional[float] = None,
     engagement_min: Optional[float] = None,
-    engagement_max: Optional[float] = None
+    engagement_max: Optional[float] = None,
+    date_min: Optional[str] = None,
+    date_max: Optional[str] = None,
 ):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     user_result = db.exec(select(User).where(User.session_id == session_id)).first()
@@ -59,6 +63,8 @@ async def get_user_musics(
     if track: query = query.where(Track.title.ilike(f"%{track}%"))
     if artist: query = query.where(Artist.name.ilike(f"%{artist}%"))
     if album: query = query.where(Album.name.ilike(f"%{album}%"))
+    if date_min: query = query.where(cast(TrackHistory.played_at, Date) >= date_min)
+    if date_max: query = query.where(cast(TrackHistory.played_at, Date) <= f"{date_max} 23:59:59")
     query = query.group_by(
         Track.spotify_id,
         Artist.name,
@@ -104,7 +110,7 @@ async def get_musics_metadata(db: Session = Depends(get_session), session_id: Op
     if not user_result: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
     current_user_id = user_result.id if isinstance(user_result, User) else user_result[0].id
     
-    # On récupère les stats de la track la plus écoutée pour calculer le rating max théorique
+    # 1. On récupère les stats de la track la plus écoutée pour calculer le rating max théorique
     # On ajoute la durée de la track (Track.duration_ms) pour l'engagement
     stats = db.exec(
         select(
@@ -119,19 +125,21 @@ async def get_musics_metadata(db: Session = Depends(get_session), session_id: Op
         .limit(1)
     ).first()
 
-    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10}
+    date_min, date_max = get_date_metadata(db,current_user_id)
+    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10, "date_min": date_min, "date-max": date_max}
 
     count = stats[0]
     mins = (stats[1] or 0) / 60000
     total_duration = stats[2] or 0
     
     # Calcul de l'engagement pour le top élément
-    eng = (stats[1] / total_duration) if total_duration > 0 else 0
-    eng = min(eng, 1.0)
+    eng = min((stats[1] / total_duration) if total_duration > 0 else 0, 1.0)
     max_rating = round((eng * .55) + (math.log10(count + 1) * .18) + (math.log10(mins + 1) * .18), 2)
 
     return {
         "max_streams": count,
         "max_minutes": round(mins),
-        "max_rating": max(max_rating, 4)
+        "max_rating": max(max_rating, 4),
+        "date_min": date_min,
+        "date_max": date_max
     }

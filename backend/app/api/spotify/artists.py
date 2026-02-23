@@ -1,10 +1,11 @@
 import math
 from fastapi import APIRouter, Depends, Cookie, HTTPException
-from sqlalchemy import Float, cast, text
+from sqlalchemy import Date, Float, cast, text
 from sqlmodel import Session, select, func
 from typing import Optional
 from app.database import get_session
 from app.models import User, Artist, Track, TrackHistory
+from app.api.spotify.metadata import get_date_metadata
 
 router = APIRouter()
 
@@ -25,7 +26,9 @@ async def get_artists(
     rating_min: Optional[float] = None,
     rating_max: Optional[float] = None,
     engagement_min: Optional[float] = None,
-    engagement_max: Optional[float] = None
+    engagement_max: Optional[float] = None,
+    date_min: Optional[str] = None,
+    date_max: Optional[str] = None,
 ):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     user = db.exec(select(User).where(User.session_id == session_id)).first()
@@ -50,6 +53,8 @@ async def get_artists(
         .where(TrackHistory.user_id == current_user_id)
     )
     if artist: query = query.where(Artist.name.ilike(f"%{artist}%"))
+    if date_min: query = query.where(cast(TrackHistory.played_at, Date) >= date_min)
+    if date_max: query = query.where(cast(TrackHistory.played_at, Date) <= f"{date_max} 23:59:59")
     query = query.group_by(Artist.spotify_id, Artist.name, Artist.image_url)
     if streams_min is not None: query = query.having(play_count >= streams_min)
     if streams_max is not None: query = query.having(play_count <= streams_max)
@@ -101,7 +106,9 @@ async def get_artists_metadata(db: Session = Depends(get_session), session_id: O
         .limit(1)
     ).first()
 
-    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10}
+    date_min, date_max = get_date_metadata(db,current_user_id)
+    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10, "date_min": date_min, "date_max": date_max}
+    
     count = stats[0]
     mins = (stats[1] or 0) / 60000
     total_duration = stats[2] or 0
@@ -112,5 +119,7 @@ async def get_artists_metadata(db: Session = Depends(get_session), session_id: O
     return {
         "max_streams": count,
         "max_minutes": round(mins),
-        "max_rating": max(max_rating, 4)
+        "max_rating": max(max_rating, 4),
+        "date_min": date_min,
+        "date_max": date_max
     }

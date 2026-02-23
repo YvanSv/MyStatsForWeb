@@ -16,6 +16,11 @@ interface FilterConfig {
     engagement?: { min: number; max: number };
     rating?: { min: number; max: number };
   };
+  period?: {
+      // Format ISO "YYYY-MM-DD"
+      date_min?: string;
+      date_max?: string;
+  };
 }
 
 interface SidebarFiltersProps {
@@ -29,10 +34,8 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
   // État local pour les inputs avant de cliquer sur "Appliquer"
   const [localFilters, setLocalFilters] = useState<Record<string, string>>({});
-
   const handleLocalChange = (key: string, value: string) => {
     setLocalFilters(prev => ({ ...prev, [key]: value }));
   };
@@ -43,7 +46,6 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
       if (!value) params.delete(key);
       else params.set(key, value);
     });
-    params.set("offset", "0");
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
     if (window.innerWidth < 1024) toggleShowFilters();
   };
@@ -152,6 +154,18 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
               </div>
             </FilterGroup>
           )}
+
+          {/* SECTION PÉRIODE */}
+          {config.period && (
+            <FilterGroup title="Période">
+              <div className="pt-2">
+                <DateFilter label="Date d'écoute" param="date" onChange={handleLocalChange}
+                  valueMin={localFilters.date_min ?? searchParams.get("date_min") ?? ""}
+                  valueMax={localFilters.date_max ?? searchParams.get("date_max") ?? ""}
+                />
+              </div>
+            </FilterGroup>
+          )}
         </div>
       </aside>
     </>
@@ -211,3 +225,43 @@ function RangeFilter({ label, param, min, max, valueMin, valueMax, step = 1, uni
     </div>
   );
 }
+
+interface DateFilterProps {
+  label: string;
+  param: string;
+  valueMin: string;
+  valueMax: string;
+  onChange: (name: string, value: any) => void;
+}
+
+const DateFilter: React.FC<DateFilterProps> = ({ label, param, valueMin, valueMax, onChange }) => {
+  return (
+    <div className="space-y-3">
+      <label className="text-sm font-medium text-gray-300">{label}</label>
+      
+      <div className="grid grid-cols-2 gap-3">
+        {/* Date Début */}
+        <div className="flex flex-col space-y-1">
+          <span className="text-[10px] text-gray-500 uppercase tracking-tight">De</span>
+          <input
+            type="date"
+            className="bg-neutral-900 text-white border border-neutral-800 rounded-md p-2 text-xs focus:ring-1 focus:ring-green-500 outline-none transition-colors"
+            value={valueMin || ""}
+            onChange={(e) => onChange(`${param}_min`, e.target.value)}
+          />
+        </div>
+
+        {/* Date Fin */}
+        <div className="flex flex-col space-y-1">
+          <span className="text-[10px] text-gray-500 uppercase tracking-tight">À</span>
+          <input
+            type="date"
+            className="bg-neutral-900 text-white border border-neutral-800 rounded-md p-2 text-xs focus:ring-1 focus:ring-green-500 outline-none transition-colors"
+            value={valueMax || ""}
+            onChange={(e) => onChange(`${param}_max`, e.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};

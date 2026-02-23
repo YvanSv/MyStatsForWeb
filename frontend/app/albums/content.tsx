@@ -8,11 +8,22 @@ import RankingView from "../components/rankings/RankingView";
 
 type SortKey = 'name' | 'total_minutes' | 'play_count' | 'rating' | 'engagement';
 
+const today = new Date();
+const formattedMonth = String(today.getMonth() + 1).padStart(2, '0');
+const formattedDay = String(today.getDate()).padStart(2, '0');
+const formattedYear = today.getFullYear();
+
 export default function AlbumsContent() {
   const searchParams = useSearchParams();
   const { getAlbums, getAlbumsMetadata } = useApi();
   const [albums, setAlbums] = useState<DataInfo[]>([]);
-  const [metadata, setMetadata] = useState({ max_streams: 99999999, max_minutes: 99999999, max_rating: 5 });
+  const [metadata, setMetadata] = useState({
+    max_streams: 99999999,
+    max_minutes: 99999999,
+    max_rating: 5,
+    date_min: "1890-01-01",
+    date_max: `${formattedYear}-${formattedMonth}-${formattedDay}`
+  });
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -32,6 +43,8 @@ export default function AlbumsContent() {
     engagement_max: searchParams.get("engagement_max") || "100",
     rating_min: searchParams.get("rating_min") || "0",
     rating_max: searchParams.get("rating_max") || "10",
+    date_min: searchParams.get("date_min") || "1890-01-01",
+    date_max: searchParams.get("date_max") || `${formattedYear}-${formattedMonth}-${formattedDay}`,
   }), [searchParams]);
 
   const albumFilters = {
@@ -41,6 +54,10 @@ export default function AlbumsContent() {
       minutes: { min: 0, max: metadata.max_minutes },
       engagement: { min: 0, max: 100 },
       rating: { min: 0, max: metadata.max_rating }
+    },
+    period: {
+      min: metadata.date_min,
+      max: metadata.date_max
     }
   };
 
@@ -75,7 +92,6 @@ export default function AlbumsContent() {
       params.set("sort", key);
       params.set("direction", "desc");
     }
-    params.set("offset", "0");
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
