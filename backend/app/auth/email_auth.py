@@ -118,7 +118,6 @@ async def logout():
 
 @router.get("/me")
 async def get_me(session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)):
-    # Si le navigateur n'envoie pas de cookie, session_id sera None
     if not session_id: return {"is_logged_in": False}
     # On cherche l'utilisateur qui possède ce session_id précis
     statement = select(User).where(User.session_id == session_id)
@@ -127,7 +126,8 @@ async def get_me(session_id: Optional[str] = Cookie(None), db: Session = Depends
     
     return {
         "is_logged_in": True,
-        "user_name": user.display_name
+        "user_name": user.display_name,
+        "has_spotify": user.spotify_id != None
     }
 
 @router.patch("/update")

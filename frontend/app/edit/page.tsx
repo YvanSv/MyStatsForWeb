@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { PulseSpinner } from "../components/CustomSpinner";
+import { useSearchParams } from "next/navigation";
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { getMe, updateProfile } = useApi();
+	const searchParams = useSearchParams();
+  const { getMe, updateProfile, unlinkSpotify } = useApi();
   // États des données
   const [profileData, setProfileData] = useState({
     username: "",
@@ -25,9 +27,8 @@ export default function EditProfilePage() {
     const fetchUser = async () => {
       try {
         const data = await getMe();
-        if (!data.is_logged_in) {
-          router.push("/auth");
-        } else {
+        if (!data.is_logged_in) router.push("/auth");
+				else {
           setProfileData({
             username: data.user_name || "",
             email: data.email || "",
@@ -42,6 +43,18 @@ export default function EditProfilePage() {
     };
     fetchUser();
   }, [getMe, router]);
+
+	useEffect(() => {
+    const errorType = searchParams.get("error");
+    const linked = searchParams.get("linked");
+
+    if (errorType === "spotify_already_linked") {
+      setError("Ce compte Spotify est déjà lié à un autre utilisateur MyStats.");
+    }
+    if (linked === "true") {
+      setSuccess("Compte Spotify lié avec succès !");
+    }
+  }, [searchParams]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,8 +75,20 @@ export default function EditProfilePage() {
   };
 
   const handleConnectSpotify = () => {
-    //window.location.href = ENDPOINTS.SPOTIFY_LOGIN;
+    window.location.href = ENDPOINTS.SPOTIFY_LOGIN;
   };
+
+	const handleUnlinkSpotify = async () => {
+		if (!confirm("Voulez-vous vraiment délier votre compte Spotify ? Vos stats ne seront plus mises à jour.")) return;
+		
+		try {
+			await unlinkSpotify(); 
+			setProfileData({ ...profileData, hasSpotify: false });
+			setSuccess("Compte Spotify délié avec succès.");
+		} catch (err: any) {
+			setError("Erreur lors de la déconnexion de Spotify.");
+		}
+	};
 
   if (loading) {
     return (
@@ -145,17 +170,28 @@ export default function EditProfilePage() {
               </div>
 
               {profileData.hasSpotify ? (
-                <div className="flex items-center gap-2 text-vert text-[10px] font-bold uppercase tracking-widest bg-vert/10 p-3 rounded-xl justify-center">
-                  <CheckIcon /> Votre compte est synchronisé
-                </div>
-              ) : (
-                <button 
-                  onClick={handleConnectSpotify}
-                  className="w-full bg-vert text-black py-4 rounded-2xl font-bold hover:scale-[1.02] transition-all active:scale-95 shadow-[0_0_20px_rgba(29,208,93,0.2)]"
-                >
-                  Lier mon Spotify
-                </button>
-              )}
+								<div className="space-y-4">
+									{/* Message de succès */}
+									<div className="flex items-center gap-2 text-vert text-[10px] font-bold uppercase tracking-widest bg-vert/10 p-3 rounded-xl justify-center">
+										<CheckIcon /> Votre compte est synchronisé
+									</div>
+									
+									{/* Bouton Délier */}
+									<button 
+										onClick={handleUnlinkSpotify}
+										className="w-full bg-white/5 hover:bg-rouge/10 hover:text-rouge hover:border-rouge/20 text-gray-400 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/10 transition-all active:scale-95"
+									>
+										Délier mon compte Spotify
+									</button>
+								</div>
+							) : (
+								<button 
+									onClick={handleConnectSpotify}
+									className="w-full bg-vert text-black py-4 rounded-2xl font-bold hover:scale-[1.02] transition-all active:scale-95 shadow-[0_0_20px_rgba(29,208,93,0.2)]"
+								>
+									Lier mon Spotify
+								</button>
+							)}
             </div>
 
             <p className="text-[10px] text-gray-600 text-center mt-8 leading-relaxed">

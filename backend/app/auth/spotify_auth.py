@@ -5,7 +5,7 @@ from typing import Optional
 from urllib.parse import urlencode
 import uuid
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 import httpx
 from pydantic import BaseModel
@@ -38,6 +38,25 @@ def spotify_login():
     }
     auth_url = f"{base_url}?{urlencode(params)}"
     return RedirectResponse(auth_url)
+
+@router.post("/unlink-spotify")
+async def unlink_spotify(
+    session_id: Optional[str] = Cookie(None), 
+    session: Session = Depends(get_session)
+):
+    if not session_id: raise HTTPException(status_code=401, detail="Non authentifié")
+    statement = select(User).where(User.session_id == session_id)
+    user = session.exec(statement).first()
+    if not user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    # On remet à zéro les champs Spotify
+    user.spotify_id = None
+    user.spotify_email = None
+    user.access_token = None
+    user.refresh_token = None
+    user.expires_at = None
+    session.add(user)
+    session.commit()
+    return {"status": "success", "message": "Spotify délié"}
 
 @router.get("/callback")
 async def callback(
@@ -86,19 +105,16 @@ async def callback(
     # A. On vérifie si l'utilisateur est déjà loggé (Liaison de compte)
     current_session_id = request.cookies.get("session_id")
     user = None
-
-    if current_session_id:
-        user = session.exec(select(User).where(User.session_id == current_session_id)).first()
+    if current_session_id: user = session.exec(select(User).where(User.session_id == current_session_id)).first()
 
     # B. Si pas loggé, on cherche par spotify_id (Connexion classique Spotify)
-    if not user:
-        user = session.exec(select(User).where(User.spotify_id == spotify_id)).first()
+    if not user: user = session.exec(select(User).where(User.spotify_id == spotify_id)).first()
 
     # C. Si toujours rien, on tente la fusion par email (Sécurité de compte)
-    if not user and spotify_email:
-        user = session.exec(select(User).where(User.email == spotify_email)).first()
+    if not user and spotify_email: user = session.exec(select(User).where(User.email == spotify_email)).first()
 
     # D. Traitement (Création ou Mise à jour)
+    endpoint = ""
     if not user:
         # Premier login Spotify (Nouvel utilisateur)
         user = User(
@@ -113,31 +129,31 @@ async def callback(
         )
         session.add(user)
     else:
+        # Vérifier si le compte Spotify n'est pas déjà lié à un autre compte
+        existing_link = session.exec(select(User).where(User.spotify_id == spotify_id, User.id != user.id)).first()
+        if existing_link: return RedirectResponse(url=f"{FRONTEND_URL}/edit?error=spotify_already_linked")
         # Liaison à un compte existant ou mise à jour des tokens
         user.spotify_id = spotify_id
         user.spotify_email = spotify_email
         user.access_token = access_token
         # Le refresh_token n'est pas toujours renvoyé par Spotify lors d'une reconnexion
-        if refresh_token:
-            user.refresh_token = refresh_token
+        if refresh_token: user.refresh_token = refresh_token
         user.expires_at = expiration_date
-        
-        if not user.session_id:
-            user.session_id = str(uuid.uuid4())
-        
+        if not user.session_id: user.session_id = str(uuid.uuid4())
         session.add(user)
+        endpoint = "/edit?linked=true"
 
     session.commit()
     session.refresh(user)
 
     # 3. Réponse et Cookie
-    response = RedirectResponse(url=FRONTEND_URL)
+    response = RedirectResponse(url=f"{FRONTEND_URL}{endpoint}")
     response.set_cookie(
         key="session_id",
         value=user.session_id,
         httponly=True,
-        samesite="lax",    # "lax" est parfait pour le dev local et les redirections
-        secure=False,      # OBLIGATOIRE à False si tu es en HTTP (localhost)
+        samesite="lax",
+        secure=False,
         max_age=3600 * 24 * 30,
         path="/"
     )

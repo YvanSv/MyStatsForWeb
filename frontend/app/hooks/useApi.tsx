@@ -100,7 +100,9 @@ export const useApi = () => {
       body: JSON.stringify(data) 
   }), [request]);
 
+  const unlinkSpotify = useCallback(async () => request(`${ENDPOINTS.UNLINK_SPOTIFY}`, {method: 'POST'}), [request])
+
   return useMemo(() => ({ 
-    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus, register, login, updateProfile
-  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus, register, login, updateProfile]);
+    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus, register, login, updateProfile, unlinkSpotify
+  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus, register, login, updateProfile, unlinkSpotify]);
 };

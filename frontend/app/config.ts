@@ -5,6 +5,7 @@ export const ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/auth/login`,
   EDIT_INFOS: `${API_BASE_URL}/auth/update`,
   SPOTIFY_LOGIN: `${API_BASE_URL}/auth/spotify-login`,
+  UNLINK_SPOTIFY: `${API_BASE_URL}/auth/unlink-spotify`,
   LOGOUT:`${API_BASE_URL}/auth/logout`,
   ME: `${API_BASE_URL}/auth/me`,
   STATS_OVERVIEW: `${API_BASE_URL}/stats/overview`,
