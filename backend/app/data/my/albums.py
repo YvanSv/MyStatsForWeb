@@ -76,9 +76,12 @@ async def get_user_albums(
     for row in results:
         album_obj, art_name, count, mins, eng = row
         eng = min(eng or 0.0, 1.0)
-        rating = round((eng * .5) + (math.log10(count + 1) * .16) + (math.log10(mins + 1) * .16), 2)
-        if rating_min and rating < rating_min: continue
-        if rating_max and rating > rating_max: continue
+        if count > 5:
+            rating = (eng * mins / (7 * count) + eng*mins / 3200.0) * 1.75 / (1 / eng)
+        else: rating = 0
+
+        if rating_min and rating <= rating_min: continue
+        if rating_max and rating >= rating_max: continue
         final_list.append({
             "spotify_id": album_obj.spotify_id,
             "name": album_obj.name,
@@ -87,7 +90,7 @@ async def get_user_albums(
             "play_count": count,
             "total_minutes": round(mins),
             "engagement": round(eng * 100, 2),
-            "rating": rating or 0
+            "rating": round(rating,2) or 0
         })
     if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:
         final_list.sort(key=lambda x: x[sort], reverse=(direction == "desc"))
@@ -124,12 +127,14 @@ async def get_albums_metadata(db: Session = Depends(get_session), session_id: Op
     total_duration = stats[2] or 0
     eng = (stats[1] / total_duration) if total_duration > 0 else 0
     eng = min(eng, 1.0)
-    max_rating = round((eng * .5) + (math.log10(count + 1) * .16) + (math.log10(mins + 1) * .16), 2)
+    if count > 5:
+        max_rating = (eng * mins / (7 * count) + eng*mins / 3200.0) * 1.75 / (1 / eng)
+    else: max_rating = 0
 
     return {
         "max_streams": count,
         "max_minutes": round(mins),
-        "max_rating": max(max_rating, 4),
+        "max_rating": max(round(max_rating,2)+0.05, 0),
         "date_min": date_min,
         "date_max": date_max
     }

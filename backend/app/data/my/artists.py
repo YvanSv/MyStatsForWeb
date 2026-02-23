@@ -68,9 +68,11 @@ async def get_artists(
     for row in results:
         artist_obj, count, mins, eng = row
         eng = min(eng or 0.0, 1.0)
-        rating = round(min((eng * .5) + (math.log10(count + 1) * .16) + (math.log10(mins + 1) * .16), 10.0), 2)
-        if rating_min and rating < rating_min: continue
-        if rating_max and rating > rating_max: continue
+        if count > 1:
+            rating = (eng / (7 * count) + math.log(mins) / 25.0) * 4 + count*eng / 10000
+        else: rating = 0
+        if rating_min and rating <= rating_min: continue
+        if rating_max and rating >= rating_max: continue
         all_artists.append({
             "id": artist_obj.spotify_id,
             "name": artist_obj.name,
@@ -78,7 +80,7 @@ async def get_artists(
             "play_count": count,
             "total_minutes": round(mins),
             "engagement": round(eng * 100, 1),
-            "rating": rating or 0
+            "rating": round(rating,2) or 0
         })
     if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:
         all_artists.sort(key=lambda x: x[sort], reverse=(direction == "desc"))
@@ -114,12 +116,13 @@ async def get_artists_metadata(db: Session = Depends(get_session), session_id: O
     total_duration = stats[2] or 0
     eng = (stats[1] / total_duration) if total_duration > 0 else 0
     eng = min(eng, 1.0)
-    max_rating = round(min((eng * .5) + (math.log10(count + 1) * .16) + (math.log10(mins + 1) * .16), 10.0), 2)
+    if count > 1:
+        max_rating = (eng / (7 * count) + math.log(mins) / 25.0) * 4 + count*eng / 10000
 
     return {
         "max_streams": count,
         "max_minutes": round(mins),
-        "max_rating": max(max_rating, 4),
+        "max_rating": max(round(max_rating,2)+.05, 0),
         "date_min": date_min,
         "date_max": date_max
     }

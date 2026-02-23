@@ -6,7 +6,6 @@ import { PulseSpinner } from "./components/CustomSpinner";
 import { FRONT_ROUTES } from "./config";
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
 
-
 export default function HomePage() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);

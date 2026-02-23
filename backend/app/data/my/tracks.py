@@ -81,9 +81,9 @@ async def get_user_musics(
     for row in results:
         track_obj, artist_name, album_name, cover_url, count, mins, eng = row
         eng = min(eng or 0.0, 1.0)
-        rating = round((eng * .55) + (math.log10(count + 1) * .18) + (math.log10(mins + 1) * .18), 2)
-        if rating_min and rating < rating_min: continue
-        if rating_max and rating > rating_max: continue
+        rating = (eng * mins / (20.0 * count) + mins / 40.0) / 8.0
+        if rating_min and rating <= rating_min: continue
+        if rating_max and rating >= rating_max: continue
 
         all_musics.append({
             "spotify_id": track_obj.spotify_id,
@@ -95,7 +95,7 @@ async def get_user_musics(
             "play_count": count,
             "total_minutes": round(mins),
             "engagement": round(eng * 100, 2),
-            "rating": rating or 0
+            "rating": round(rating,2) or 0
         })
     if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:
         all_musics.sort(key=lambda x: x["title" if sort == "name" else sort], reverse=(direction == "desc"))
@@ -132,12 +132,12 @@ async def get_musics_metadata(db: Session = Depends(get_session), session_id: Op
     
     # Calcul de l'engagement pour le top élément
     eng = min((stats[1] / total_duration) if total_duration > 0 else 0, 1.0)
-    max_rating = round((eng * .55) + (math.log10(count + 1) * .18) + (math.log10(mins + 1) * .18), 2)
+    max_rating = (eng * mins / (20.0 * count) + mins / 40.0) / 8.0
 
     return {
         "max_streams": count,
         "max_minutes": round(mins),
-        "max_rating": max(max_rating, 4),
+        "max_rating": max(round(max_rating,2)+.05, 0),
         "date_min": date_min,
         "date_max": date_max
     }
