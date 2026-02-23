@@ -5,7 +5,7 @@ import spotipy
 from sqlmodel import Session, select
 from app.database import get_session
 from app.utils.spotify_api import get_spotify_client
-from app.database import Track,Artist,Album
+from app.models import Track,Artist,Album
 from app.utils.spotify_status import spotify_status
 
 class SpotifyWorker:
@@ -31,7 +31,7 @@ class SpotifyWorker:
         while not self._queue.empty():
             status = spotify_status.get_status()
             if status["is_rate_limited"]:
-                await asyncio.sleep(status["retry_after_seconds"])
+                await asyncio.sleep(status["retry_after_seconds"] + 1)
                 continue
             batch = []
             while len(batch) < 50 and not self._queue.empty():
