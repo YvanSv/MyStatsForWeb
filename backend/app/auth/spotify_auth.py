@@ -19,6 +19,7 @@ CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
+IS_PRODUCTION = os.getenv("RENDER") is not None or os.getenv("ENV") == "production"
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -153,7 +154,7 @@ async def callback(
         value=user.session_id,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=IS_PRODUCTION,
         max_age=3600 * 24 * 30,
         path="/"
     )

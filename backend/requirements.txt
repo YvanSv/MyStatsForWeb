@@ -7,3 +7,4 @@ httpx
 python-multipart
 python-dotenv
 bcrypt
+email-validator>=2.0.0

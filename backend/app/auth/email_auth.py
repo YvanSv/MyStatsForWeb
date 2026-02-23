@@ -12,6 +12,7 @@ from app.auth.spotify_auth import UpdateProfileSchema
 
 load_dotenv()
 FRONTEND_URL = os.getenv("FRONTEND_URL")
+IS_PRODUCTION = os.getenv("RENDER") is not None or os.getenv("ENV") == "production"
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 class LoginSchema(BaseModel):
@@ -63,7 +64,7 @@ async def login_email(data: LoginSchema, response: Response, session: Session = 
         value=new_session_id,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=IS_PRODUCTION,
         max_age=3600 * 24 * 30,
         path="/"
     )
