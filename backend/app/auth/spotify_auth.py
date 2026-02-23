@@ -153,7 +153,7 @@ async def callback(
         key="session_id",
         value=user.session_id,
         httponly=True,
-        samesite="lax",
+        samesite="none" if IS_PRODUCTION else "lax",
         secure=IS_PRODUCTION,
         max_age=3600 * 24 * 30,
         path="/"
