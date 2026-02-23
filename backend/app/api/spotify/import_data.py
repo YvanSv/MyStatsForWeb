@@ -6,8 +6,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, UploadFile, File,
 from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User, Track, TrackHistory
-from app.utils.spotify_api import get_spotify_client
-from SpotifyWorker import spotify_worker
+from app.api.spotify.SpotifyWorker import spotify_worker
 
 router = APIRouter()
 
@@ -18,7 +17,6 @@ def stable_hash(text: str) -> str:
 
 @router.post("/upload-json")
 async def upload_spotify_json(
-    background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
     session_id: Optional[str] = Cookie(None),
     db: Session = Depends(get_session)
@@ -27,7 +25,6 @@ async def upload_spotify_json(
     user = db.exec(select(User).where(User.session_id == session_id)).first()
     if not user: raise HTTPException(status_code=401, detail="Non connecté")
 
-    sp = get_spotify_client()
     valid_entries = []
     new_track_ids_for_worker = set()
 
