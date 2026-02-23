@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ENDPOINTS } from "./config";
 import { useApi } from "./hooks/useApi";
 import { PulseSpinner } from "./components/CustomSpinner";
 
@@ -15,20 +14,22 @@ export default function HomePage() {
   const { getMe, getOverview } = useApi();
 
   useEffect(() => {
+    let isMounted = true;
     const initApp = async () => {
       try {
         const userData = await getMe();
+        if (!isMounted) return;
         if (userData.is_logged_in) {
           setIsLoggedIn(true);
-          setRandomStats(await getOverview());
-        } else { setIsLoggedIn(false); }
-      } catch (error) {
-        console.error("Erreur d'initialisation:", error);
-        setIsLoggedIn(false);
-      } finally { setLoading(false); }
+          const stats = await getOverview();
+          setRandomStats(stats);
+        } else {setIsLoggedIn(false);}
+      } catch (error) {if (isMounted) setIsLoggedIn(false);}
+      finally {if (isMounted) setLoading(false);}
     };
     initApp();
-  }, [getMe]);
+    return () => { isMounted = false; };
+  }, [getMe, getOverview]);
 
   return (
     <main className="min-h-screen text-white font-jost overflow-x-hidden">
@@ -87,12 +88,12 @@ export default function HomePage() {
                 <div className="bg-bg1/80 backdrop-blur-2xl border border-white/10 p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-md">
                   <p className="text-lg md:text-ss-titre font-hias text-white flex flex-col items-center gap-2">
                     <span className="text-vert text-3xl md:text-4xl mb-1">🔒</span>
-                    <span className="text-center">Connectez-vous pour voir vos vraies stats</span>
+                    <span className="text-center">Connectez-vous pour voir vos statistiques</span>
                   </p>
                   <button 
-                    onClick={() => window.location.href = ENDPOINTS.LOGIN}
+                    onClick={() => router.push('/auth')}
                     className="mt-6 w-full bg-vert text-black py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition-transform shadow-lg cursor-pointer"
-                  >Se connecter avec Spotify</button>
+                  >Se connecter</button>
                 </div>
               </div>
             )}

@@ -4,7 +4,7 @@ from app.database import get_session
 from app.models import TrackHistory, User, Track, Artist, Album
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from sqlalchemy import Float, cast, desc, asc, func, select, text
+from sqlalchemy import Float, cast, func, select, text
 from sqlmodel import Session
 
 router = APIRouter()

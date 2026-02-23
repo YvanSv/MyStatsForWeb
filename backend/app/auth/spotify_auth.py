@@ -1,28 +1,32 @@
 import base64
 from datetime import datetime, timedelta
 import os
+from typing import Optional
 from urllib.parse import urlencode
 import uuid
-from typing import Optional
-from fastapi import APIRouter, Cookie, Depends, HTTPException
+from dotenv import load_dotenv
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 import httpx
+from pydantic import BaseModel
 from sqlmodel import Session, select
-from app.database import get_session
 from app.models import User
-from dotenv import load_dotenv
+from app.database import get_session
 
 load_dotenv()
-
-router = APIRouter(prefix="/auth", tags=["auth"])
 
 CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 
-@router.get("/login")
-def login():
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+class UpdateProfileSchema(BaseModel):
+    username: Optional[str] = None
+
+@router.get("/spotify-login")
+def spotify_login():
     scope = "user-read-recently-played user-top-read user-read-private user-read-email"
     base_url = "https://accounts.spotify.com/authorize"
     params = {
@@ -36,9 +40,14 @@ def login():
     return RedirectResponse(auth_url)
 
 @router.get("/callback")
-async def callback(code: str, session: Session = Depends(get_session)):
+async def callback(
+    request: Request,
+    code: str, 
+    session: Session = Depends(get_session)
+):
     async with httpx.AsyncClient() as client:
-        response = await client.post(
+        # 1. Échange du code contre les tokens
+        token_res = await client.post(
             "https://accounts.spotify.com/api/token",
             data={
                 "grant_type": "authorization_code",
@@ -50,103 +59,89 @@ async def callback(code: str, session: Session = Depends(get_session)):
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         
-    # Vérifie si Spotify a répondu une erreur ici
-    if response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Impossible de récupérer le token Spotify")
+        if token_res.status_code != 200:
+            raise HTTPException(status_code=400, detail="Impossible de récupérer le token Spotify")
 
-    token_data = response.json()
-    access_token = token_data["access_token"]
-    refresh_token = token_data.get("refresh_token")
-    expires_in = token_data.get("expires_in", 3600)
-    expiration_date = datetime.now() + timedelta(seconds=expires_in)
+        token_data = token_res.json()
+        access_token = token_data["access_token"]
+        refresh_token = token_data.get("refresh_token")
+        expires_in = token_data.get("expires_in", 3600)
+        expiration_date = datetime.now() + timedelta(seconds=expires_in)
 
-    # 2. On demande à Spotify qui est l'utilisateur actuel
-    async with httpx.AsyncClient() as client:
+        # 2. Récupération du profil Spotify
         user_res = await client.get(
-            "https://api.spotify.com/v1/me",
+            "https://api.spotify.com/v1/me", # URL officielle API Spotify
             headers={"Authorization": f"Bearer {access_token}"}
         )
 
-    # Vérifie que user_res est correct avant le .json()
-    if user_res.status_code != 200:
-        raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Spotify")
+        if user_res.status_code != 200:
+            raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Spotify")
 
-    user_info = user_res.json()
+        user_info = user_res.json()
+        spotify_id = user_info["id"]
+        spotify_email = user_info.get("email")
 
-    # 3. On enregistre dans PostgreSQL
-    statement = select(User).where(User.spotify_id == user_info["id"])
-    user = session.exec(statement).first()
+    # --- LOGIQUE DE LIAISON / AUTHENTIFICATION ---
 
+    # A. On vérifie si l'utilisateur est déjà loggé (Liaison de compte)
+    current_session_id = request.cookies.get("session_id")
+    user = None
+
+    if current_session_id:
+        user = session.exec(select(User).where(User.session_id == current_session_id)).first()
+
+    # B. Si pas loggé, on cherche par spotify_id (Connexion classique Spotify)
     if not user:
+        user = session.exec(select(User).where(User.spotify_id == spotify_id)).first()
+
+    # C. Si toujours rien, on tente la fusion par email (Sécurité de compte)
+    if not user and spotify_email:
+        user = session.exec(select(User).where(User.email == spotify_email)).first()
+
+    # D. Traitement (Création ou Mise à jour)
+    if not user:
+        # Premier login Spotify (Nouvel utilisateur)
         user = User(
-            spotify_id=user_info["id"],
+            spotify_id=spotify_id,
             display_name=user_info.get("display_name", "Inconnu"),
-            email=user_info.get("email", "no-email"),
-            refresh_token=token_data["refresh_token"],
+            email=spotify_email or "no-email",
+            spotify_email=spotify_email,
+            refresh_token=refresh_token,
             access_token=access_token,
-            expires_at=expiration_date
+            expires_at=expiration_date,
+            session_id=str(uuid.uuid4())
         )
         session.add(user)
     else:
-        # Si l'utilisateur existe, on met juste à jour son refresh_token
+        # Liaison à un compte existant ou mise à jour des tokens
+        user.spotify_id = spotify_id
+        user.spotify_email = spotify_email
         user.access_token = access_token
-        user.refresh_token = refresh_token
+        # Le refresh_token n'est pas toujours renvoyé par Spotify lors d'une reconnexion
+        if refresh_token:
+            user.refresh_token = refresh_token
         user.expires_at = expiration_date
-    
-    if not user.session_id:
-        user.session_id = str(uuid.uuid4())
-
-    session.add(user)
-    session.commit()
-
-    # 1. On s'assure que l'utilisateur a un session_id
-    if not user.session_id:
-        user.session_id = str(uuid.uuid4())
+        
+        if not user.session_id:
+            user.session_id = str(uuid.uuid4())
+        
         session.add(user)
-        session.commit()
 
-    # 2. On crée la réponse de redirection
+    session.commit()
+    session.refresh(user)
+
+    # 3. Réponse et Cookie
     response = RedirectResponse(url=FRONTEND_URL)
     response.set_cookie(
         key="session_id",
         value=user.session_id,
         httponly=True,
-        samesite="none",
-        secure=True,
-        max_age=3600 * 24 * 7,
+        samesite="lax",    # "lax" est parfait pour le dev local et les redirections
+        secure=False,      # OBLIGATOIRE à False si tu es en HTTP (localhost)
+        max_age=3600 * 24 * 30,
         path="/"
     )
     return response
-
-@router.get("/logout")
-async def logout():
-    response = RedirectResponse(url=FRONTEND_URL)
-    # On supprime le cookie de session
-    # On utilise 'delete_cookie' avec le même nom que lors de la création
-    response.delete_cookie(
-        key="session_id", 
-        path="/", 
-        domain="127.0.0.1"
-    )
-    return response
-
-@router.get("/me")
-async def get_me(session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)):
-    # Si le navigateur n'envoie pas de cookie, session_id sera None
-    if not session_id:
-        return {"is_logged_in": False}
-    
-    # On cherche l'utilisateur qui possède ce session_id précis
-    statement = select(User).where(User.session_id == session_id)
-    user = db.exec(statement).first()
-
-    if not user:
-        return {"is_logged_in": False}
-    
-    return {
-        "is_logged_in": True,
-        "user_name": user.display_name
-    }
 
 async def get_valid_access_token(user: User, db: Session):
     # Si le token expire dans moins de 60 secondes, on rafraîchit

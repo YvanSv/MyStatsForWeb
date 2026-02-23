@@ -1,5 +1,5 @@
 from app.database import get_session
-from app.auth import get_valid_access_token
+from app.auth.spotify_auth import get_valid_access_token
 from app.models import TrackHistory, User, Track, Artist, Album
 from datetime import datetime
 from typing import Optional

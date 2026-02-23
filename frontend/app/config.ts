@@ -1,7 +1,10 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export const ENDPOINTS = {
+  REGISTER: `${API_BASE_URL}/auth/register`,
   LOGIN: `${API_BASE_URL}/auth/login`,
+  EDIT_INFOS: `${API_BASE_URL}/auth/update`,
+  SPOTIFY_LOGIN: `${API_BASE_URL}/auth/spotify-login`,
   LOGOUT:`${API_BASE_URL}/auth/logout`,
   ME: `${API_BASE_URL}/auth/me`,
   STATS_OVERVIEW: `${API_BASE_URL}/stats/overview`,

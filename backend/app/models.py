@@ -4,14 +4,22 @@ from sqlmodel import Field, Relationship, SQLModel
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    spotify_id: str = Field(index=True, unique=True)
+    # --- IDENTITÉ (Email de connexion) ---
+    # C'est l'email utilisé pour le login classique
+    email: str = Field(index=True, unique=True) 
+    password_hash: Optional[str] = Field(default=None)
     display_name: str
-    email: str
+    # --- LIEN SPOTIFY (Email technique Spotify) ---
+    # On stocke l'email renvoyé par Spotify ici. 
+    # Il peut être différent de l'email ci-dessus.
+    spotify_email: Optional[str] = Field(default=None) 
+    spotify_id: Optional[str] = Field(default=None, index=True, unique=True)
+    # Tokens et sessions
     session_id: Optional[str] = Field(default=None, index=True)
-    refresh_token: str
-    access_token: Optional[str] = None
-    expires_at: Optional[datetime] = None
-    
+    refresh_token: Optional[str] = Field(default=None)
+    access_token: Optional[str] = Field(default=None)
+    expires_at: Optional[datetime] = Field(default=None)
+
     history: List["TrackHistory"] = Relationship(back_populates="user")
 
 class Artist(SQLModel, table=True):

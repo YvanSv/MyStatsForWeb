@@ -90,7 +90,17 @@ export const useApi = () => {
 
   const getStatus = useCallback(async () => request(`${ENDPOINTS.STATUS}`), [request]);
 
+  const register = useCallback((regData: any) => 
+    request(ENDPOINTS.REGISTER, {method: 'POST', body: regData}), [request]);
+  const login = useCallback((loginData: any) => 
+    request(ENDPOINTS.LOGIN, {method: 'POST', body: loginData}), [request]);
+  const updateProfile = useCallback((data: any) => 
+    request(`${ENDPOINTS.EDIT_INFOS}`, { 
+      method: 'PATCH', 
+      body: JSON.stringify(data) 
+  }), [request]);
+
   return useMemo(() => ({ 
-    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus
-  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus]);
+    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus, register, login, updateProfile
+  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus, register, login, updateProfile]);
 };

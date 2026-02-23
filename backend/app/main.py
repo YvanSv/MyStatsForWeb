@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_db_and_tables
-from app.auth import router as auth_router
+from app.auth.email_auth import router as auth_router
+from app.auth.spotify_auth import router as auth_spotify_router
 from app.api.spotify import router as spotify_router
 from app.api.stats.overview import router as overview_router
 from app.scripts.maintenance import router as fix_router
@@ -26,6 +27,7 @@ app.include_router(auth_router)
 app.include_router(spotify_router)
 app.include_router(overview_router)
 app.include_router(fix_router)
+app.include_router(auth_spotify_router)
 
 @app.get("/")
 def read_root():
