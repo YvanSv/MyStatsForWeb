@@ -38,7 +38,7 @@ async def upload_spotify_json(
 
     print(f"👂 {len(all_history)} écoutes dans l'historique")
 
-    # 1. PRE-SCAN & FILTRAGE IMMEDIAT
+    # 2. PRE-SCAN & FILTRAGE IMMEDIAT
     for file in files:
         content = await file.read()
         try: data = json.loads(content)
@@ -55,7 +55,7 @@ async def upload_spotify_json(
                 except ValueError: continue
                 if (dt_obj, sid) in all_history or ms_played < 3000: continue
                 valid_entries.append(entry)
-                new_track_ids_for_worker.add(sid)
+
     print(f"🆕 {len(valid_entries)} nouvelles écoutes à ajouter.")
     if not valid_entries: return {"status": "success", "message": "Aucune nouvelle écoute à ajouter."}
 
@@ -65,7 +65,6 @@ async def upload_spotify_json(
     to_add_tracks = {}
     to_add_history = []
 
-    #####
     for entry in valid_entries:
         sid = entry["spotify_track_uri"].split(":")[-1]
 
@@ -74,9 +73,9 @@ async def upload_spotify_json(
         if sid not in existing_tracks and sid not in to_add_tracks:
             to_add_tracks[sid] = Track(
                 spotify_id=sid,
-                title=entry.get("master_metadata_track_name") or "Chargement...",
-                # On peut mettre des placeholders ou laisser à None
+                title=entry.get("master_metadata_track_name") or "Chargement..."
             )
+            new_track_ids_for_worker.add(sid)
 
         to_add_history.append(TrackHistory(
             user_id=user.id,
@@ -85,16 +84,15 @@ async def upload_spotify_json(
             ms_played=entry.get("ms_played") or 0
         ))
 
-    # 5. COMMIT IMMEDIAT
+    # 4. COMMIT IMMEDIAT
     db.add_all(to_add_tracks.values())
-    db.flush() 
+    db.flush()
     db.add_all(to_add_history)
     db.commit()
 
-    # 6. APPEL AU WORKER (Asynchrone)
+    # 5. APPEL AU WORKER (Asynchrone)
     # On envoie la liste des IDs qui ont besoin d'être enrichis
     await spotify_worker.add_tracks(list(new_track_ids_for_worker))
-
     return {
         "status": "success", 
         "added": len(to_add_history), 

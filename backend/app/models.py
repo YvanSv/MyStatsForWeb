@@ -42,10 +42,10 @@ class Album(SQLModel, table=True):
 class Track(SQLModel, table=True):
     spotify_id: str = Field(primary_key=True)
     title: str
-    duration_ms: int
+    duration_ms: Optional[int] = None
     
-    artist_id: str = Field(foreign_key="artist.spotify_id")
-    album_id: str = Field(foreign_key="album.spotify_id")
+    artist_id: Optional[str] = Field(foreign_key="artist.spotify_id")
+    album_id: Optional[str] = Field(foreign_key="album.spotify_id")
     
     artist: Artist = Relationship(back_populates="tracks")
     album: Album = Relationship(back_populates="tracks")

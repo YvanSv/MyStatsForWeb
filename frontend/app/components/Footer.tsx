@@ -37,7 +37,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col items-end gap-0.5">
               <p className="text-gray-400 text-[9px] font-mono uppercase tracking-tight">Designed for Music Lovers</p>
-              <p className="text-vert/70 text-[10px] font-mono font-bold italic">v0.11.7</p>
+              <p className="text-vert/70 text-[10px] font-mono font-bold italic">v0.11.8</p>
             </div>
           </div>
           
