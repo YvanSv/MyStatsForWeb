@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useApi } from "./hooks/useApi";
 import { PulseSpinner } from "./components/CustomSpinner";
 import { FRONT_ROUTES } from "./config";
+import { useApiMyDatas } from "./hooks/useApiMyDatas";
 
 
 export default function HomePage() {
@@ -12,7 +12,7 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [randomStats, setRandomStats] = useState<any[]>([]);
-  const { getMe, getOverview } = useApi();
+  const { getMe, getOverview } = useApiMyDatas();
 
   useEffect(() => {
     let isMounted = true;
