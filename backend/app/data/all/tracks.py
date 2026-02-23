@@ -1,0 +1,128 @@
+from .utils.metadata import get_date_metadata
+from app.database import get_session
+from app.models import TrackHistory, Track, Artist, Album
+from typing import Optional
+from fastapi import APIRouter, Depends
+from sqlalchemy import Date, Float, cast, func, select, text
+from sqlmodel import Session
+
+router = APIRouter()
+
+@router.get('')
+async def get_user_musics(
+    *,
+    db: Session = Depends(get_session),
+    offset: int = 0,
+    limit: int = 50,
+    sort: str = "play_count",
+    direction: str = "desc",
+    track: Optional[str] = None,
+    artist: Optional[str] = None,
+    album: Optional[str] = None,
+    streams_min: Optional[int] = None,
+    streams_max: Optional[int] = None,
+    minutes_min: Optional[float] = None,
+    minutes_max: Optional[float] = None,
+    rating_min: Optional[float] = None,
+    rating_max: Optional[float] = None,
+    engagement_min: Optional[float] = None,
+    engagement_max: Optional[float] = None,
+    date_min: Optional[str] = None,
+    date_max: Optional[str] = None,
+):
+    play_count = func.count(TrackHistory.id).label("play_count")
+    total_minutes = (cast(func.sum(TrackHistory.ms_played), Float) / 60000).label("total_minutes")
+    sum_played = func.sum(TrackHistory.ms_played)
+    sum_duration = func.sum(Track.duration_ms)
+    engagement_sql = (cast(sum_played, Float) / func.nullif(cast(sum_duration, Float), 0)).label("engagement")
+
+    query = (select(
+            Track,
+            Artist.name.label("artist"),
+            Album.name.label("album"),
+            Album.image_url.label("cover"),
+            play_count,
+            total_minutes,
+            engagement_sql
+        )
+        .join(Album, Track.album_id == Album.spotify_id)
+        .join(Artist, Track.artist_id == Artist.spotify_id)
+        .join(TrackHistory, Track.spotify_id == TrackHistory.spotify_id)
+    )
+    if track: query = query.where(Track.title.ilike(f"%{track}%"))
+    if artist: query = query.where(Artist.name.ilike(f"%{artist}%"))
+    if album: query = query.where(Album.name.ilike(f"%{album}%"))
+    if date_min: query = query.where(cast(TrackHistory.played_at, Date) >= date_min)
+    if date_max: query = query.where(cast(TrackHistory.played_at, Date) <= f"{date_max} 23:59:59")
+    query = query.group_by(
+        Track.spotify_id,
+        Artist.name,
+        Album.name,
+        Album.image_url
+    )
+    if streams_min is not None: query = query.having(play_count >= streams_min)
+    if streams_max is not None: query = query.having(play_count <= streams_max)
+    if minutes_min is not None: query = query.having(total_minutes >= minutes_min)
+    if minutes_max is not None: query = query.having(total_minutes <= minutes_max)
+    if engagement_min is not None: query = query.having(engagement_sql >= engagement_min / 100)
+    if engagement_max is not None: query = query.having(engagement_sql <= engagement_max / 100)
+    results = db.exec(query).all()
+
+    all_musics = []
+    for row in results:
+        track_obj, artist_name, album_name, cover_url, count, mins, eng = row
+        eng = min(eng or 0.0, 1.0)
+        rating = (eng * mins / (20.0 * count) + mins / 40.0) / 8.0
+        if rating_min and rating <= rating_min: continue
+        if rating_max and rating >= rating_max: continue
+
+        all_musics.append({
+            "spotify_id": track_obj.spotify_id,
+            "title": track_obj.title,
+            "artist": artist_name,
+            "album": album_name,
+            "cover": cover_url,        
+            "duration_ms": track_obj.duration_ms,
+            "play_count": count,
+            "total_minutes": round(mins),
+            "engagement": round(eng * 100, 2),
+            "rating": round(rating,2) or 0
+        })
+    if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:
+        all_musics.sort(key=lambda x: x["title" if sort == "name" else sort], reverse=(direction == "desc"))
+    return all_musics[offset : offset + limit]
+
+@router.get("/metadata")
+async def get_musics_metadata(db: Session = Depends(get_session)):
+    # 1. On récupère les stats de la track la plus écoutée pour calculer le rating max théorique
+    # On ajoute la durée de la track (Track.duration_ms) pour l'engagement
+    stats = db.exec(
+        select(
+            func.count(TrackHistory.id).label("max_streams"),
+            func.sum(TrackHistory.ms_played).label("max_ms"),
+            func.sum(Track.duration_ms).label("total_duration")
+        )
+        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
+        .group_by(TrackHistory.spotify_id)
+        .order_by(text("max_streams DESC"))
+        .limit(1)
+    ).first()
+
+    date_min, date_max = get_date_metadata(db)
+    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10, "date_min": date_min, "date-max": date_max}
+
+    count = stats[0]
+    mins = (stats[1] or 0) / 60000
+    total_duration = stats[2] or 0
+    
+    # Calcul de l'engagement pour le top élément
+    eng = min((stats[1] / total_duration) if total_duration > 0 else 0, 1.0)
+    max_rating = (eng * mins / (20.0 * count) + mins / 40.0) / 8.0
+
+    return {
+        "max_streams": count,
+        "max_minutes": round(mins),
+        "max_rating": max(round(max_rating,2)+.05, 0),
+        "date_min": date_min,
+        "date_max": date_max
+    }
