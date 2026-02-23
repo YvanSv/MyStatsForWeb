@@ -7,8 +7,8 @@ from pydantic import BaseModel, EmailStr
 from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User
-from app.utils.auth_utils import create_uuid_session, get_password_hash, verify_password
-from app.auth.spotify_auth import UpdateProfileSchema
+from .utils.auth_utils import create_uuid_session, get_password_hash, verify_password
+from .spotify_auth import UpdateProfileSchema
 
 load_dotenv()
 FRONTEND_URL = os.getenv("FRONTEND_URL")

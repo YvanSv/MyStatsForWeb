@@ -1,5 +1,5 @@
 import { useCallback, useState, useMemo } from "react";
-import { ENDPOINTS } from "../config";
+import { API_ENDPOINTS } from "../config";
 
 export const useApi = () => {
   const [loading, setLoading] = useState(false);
@@ -25,84 +25,21 @@ export const useApi = () => {
     finally { setLoading(false); }
   }, []);
 
-  // Stabilisation des méthodes individuelles
-  const getMe = useCallback(() => request(ENDPOINTS.ME), [request]);
-
-  const getHistory = useCallback((offset: number, limit: number = 50) => 
-    request(`${ENDPOINTS.HISTORY}?offset=${offset}&limit=${limit}`), [request]);
-
-  const getMusics = useCallback(async (filters: Record<string, any>) => {
-    const params = new URLSearchParams();
-    params.set('offset', '0');
-    params.set('limit', '50');
-    if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== "") {
-              params.set(key, String(value));
-            }
-        });
-    }
-    if (!params.has('sort')) params.set('sort', 'play_count');
-    if (!params.has('direction')) params.set('direction', 'desc');
-    return request(`${ENDPOINTS.TRACKS}?${params.toString()}`);
-  }, [request]);
-
-  const getArtists = useCallback(async (filters: Record<string, any>) => {
-    const params = new URLSearchParams();
-    params.set('offset', '0');
-    params.set('limit', '50');
-    if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== "") {
-                params.set(key, String(value));
-            }
-        });
-    }
-    if (!params.has('sort')) params.set('sort', 'play_count');
-    if (!params.has('direction')) params.set('direction', 'desc');
-    return request(`${ENDPOINTS.ARTISTS}?${params.toString()}`);
-  }, [request]);
-
-  const getAlbums = useCallback(async (filters: Record<string, any>) => {
-    const params = new URLSearchParams();
-    params.set('offset', '0');
-    params.set('limit', '50');
-    if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== "") {
-                params.set(key, String(value));
-            }
-        });
-    }
-    if (!params.has('sort')) params.set('sort', 'play_count');
-    if (!params.has('direction')) params.set('direction', 'desc');
-    return request(`${ENDPOINTS.ALBUMS}?${params.toString()}`);
-  }, [request]);
-
-  const getOverview = useCallback(() => request(ENDPOINTS.STATS_OVERVIEW), [request]);
-
-  const uploadJson = useCallback((formData: FormData) =>
-    request(ENDPOINTS.IMPORT_DATA, {method: 'POST', body: formData}), [request]);
-
-  const getMusicsMetadata = useCallback(async () => request(`${ENDPOINTS.MUSICS_METADATA}`), [request]);
-  const getArtistsMetadata = useCallback(async () => request(`${ENDPOINTS.ARTISTS_METADATA}`), [request]);
-  const getAlbumsMetadata = useCallback(async () => request(`${ENDPOINTS.ALBUMS_METADATA}`), [request]);
-
-  const getStatus = useCallback(async () => request(`${ENDPOINTS.STATUS}`), [request]);
+  const getStatus = useCallback(async () => request(`${API_ENDPOINTS.STATUS}`), [request]);
 
   const register = useCallback((regData: any) => 
-    request(ENDPOINTS.REGISTER, {method: 'POST', body: regData}), [request]);
+    request(API_ENDPOINTS.REGISTER, {method: 'POST', body: regData}), [request]);
   const login = useCallback((loginData: any) => 
-    request(ENDPOINTS.LOGIN, {method: 'POST', body: loginData}), [request]);
+    request(API_ENDPOINTS.LOGIN, {method: 'POST', body: loginData}), [request]);
   const updateProfile = useCallback((data: any) => 
-    request(`${ENDPOINTS.EDIT_INFOS}`, { 
+    request(`${API_ENDPOINTS.EDIT_INFOS}`, { 
       method: 'PATCH', 
       body: JSON.stringify(data) 
   }), [request]);
 
-  const unlinkSpotify = useCallback(async () => request(`${ENDPOINTS.UNLINK_SPOTIFY}`, {method: 'POST'}), [request])
+  const unlinkSpotify = useCallback(async () => request(`${API_ENDPOINTS.UNLINK_SPOTIFY}`, {method: 'POST'}), [request]);
 
   return useMemo(() => ({ 
-    loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus, register, login, updateProfile, unlinkSpotify
-  }), [loading, getMe, getHistory, getMusics, getArtists, getAlbums, getOverview, uploadJson, getMusicsMetadata, getArtistsMetadata, getAlbumsMetadata, getStatus, register, login, updateProfile, unlinkSpotify]);
+    loading, request, getStatus, register, login, updateProfile, unlinkSpotify
+  }), [loading, getStatus, register, login, updateProfile, unlinkSpotify]);
 };

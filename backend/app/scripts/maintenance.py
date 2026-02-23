@@ -1,18 +1,16 @@
 import random
 import re
 import time
-
 from fastapi import BackgroundTasks, APIRouter
-from sqlmodel import Session, select, text, update
-
-from app.models import Album, Artist, Track
-from app.utils.spotify_status import spotify_status
-from app.utils.spotify_api import get_spotify_client
+from sqlmodel import Session, select, update
+from app.models import Artist
+from app.spotify.utils.spotify_status import spotify_status
+from app.spotify.utils.spotify_api import get_spotify_client
 from app.database import engine
 
 router = APIRouter()
 
-@router.post("/fix-missing-covers")
+@router.post('')
 async def fix_missing_covers(background_tasks: BackgroundTasks):
     """Endpoint pour lancer le rattrapage en arrière-plan"""
     background_tasks.add_task(catch_up_maintenance)

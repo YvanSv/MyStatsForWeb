@@ -1,6 +1,6 @@
 "use client";
 
-import { ENDPOINTS } from "../config";
+import { API_ENDPOINTS, FRONT_ROUTES } from "../config";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
@@ -59,7 +59,7 @@ function AuthContent() {
     setLoading(true);
     try {
       await login(JSON.stringify(loginData));
-      router.push("/");
+      router.push(FRONT_ROUTES.ACCUEIL);
       router.refresh();
     } catch (err: any) {setLoginError(err.message);}
     finally {setLoading(false);}
@@ -100,11 +100,11 @@ function AuthContent() {
       }));
 
       if (loginRes.ok) {
-        router.push("/auth?registered=true&connected=true"); 
+        router.push(`${FRONT_ROUTES.AUTH}?registered=true&connected=true`); 
         router.refresh();
       } else {
         // Si l'auto-login foire, on renvoie quand même au login manuel
-        router.push("/auth?registered=true");
+        router.push(`${FRONT_ROUTES.AUTH}?registered=true`);
       }
     } catch (err: any) {
       setRegError(err.message);
@@ -114,7 +114,7 @@ function AuthContent() {
   };
 
   const handleSpotifyLogin = () => {
-    window.location.href = ENDPOINTS.SPOTIFY_LOGIN;
+    window.location.href = API_ENDPOINTS.SPOTIFY_LOGIN;
   };
 
   return (

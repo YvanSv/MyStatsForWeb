@@ -1,6 +1,6 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-export const ENDPOINTS = {
+export const API_ENDPOINTS = {
   REGISTER: `${API_BASE_URL}/auth/register`,
   LOGIN: `${API_BASE_URL}/auth/login`,
   EDIT_INFOS: `${API_BASE_URL}/auth/update`,
@@ -8,15 +8,33 @@ export const ENDPOINTS = {
   UNLINK_SPOTIFY: `${API_BASE_URL}/auth/unlink-spotify`,
   LOGOUT:`${API_BASE_URL}/auth/logout`,
   ME: `${API_BASE_URL}/auth/me`,
-  STATS_OVERVIEW: `${API_BASE_URL}/stats/overview`,
-  HISTORY:`${API_BASE_URL}/spotify/history`,
-  TRACKS:`${API_BASE_URL}/spotify/musics/`,
-  MUSICS_METADATA:`${API_BASE_URL}/spotify/musics/metadata`,
-  ARTISTS:`${API_BASE_URL}/spotify/artists/`,
-  ARTISTS_METADATA:`${API_BASE_URL}/spotify/artists/metadata`,
-  ALBUMS:`${API_BASE_URL}/spotify/albums/`,
-  ALBUMS_METADATA:`${API_BASE_URL}/spotify/albums/metadata`,
-  UPLOAD_JSON:`${API_BASE_URL}/spotify/upload-json`,
-  IMPORT_DATA:`${API_BASE_URL}/spotify/upload-json`,
-  STATUS:`${API_BASE_URL}/spotify/status/`,
+  STATS_OVERVIEW: `${API_BASE_URL}/datas/my/overview`,
+  HISTORY:`${API_BASE_URL}/datas/my/history`,
+  TRACKS:`${API_BASE_URL}/datas/my/tracks`,
+  TRACKS_METADATA:`${API_BASE_URL}/datas/my/tracks/metadata`,
+  ARTISTS:`${API_BASE_URL}/datas/my/artists`,
+  ARTISTS_METADATA:`${API_BASE_URL}/datas/my/artists/metadata`,
+  ALBUMS:`${API_BASE_URL}/datas/my/albums`,
+  ALBUMS_METADATA:`${API_BASE_URL}/datas/my/albums/metadata`,
+  UPLOAD_JSON:`${API_BASE_URL}/datas/my/upload-json`,
+  IMPORT_DATA:`${API_BASE_URL}/datas/my/upload-json`,
+  ALL_HISTORY:`${API_BASE_URL}/datas/all/history`,
+  ALL_TRACKS:`${API_BASE_URL}/datas/all/tracks`,
+  ALL_TRACKS_METADATA:`${API_BASE_URL}/datas/all/tracks/metadata`,
+  ALL_ARTISTS:`${API_BASE_URL}/datas/all/artists`,
+  ALL_ARTISTS_METADATA:`${API_BASE_URL}/datas/all/artists/metadata`,
+  ALL_ALBUMS:`${API_BASE_URL}/datas/all/albums`,
+  ALL_ALBUMS_METADATA:`${API_BASE_URL}/datas/all/albums/metadata`,
+  STATUS:`${API_BASE_URL}/spotify/status`,
 };
+
+export const FRONT_ROUTES = {
+  ACCUEIL: '/',
+  AUTH: '/auth',
+  MY_RANKINGS: '/my/',
+  ALL_RANKINGS: '/all/',
+  IMPORT: '/import',
+  ACCOUNT: '/account',
+  DASHBOARD: '/dashboard',
+  ABOUT: '/about',
+}

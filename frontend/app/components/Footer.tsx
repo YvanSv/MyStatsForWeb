@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ApiStatusBadge } from './StatusBadge';
+import { FRONT_ROUTES } from '../config';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -22,8 +23,8 @@ export default function Footer() {
           {/* Section Centre : Navigation avec séparateurs */}
           <div className="flex flex-col items-center py-4 md:py-0 my-4 md:my-0">
             <nav className="flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">
-              <Link href="/dashboard" className="hover:text-vert transition-colors"> Mon dashboard</Link>
-              <Link href="/about" className="hover:text-vert transition-colors">À propos</Link>
+              <Link href={`${FRONT_ROUTES.DASHBOARD}`} className="hover:text-vert transition-colors"> Mon dashboard</Link>
+              <Link href={`${FRONT_ROUTES.ABOUT}`} className="hover:text-vert transition-colors">À propos</Link>
             </nav>
             <p className="text-gray-400 text-[9px] font-mono font-medium pt-3 opacity-50 uppercase tracking-tighter">
               &copy; {currentYear} • MyStats • Tous droits réservés

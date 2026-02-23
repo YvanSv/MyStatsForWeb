@@ -132,7 +132,7 @@ async def callback(
     else:
         # Vérifier si le compte Spotify n'est pas déjà lié à un autre compte
         existing_link = session.exec(select(User).where(User.spotify_id == spotify_id, User.id != user.id)).first()
-        if existing_link: return RedirectResponse(url=f"{FRONTEND_URL}/edit?error=spotify_already_linked")
+        if existing_link: return RedirectResponse(url=f"{FRONTEND_URL}/account?error=spotify_already_linked")
         # Liaison à un compte existant ou mise à jour des tokens
         user.spotify_id = spotify_id
         user.spotify_email = spotify_email
@@ -142,7 +142,7 @@ async def callback(
         user.expires_at = expiration_date
         if not user.session_id: user.session_id = str(uuid.uuid4())
         session.add(user)
-        endpoint = "/edit?linked=true"
+        endpoint = "/account?linked=true"
 
     session.commit()
     session.refresh(user)

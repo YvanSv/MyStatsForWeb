@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useApi } from "../hooks/useApi";
-import { useRouter } from "next/navigation";
+import { useApiMyDatas } from "../hooks/useApiMyDatas";
 
 export default function ImportPage() {
-  const router = useRouter();
-  const { uploadJson } = useApi();
+  const { uploadJson } = useApiMyDatas();
 
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);

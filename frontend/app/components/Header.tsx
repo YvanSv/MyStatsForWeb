@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
-import { ENDPOINTS } from "../config";
-import { useApi } from "../hooks/useApi";
+import { API_ENDPOINTS, FRONT_ROUTES } from "../config";
+import { useApiMyDatas } from "../hooks/useApiMyDatas";
 import { ApiStatusBadge } from "./StatusBadge";
 
 export default function Header() {
@@ -21,7 +21,7 @@ export default function Header() {
   const { viewMode, toggleViewMode } = useViewMode();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { getMe } = useApi();
+  const { getMe } = useApiMyDatas();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -48,8 +48,8 @@ export default function Header() {
     checkAuth();
   }, []);
 
-  const handleLogin = () => {router.push('/auth');};
-  const handleSpotifyLogin = () => {window.location.href = ENDPOINTS.SPOTIFY_LOGIN;};
+  const handleLogin = () => {navigate(FRONT_ROUTES.AUTH);};
+  const handleSpotifyLogin = () => {window.location.href = API_ENDPOINTS.SPOTIFY_LOGIN;};
   const handleLogout = () => {
     // 1. Mise à jour immédiate de l'UI pour éviter le lag visuel
     setIsLoggedIn(false);
@@ -59,7 +59,7 @@ export default function Header() {
     localStorage.clear(); 
     sessionStorage.clear();
     // 3. Redirection vers l'endpoint de logout de l'API
-    window.location.replace(ENDPOINTS.LOGOUT);
+    window.location.replace(API_ENDPOINTS.LOGOUT);
   };
 
   return (
@@ -67,7 +67,7 @@ export default function Header() {
       {/* GAUCHE : Logo + Titre */}
       <div 
         className="flex items-center gap-3 cursor-pointer group"
-        onClick={() => navigate("/")}
+        onClick={() => navigate(FRONT_ROUTES.ACCUEIL)}
       >
         <Image 
           src="/logo.png" alt="Logo" width={60} height={60} style={{ height: 'auto' }} priority
@@ -82,8 +82,8 @@ export default function Header() {
 
       {/* CENTRE : Navigation (Masquée sur mobile, Burger en bas) */}
       <nav className="hidden lg:flex items-center gap-8 xl:gap-20 text-ss-titre font-jost font-semibold text-white">
-        {["Musiques", "Albums", "Artistes", "Historique"].map((item) => (
-          <button key={item} onClick={() => navigate(`/${item.toLowerCase()}`)} className="hover:text-vert transition-all cursor-pointer">
+        {["Tracks", "Albums", "Artists", "History"].map((item) => (
+          <button key={item} onClick={() => {isLoggedIn ? navigate(`${FRONT_ROUTES.MY_RANKINGS}${item.toLowerCase()}`) : navigate(`${FRONT_ROUTES.ALL_RANKINGS}${item.toLowerCase()}`)}} className="hover:text-vert transition-all cursor-pointer">
             {item}
           </button>
         ))}
@@ -138,7 +138,7 @@ export default function Header() {
 
                 {/* 2. Compte (Edit) */}
                 <button 
-                  onClick={() => { navigate("/edit"); setMenuOpen(false); }}
+                  onClick={() => { navigate(`${FRONT_ROUTES.ACCOUNT}`); setMenuOpen(false); }}
                   className="w-full text-left px-4 py-3 text-sm hover:bg-white/5 rounded-xl transition-colors flex items-center gap-3 text-white"
                 >
                   <UserIcon/>Compte
@@ -175,10 +175,10 @@ export default function Header() {
       {isMobileNavOpen && (
         <div className="absolute top-full left-0 w-full bg-bg1 border-b border-white/10 lg:hidden animate-in slide-in-from-top duration-300">
           <nav className="flex flex-col p-4 space-y-4 text-center font-jost font-semibold text-white">
-            {["Musiques", "Albums", "Artistes", "Historique"].map((item) => (
+            {["Tracks", "Albums", "Artists", "History"].map((item) => (
               <button 
                 key={item} 
-                onClick={() => { navigate(`/${item.toLowerCase()}`); setIsMobileNavOpen(false); }} 
+                onClick={() => {isLoggedIn ? navigate(`${FRONT_ROUTES.MY_RANKINGS}${item.toLowerCase()}`) : navigate(`${FRONT_ROUTES.ALL_RANKINGS}${item.toLowerCase()}`); }} 
                 className="py-2 hover:text-vert"
               >
                 {item}
@@ -198,7 +198,7 @@ export default function Header() {
             
             {/* 1. Paramètres */}
             <button 
-              onClick={() => { navigate(`/import`); setMenuOpen(false); }} 
+              onClick={() => { navigate(`${FRONT_ROUTES.IMPORT}`); setMenuOpen(false); }} 
               className="flex items-center justify-center gap-3 py-2 hover:text-vert transition-colors"
             >
               <UploadIcon/> 
@@ -207,7 +207,7 @@ export default function Header() {
 
             {/* 2. Compte */}
             <button 
-              onClick={() => { navigate(`/edit`); setMenuOpen(false); }} 
+              onClick={() => { navigate(`${FRONT_ROUTES.ACCOUNT}`); setMenuOpen(false); }} 
               className="flex items-center justify-center gap-3 py-2 hover:text-vert transition-colors"
             >
               <UserIcon /> 
@@ -224,7 +224,6 @@ export default function Header() {
               <LogoutIcon /> 
               <span>Déconnexion</span>
             </button>
-
           </nav>
         </div>
       )}

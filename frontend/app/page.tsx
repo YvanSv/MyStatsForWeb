@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApi } from "./hooks/useApi";
 import { PulseSpinner } from "./components/CustomSpinner";
+import { FRONT_ROUTES } from "./config";
 
 
 export default function HomePage() {
@@ -91,7 +92,7 @@ export default function HomePage() {
                     <span className="text-center">Connectez-vous pour voir vos statistiques</span>
                   </p>
                   <button 
-                    onClick={() => router.push('/auth')}
+                    onClick={() => router.push(FRONT_ROUTES.AUTH)}
                     className="mt-6 w-full bg-vert text-black py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition-transform shadow-lg cursor-pointer"
                   >Se connecter</button>
                 </div>
@@ -115,7 +116,7 @@ export default function HomePage() {
           {/* Boutons empilés sur mobile, côte à côte sur desktop */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center px-6 sm:px-0">
             <button 
-              onClick={() => router.push("/musiques")}
+              onClick={() => router.push(`${FRONT_ROUTES.MY_RANKINGS}/tracks`)}
               className="bg-vert text-black px-8 py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition-transform shadow-lg"
             >
               Commencer l'expérience
