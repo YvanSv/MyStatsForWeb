@@ -2,12 +2,24 @@
 
 import { ENDPOINTS } from "../config";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { PulseSpinner } from "../components/CustomSpinner";
 import { useSearchParams } from "next/navigation";
 
 export default function EditProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-bg1">
+        <PulseSpinner/>
+      </div>
+    }>
+      <EditProfileContent />
+    </Suspense>
+  );
+}
+
+function EditProfileContent() {
   const router = useRouter();
 	const searchParams = useSearchParams();
   const { getMe, updateProfile, unlinkSpotify } = useApi();

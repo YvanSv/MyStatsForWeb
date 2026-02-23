@@ -3,9 +3,23 @@
 import { ENDPOINTS } from "../config";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useApi } from "../hooks/useApi"; 
+import { useApi } from "../hooks/useApi";
+import { Suspense } from 'react';
+import { PulseSpinner } from "../components/CustomSpinner";
 
 export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-bg1">
+        <PulseSpinner/>
+      </div>
+    }>
+      <AuthContent />
+    </Suspense>
+  );
+}
+
+function AuthContent() {
 	const router = useRouter();
 	// États pour le Login
   const [loginData, setLoginData] = useState({ email: "", password: "" });
