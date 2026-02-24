@@ -37,4 +37,5 @@ export const FRONT_ROUTES = {
   ACCOUNT: '/account',
   DASHBOARD: '/dashboard',
   ABOUT: '/about',
+  PROFILE: '/profile',
 }

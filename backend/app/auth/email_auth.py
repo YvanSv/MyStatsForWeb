@@ -128,7 +128,8 @@ async def get_me(session_id: Optional[str] = Cookie(None), db: Session = Depends
     return {
         "is_logged_in": True,
         "user_name": user.display_name,
-        "has_spotify": user.spotify_id != None
+        "has_spotify": user.spotify_id != None,
+        "profileURL": user.id
     }
 
 @router.patch("/update")
