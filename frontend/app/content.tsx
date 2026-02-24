@@ -8,7 +8,7 @@ export default function Content({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isProfilePage = pathname?.startsWith('/profile');
 	return (
-		<div className="flex-1 flex flex-col overflow-x-hidden">
+		<div className="flex-1 flex flex-col overflow-x-hidden font-jost">
 			{!isProfilePage && (
 			<div className="fixed inset-0 -z-10 pointer-events-none">
 					<div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]" />

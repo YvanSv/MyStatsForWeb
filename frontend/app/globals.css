@@ -8,27 +8,41 @@
   --font-insanibu: var(--font-insanibu);
   --font-insanibc: var(--font-insanibc);
   /*-------*/
-
-  --text-titre: 3.0rem;
-  --text-titre--line-height: 1;
-  --text-titre--font-weight: 900;
-
-  --text-s-titre: 2.25rem;
-  --text-s-titre--line-height: 1.2;
-  --text-s-titre--font-weight: 700;
-
-  --text-ss-titre: 1.5rem;
-  --text-ss-titre--line-height: 1.2;
-  --text-ss-titre--font-weight: 600;
-
-  --text-texte: 1rem;
-  --text-texte--line-height: 1.5;
   
   --color-vert: #1DD05D;
   --color-jaune: #D3F527;
   --color-rouge: #F54927;
   --color-bg2: #282828;
   --color-bg1: #1d1d1d;
+}
+
+@layer components {
+  .titre-1 {
+    @apply font-semibold text-white tracking-tighter;
+  }
+
+  .titre-2 {
+    @apply font-semibold text-white;
+  }
+
+  .greenbutton {
+    @apply bg-vert px-2 py-2 text-black font-semibold cursor-pointer rounded-full;
+  }
+
+  .flex-centre {
+    @apply flex items-center;
+  }
+
+  .option-dropdown-pc {
+    @apply w-full px-4 py-3 hover:bg-white/5 rounded-xl transition-colors gap-3;
+  }
+  .option-dropdown-pc-danger {
+    @apply w-full px-4 py-3 hover:bg-red-500/10 text-red-400 rounded-xl transition-colors gap-3;
+  }
+
+  button {
+    @apply active:scale-95 transition-all;
+  }
 }
 
 :root {

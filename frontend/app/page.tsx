@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { PulseSpinner } from "./components/small_elements/CustomSpinner";
 import { FRONT_ROUTES } from "./config";
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
-import GreenButton from "./components/small_elements/GreenButton";
 
 export default function HomePage() {
   const router = useRouter();
@@ -33,35 +32,24 @@ export default function HomePage() {
   }, [getMe, getOverview]);
 
   return (
-    <main className="min-h-screen text-white font-jost overflow-x-hidden">
-      {/* --- ANIMATION DE FOND --- */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] h-[600px] w-[600px] animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-10 blur-[120px]" />
-      </div>
-
+    <main className="min-h-screen text-white overflow-x-hidden">
       <section className="relative flex flex-col items-center justify-center pt-12 md:pt-20 pb-16 md:pb-24 px-4 md:px-6 text-center">
-        
         {/* --- SECTION STATS AVANT-GOÛT --- */}
         <div className="relative z-20 mb-12 w-full max-w-5xl animate-in fade-in slide-in-from-top-4 duration-1000">
-          <h2 className="text-xl md:text-ss-titre font-hias mb-6 md:mb-10 opacity-80">
+          <p className="text-[24px] lg:text-[32px] mb-6 md:mb-10 opacity-80">
             Un avant-goût de vos stats...
-          </h2>
+          </p>
           
           <div className="relative"> 
             {/* Grille responsive : 1 col mobile, 2 col tablette, 3 col desktop */}
             <div className={`flex flex-wrap justify-center gap-4 md:gap-6 transition-all duration-700 ${!isLoggedIn ? 'blur-md pointer-events-none select-none opacity-50' : ''}`}>
               {isLoggedIn && randomStats.length === 0 ? (
                 <>
-                  <div className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]">
-                    <StatCardSkeleton />
-                  </div>
-                  <div className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]">
-                    <StatCardSkeleton />
-                  </div>
-                  <div className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]">
-                    <StatCardSkeleton />
-                  </div>
+                  {[1,2,3].map(i =>
+                    <div key={i} className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]">
+                      <StatCardSkeleton />
+                    </div>
+                  )}
                 </>
               ) : (
                 (randomStats.length > 0 ? randomStats : [
@@ -85,13 +73,13 @@ export default function HomePage() {
 
             {/* Overlay d'incitation (Adaptation de la taille de la boîte) */}
             {!loading && !isLoggedIn && (
-              <div className="absolute inset-0 flex items-center justify-center z-30 px-4 pb-4">
+              <div className="absolute inset-0 flex items-center justify-center z-30">
                 <div className="bg-bg1/80 backdrop-blur-2xl border border-white/10 p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-md">
-                  <p className="text-lg md:text-ss-titre font-hias text-white flex flex-col items-center gap-2">
+                  <p className="text-lg md:text-ss-titre text-white flex flex-col items-center gap-2">
                     <span className="text-vert text-3xl md:text-4xl mb-1">🔒</span>
                     <span className="text-center">Connectez-vous pour voir vos statistiques</span>
                   </p>
-                  <GreenButton texte="Se connecter" onClick={() => router.push(FRONT_ROUTES.AUTH)} className="mt-6 w-full py-3 md:py-4 md:text-lg shadow-lg"/>
+                  <button onClick={() => router.push(FRONT_ROUTES.AUTH)} className="greenbutton titre-1 mt-4 w-full py-2 md:py-3 md:text-[20px] lg:px-5 shadow-lg transition-transform hover:scale-105">Se connecter</button>
                 </div>
               </div>
             )}
@@ -101,7 +89,7 @@ export default function HomePage() {
         {/* --- CONTENU HERO --- */}
         <div className="relative z-10 mt-8">
           {/* Taille de police fluide pour le titre */}
-          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-titre font-hias leading-tight md:leading-none tracking-tighter mb-6 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-titre leading-tight md:leading-none tracking-tighter mb-6 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
             Vos statistiques <br className="hidden sm:block" />
             <span className="text-vert">Spotify</span> en temps réel.
           </h1>
@@ -112,7 +100,7 @@ export default function HomePage() {
           
           {/* Boutons empilés sur mobile, côte à côte sur desktop */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center px-6 sm:px-0">
-            <GreenButton texte="Commencer l'expérience" onClick={() => router.push(`${FRONT_ROUTES.MY_RANKINGS}/tracks`)} className="px-8 py-4 lg:text-lg shadow-lg"/>
+            <button onClick={() => router.push(`${FRONT_ROUTES.MY_RANKINGS}/tracks`)} className="greenbutton px-8 py-4 lg:text-lg shadow-lg texte-1 lg:px-5 lg:transition-transform lg:hover:scale-105">Commencer l'expérience</button>
             <button 
               className="border border-gray-700 px-8 py-4 rounded-full font-bold text-base md:text-lg hover:bg-white/5 transition-colors backdrop-blur-sm"
             >En savoir plus</button>
@@ -130,7 +118,7 @@ export default function HomePage() {
       {/* Section Technique / "About" */}
       <section className="py-6 md:py-6 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-s-titre font-hias mb-8 md:mb-12">Le Projet MyStats</h2>
+          <h2 className="text-2xl md:text-s-titre mb-8 md:mb-12">Le Projet MyStats</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-xs md:text-sm opacity-70">
             {["Next.js", "FastAPI", "SQLModel", "PostgreSQL"].map((tech) => (
               <div key={tech} className="p-3 md:p-4 border border-white/10 rounded-xl bg-white/5">{tech}</div>
@@ -146,7 +134,7 @@ function FeatureCard({ title, description, icon }: { title: string, description:
   return (
     <div className="bg-bg2 p-6 md:p-8 rounded-2xl border border-white/5 hover:border-vert/30 transition-all group h-full">
       <div className="text-3xl md:text-4xl mb-4 group-hover:scale-110 transition-transform inline-block">{icon}</div>
-      <h3 className="text-lg md:text-ss-titre font-hias mb-2 md:mb-3 text-white">{title}</h3>
+      <h3 className="text-lg md:text-ss-titre mb-2 md:mb-3 text-white">{title}</h3>
       <p className="text-sm md:text-base text-gray-400 leading-snug font-light">{description}</p>
     </div>
   );
@@ -157,7 +145,7 @@ function StatPreviewCard({ title, value, detail }: { title: string, value: strin
     <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 md:p-6 rounded-2xl md:rounded-3xl text-left hover:border-vert/40 transition-all hover:scale-[1.02] cursor-default group h-full flex flex-col justify-between">
       <div>
         <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-vert mb-3 md:mb-4">{title}</p>
-        <h3 className="text-lg md:text-xl font-hias mb-1 group-hover:text-vert transition-colors break-words">{value}</h3>
+        <h3 className="text-lg md:text-xl mb-1 group-hover:text-vert transition-colors break-words">{value}</h3>
         <p className="text-xs md:text-sm text-gray-400 font-light leading-relaxed">{detail}</p>
       </div>
       <div className="flex justify-end mt-4 md:mt-2 opacity-100 md:opacity-20 md:group-hover:opacity-100 md:transition-opacity">

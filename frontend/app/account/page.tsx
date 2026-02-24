@@ -7,7 +7,6 @@ import { useApi } from "../hooks/useApi";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
 import { PulseSpinner } from "../components/small_elements/CustomSpinner";
 import { useSearchParams } from "next/navigation";
-import GreenButton from "../components/small_elements/GreenButton";
 
 export default function EditProfilePage() {
   return (
@@ -121,7 +120,7 @@ function EditProfileContent() {
           {/* COLONNE GAUCHE : INFOS PERSO */}
           <div className="flex-1 p-8 md:p-12 lg:p-16">
             <div className="mb-10">
-              <h1 className="text-ss-titre md:text-s-titre font-jost text-white leading-none mb-3">Profil</h1>
+              <h1 className="text-ss-titre md:text-s-titre text-white leading-none mb-3">Profil</h1>
               <p className="text-gray-500 text-md tracking-[0.2em] font-medium font-hias">Gérez vos informations.</p>
             </div>
 
@@ -147,7 +146,7 @@ function EditProfileContent() {
                 />
               </div>
 
-              <button disabled={updating} className="w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-bold border border-white/5 transition-all mt-4">
+              <button disabled={updating} className="w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-bold border border-white/5 mt-4">
                 {updating ? "Mise à jour..." : "Enregistrer les modifications"}
               </button>
             </form>
@@ -161,7 +160,7 @@ function EditProfileContent() {
           {/* COLONNE DROITE : CONNEXIONS */}
           <div className="flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.02] flex flex-col justify-center">
             <div className="mb-10">
-              <h2 className="text-ss-titre md:text-s-titre font-jost text-white leading-none mb-3">Services</h2>
+              <h2 className="text-ss-titre md:text-s-titre text-white leading-none mb-3">Services</h2>
               <p className="text-gray-500 text-md tracking-[0.2em] font-medium font-hias">Liaison de comptes tiers.</p>
             </div>
 
@@ -171,7 +170,7 @@ function EditProfileContent() {
                   <SpotifyIcon />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold font-jost text-lg">Spotify</h3>
+                  <h3 className="text-white font-bold text-lg">Spotify</h3>
                   <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">
                     {profileData.hasSpotify ? "Connecté" : "Non lié"}
                   </p>
@@ -188,11 +187,11 @@ function EditProfileContent() {
 									{/* Bouton Délier */}
 									<button 
 										onClick={handleUnlinkSpotify}
-										className="w-full bg-white/5 hover:bg-rouge/10 hover:text-rouge hover:border-rouge/20 text-gray-400 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/10 transition-all active:scale-95"
+										className="w-full bg-white/5 hover:bg-rouge/10 hover:text-rouge hover:border-rouge/20 text-gray-400 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/10 active:scale-95"
 									>Délier mon compte Spotify</button>
 								</div>
 							) : (
-                <GreenButton texte="Lier mon Spotify" onClick={handleConnectSpotify} className="sm:text-base w-full py-4 sm:rounded-2xl hover:scale-[1.02] shadow-[0_0_20px_rgba(29,208,93,0.2)]"/>
+                <button onClick={handleConnectSpotify} className="greenbutton sm:text-base w-full py-4 sm:rounded-2xl hover:scale-[1.02] shadow-[0_0_20px_rgba(29,208,93,0.2)]">Lier mon compte Spotify</button>
 							)}
             </div>
 

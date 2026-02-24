@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
 import { API_ENDPOINTS, FRONT_ROUTES } from "../config";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
-import { ApiStatusBadge } from "./small_elements/StatusBadge";
-import GreenButton from "./small_elements/GreenButton";
 
 export default function Header() {
   const router = useRouter();
@@ -27,6 +25,13 @@ export default function Header() {
     { id: 'grid', icon: <GridIcon />, hideMobile: false },
     { id: 'list', icon: <ListIcon />, hideMobile: false },
   ] as const;
+  const dropdown_menu = [
+    { id: 'Profil public', icon: <EyeIcon/>, click: () => navigate(`${FRONT_ROUTES.PROFILE}/${profileURL}`)},
+    { id: 'Import de datas', icon: <UploadIcon/>, click: () => navigate(`${FRONT_ROUTES.IMPORT}`)},
+    { id: 'Compte', icon: <UserIcon/>, click: () => navigate(`${FRONT_ROUTES.ACCOUNT}`)},
+  ] as const;
+  const navigation_menu = ['Tracks','Albums','Artists','History'] as const;
+  const route_rankings = isLoggedIn ? FRONT_ROUTES.MY_RANKINGS : FRONT_ROUTES.ALL_RANKINGS;
 
   const activeView = views.find(v => v.id === viewMode) || views[1];
 
@@ -73,43 +78,39 @@ export default function Header() {
   }
 
   return (
-    <header className="flex items-center justify-between py-3 md:py-4 px-4 md:px-6 sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl border-b border-white/5">
+    <header className="flex-centre justify-between sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl border-b border-white/5
+      py-3 md:py-4 px-4 md:px-6"
+    >
       {/* GAUCHE : Logo + Titre */}
       <div 
-        className="flex items-center gap-3 cursor-pointer group"
+        className="flex-centre cursor-pointer titre-2 tracking-tighter hover:text-vert transition-all hover:scale-105
+          text-[24px] md:text-[40px] gap-2 md:gap-3"
         onClick={() => navigate(FRONT_ROUTES.ACCUEIL)}
       >
-        <Image 
-          src="/logo.png" alt="Logo" width={60} height={60} style={{ height: 'auto' }} priority
-          className="w-10 md:w-16 rounded-md transition-transform group-hover:scale-105"
-        />
-        <div className="flex flex-col md:flex-row md:items-center md:gap-4">
-            <span className="text-ss-titre md:text-titre font-jost text-white tracking-tighter group-hover:text-vert lg:transition-colors lg:transition-transform lg:group-hover:scale-105">
-              MyStats
-            </span>
-        </div>
+        <Image src="/logo.png" alt="Logo" width={60} height={60} style={{ height: 'auto' }} priority className="w-10 md:w-13"/>
+        MyStats
       </div>
 
       {/* CENTRE : Navigation (Masquée sur mobile, Burger en bas) */}
-      <nav className="hidden lg:flex items-center gap-8 xl:gap-20 text-ss-titre font-jost font-semibold text-white">
-        {["Tracks", "Albums", "Artists", "History"].map((item) => (
-          <button key={item} onClick={() => {isLoggedIn ? navigate(`${FRONT_ROUTES.MY_RANKINGS}${item.toLowerCase()}`) : navigate(`${FRONT_ROUTES.ALL_RANKINGS}${item.toLowerCase()}`)}} className="hover:text-vert transition-all cursor-pointer">
-            {item}
-          </button>
-        ))}
+      <nav className="hidden titre-2 lg:flex items-center gap-8 xl:gap-20 text-[24px]">
+        {navigation_menu.map(item => 
+          <button key={item} onClick={() => navigate(`${route_rankings}/${item.toLowerCase()}`)}
+            className="cursor-pointer hover:text-vert"
+          >{item}</button>
+        )}
       </nav>
 
       {/* DROITE : Toggles + Profil + Burger */}
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex-centre gap-2 md:gap-4">
         {/* View Mode */}
         <div ref={containerRef} className="relative">
-          {/* Bouton Principal (Affiche l'icône active) */}
+          {/* Bouton Principal */}
           <div className="bg-bg2/50 p-1 rounded-xl border border-white/5 backdrop-blur-sm">
             <button
               onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
-              className="p-2 rounded-lg text-vert bg-white/10 hover:bg-white/15 transition-all flex flex-col items-center justify-center"
+              className="p-2 rounded-lg text-vert bg-white/10 hover:bg-white/15 flex flex-col items-center justify-center"
             >
-              <div className="flex items-center justify-center">{activeView.icon}</div>
+              <div className="flex-centre justify-center">{activeView.icon}</div>
               <ChevronDown size={14} className={`opacity-50 transition-transform duration-300 ${isViewMenuOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
@@ -120,7 +121,7 @@ export default function Header() {
               <div className="flex flex-col gap-1">
                 {views.map((v) => (
                   <button key={v.id} onClick={() => { toggleViewMode(v.id); setIsViewMenuOpen(false); }}
-                    className={`p-2 rounded-lg transition-all flex items-center gap-3 ${
+                    className={`p-2 rounded-lg flex-centre gap-3 ${
                       viewMode === v.id ? 'bg-white/10 text-vert' : 'text-gray-500 hover:text-white hover:bg-white/5'
                     } ${v.hideMobile ? 'hidden lg:flex' : 'flex'}`}
                   >{v.icon}</button>
@@ -134,18 +135,18 @@ export default function Header() {
         <div className="relative" ref={menuRef}>
           {isLoggedIn ? (
             <button 
-                onClick={() => {setMenuOpen(!menuOpen); setIsMobileNavOpen(false);}}
-                className={`flex items-center gap-2 md:gap-3 bg-bg2 px-3 md:px-4 py-2 rounded-full text-sm font-medium border transition-all ${menuOpen ? 'border-vert' : 'border-white/10'}`}
+              onClick={() => {setMenuOpen(!menuOpen); setIsMobileNavOpen(false);}}
+              className={`flex-centre gap-2 md:gap-3 bg-bg2 px-3 md:px-4 py-2 rounded-full text-sm font-medium border md:hover:border-vert ${menuOpen ? 'border-vert' : 'border-white/10'}`}
             >
-                <div className="w-6 h-6 rounded-full bg-vert/20 flex items-center justify-center text-vert font-bold text-[10px]">
-                    {userName.charAt(0).toUpperCase()}
-                </div>
-                <span className="hidden sm:block max-w-[80px] truncate">{userName}</span>
+              <div className="w-6 h-6 rounded-full bg-vert/20 flex-centre justify-center text-vert font-bold text-[13px]">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              <span className="hidden sm:block max-w-[80px] truncate">{userName}</span>
             </button>
           ) : (!loading && (
-              <div className="flex items-center justify-center gap-3">
-                <GreenButton texte="Se connecter" onClick={handleLogin} className="md:px-6"/>
-                <GreenButton icon={SpotifyIcon} onClick={handleSpotifyLogin}/>
+              <div className="flex-centre justify-center gap-3">
+                <button onClick={handleLogin} className="greenbutton text-[13px] font-bold lg:px-5 lg:hover:scale-105">Se connecter</button>
+                <button onClick={handleSpotifyLogin} className="hidden lg:block greenbutton lg:hover:scale-105">{SpotifyIcon()}</button>
               </div>
             )
           )}
@@ -153,36 +154,11 @@ export default function Header() {
           {menuOpen && (
             <div className="hidden lg:block absolute right-0 mt-3 w-48 bg-bg2 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               <div className="p-2 space-y-1">
-                {/* 1. Profil Public (Nouveau) */}
-                <button
-                  onClick={() => { navigate(`${FRONT_ROUTES.PROFILE}/${profileURL}`); setMenuOpen(false); }}
-                  className="w-full text-left px-4 py-3 text-sm hover:bg-white/5 rounded-xl transition-colors flex items-center gap-3 text-white"
-                ><EyeIcon/>Profil public</button>
-                {/* 1. Paramètres */}
-                <button 
-                  onClick={() => { navigate(`${FRONT_ROUTES.IMPORT}`); setMenuOpen(false); }}
-                  className="w-full text-left px-4 py-3 text-sm hover:bg-white/5 rounded-xl transition-colors flex items-center gap-3 text-white"
-                >
-                  <UploadIcon/>Import de datas
-                </button>
-
-                {/* 2. Compte (Edit) */}
-                <button 
-                  onClick={() => { navigate(`${FRONT_ROUTES.ACCOUNT}`); setMenuOpen(false); }}
-                  className="w-full text-left px-4 py-3 text-sm hover:bg-white/5 rounded-xl transition-colors flex items-center gap-3 text-white"
-                >
-                  <UserIcon/>Compte
-                </button>
-
-                <div className="h-[1px] bg-white/5 mx-2" />
-
-                {/* 3. Déconnexion */}
-                <button 
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-3 text-sm hover:bg-red-500/10 text-red-400 rounded-xl transition-colors flex items-center gap-3"
-                >
-                  <LogoutIcon/>Déconnexion
-                </button>
+                {dropdown_menu.map(v => 
+                  <button key={v.id} className="option-dropdown-pc text-[14px] flex-centre" onClick={v.click}>{v.icon}{v.id}</button>
+                )}
+                <div className="h-[1px] bg-white/5 mx-2"/>
+                <button onClick={handleLogout} className="option-dropdown-pc-danger text-[14px] flex-centre"><LogoutIcon/>Déconnexion</button>
               </div>
             </div>
           )}
@@ -203,57 +179,26 @@ export default function Header() {
 
       {/* MOBILE OVERLAY MENU NAVIGATION */}
       {isMobileNavOpen && (
-        <div className="absolute top-full left-0 w-full bg-bg1 border-b border-white/10 lg:hidden animate-in slide-in-from-top duration-300">
-          <nav className="flex flex-col p-4 space-y-4 text-center font-jost font-semibold text-white">
-            {["Tracks", "Albums", "Artists", "History"].map((item) => (
-              <button 
-                key={item} 
-                onClick={() => {isLoggedIn ? navigate(`${FRONT_ROUTES.MY_RANKINGS}${item.toLowerCase()}`) : navigate(`${FRONT_ROUTES.ALL_RANKINGS}${item.toLowerCase()}`); }} 
-                className="py-2 hover:text-vert"
-              >
+        <div className="absolute top-full left-0 w-full bg-bg1 border-b border-white/10 lg:hidden">
+          <nav className="flex flex-col p-4 space-y-4 text-center titre-2">
+            {navigation_menu.map(item => 
+              <button key={item} className="text-[14px] py-2" onClick={() => navigate(`${route_rankings}/${item.toLowerCase()}`)}>
                 {item}
               </button>
-            ))}
-            <div className="pt-4 border-t border-white/5 flex justify-center">
-                <ApiStatusBadge />
-            </div>
+            )}
           </nav>
         </div>
       )}
 
       {/* MOBILE OVERLAY MENU */}
       {menuOpen && (
-        <div className="absolute top-full left-0 w-full bg-bg1 border-b border-white/10 lg:hidden animate-in slide-in-from-top duration-300">
-          <nav className="flex flex-col p-4 space-y-4 font-jost font-semibold text-white">
-            
-            {/* 1. Paramètres */}
-            <button 
-              onClick={() => { navigate(`${FRONT_ROUTES.IMPORT}`); setMenuOpen(false); }} 
-              className="flex items-center justify-center gap-3 py-2 hover:text-vert transition-colors"
-            >
-              <UploadIcon/> 
-              <span>Importer vos données</span>
-            </button>
-
-            {/* 2. Compte */}
-            <button 
-              onClick={() => { navigate(`${FRONT_ROUTES.ACCOUNT}`); setMenuOpen(false); }} 
-              className="flex items-center justify-center gap-3 py-2 hover:text-vert transition-colors"
-            >
-              <UserIcon /> 
-              <span>Compte</span>
-            </button>
-
-            <div className="h-[1px] bg-white/5 mx-8" />
-
-            {/* 3. Déconnexion */}
-            <button 
-              onClick={handleLogout} 
-              className="flex items-center justify-center gap-3 py-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
-            >
-              <LogoutIcon /> 
-              <span>Déconnexion</span>
-            </button>
+        <div className="absolute top-full left-0 w-full bg-bg1 border-b border-white/10 lg:hidden">
+          <nav className="flex flex-col p-4 space-y-4 text-center titre-2">
+            {dropdown_menu.map(v => 
+              <button key={v.id} className="option-dropdown-pc text-[14px] flex-centre justify-center" onClick={v.click}>{v.icon}{v.id}</button>
+            )}
+            <div className="h-[1px] bg-white/5 mx-2"/>
+            <button onClick={handleLogout} className="option-dropdown-pc-danger text-[14px] flex-centre justify-center"><LogoutIcon/>Déconnexion</button>
           </nav>
         </div>
       )}

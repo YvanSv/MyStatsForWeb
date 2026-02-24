@@ -46,7 +46,7 @@ export default function HistoryPage() {
   }, [fetchHistory]);
 
   return (
-    <main className="min-h-screen text-white font-jost relative overflow-hidden">
+    <main className="min-h-screen text-white relative overflow-hidden">
       <div className="max-w-[1400px] mx-auto py-12 px-6">
         <div className="flex flex-col gap-8">
           <section className="flex-1">

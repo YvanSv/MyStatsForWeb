@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import GreenButton from "./small_elements/GreenButton";
 
 // Types pour configurer quels filtres afficher
 interface FilterConfig {
@@ -91,12 +90,12 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
           
           {/* Actions principales */}
           <div className="pb-4 mb-2 border-b border-white/5">
-            <GreenButton texte={loading ? 'Chargement...' : "Appliquer les filtres"} onClick={applyFilters} disabled={loading} className="md:text-base disabled:opacity-50 w-full py-3"/>
+            <button onClick={applyFilters} disabled={loading} className="greenbutton md:text-base disabled:opacity-50 w-full py-3">{loading ? 'Chargement...' : "Appliquer les filtres"}</button>
           </div>
 
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-hias text-vert">Filtres</h2>
-            <button onClick={resetFilters} className="text-[10px] uppercase text-gray-500 hover:text-white transition-colors">
+            <button onClick={resetFilters} className="text-[10px] uppercase text-gray-500 hover:text-white">
               Réinitialiser
             </button>
           </div>
@@ -183,7 +182,7 @@ function FilterGroup({ title, children }: { title: string, children: React.React
   const [isOpen, setIsOpen] = useState(true);
   return (
     <div className="mb-4">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70 hover:opacity-100 transition-opacity">
+      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70 hover:opacity-100">
         {title} <span className={`transition-transform duration-300 ${isOpen ? '' : 'rotate-180'}`}>{isOpen ? '−' : '+'}</span>
       </button>
       <div className={`grid transition-all duration-300 ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>

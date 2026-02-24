@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { Suspense } from 'react';
 import { PulseSpinner } from "../components/small_elements/CustomSpinner";
-import GreenButton from "../components/small_elements/GreenButton";
 
 export default function AuthPage() {
   return (
@@ -125,12 +124,12 @@ function AuthContent() {
           {/* COLONNE GAUCHE : LOGIN */}
           <div className="flex-1 p-8 md:p-12 lg:p-16">
             <div className="mb-10 text-center lg:text-left">
-              <h1 className="text-ss-titre md:text-s-titre font-jost text-white leading-none mb-3">Connexion</h1>
+              <h1 className="text-ss-titre md:text-s-titre text-white leading-none mb-3">Connexion</h1>
               <p className="text-gray-500 text-md tracking-[0.2em] font-medium font-hias">Bon retour sur MyStats.</p>
             </div>
 
-            <GreenButton icon={SpotifyIcon} texte="Continuer avec Spotify" onClick={handleSpotifyLogin} className="sm:text-base shadow-[0_0_20px_rgba(29,208,93,0.2)] w-full flex items-center justify-center gap-3 mb-8 py-4 sm:rounded-2xl hover:scale-[1.02]"/>
-
+            <button onClick={handleSpotifyLogin} className="greenbutton sm:text-base shadow-[0_0_20px_rgba(29,208,93,0.2)] w-full flex items-center justify-center gap-3 mb-8 py-4 sm:rounded-2xl hover:scale-[1.02]">{SpotifyIcon()}Continuer avec Spotify</button>
+            
             <div className="relative mb-8 text-center">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
               <span className="relative px-4 bg-[#2a2a2a] text-[9px] text-gray-500 uppercase tracking-widest">Ou</span>
@@ -154,7 +153,7 @@ function AuthContent() {
 									className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white focus:border-vert/50 outline-none transition-all focus:bg-white/10" placeholder="••••••••"
 								/>
               </div>
-              <button disabled={loading} className="w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-bold border border-white/5 transition-all mt-4">
+              <button disabled={loading} className="w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-bold border border-white/5 mt-4">
                 {loading ? "Chargement..." : "Se connecter"}
               </button>
             </form>
@@ -168,7 +167,7 @@ function AuthContent() {
           {/* COLONNE DROITE : REGISTER */}
           <div className="flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.02]">
             <div className="mb-10 text-center lg:text-left">
-              <h2 className="text-ss-titre md:text-s-titre font-jost text-white leading-none mb-3">S'inscrire</h2>
+              <h2 className="text-ss-titre md:text-s-titre text-white leading-none mb-3">S'inscrire</h2>
               <p className="text-gray-500 text-md tracking-[0.2em] font-medium font-hias">Nouveau ici ? Bienvenue.</p>
             </div>
 
@@ -217,7 +216,7 @@ function AuthContent() {
               </div>
 
               <div className="pt-4">
-                <GreenButton disabled={loading} texte="Créer mon compte" className="shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02] sm:rounded-2xl py-4 w-full sm:text-base"/>
+                <button disabled={loading} className="greenbutton shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02] sm:rounded-2xl py-4 w-full sm:text-base">Créer mon compte</button>
               </div>
               
               <p className="text-[10px] text-gray-600 text-center mt-4 leading-relaxed px-4">

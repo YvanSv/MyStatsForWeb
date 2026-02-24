@@ -7,7 +7,6 @@ import { DataInfo } from "@/app/data/DataInfos";
 import GridCell from "./GridCell";
 import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
-import GreenButton from "../small_elements/GreenButton";
 
 interface RankingViewProps {
   title: string;
@@ -42,9 +41,11 @@ export default function RankingView({title, type, items, sortConfig, onSort, loa
               <button 
                 onClick={toggleShowFilters}
                 className="flex items-center justify-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm
-                  font-semibold border transition-all duration-300 flex-1 md:flex-none bg-bg2 text-white border-white/10"
+                  font-semibold border duration-300 flex-1 md:flex-none bg-bg2 text-white border-white/10"
               ><span className="text-sm md:text-base">⚙️ Filtres</span></button>
-            ) : (<GreenButton icon={CloseIcon} texte="Fermer" onClick={toggleShowFilters} className="border-vert border flex-1 gap-2 px-4 flex items-center justify-center md:text-base"/>)}
+            ) : (
+              <button onClick={toggleShowFilters} className="greenbutton border-vert border flex-1 gap-2 px-4 flex items-center justify-center md:text-base texte-1 lg:px-5 lg:hover:scale-105"><CloseIcon/>Fermer</button>
+            )}
 
             {/* Conteneur Sélecteur de Tri : Aligné à côté sur mobile */}
             <div className="relative flex-[1.5] md:flex-none group">
@@ -113,7 +114,7 @@ export default function RankingView({title, type, items, sortConfig, onSort, loa
         {hasMore && (
           <div className="mt-12 flex justify-center pb-12">
             <button onClick={loadMore} disabled={loading}
-              className="bg-bg2 border border-white/10 px-8 py-4 rounded-full font-bold hover:border-vert/50 transition-all disabled:opacity-50"
+              className="bg-bg2 border border-white/10 px-8 py-4 rounded-full font-bold hover:border-vert/50 disabled:opacity-50"
             >{loading ? "Chargement..." : "Charger plus"}</button>
           </div>
         )}

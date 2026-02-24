@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
-import GreenButton from "../components/small_elements/GreenButton";
 
 export default function ImportPage() {
   const { uploadJson } = useApiMyDatas();
@@ -51,7 +50,7 @@ export default function ImportPage() {
               <div className="inline-flex p-4 rounded-3xl bg-vert/10 text-vert mb-6">
                 <UploadIcon size={32} />
               </div>
-              <h1 className="text-ss-titre md:text-s-titre font-jost text-white leading-none mb-3">Importer vos données</h1>
+              <h1 className="text-ss-titre md:text-s-titre text-white leading-none mb-3">Importer vos données</h1>
               <p className="text-gray-500 text-md tracking-[0.1em] font-medium font-hias max-w-md">
                 Glissez vos fichiers JSON Spotify pour synchroniser votre historique d'écoute.
               </p>
@@ -72,7 +71,7 @@ export default function ImportPage() {
                   <div className="text-gray-400 group-hover:scale-110 transition-transform duration-300">
                     <FileIcon size={40} />
                   </div>
-                  <p className="text-xs font-jost text-gray-400 text-center">
+                  <p className="text-xs text-gray-400 text-center">
                     {files.length > 0 
                       ? `${files.length} fichier(s) prêt(s)` 
                       : "Déposez vos fichiers .json ici"}
@@ -95,10 +94,10 @@ export default function ImportPage() {
 
               {loading || files.length === 0 ? (
                 <button disabled={true}
-                  className="w-full py-4 rounded-2xl font-bold transition-all active:scale-95 bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed"
+                  className="w-full py-4 rounded-2xl font-bold active:scale-95 bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed"
                 >{loading ? "Importation en cours..." : "Lancer l'importation"}</button>
               ) : (
-                <GreenButton texte="Lancer l'importation" className="sm:text-base w-full py-4 sm:rounded-2xl shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02]"/>
+                <button className="greenbutton sm:text-base w-full py-4 sm:rounded-2xl shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02]">Lancer l'importation</button>
               )}
 
               <p className="text-[10px] text-gray-600 text-center leading-relaxed uppercase tracking-[0.12em] font-bold">
@@ -118,13 +117,13 @@ export default function ImportPage() {
               <div className="inline-flex p-4 rounded-3xl bg-blue-500/10 text-blue-400 mb-6">
                 <QuestionIcon size={32} />
               </div>
-              <h1 className="text-ss-titre md:text-s-titre font-jost text-white leading-none mb-3">Aide</h1>
+              <h1 className="text-ss-titre md:text-s-titre text-white leading-none mb-3">Aide</h1>
               <p className="text-gray-500 text-md tracking-[0.1em] font-medium font-hias max-w-md">
                 Comment obtenir mes données ?
               </p>
             </div>
 
-            <div className="space-y-6 text-gray-300 font-jost text-sm leading-relaxed">
+            <div className="space-y-6 text-gray-300 text-sm leading-relaxed">
               <div className="flex gap-4">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold">1</span>
                 <p>
