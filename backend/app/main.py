@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_db_and_tables
 from app.auth import router as auth_router
 from app.data.my import router as my_data_router
-from app.data.all import router as all_data_router
+from app.data.everyone import router as all_data_router
 from app.scripts import router as scripts_router
 from app.spotify import router as status_router
 
