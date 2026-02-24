@@ -6,6 +6,7 @@ import "./globals.css";
 import { ViewModeProvider } from "./context/viewModeContext";
 import { ShowFiltersProvider } from "./context/showFiltersContext";
 import Footer from "./components/Footer";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const hHiasSans = localFont({
   src: "./fonts/Insanibc.ttf",
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Header/>
               {children}
               <Footer/>
+              <SpeedInsights />
             </div>
           </ShowFiltersProvider>
         </ViewModeProvider>
