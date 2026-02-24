@@ -3,10 +3,11 @@ import Image from "next/image";
 
 interface GridCellProps {
   element: DataInfo;
+  index: number;
   sort: string;
 }
 
-export default function GridCell({ element, sort }: GridCellProps) {
+export default function GridCell({ element, index, sort }: GridCellProps) {
   const isArtist = element.type === 'artist';
   // Normalisation des champs pour éviter les erreurs
   const displayName = element.title || element.name || "Inconnu";
@@ -29,6 +30,10 @@ export default function GridCell({ element, sort }: GridCellProps) {
     <div className={`group bg-bg2/30 backdrop-blur-md border border-white/5 transition-all hover:border-vert/40 hover:-translate-y-1 flex flex-col h-full
       ${isArtist ? 'rounded-xl md:rounded-3xl p-1.5 md:p-4 bg-bg2/20' : 'rounded-xl md:rounded-3xl p-2 md:p-4'}
     `}>
+      {/* BADGE INDEX */}
+      <div className={`absolute top-4.5 left-4.5 z-10 flex items-center justify-center 
+        min-w-[20px] h-[20px] px-1.5 rounded-full text-[15px] font-black text-gray-300
+      `}>#{index + 1}</div>
       
       {/* SECTION IMAGE */}
       <div className={`relative aspect-square md:mb-4 overflow-hidden shadow-2xl bg-bg2/50

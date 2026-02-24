@@ -1,12 +1,14 @@
 ### TO DO LIST :
 - gérer les erreurs lors de la déconnexion
-- page /about
+- **page /about**
 - embellir l'accueil
-- trouver un moyen de se rendre sur les pages /all/ quand on est connecté
-- trouver un moyen de limiter un utilisateur déconnecté
+- **trouver un moyen de se rendre sur les pages /all/ quand on est connecté**
+- **trouver un moyen de limiter un utilisateur déconnecté**
 - roles ?
 - page /dashboard
-- page /help
-- afficher le # sur les grid
+- **page /help**
+- page /user/[id]
+- **afficher le # sur les grid**
+- page de détail d'une donnée quand on clique dessus
 - Provider Apple Music
 - Data reader Apple Music

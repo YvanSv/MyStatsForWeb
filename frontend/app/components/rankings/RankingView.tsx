@@ -6,6 +6,7 @@ import { useShowFilters } from "../../context/showFiltersContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import GridCell from "./GridCell";
 import ListCell from "./ListCell";
+import SmallGridCell from "./SmallGridCell";
 
 interface RankingViewProps {
   title: string;
@@ -104,9 +105,13 @@ export default function RankingView({title, type, items, sortConfig, onSort, loa
           <div className="space-y-3">
             {normalizedItems.map((item, i) => (<ListCell key={item.spotify_id || item.id} element={item} index={i} sort={sortConfig.sort}/>))}
           </div>
+        ) : viewMode === 'grid_sm' ? (
+          <div className="grid grid-cols-5 md:grid-cols-7 xl:grid-cols-8 gap-1 md:gap-4">
+            {normalizedItems.map((item, i) => (<SmallGridCell key={item.spotify_id || item.id} element={item} index={i} sort={sortConfig.sort} />))}
+          </div>
         ) : (
-          <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-6">
-            {normalizedItems.map((item) => (<GridCell key={item.spotify_id || item.id} element={item} sort={sortConfig.sort} />))}
+          <div className="grid grid-cols-3 md:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6">
+            {normalizedItems.map((item, i) => (<GridCell key={item.spotify_id || item.id} element={item} index={i} sort={sortConfig.sort} />))}
           </div>
         )}
 
