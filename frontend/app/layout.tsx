@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { Jost } from "next/font/google";
 import localFont from "next/font/local";
-import Header from "./components/Header";
 import "./globals.css";
 import { ViewModeProvider } from "./context/viewModeContext";
 import { ShowFiltersProvider } from "./context/showFiltersContext";
-import Footer from "./components/Footer";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import Content from "./content";
 
 const hHiasSans = localFont({
   src: "./fonts/Insanibc.ttf",
@@ -45,12 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${jost.variable} ${hHiasSans.variable} ${boldmarker.variable} ${insanibu.variable} ${insanibc.variable}flex bg-[#121212] min-h-screen`}>
         <ViewModeProvider>
           <ShowFiltersProvider>
-            <div className="flex-1 flex flex-col overflow-x-hidden">
-              <Header/>
-              {children}
-              <Footer/>
-              <SpeedInsights />
-            </div>
+            <Content children={children}/>
           </ShowFiltersProvider>
         </ViewModeProvider>
       </body>

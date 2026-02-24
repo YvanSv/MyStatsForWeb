@@ -7,6 +7,7 @@ import { DataInfo } from "@/app/data/DataInfos";
 import GridCell from "./GridCell";
 import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
+import GreenButton from "../small_elements/GreenButton";
 
 interface RankingViewProps {
   title: string;
@@ -37,19 +38,13 @@ export default function RankingView({title, type, items, sortConfig, onSort, loa
         <div className="flex flex-col-reverse md:flex-row md:items-center justify-between lg:mb-4 gap-4">
           <div className="flex flex-row gap-2 w-full md:w-auto items-center mb-6">
             {/* Bouton Filtres : Plus compact sur mobile */}
-            <button 
-              onClick={toggleShowFilters}
-              className={`
-                flex items-center justify-center gap-2 px-4 py-2 md:px-5 md:py-2.5 
-                rounded-full text-xs md:text-sm font-semibold border transition-all duration-300 flex-1 md:flex-none
-                ${showFilters 
-                  ? "bg-vert text-black border-vert" 
-                  : "bg-bg2 text-white border-white/10"}
-              `}
-            >
-              <span className="text-sm md:text-base">{showFilters ? "✕" : "⚙️"}</span>
-              <span>{showFilters ? "Fermer" : "Filtres"}</span>
-            </button>
+            {!showFilters ? (
+              <button 
+                onClick={toggleShowFilters}
+                className="flex items-center justify-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm
+                  font-semibold border transition-all duration-300 flex-1 md:flex-none bg-bg2 text-white border-white/10"
+              ><span className="text-sm md:text-base">⚙️ Filtres</span></button>
+            ) : (<GreenButton icon={CloseIcon} texte="Fermer" onClick={toggleShowFilters} className="border-vert border flex-1 gap-2 px-4 flex items-center justify-center md:text-base"/>)}
 
             {/* Conteneur Sélecteur de Tri : Aligné à côté sur mobile */}
             <div className="relative flex-[1.5] md:flex-none group">
@@ -126,3 +121,5 @@ export default function RankingView({title, type, items, sortConfig, onSort, loa
     </div>
   );
 }
+
+const CloseIcon = () => <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>

@@ -47,12 +47,6 @@ export default function HistoryPage() {
 
   return (
     <main className="min-h-screen text-white font-jost relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]"></div>
-        <div className="absolute bottom-[10%] right-[-5%] h-[600px] w-[600px] animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-10 blur-[120px]"></div>
-      </div>
-
       <div className="max-w-[1400px] mx-auto py-12 px-6">
         <div className="flex flex-col gap-8">
           <section className="flex-1">

@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
-import { PulseSpinner } from "../components/CustomSpinner";
+import { PulseSpinner } from "../components/small_elements/CustomSpinner";
 import { useSearchParams } from "next/navigation";
+import GreenButton from "../components/small_elements/GreenButton";
 
 export default function EditProfilePage() {
   return (
@@ -114,12 +115,6 @@ function EditProfileContent() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20">
-      {/* --- ANIMATION DE FOND (Identique à Auth) --- */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] h-[600px] w-[600px] animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-10 blur-[120px]" />
-      </div>
-
       <div className="w-full max-w-5xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden">
         <div className="flex flex-col lg:flex-row">
           
@@ -194,17 +189,10 @@ function EditProfileContent() {
 									<button 
 										onClick={handleUnlinkSpotify}
 										className="w-full bg-white/5 hover:bg-rouge/10 hover:text-rouge hover:border-rouge/20 text-gray-400 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/10 transition-all active:scale-95"
-									>
-										Délier mon compte Spotify
-									</button>
+									>Délier mon compte Spotify</button>
 								</div>
 							) : (
-								<button 
-									onClick={handleConnectSpotify}
-									className="w-full bg-vert text-black py-4 rounded-2xl font-bold hover:scale-[1.02] transition-all active:scale-95 shadow-[0_0_20px_rgba(29,208,93,0.2)]"
-								>
-									Lier mon Spotify
-								</button>
+                <GreenButton texte="Lier mon Spotify" onClick={handleConnectSpotify} className="sm:text-base w-full py-4 sm:rounded-2xl hover:scale-[1.02] shadow-[0_0_20px_rgba(29,208,93,0.2)]"/>
 							)}
             </div>
 

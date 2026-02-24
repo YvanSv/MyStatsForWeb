@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ApiStatusBadge } from './StatusBadge';
+import { ApiStatusBadge } from './small_elements/StatusBadge';
 import { FRONT_ROUTES } from '../config';
 
 export default function Footer() {

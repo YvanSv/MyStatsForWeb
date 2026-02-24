@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import AlbumsContent from './content';
-import { PulseSpinner } from "../../components/CustomSpinner";
+import { PulseSpinner } from "../../components/small_elements/CustomSpinner";
 
 export default function AlbumsPage() {
   return (

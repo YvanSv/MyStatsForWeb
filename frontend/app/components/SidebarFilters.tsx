@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import GreenButton from "./small_elements/GreenButton";
 
 // Types pour configurer quels filtres afficher
 interface FilterConfig {
@@ -90,10 +91,7 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
           
           {/* Actions principales */}
           <div className="pb-4 mb-2 border-b border-white/5">
-            <button onClick={applyFilters} disabled={loading}
-              className="w-full bg-vert text-black py-3 rounded-2xl font-bold hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
-              {loading ? 'Chargement...' : 'Appliquer les filtres'}
-            </button>
+            <GreenButton texte={loading ? 'Chargement...' : "Appliquer les filtres"} onClick={applyFilters} disabled={loading} className="md:text-base disabled:opacity-50 w-full py-3"/>
           </div>
 
           <div className="flex items-center justify-between mb-6">

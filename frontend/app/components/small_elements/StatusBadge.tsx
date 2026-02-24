@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useApi } from "../hooks/useApi";
+import { useApi } from "../../hooks/useApi";
 
 export const ApiStatusBadge = () => {
   const { getStatus } = useApi();

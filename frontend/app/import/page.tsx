@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
+import GreenButton from "../components/small_elements/GreenButton";
 
 export default function ImportPage() {
   const { uploadJson } = useApiMyDatas();
@@ -41,12 +42,6 @@ export default function ImportPage() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20">
-      {/* --- ANIMATION DE FOND --- */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] h-[600px] w-[600px] animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-10 blur-[120px]" />
-      </div>
-
       <div className="w-full max-w-6xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden">
         <div className="flex flex-col lg:flex-row">
           
@@ -98,16 +93,14 @@ export default function ImportPage() {
               {error && <div className="bg-rouge/10 border border-rouge/20 text-rouge text-[10px] p-4 rounded-2xl animate-shake font-bold uppercase tracking-widest">{error}</div>}
               {success && <div className="bg-vert/10 border border-vert/20 text-vert text-[10px] p-4 rounded-2xl font-bold uppercase tracking-widest">{success}</div>}
 
-              <button
-                disabled={loading || files.length === 0}
-                className={`w-full py-4 rounded-2xl font-bold transition-all active:scale-95 ${
-                  loading || files.length === 0
-                    ? "bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed"
-                    : "bg-vert text-black shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02]"
-                }`}
-              >
-                {loading ? "Importation..." : "Lancer l'importation"}
-              </button>
+              {loading || files.length === 0 ? (
+                <button disabled={true}
+                  className="w-full py-4 rounded-2xl font-bold transition-all active:scale-95 bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed"
+                >{loading ? "Importation en cours..." : "Lancer l'importation"}</button>
+              ) : (
+                <GreenButton texte="Lancer l'importation" className="sm:text-base w-full py-4 sm:rounded-2xl shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02]"/>
+              )}
+
               <p className="text-[10px] text-gray-600 text-center leading-relaxed uppercase tracking-[0.12em] font-bold">
                 Seuls les fichiers <span className="text-vert">Streaming_History_Audio_X.json</span> sont supportés
               </p>

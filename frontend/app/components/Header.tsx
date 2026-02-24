@@ -6,15 +6,11 @@ import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
 import { API_ENDPOINTS, FRONT_ROUTES } from "../config";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
-import { ApiStatusBadge } from "./StatusBadge";
+import { ApiStatusBadge } from "./small_elements/StatusBadge";
+import GreenButton from "./small_elements/GreenButton";
 
 export default function Header() {
   const router = useRouter();
-  const navigate = (path: string) => {
-    router.push(path);
-    setMenuOpen(false);
-    setIsMobileNavOpen(false);
-  }
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
   const [userName, setUserName] = useState("null");
   const [profileURL, setProfileURL] = useState("");
@@ -24,17 +20,24 @@ export default function Header() {
   const menuRef = useRef<HTMLDivElement>(null);
   const { getMe } = useApiMyDatas();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const views = [
+    { id: 'grid_sm', icon: <Grid3x3Icon />, hideMobile: true },
+    { id: 'grid', icon: <GridIcon />, hideMobile: false },
+    { id: 'list', icon: <ListIcon />, hideMobile: false },
+  ] as const;
+
+  const activeView = views.find(v => v.id === viewMode) || views[1];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node))
         setMenuOpen(false);
+      if (containerRef.current && !containerRef.current.contains(event.target as Node))
+        setIsViewMenuOpen(false);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
-  useEffect(() => {
     const checkAuth = async () => {
       try {
         const data = await getMe();
@@ -46,22 +49,28 @@ export default function Header() {
       } catch (error) { console.error("Erreur auth:", error); setIsLoggedIn(false); }
       finally { setLoading(false); }
     };
+
     checkAuth();
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogin = () => {navigate(FRONT_ROUTES.AUTH);};
   const handleSpotifyLogin = () => {window.location.href = API_ENDPOINTS.SPOTIFY_LOGIN;};
   const handleLogout = () => {
-    // 1. Mise à jour immédiate de l'UI pour éviter le lag visuel
     setIsLoggedIn(false);
     setUserName("null");
     setMenuOpen(false);
-    // 2. Nettoyage local
     localStorage.clear(); 
     sessionStorage.clear();
-    // 3. Redirection vers l'endpoint de logout de l'API
     window.location.replace(API_ENDPOINTS.LOGOUT);
   };
+
+  const navigate = (path: string) => {
+    router.push(path);
+    setMenuOpen(false);
+    setIsMobileNavOpen(false);
+  }
 
   return (
     <header className="flex items-center justify-between py-3 md:py-4 px-4 md:px-6 sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl border-b border-white/5">
@@ -93,16 +102,32 @@ export default function Header() {
       {/* DROITE : Toggles + Profil + Burger */}
       <div className="flex items-center gap-2 md:gap-4">
         {/* View Mode */}
-        <div className={`bg-bg2/50 p-1 rounded-xl border border-white/5 backdrop-blur-sm sm:flex`}>
-          <button onClick={() => toggleViewMode('grid_sm')} className={`hidden lg:block p-2 rounded-lg transition-all ${viewMode === 'grid_sm' ? 'bg-white/10 text-vert' : 'text-gray-500 hover:text-white'}`}>
-            <Grid3x3Icon />
-          </button>
-          <button onClick={() => toggleViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white/10 text-vert' : 'text-gray-500 hover:text-white'}`}>
-            <GridIcon />
-          </button>
-          <button onClick={() => toggleViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white/10 text-vert' : 'text-gray-500 hover:text-white'}`}>
-            <ListIcon />
-          </button>
+        <div ref={containerRef} className="relative">
+          {/* Bouton Principal (Affiche l'icône active) */}
+          <div className="bg-bg2/50 p-1 rounded-xl border border-white/5 backdrop-blur-sm">
+            <button
+              onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
+              className="p-2 rounded-lg text-vert bg-white/10 hover:bg-white/15 transition-all flex flex-col items-center justify-center"
+            >
+              <div className="flex items-center justify-center">{activeView.icon}</div>
+              <ChevronDown size={14} className={`opacity-50 transition-transform duration-300 ${isViewMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          {/* Liste déroulante */}
+          {isViewMenuOpen && (
+            <div className="absolute right-0 mt-2 p-1 bg-bg2 border border-white/10 rounded-xl shadow-2xl backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex flex-col gap-1">
+                {views.map((v) => (
+                  <button key={v.id} onClick={() => { toggleViewMode(v.id); setIsViewMenuOpen(false); }}
+                    className={`p-2 rounded-lg transition-all flex items-center gap-3 ${
+                      viewMode === v.id ? 'bg-white/10 text-vert' : 'text-gray-500 hover:text-white hover:bg-white/5'
+                    } ${v.hideMobile ? 'hidden lg:flex' : 'flex'}`}
+                  >{v.icon}</button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Profil */}
@@ -119,12 +144,8 @@ export default function Header() {
             </button>
           ) : (!loading && (
               <div className="flex items-center justify-center gap-3">
-                <button onClick={handleLogin} className="bg-vert px-4 md:px-6 py-2 rounded-full text-xs md:sm font-bold text-black transition active:scale-95 hover:scale-105 transition-transform">
-                  Se connecter
-                </button>
-                <button onClick={handleSpotifyLogin} className="bg-vert px-2 py-2 rounded-full text-xs md:sm font-bold text-black transition active:scale-95 hover:scale-105 transition-transform">
-                  {SpotifyIcon()}
-                </button>
+                <GreenButton texte="Se connecter" onClick={handleLogin} className="md:px-6"/>
+                <GreenButton icon={SpotifyIcon} onClick={handleSpotifyLogin}/>
               </div>
             )
           )}
@@ -227,7 +248,7 @@ export default function Header() {
 
             {/* 3. Déconnexion */}
             <button 
-              onClick={() => { setMenuOpen(false); handleLogout(); }} 
+              onClick={handleLogout} 
               className="flex items-center justify-center gap-3 py-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
             >
               <LogoutIcon /> 
@@ -240,7 +261,7 @@ export default function Header() {
   );
 }
 
-const Grid3x3Icon: React.FC = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="9.5" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="9.5" rx="1" /><rect width="5" height="5" x="9.5" y="9.5" rx="1" /><rect width="5" height="5" x="16" y="9.5" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><rect width="5" height="5" x="9.5" y="16" rx="1" /><rect width="5" height="5" x="16" y="16" rx="1" /></svg>
+const Grid3x3Icon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="9.5" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="9.5" rx="1" /><rect width="5" height="5" x="9.5" y="9.5" rx="1" /><rect width="5" height="5" x="16" y="9.5" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><rect width="5" height="5" x="9.5" y="16" rx="1" /><rect width="5" height="5" x="16" y="16" rx="1" /></svg>
 const GridIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>;
 const ListIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>;
 // const SettingsIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
@@ -249,3 +270,4 @@ const SpotifyIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="
 const UserIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
 const UploadIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
 const EyeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+const ChevronDown = ({ size = 16, className = "" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { Suspense } from 'react';
-import { PulseSpinner } from "../components/CustomSpinner";
+import { PulseSpinner } from "../components/small_elements/CustomSpinner";
+import GreenButton from "../components/small_elements/GreenButton";
 
 export default function AuthPage() {
   return (
@@ -119,14 +120,8 @@ function AuthContent() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20">
-    	{/* --- ANIMATION DE FOND --- */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-          <div className="absolute top-[20%] left-[-5%] h-[600px] w-[600px] animate-blob rounded-full bg-vert opacity-10 blur-[120px]" />
-          <div className="absolute bottom-[10%] right-[-5%] h-[600px] w-[600px] animate-blob animation-delay-2000 rounded-full bg-purple-600 opacity-10 blur-[120px]" />
-      </div>
       <div className="w-full max-w-6xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden">
         <div className="flex flex-col lg:flex-row">
-          
           {/* COLONNE GAUCHE : LOGIN */}
           <div className="flex-1 p-8 md:p-12 lg:p-16">
             <div className="mb-10 text-center lg:text-left">
@@ -134,13 +129,7 @@ function AuthContent() {
               <p className="text-gray-500 text-md tracking-[0.2em] font-medium font-hias">Bon retour sur MyStats.</p>
             </div>
 
-            <button 
-              onClick={handleSpotifyLogin}
-              className="w-full flex items-center justify-center gap-3 bg-vert text-black py-4 rounded-2xl font-bold hover:scale-[1.02] transition-all active:scale-95 mb-8 shadow-[0_0_20px_rgba(29,208,93,0.2)]"
-            >
-              <SpotifyIcon />
-              Continuer avec Spotify
-            </button>
+            <GreenButton icon={SpotifyIcon} texte="Continuer avec Spotify" onClick={handleSpotifyLogin} className="sm:text-base shadow-[0_0_20px_rgba(29,208,93,0.2)] w-full flex items-center justify-center gap-3 mb-8 py-4 sm:rounded-2xl hover:scale-[1.02]"/>
 
             <div className="relative mb-8 text-center">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
@@ -228,9 +217,7 @@ function AuthContent() {
               </div>
 
               <div className="pt-4">
-                <button disabled={loading} className="w-full bg-vert text-black py-4 rounded-2xl font-bold hover:scale-[1.02] transition-all active:scale-95 shadow-[0_10px_30px_rgba(29,208,93,0.15)]">
-                  Créer mon compte
-                </button>
+                <GreenButton disabled={loading} texte="Créer mon compte" className="shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02] sm:rounded-2xl py-4 w-full sm:text-base"/>
               </div>
               
               <p className="text-[10px] text-gray-600 text-center mt-4 leading-relaxed px-4">

@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PulseSpinner } from "./components/CustomSpinner";
+import { PulseSpinner } from "./components/small_elements/CustomSpinner";
 import { FRONT_ROUTES } from "./config";
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
+import GreenButton from "./components/small_elements/GreenButton";
 
 export default function HomePage() {
   const router = useRouter();
@@ -84,16 +85,13 @@ export default function HomePage() {
 
             {/* Overlay d'incitation (Adaptation de la taille de la boîte) */}
             {!loading && !isLoggedIn && (
-              <div className="absolute inset-0 flex items-center justify-center z-30 px-4">
+              <div className="absolute inset-0 flex items-center justify-center z-30 px-4 pb-4">
                 <div className="bg-bg1/80 backdrop-blur-2xl border border-white/10 p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-md">
                   <p className="text-lg md:text-ss-titre font-hias text-white flex flex-col items-center gap-2">
                     <span className="text-vert text-3xl md:text-4xl mb-1">🔒</span>
                     <span className="text-center">Connectez-vous pour voir vos statistiques</span>
                   </p>
-                  <button 
-                    onClick={() => router.push(FRONT_ROUTES.AUTH)}
-                    className="mt-6 w-full bg-vert text-black py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition-transform shadow-lg cursor-pointer"
-                  >Se connecter</button>
+                  <GreenButton texte="Se connecter" onClick={() => router.push(FRONT_ROUTES.AUTH)} className="mt-6 w-full py-3 md:py-4 md:text-lg shadow-lg"/>
                 </div>
               </div>
             )}
@@ -114,17 +112,10 @@ export default function HomePage() {
           
           {/* Boutons empilés sur mobile, côte à côte sur desktop */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center px-6 sm:px-0">
-            <button 
-              onClick={() => router.push(`${FRONT_ROUTES.MY_RANKINGS}/tracks`)}
-              className="bg-vert text-black px-8 py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition-transform shadow-lg"
-            >
-              Commencer l'expérience
-            </button>
+            <GreenButton texte="Commencer l'expérience" onClick={() => router.push(`${FRONT_ROUTES.MY_RANKINGS}/tracks`)} className="px-8 py-4 lg:text-lg shadow-lg"/>
             <button 
               className="border border-gray-700 px-8 py-4 rounded-full font-bold text-base md:text-lg hover:bg-white/5 transition-colors backdrop-blur-sm"
-            >
-              En savoir plus
-            </button>
+            >En savoir plus</button>
           </div>
         </div>
       </section>
