@@ -161,21 +161,27 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
           {config.search && (
             <FilterGroup title="Recherche">
               <div className="space-y-3">
-                <SearchInput 
-                  placeholder="Titre..." 
-                  value={localFilters["track"] || ""} 
-                  onChange={(v: string) => handleLocalChange("track", v)} 
-                />
-                <SearchInput 
-                  placeholder="Album..." 
-                  value={localFilters["album"] || ""} 
-                  onChange={(v: string) => handleLocalChange("album", v)} 
-                />
-                <SearchInput 
-                  placeholder="Artiste..." 
-                  value={localFilters["artist"] || ""} 
-                  onChange={(v: string) => handleLocalChange("artist", v)} 
-                />
+                {config.search["track"] &&
+                  <SearchInput 
+                    placeholder="Titre..." 
+                    value={localFilters["track"] || ""} 
+                    onChange={(v: string) => handleLocalChange("track", v)} 
+                  />
+                }
+                {config.search["album"] &&
+                  <SearchInput 
+                    placeholder="Album..." 
+                    value={localFilters["album"] || ""} 
+                    onChange={(v: string) => handleLocalChange("album", v)} 
+                  />
+                }
+                {config.search["artist"] &&
+                  <SearchInput 
+                    placeholder="Artiste..." 
+                    value={localFilters["artist"] || ""} 
+                    onChange={(v: string) => handleLocalChange("artist", v)} 
+                  />
+                }
               </div>
             </FilterGroup>
           )}
