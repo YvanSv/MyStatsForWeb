@@ -20,7 +20,7 @@ const IMPORT_STYLES = {
   HEADER_WRAPPER: "mb-10 text-center lg:text-left",
   ICON_BOX_VERT: "inline-flex p-4 rounded-3xl bg-vert/10 text-vert mb-6",
   ICON_BOX_BLUE: "inline-flex p-4 rounded-3xl bg-blue-500/10 text-blue-400 mb-6",
-  TITLE: `${GENERAL_STYLES.TITRES_BLANC} text-[16px] lg:text-[24px] leading-none mb-3`,
+  TITLE: `${GENERAL_STYLES.DOUBLE_FRAME_TITLE}`,
   SUBTITLE: "text-gray-500 text-md tracking-[0.08em] font-medium max-w-md",
 
   // Dropzone

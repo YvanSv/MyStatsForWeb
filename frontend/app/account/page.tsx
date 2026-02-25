@@ -1,4 +1,4 @@
-"use client";
+/*"use client";
 
 import { API_ENDPOINTS, FRONT_ROUTES } from "../config";
 import { useRouter } from "next/navigation";
@@ -19,193 +19,230 @@ export default function EditProfilePage() {
       <EditProfileContent />
     </Suspense>
   );
-}
+}*/
+"use client";
 
-function EditProfileContent() {
-  const router = useRouter();
-	const searchParams = useSearchParams();
-  const { updateProfile, unlinkSpotify } = useApi();
-  const { getMe } = useApiMyDatas();
-  // États des données
-  const [profileData, setProfileData] = useState({
-    username: "",
-    email: "",
-    hasSpotify: false,
-  });
-  // États UI
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(true);
+import { useEffect, useState } from "react";
+import { GENERAL_STYLES } from "../styles/general";
+import { useAuth } from "../hooks/useAuth";
+
+const PROFILE_STYLES = {
+  WRAPPER: "min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20",
+  CARD: "w-full max-w-5xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden",
+  CONTAINER_FLEX: "flex flex-col lg:flex-row",
+  COL_LEFT: "flex-1 p-8 md:p-12 lg:p-16",
+  COL_RIGHT: "flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.02] flex flex-col",
+  HEADER_SECTION: "mb-10",
+  TITLE: `${GENERAL_STYLES.DOUBLE_FRAME_TITLE}`,
+  SUBTITLE: "text-gray-500 text-md tracking-[0.2em] font-medium font-hias",
+  INPUT_LABEL: "text-[10px] text-gray-500 uppercase font-bold ml-2",
+  INPUT_FIELD: "w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white focus:border-vert/50 outline-none transition-all focus:bg-white/10",
+  BTN_SAVE: "w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-bold border border-white/5 mt-4 transition-all",
+  SEPARATOR: "hidden lg:flex flex-col items-center justify-center",
+  SEPARATOR_LINE: "w-[1px] h-3/4 bg-gradient-to-b from-transparent via-white/10 to-transparent",
+  SERVICE_CARD: (hasSpotify: boolean) => `p-6 rounded-[30px] border transition-all duration-500 ${hasSpotify ? 'bg-vert/5 border-vert/20' : 'bg-white/5 border-white/10'}`,
+  SPOTIFY_ICON_BOX: (hasSpotify: boolean) => `p-4 rounded-2xl ${hasSpotify ? 'bg-vert text-black' : 'bg-white/10 text-white'}`,
+  BADGE_SUCCESS: "flex items-center gap-2 text-vert text-[11px] font-bold uppercase tracking-widest rounded-xl justify-center",
+  BADGE_ERROR: "flex items-center gap-2 text-rouge text-[11px] font-bold uppercase tracking-widest rounded-xl justify-center",
+  BTN_UNLINK: "w-full bg-white/5 hover:bg-rouge/10 hover:text-rouge hover:border-rouge/20 text-gray-400 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/10 active:scale-95 transition-all",
+  SKELETON: "animate-pulse bg-white/5 rounded-2xl",
+  MESSAGE_CONTAINER: "mb-6 min-h-[45px] transition-all duration-300 ease-in-out",
+  BADGE_ANIM: "animate-in fade-in slide-in-from-top-2 duration-300",
+};
+
+export default function EditProfilePage() {
+  const { user, loading, updateUserProfile, unlinkSpotify, loginSpotify } = useAuth();
+  const [username, setUsername] = useState("");
   const [updating, setUpdating] = useState(false);
-  // Charger les infos au montage
+  const [message, setMessage] = useState({ type: "", text: "" });
+
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const data = await getMe();
-        if (!data.is_logged_in) router.push(FRONT_ROUTES.AUTH);
-				else {
-          setProfileData({
-            username: data.user_name || "",
-            email: data.email || "",
-            hasSpotify: data.has_spotify || false,
-          });
-        }
-      } catch (err: any) {
-        setError("Impossible de charger votre profil.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, [getMe, router]);
+    if (user?.user_name) setUsername(user.user_name)
+  }, [user]);
 
-	useEffect(() => {
-    const errorType = searchParams.get("error");
-    const linked = searchParams.get("linked");
-
-    if (errorType === "spotify_already_linked") {
-      setError("Ce compte Spotify est déjà lié à un autre utilisateur MyStats.");
-    }
-    if (linked === "true") {
-      setSuccess("Compte Spotify lié avec succès !");
-    }
-  }, [searchParams]);
-
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
+    if (updating) return;
     e.preventDefault();
     setUpdating(true);
-    setSuccess("");
-    setError("");
-
     try {
-      await updateProfile({ username: profileData.username });
-			setSuccess("Profil mis à jour avec succès !");
-			router.refresh();
-      setSuccess("Profil mis à jour avec succès !");
-    } catch (err: any) {
-      setError(err.message);
+      await updateUserProfile(username);
+      setMessage({ type: "success", text: "Profil mis à jour partout !" });
+    } catch (err) {
+      setMessage({ type: "error", text: "Erreur lors de la sauvegarde" });
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleConnectSpotify = () => {
-    window.location.href = API_ENDPOINTS.SPOTIFY_LOGIN;
-  };
-
-	const handleUnlinkSpotify = async () => {
-		if (!confirm("Voulez-vous vraiment délier votre compte Spotify ? Vos stats ne seront plus mises à jour.")) return;
-		
-		try {
-			await unlinkSpotify(); 
-			setProfileData({ ...profileData, hasSpotify: false });
-			setSuccess("Compte Spotify délié avec succès.");
-		} catch (err: any) {
-			setError("Erreur lors de la déconnexion de Spotify.");
-		}
-	};
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <PulseSpinner/>
-      </div>
-    );
-  }
+  if (!user)
+    if (loading) return <SkeletonAccount/>;
+    else return <></>;
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20">
-      <div className="w-full max-w-5xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden">
-        <div className="flex flex-col lg:flex-row">
-          
+    <div className={PROFILE_STYLES.WRAPPER}>
+      <div className={PROFILE_STYLES.CARD}>
+        <div className={PROFILE_STYLES.CONTAINER_FLEX}>
           {/* COLONNE GAUCHE : INFOS PERSO */}
-          <div className="flex-1 p-8 md:p-12 lg:p-16">
-            <div className="mb-10">
-              <h1 className="text-ss-titre md:text-s-titre text-white leading-none mb-3">Profil</h1>
-              <p className="text-gray-500 text-md tracking-[0.2em] font-medium font-hias">Gérez vos informations.</p>
+          <div className={PROFILE_STYLES.COL_LEFT}>
+            <div className={PROFILE_STYLES.HEADER_SECTION}>
+              <h1 className={`${PROFILE_STYLES.TITLE}`}>Profil</h1>
+              <p className={PROFILE_STYLES.SUBTITLE}>Gérez vos informations.</p>
             </div>
 
-            <form className="space-y-6" onSubmit={handleUpdateProfile}>
-              {error && (
-                <div className="bg-rouge/10 border border-rouge/20 text-rouge text-[10px] p-3 rounded-xl animate-shake">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="bg-vert/10 border border-vert/20 text-vert text-[10px] p-3 rounded-xl">
-                  {success}
-                </div>
-              )}
+            {/* ZONE DE MESSAGE (Feedback API) */}
+            {message.text !== "" &&
+              <div className={PROFILE_STYLES.MESSAGE_CONTAINER}>
+                {message.text && (
+                  <div className={`
+                    ${message.type === "success" ? PROFILE_STYLES.BADGE_SUCCESS : PROFILE_STYLES.BADGE_ERROR}
+                    ${PROFILE_STYLES.BADGE_ANIM}
+                  `}>
+                    {message.type === "success" ? <CheckIcon /> : <CrossIcon />}
+                    <span className="ml-1">{message.text}</span>
+                  </div>
+                )}
+              </div>
+            }
 
+            <div className="space-y-6">
+              {/* Champ Nom */}
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-500 uppercase font-bold ml-2">Nom d'affichage</label>
-                <input 
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white focus:border-vert/50 outline-none transition-all focus:bg-white/10"
-                  value={profileData.username} 
-                  onChange={(e) => setProfileData({...profileData, username: e.target.value})}
-                  type="text" 
+                <label className={PROFILE_STYLES.INPUT_LABEL}>Nom d'affichage</label>
+                <input className={PROFILE_STYLES.INPUT_FIELD} value={username ?? ""} 
+                  onChange={(e) => setUsername(e.target.value)} type="text" 
+                  placeholder="Ton pseudo..."
                 />
               </div>
 
-              <button disabled={updating} className="w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-bold border border-white/5 mt-4">
-                {updating ? "Mise à jour..." : "Enregistrer les modifications"}
+              {/* Champ Email */}
+              <div className="space-y-1">
+                <label className={PROFILE_STYLES.INPUT_LABEL}>Email (non modifiable)</label>
+                <input value={user?.email ?? ""} disabled
+                  className={`${PROFILE_STYLES.INPUT_FIELD} opacity-50 cursor-not-allowed`}/>
+              </div>
+
+              {/* Bouton Enregistrer avec état de chargement */}
+              <button onClick={handleSave} disabled={updating || !username || username === user?.user_name}
+                className={`${PROFILE_STYLES.BTN_SAVE} disabled:opacity-50 transition-all ${updating || !username || username === user?.user_name ? 'cursor-not-allowed active:scale-100' : 'cursor-pointer'}`}
+              >
+                {updating ? (
+                  <span className="flex items-center justify-center gap-2">
+                    Enregistrement...
+                  </span>
+                ) : "Enregistrer les modifications"}
               </button>
-            </form>
+            </div>
           </div>
 
-          {/* SÉPARATEUR */}
-          <div className="hidden lg:flex flex-col items-center justify-center">
-            <div className="w-[1px] h-3/4 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+          <div className={PROFILE_STYLES.SEPARATOR}>
+            <div className={PROFILE_STYLES.SEPARATOR_LINE}/>
           </div>
 
-          {/* COLONNE DROITE : CONNEXIONS */}
-          <div className="flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.02] flex flex-col justify-center">
-            <div className="mb-10">
-              <h2 className="text-ss-titre md:text-s-titre text-white leading-none mb-3">Services</h2>
-              <p className="text-gray-500 text-md tracking-[0.2em] font-medium font-hias">Liaison de comptes tiers.</p>
+          {/* COLONNE DROITE : SERVICES */}
+          <div className={PROFILE_STYLES.COL_RIGHT}>
+            <div className={PROFILE_STYLES.HEADER_SECTION}>
+              <>
+                <h2 className={PROFILE_STYLES.TITLE}>Services</h2>
+                <p className={PROFILE_STYLES.SUBTITLE}>Liaison de comptes tiers.</p>
+              </>
             </div>
 
-            <div className={`p-6 rounded-[30px] border transition-all duration-500 ${profileData.hasSpotify ? 'bg-vert/5 border-vert/20' : 'bg-white/5 border-white/10'}`}>
+            <div className={PROFILE_STYLES.SERVICE_CARD(user.has_spotify)}>
               <div className="flex items-center gap-5 mb-6">
-                <div className={`p-4 rounded-2xl ${profileData.hasSpotify ? 'bg-vert text-black' : 'bg-white/10 text-white'}`}>
+                <div className={PROFILE_STYLES.SPOTIFY_ICON_BOX(user.has_spotify)}>
                   <SpotifyIcon />
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-lg">Spotify</h3>
-                  <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">
-                    {profileData.hasSpotify ? "Connecté" : "Non lié"}
-                  </p>
+                  {user.has_spotify ?
+                    <div className={PROFILE_STYLES.BADGE_SUCCESS}>
+                      <CheckIcon/> Votre compte est synchronisé
+                    </div>
+                    :
+                    <div className={PROFILE_STYLES.BADGE_ERROR}>
+                      <CrossIcon/> Non synchronisé
+                    </div>
+                  }
                 </div>
               </div>
 
-              {profileData.hasSpotify ? (
-								<div className="space-y-4">
-									{/* Message de succès */}
-									<div className="flex items-center gap-2 text-vert text-[10px] font-bold uppercase tracking-widest bg-vert/10 p-3 rounded-xl justify-center">
-										<CheckIcon /> Votre compte est synchronisé
-									</div>
-									
-									{/* Bouton Délier */}
-									<button 
-										onClick={handleUnlinkSpotify}
-										className="w-full bg-white/5 hover:bg-rouge/10 hover:text-rouge hover:border-rouge/20 text-gray-400 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/10 active:scale-95"
-									>Délier mon compte Spotify</button>
-								</div>
-							) : (
-                <button onClick={handleConnectSpotify} className={`${GENERAL_STYLES.GREENBUTTON} sm:text-base w-full py-4 sm:rounded-2xl hover:scale-[1.02] shadow-[0_0_20px_rgba(29,208,93,0.2)]`}>Lier mon compte Spotify</button>
-							)}
+              {user.has_spotify ? (
+                <div className="space-y-4">
+                  <button onClick={unlinkSpotify}
+                    className={PROFILE_STYLES.BTN_UNLINK}
+                  >Délier mon compte Spotify</button>
+                </div>
+              ) : (
+                <button onClick={loginSpotify}
+                  className={`${GENERAL_STYLES.GREENBUTTON} sm:text-base w-full py-4 sm:rounded-2xl shadow-[0_0_20px_rgba(29,208,93,0.2)]`}
+                >Lier mon compte Spotify</button>
+              )}
             </div>
 
-            <p className="text-[10px] text-gray-600 text-center mt-8 leading-relaxed">
-              La liaison Spotify permet à MyStats de récupérer vos écoutes en temps réel pour générer vos rapports personnalisés.
+            {/* Note en bas */}
+            <p className="text-[10px] text-gray-600 text-center mt-8 leading-relaxed font-hias uppercase tracking-tighter">
+              La liaison Spotify permet à MyStats de récupérer vos écoutes.
             </p>
           </div>
-
         </div>
       </div>
     </div>
   );
 }
+
+function SkeletonAccount() {
+  return (
+    <div className={PROFILE_STYLES.WRAPPER}>
+      <div className={PROFILE_STYLES.CARD}>
+        <div className={PROFILE_STYLES.CONTAINER_FLEX}>
+          {/* COLONNE GAUCHE : INFOS PERSO */}
+          <div className={PROFILE_STYLES.COL_LEFT}>
+            <div className={PROFILE_STYLES.HEADER_SECTION}>
+              <div className="space-y-3">
+                <div className="h-10 w-32 bg-white/10 rounded-xl animate-pulse" />
+                <div className="h-4 w-48 bg-white/5 rounded-lg animate-pulse" />
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Champ Nom */}
+              <div className="space-y-1">
+                <div className={`h-12 w-full ${PROFILE_STYLES.SKELETON}`}/>
+              </div>
+              {/* Champ Email */}
+              <div className="space-y-1">
+                <div className={`h-12 w-full ${PROFILE_STYLES.SKELETON}`}/>
+              </div>
+              <div className="h-14 w-full bg-white/10 rounded-2xl animate-pulse mt-4"/>
+            </div>
+          </div>
+
+          <div className={PROFILE_STYLES.SEPARATOR}>
+            <div className={PROFILE_STYLES.SEPARATOR_LINE}/>
+          </div>
+
+          {/* COLONNE DROITE : SERVICES */}
+          <div className={PROFILE_STYLES.COL_RIGHT}>
+            <div className={PROFILE_STYLES.HEADER_SECTION}>
+              <div className="space-y-3">
+                <div className="h-10 w-32 bg-white/10 rounded-xl animate-pulse"/>
+                <div className="h-4 w-48 bg-white/5 rounded-lg animate-pulse"/>
+              </div>
+            </div>
+            <div className="h-48 w-full bg-white/5 rounded-[30px] border border-white/5 animate-pulse"/>
+            {/* Note en bas */}
+            <div className="mt-8 space-y-2">
+              <div className="h-2 w-full bg-white/5 rounded animate-pulse"/>
+              <div className="h-2 w-2/3 mx-auto bg-white/5 rounded animate-pulse"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- ICONES ---
 
 const SpotifyIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -216,5 +253,12 @@ const SpotifyIcon = () => (
 const CheckIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const CrossIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );

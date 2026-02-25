@@ -30,7 +30,7 @@ export default function Header() {
   const dropdown_menu = [
     { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}/${user?.id}` },
     { id: 'Import de datas', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
-    { id: 'Compte', icon: <UserIcon/>, path: FRONT_ROUTES.ACCOUNT },
+    { id: 'Mon compte', icon: <UserIcon/>, path: FRONT_ROUTES.ACCOUNT },
   ] as const;
   const activeView = views.find(v => v.id === viewMode) || views[1];
   useEffect(() => {

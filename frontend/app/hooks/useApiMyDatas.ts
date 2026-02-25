@@ -29,9 +29,7 @@ export const useApiMyDatas = () => {
     return params.toString();
   }, []);
 
-  // --- AUTH & CORE ---
-  const getMe = useCallback(() => request(API_ENDPOINTS.ME), [request]);
-
+  // --- CORE ---
   const getOverview = useCallback(() => request(API_ENDPOINTS.STATS_OVERVIEW), [request]);
 
   const uploadJson = useCallback((formData: FormData) =>
@@ -57,7 +55,6 @@ export const useApiMyDatas = () => {
 
   return useMemo(() => ({
     loading,
-    getMe,
     getOverview,
     uploadJson,
     getHistory,
@@ -68,7 +65,7 @@ export const useApiMyDatas = () => {
     getArtistsMetadata,
     getAlbumsMetadata
   }), [
-    loading, getMe, getOverview, uploadJson, getHistory, getTracks, 
+    loading, getOverview, uploadJson, getHistory, getTracks, 
     getArtists, getAlbums, getTracksMetadata, getArtistsMetadata, getAlbumsMetadata
   ]);
 };

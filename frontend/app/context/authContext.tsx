@@ -11,6 +11,7 @@ interface AuthResponse {
   user_name: string;
   has_spotify: boolean;
   is_logged_in: boolean;
+  email: string;
 }
 
 interface AuthContextType {
@@ -18,6 +19,9 @@ interface AuthContextType {
   loading: boolean;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
+  updateUserProfile: (newUsername: string) => Promise<void>;
+  loginSpotify: () => void;
+  unlinkSpotify: () => Promise<void>;
   isLoggedIn: boolean;
 }
 
@@ -52,12 +56,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUserProfile = async (newUsername: string) => {
+    try {
+      await request(API_ENDPOINTS.EDIT_INFOS, {
+        method: 'PATCH',
+        body: JSON.stringify({ username: newUsername })
+      });
+      setUser(prev => prev ? { ...prev, user_name: newUsername } : null);
+      await refreshUser(); 
+    } catch (err) {throw err}
+  };
+
+  const loginSpotify = () => {window.location.href = API_ENDPOINTS.SPOTIFY_LOGIN};
+
+  const unlinkSpotify = async () => {
+    try {setUser(prev => prev ? { ...prev, has_spotify: false } : null)}
+    catch (err) {
+      console.error("Erreur lors du déliage :", err);
+      throw err; 
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user,
       loading, 
       refreshUser, 
       logout,
+      updateUserProfile,
+      loginSpotify,
+      unlinkSpotify,
       isLoggedIn: !!user
     }}>
       {children}

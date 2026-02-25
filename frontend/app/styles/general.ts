@@ -14,4 +14,5 @@ export const GENERAL_STYLES = {
   /* TEXTES */
   TITRES_BLANC: `${titres} text-white`,
   TITRES_NOIR: `${titres} text-black`,
+  DOUBLE_FRAME_TITLE: `${titres} text-white text-[16px] lg:text-[24px] leading-none mb-3`,
 }

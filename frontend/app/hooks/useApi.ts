@@ -17,18 +17,6 @@ export const useApi = () => {
   const getSpotifyStatus = useCallback(() => 
     requestWithLoading(API_ENDPOINTS.SPOTIFY_STATUS), [requestWithLoading]);
 
-  /*const updateProfile = useCallback((data: any) => 
-    execute(() => apiRequest(API_ENDPOINTS.EDIT_INFOS, { 
-      method: 'PATCH', 
-      body: JSON.stringify(data) 
-    })), [execute]);*/
-
-  /*const unlinkSpotify = useCallback(() => 
-    execute(() => apiRequest(API_ENDPOINTS.UNLINK_SPOTIFY, { method: 'POST' })), [execute]);
-
-  const getProfileData = useCallback((id: string) => 
-    execute(() => apiRequest(`${API_ENDPOINTS.PROFILE_DATA}/${id}`)), [execute]);*/
-
   return useMemo(() => ({ 
     loading, 
     getSpotifyStatus,
