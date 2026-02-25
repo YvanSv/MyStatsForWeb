@@ -21,13 +21,12 @@ async def upload_spotify_json(
     session_id: Optional[str] = Cookie(None),
     db: Session = Depends(get_session)
 ):
-    # 1. Authentification de l'utilisateur
+    # Authentification de l'utilisateur
     user = db.exec(select(User).where(User.session_id == session_id)).first()
     if not user: raise HTTPException(status_code=401, detail="Non connecté")
 
     valid_entries = []
     new_track_ids_for_worker = set()
-
     # Charger l'historique existant immédiatement
     all_history = set(
         db.exec(

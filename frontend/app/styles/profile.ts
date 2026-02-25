@@ -16,7 +16,7 @@ export const PROFILE_STYLES = {
 
   // ACTIONS
   ACTION_GROUP: "flex gap-3 mb-4",
-  BTN_EDIT: "px-8 py-3 bg-vert hover:bg-vert/90 text-bg1 font-semibold rounded-2xl transition-all active:scale-95 flex items-center gap-2",
+  BTN_EDIT: "px-8 py-3 rounded-2xl flex items-center gap-2",
   BTN_FOLLOW: "px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-2xl text-white transition-all active:scale-95",
   BTN_SHARE: "p-3 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-2xl text-white transition-all active:scale-95",
 

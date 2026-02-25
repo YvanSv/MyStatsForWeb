@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { PROFILE_STYLES } from "@/app/styles/profile";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useProfile } from "@/app/hooks/useProfile";
+import { GENERAL_STYLES } from "@/app/styles/general";
+import { FRONT_ROUTES } from "@/app/config";
 
 interface UserProfile {
   display_name: string;
@@ -17,7 +19,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
-  // const router = useRouter();
+  const router = useRouter();
   const { id } = useParams();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const { getProfile, loading } = useProfile();
@@ -33,13 +35,11 @@ export default function ProfilePage() {
     const loadData = async () => {
       const profileId = Array.isArray(id) ? id[0] : id;
       if (!profileId) return;
-
       try {
         const data = await getProfile(profileId);
         setProfile(data);
       } catch (err) {console.error("Échec du chargement du profil", err)}
     };
-
     loadData();
   }, []);
 
@@ -70,7 +70,7 @@ export default function ProfilePage() {
           {/* --- ACTIONS --- */}
           <div className={PROFILE_STYLES.ACTION_GROUP}>
             {isOwner ? (
-              <button className={PROFILE_STYLES.BTN_EDIT}>
+              <button onClick={() => router.push(`${FRONT_ROUTES.PROFILE_EDIT}`)} className={`${PROFILE_STYLES.BTN_EDIT} ${GENERAL_STYLES.GREENBUTTON}`}>
                 <EditIcon size={18} />
                 Modifier le profil
               </button>

@@ -2,7 +2,7 @@ const titres = 'font-semibold tracking-tighter';
 
 export const GENERAL_STYLES = {
   /* BOUTONS */
-  GREENBUTTON: 'bg-vert px-2 py-2 text-black font-semibold cursor-pointer rounded-full',
+  GREENBUTTON: 'bg-vert hover:bg-vert/90 px-2 py-2 text-black transition-all active:scale-95 font-semibold cursor-pointer',
 
   /* ALIGNEMENTS */
   LIGNE_CENTREE: 'flex items-center',

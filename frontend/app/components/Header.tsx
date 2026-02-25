@@ -104,7 +104,7 @@ export default function Header() {
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
             </button>
           ) : (
-            <button onClick={() => navigate(FRONT_ROUTES.AUTH)} className={`${GENERAL_STYLES.GREENBUTTON} text-[13px] font-bold px-5`}>
+            <button onClick={() => navigate(FRONT_ROUTES.AUTH)} className={`${GENERAL_STYLES.GREENBUTTON} rounded-full text-[13px] font-bold px-5`}>
               Se connecter
             </button>
           )}
@@ -119,7 +119,7 @@ export default function Header() {
                   </button>
                 ))}
                 <div className="h-[1px] bg-white/5 mx-2"/>
-                <button onClick={() => logout} className={HEADER_STYLES.MENU_ITEM_DANGER}>
+                <button onClick={() => logout()} className={HEADER_STYLES.MENU_ITEM_DANGER}>
                   <LogoutIcon/>Déconnexion
                 </button>
               </div>

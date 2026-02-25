@@ -5,14 +5,6 @@ import { useApi } from '@/app/hooks/useApi';
 import { API_ENDPOINTS } from '@/app/config';
 import { useRouter } from 'next/navigation';
 
-// Définition de l'utilisateur
-interface AuthUser {
-  id: number;
-  email: string;
-  display_name: string;
-  spotify_id?: string;
-}
-
 // Structure exacte de ce que renvoie /me
 interface AuthResponse {
   id: number;

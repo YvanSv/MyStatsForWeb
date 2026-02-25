@@ -3,11 +3,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 export const API_ENDPOINTS = {
   REGISTER: `${API_BASE_URL}/auth/register`,
   LOGIN: `${API_BASE_URL}/auth/login`,
+  LOGOUT:`${API_BASE_URL}/auth/logout`,
+  ME: `${API_BASE_URL}/auth/me`,
   EDIT_INFOS: `${API_BASE_URL}/auth/update`,
   SPOTIFY_LOGIN: `${API_BASE_URL}/auth/spotify-login`,
   UNLINK_SPOTIFY: `${API_BASE_URL}/auth/unlink-spotify`,
-  LOGOUT:`${API_BASE_URL}/auth/logout`,
-  ME: `${API_BASE_URL}/auth/me`,
   STATS_OVERVIEW: `${API_BASE_URL}/data/my/overview`,
   HISTORY:`${API_BASE_URL}/data/my/history`,
   TRACKS:`${API_BASE_URL}/data/my/tracks`,
@@ -25,7 +25,7 @@ export const API_ENDPOINTS = {
   ALL_ARTISTS_METADATA:`${API_BASE_URL}/data/all/artists/metadata`,
   ALL_ALBUMS:`${API_BASE_URL}/data/all/albums`,
   ALL_ALBUMS_METADATA:`${API_BASE_URL}/data/all/albums/metadata`,
-  STATUS:`${API_BASE_URL}/spotify/status`,
+  SPOTIFY_STATUS:`${API_BASE_URL}/spotify/status`,
   PROFILE_DATA: `${API_BASE_URL}/profile`,
 };
 
@@ -39,4 +39,5 @@ export const FRONT_ROUTES = {
   DASHBOARD: '/dashboard',
   ABOUT: '/about',
   PROFILE: '/profile',
+  PROFILE_EDIT: '/profile/edit',
 }

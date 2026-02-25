@@ -74,7 +74,7 @@ export default function HomePage() {
                     <span className="text-center font-semibold">Connectez-vous pour voir vos statistiques</span>
                   </p>
                   <button onClick={() => router.push(`${FRONT_ROUTES.AUTH}`)}
-                    className={`${GENERAL_STYLES.GREENBUTTON} ${GENERAL_STYLES.ZOOM_SURVOL} ${GENERAL_STYLES.TITRES_NOIR} mt-6 w-full py-3 md:text-[20px] shadow-lg`}
+                    className={`${GENERAL_STYLES.GREENBUTTON} ${GENERAL_STYLES.TITRES_NOIR} rounded-full mt-6 w-full py-3 md:text-[20px] shadow-lg`}
                   >Se connecter</button>
                 </div>
               </div>
@@ -94,7 +94,7 @@ export default function HomePage() {
           </p>
           
           <div className={ACCUEIL_STYLES.HERO_BUTTON_GROUP}>
-            <button className={`${GENERAL_STYLES.GREENBUTTON} px-8 py-4 lg:text-lg shadow-lg`}>Commencer l'expérience</button>
+            <button className={`${GENERAL_STYLES.GREENBUTTON} rounded-full px-8 py-4 lg:text-lg shadow-lg`}>Commencer l'expérience</button>
             <button className={ACCUEIL_STYLES.BTN_SECONDARY}>En savoir plus</button>
           </div>
         </div>
