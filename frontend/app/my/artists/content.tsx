@@ -5,48 +5,45 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { DataInfo } from "../../data/DataInfos";
 import RankingView from "../../components/rankings/RankingView";
 import { useApiMyDatas } from "@/app/hooks/useApiMyDatas";
+import { DEFAULT_METADATA } from "@/app/data/FiltresDefault";
 
 type SortKey = 'name' | 'total_minutes' | 'engagement' | 'play_count' | 'rating';
 
-const today = new Date();
-const formattedMonth = String(today.getMonth() + 1).padStart(2, '0');
-const formattedDay = String(today.getDate()).padStart(2, '0');
-const formattedYear = today.getFullYear();
-
 export default function ArtistesContent() {
-  const searchParams = useSearchParams();
-  const { getArtists, getArtistsMetadata } = useApiMyDatas();
-  const [artists, setArtists] = useState<DataInfo[]>([]);
-  const [metadata, setMetadata] = useState({
-    max_streams: 99999999,
-    max_minutes: 99999999,
-    max_rating: 5,
-    date_min: "1890-01-01",
-    date_max: `${formattedYear}-${formattedMonth}-${formattedDay}`
-  });
-  const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { getArtists, getArtistsMetadata } = useApiMyDatas();
 
-  const currentSort = useMemo(() => ({
-    sort: (searchParams.get("sort") as SortKey) || "play_count",
-    direction: (searchParams.get("direction") as "asc" | "desc") || "desc",
-    artist: searchParams.get("artist") || "",
-    streams_min: searchParams.get("streams_min") || "0",
-    streams_max: searchParams.get("streams_max") || "99999999",
-    minutes_min: searchParams.get("minutes_min") || "0",
-    minutes_max: searchParams.get("minutes_max") || "99999999",
-    engagement_min: searchParams.get("engagement_min") || "0",
-    engagement_max: searchParams.get("engagement_max") || "100",
-    rating_min: searchParams.get("rating_min") || "0",
-    rating_max: searchParams.get("rating_max") || "10",
-    date_min: searchParams.get("date_min") || "1890-01-01",
-    date_max: searchParams.get("date_max") || `${formattedYear}-${formattedMonth}-${formattedDay}`,
-  }), [searchParams]);
+  const [artists, setArtists] = useState<DataInfo[]>([]);
+  const [metadata, setMetadata] = useState(DEFAULT_METADATA);
+  const [status, setStatus] = useState({ loading: false, hasMore: true, offset: 0 });
 
-  const artistFilters = {
+  const currentSort = useMemo(() => {
+    const params = Object.fromEntries(searchParams.entries());
+    const isValidDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+    return {
+      sort: (params.sort as SortKey) || "play_count",
+      direction: (params.direction as "asc" | "desc") || "desc",
+      artist: params.artist || "",
+      streams_min: params.streams_min || "0",
+      streams_max: params.streams_max || String(metadata.max_streams),
+      minutes_min: params.minutes_min || "0",
+      minutes_max: params.minutes_max || String(metadata.max_minutes),
+      engagement_min: params.engagement_min || "0",
+      engagement_max: params.engagement_max || "100",
+      rating_min: params.rating_min || "0",
+      rating_max: params.rating_max || String(metadata.max_rating),
+      date_min: isValidDate(params.date_min)
+        ? params.date_min
+        : (isValidDate(metadata.date_min) ? metadata.date_min : "1890-01-01"),
+      date_max: isValidDate(params.date_max)
+        ? params.date_max
+        : (isValidDate(metadata.date_max) ? metadata.date_max : new Date().toISOString().split('T')[0]),
+    };
+  }, [searchParams, metadata]);
+
+  const artistFilters = useMemo(() => ({
     search: { artist: true },
     stats: {
       streams: { min: 0, max: metadata.max_streams },
@@ -54,56 +51,51 @@ export default function ArtistesContent() {
       engagement: { min: 0, max: 100 },
       rating: { min: 0, max: metadata.max_rating }
     },
-    period: {
-      min: metadata.date_min,
-      max: metadata.date_max
-    }
-  };
+    period: { min: metadata.date_min, max: metadata.date_max }
+  }), [metadata]);
 
-  const fetchArtists = useCallback(async (currentOffset: number, isNewSort: boolean = false) => {
-    setLoading(true);
+  const fetchData = useCallback(async (newOffset: number, clearExisting: boolean) => {
+    setStatus(prev => ({ ...prev, loading: true }));
     try {
-      const newData = await getArtists({
-        offset: currentOffset,
-        limit: 50,
-        ...currentSort
-      });
-      setHasMore(newData.length === 50);
-      setArtists(prev => (isNewSort || currentOffset === 0 ? newData : [...prev, ...newData]));
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+      const newData = await getArtists({ offset: newOffset, limit: 50, ...currentSort });
+      
+      setArtists(prev => clearExisting ? newData : [...prev, ...newData]);
+      setStatus(prev => ({ 
+        ...prev, 
+        offset: newOffset, 
+        hasMore: newData.length === 50, 
+        loading: false 
+      }));
+    } catch (err) {
+      console.error("Erreur API :", err);
+      setStatus(prev => ({ ...prev, loading: false }));
+    }
   }, [getArtists, currentSort]);
-  
-  useEffect(() => {
-    getArtistsMetadata().then(setMetadata);
-  }, []);
 
+  // Initialisation Metadata
   useEffect(() => {
-    setOffset(0);
-    fetchArtists(0, true);
-  }, [searchParams, fetchArtists]);
+    getArtistsMetadata().then(data => setMetadata(prev => ({ ...prev, ...data })));
+  }, [getArtistsMetadata]);
+
+  // Trigger au changement de filtres/sort
+  useEffect(() => {fetchData(0, true)}, [searchParams, fetchData]);
 
   const handleSort = (key: SortKey) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (currentSort.sort === key) {
-      params.set("direction", currentSort.direction === "desc" ? "asc" : "desc");
-    } else {
-      params.set("sort", key);
-      params.set("direction", "desc");
-    }
+    const isSameSort = currentSort.sort === key;
+    
+    params.set("sort", key);
+    params.set("direction", isSameSort && currentSort.direction === "desc" ? "asc" : "desc");
+    params.set("offset", "0");
+    
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
-  const loadMore = () => {
-    const nextOffset = offset + 50;
-    setOffset(nextOffset);
-    fetchArtists(nextOffset);
   };
 
   return (
     <RankingView title="Tous mes" type="artist" items={artists}
-      sortConfig={currentSort} onSort={handleSort} loading={loading}
-      hasMore={hasMore} loadMore={loadMore} filterConfig={artistFilters}
+      sortConfig={currentSort} onSort={handleSort} loading={status.loading}
+      hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)}
+      filterConfig={artistFilters}
     />
   );
 }

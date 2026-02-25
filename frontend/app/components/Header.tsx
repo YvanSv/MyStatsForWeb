@@ -12,7 +12,7 @@ import { useAuth } from "../hooks/useAuth";
 export default function Header() {
   const router = useRouter();
   // --- ÉTATS STATIQUES ---
-  const { loading, isLoggedIn, user, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
   const userName = user?.user_name || "Username";
   // --- ÉTATS UI ---
   const { viewMode, toggleViewMode } = useViewMode();
