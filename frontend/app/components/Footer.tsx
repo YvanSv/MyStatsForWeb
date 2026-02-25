@@ -2,43 +2,70 @@ import Link from 'next/link';
 import { ApiStatusBadge } from './small_elements/StatusBadge';
 import { FRONT_ROUTES } from '../config';
 
+const FOOTER_STYLES = {
+  // Structure globale
+  MAIN: "w-full mt-auto pt-4",
+  INNER_CONTAINER: "max-w-[1800px] mx-auto",
+  CONTENT_GRID: "bg-bg2 border-t border-white/5 p-6 pt-5 pb-4 grid grid-cols-1 md:grid-cols-3 items-center",
+
+  // Section Logo (Gauche)
+  LOGO_SECTION: "flex items-center gap-4 justify-start",
+  LOGO_BOX: "w-10 h-10 bg-vert rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(29,208,93,0.2)] shrink-0",
+  LOGO_ICON: "text-black font-bold text-2xl",
+  BRAND_NAME: "text-white font-hias font-bold text-base leading-none tracking-tight",
+  BRAND_TAGLINE: "text-gray-500 text-[9px] uppercase tracking-[0.2em] mt-1",
+
+  // Section Navigation (Centre)
+  NAV_SECTION: "flex flex-col items-center py-4 md:py-0 my-4 md:my-0",
+  NAV_LINKS: "flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400",
+  LINK: "hover:text-vert transition-colors duration-300",
+  COPYRIGHT: "text-gray-400 text-[9px] font-mono font-medium pt-3 opacity-50 uppercase tracking-tighter",
+
+  // Section Infos (Droite)
+  INFO_SECTION: "flex items-center justify-end gap-6",
+  INFO_TEXT_GROUP: "flex flex-col items-end gap-0.5",
+  INFO_TAGLINE: "text-gray-400 text-[9px] font-mono uppercase tracking-tight",
+  INFO_VERSION: "text-vert/70 text-[10px] font-mono font-bold italic"
+};
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full mt-auto pt-4">
-      <div className="max-w-[1800px] mx-auto">
-        <div className="bg-bg2 border-t border-white/5 p-6 pt-5 pb-4 grid grid-cols-1 md:grid-cols-3 items-center">
+    <footer className={FOOTER_STYLES.MAIN}>
+      <div className={FOOTER_STYLES.INNER_CONTAINER}>
+        <div className={FOOTER_STYLES.CONTENT_GRID}>
+          
           {/* Section Gauche : Logo / Nom */}
-          <div className="flex items-center gap-4 justify-start">
-            <div className="w-10 h-10 bg-vert rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(29,208,93,0.2)] shrink-0">
-              <span className="text-black font-bold text-2xl">⇅</span>
+          <div className={FOOTER_STYLES.LOGO_SECTION}>
+            <div className={FOOTER_STYLES.LOGO_BOX}>
+              <span className={FOOTER_STYLES.LOGO_ICON}>⇅</span>
             </div>
             <div>
-              <h4 className="text-white font-hias font-bold text-base leading-none tracking-tight">MyStats</h4>
-              <p className="text-gray-500 text-[9px] uppercase tracking-[0.2em] mt-1">Analytics Studio</p>
+              <h4 className={FOOTER_STYLES.BRAND_NAME}>MyStats</h4>
+              <p className={FOOTER_STYLES.BRAND_TAGLINE}>Analytics Studio</p>
             </div>
           </div>
 
-          {/* Section Centre : Navigation avec séparateurs */}
-          <div className="flex flex-col items-center py-4 md:py-0 my-4 md:my-0">
-            <nav className="flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400">
-              <Link href={`${FRONT_ROUTES.DASHBOARD}`} className="hover:text-vert transition-colors"> Mon dashboard</Link>
-              <Link href={`${FRONT_ROUTES.ABOUT}`} className="hover:text-vert transition-colors">À propos</Link>
+          {/* Section Centre : Navigation */}
+          <div className={FOOTER_STYLES.NAV_SECTION}>
+            <nav className={FOOTER_STYLES.NAV_LINKS}>
+              <Link href={FRONT_ROUTES.DASHBOARD} className={FOOTER_STYLES.LINK}>Mon dashboard</Link>
+              <Link href={FRONT_ROUTES.ABOUT} className={FOOTER_STYLES.LINK}>À propos</Link>
             </nav>
-            <p className="text-gray-400 text-[9px] font-mono font-medium pt-3 opacity-50 uppercase tracking-tighter">
+            <p className={FOOTER_STYLES.COPYRIGHT}>
               &copy; {currentYear} • MyStats • Tous droits réservés
             </p>
           </div>
 
           {/* Section Droite : Status & Version */}
-          <div className="flex items-center justify-end gap-6">
+          <div className={FOOTER_STYLES.INFO_SECTION}>
             <div className="hidden sm:block">
               <ApiStatusBadge />
             </div>
-            <div className="flex flex-col items-end gap-0.5">
-              <p className="text-gray-400 text-[9px] font-mono uppercase tracking-tight">Designed for Music Lovers</p>
-              <p className="text-vert/70 text-[10px] font-mono font-bold italic">v0.12.2</p>
+            <div className={FOOTER_STYLES.INFO_TEXT_GROUP}>
+              <p className={FOOTER_STYLES.INFO_TAGLINE}>Designed for Music Lovers</p>
+              <p className={FOOTER_STYLES.INFO_VERSION}>v0.12.2</p>
             </div>
           </div>
           
