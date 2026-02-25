@@ -1,18 +1,11 @@
-"use client";
+/*"use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PulseSpinner } from "./components/small_elements/CustomSpinner";
-import { FRONT_ROUTES } from "./config";
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
-import { GENERAL_STYLES } from "./styles/general";
 
 export default function HomePage() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [randomStats, setRandomStats] = useState<any[]>([]);
-  const { getMe, getOverview } = useApiMyDatas();
 
   useEffect(() => {
     let isMounted = true;
@@ -31,56 +24,58 @@ export default function HomePage() {
     initApp();
     return () => { isMounted = false; };
   }, [getMe, getOverview]);
+}*/
+"use client";
+
+import { useRouter } from "next/navigation";
+import { FRONT_ROUTES } from "./config";
+import { GENERAL_STYLES } from "./styles/general";
+import { ACCUEIL_FEATURE_STYLES, ACCUEIL_STATS_STYLES, ACCUEIL_STYLES } from "./styles/accueil";
+import { PulseSpinner } from "./components/small_elements/CustomSpinner";
+import { useAuth } from "./hooks/useAuth";
+
+
+export default function HomePage() {
+  const router = useRouter();
+  const { loading, isLoggedIn } = useAuth();
+  
+  // --- MOCK DATA ---
+  const STATS = [
+    { title: "Top Titre", value: "Blinding Lights", detail: "The Weeknd • 452 écoutes" },
+    { title: "Genre Préféré", value: "Synthwave", detail: "80% de votre mix 2024" },
+    { title: "Artiste du Moment", value: "Daft Punk", detail: "12h d'écoute cette semaine" }
+  ];
+  const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
+
+  if (loading) return (
+    <div className={ACCUEIL_STYLES.LOADING_SCREEN}>
+      <PulseSpinner />
+      <p className="text-vert tracking-widest text-xs uppercase animate-pulse">Initialisation...</p>
+    </div>
+  );
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
-      <section className={`${GENERAL_STYLES.FLEX_COL} relative items-center justify-center pt-12 md:pt-20 pb-16 md:pb-24 px-4 md:px-6 text-center`}>
+    <main className={ACCUEIL_STYLES.MAIN}>
+      <section className={ACCUEIL_STYLES.HERO_SECTION}>
         {/* --- SECTION STATS AVANT-GOÛT --- */}
-        <div className="relative z-20 mb-12 w-full max-w-5xl animate-in fade-in slide-in-from-top-4 duration-1000">
-          <p className="text-[24px] lg:text-[32px] mb-6 md:mb-10 opacity-80">
-            Un avant-goût de vos stats...
-          </p>
+        <div className={ACCUEIL_STYLES.PREVIEW_CONTAINER}>
+          <p className={ACCUEIL_STYLES.PREVIEW_TITLE}>Un avant-goût de vos stats...</p>
           
           <div className="relative"> 
-            {/* Grille responsive : 1 col mobile, 2 col tablette, 3 col desktop */}
-            <div className={`flex flex-wrap justify-center gap-4 md:gap-6 transition-all duration-700 ${!isLoggedIn ? 'blur-md pointer-events-none select-none opacity-50' : ''}`}>
-              {isLoggedIn && randomStats.length === 0 ? (
-                <>
-                  {[1,2,3].map(i =>
-                    <div key={i} className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]">
-                      <StatCardSkeleton />
-                    </div>
-                  )}
-                </>
-              ) : (
-                (randomStats.length > 0 ? randomStats : [
-                  {title: "Top Titre", value: "Blinding Lights", detail: "The Weeknd"},
-                  {title: "Genre Préféré", value: "Synthwave", detail: "80% de vos écoutes"},
-                  {title: "Artiste du Moment", value: "Daft Punk", detail: "12h d'écoute"}
-                ]).map((s, index) => (
-                  <div 
-                    key={index} 
-                    className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.33%-16px)]"
-                  >
-                    <StatPreviewCard 
-                      title={s.title} 
-                      value={s.value} 
-                      detail={s.detail}
-                    />
-                  </div>
-                ))
-              )}
+            <div className={ACCUEIL_STYLES.PREVIEW_GRID(isLoggedIn)}>
+              {STATS.map((s, index) => <div key={index} className={ACCUEIL_STYLES.PREVIEW_ITEM}><StatPreviewCard {...s}/></div>)}
             </div>
 
-            {/* Overlay d'incitation (Adaptation de la taille de la boîte) */}
-            {!loading && !isLoggedIn && (
-              <div className="absolute inset-0 flex items-center justify-center z-30">
-                <div className="bg-bg1/80 backdrop-blur-2xl border border-white/10 p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-md">
-                  <p className="text-lg md:text-ss-titre text-white flex flex-col items-center gap-2">
-                    <span className="text-vert text-3xl md:text-4xl mb-1">🔒</span>
-                    <span className="text-center">Connectez-vous pour voir vos statistiques</span>
+            {!isLoggedIn && (
+              <div className={ACCUEIL_STYLES.LOCK_OVERLAY}>
+                <div className={ACCUEIL_STYLES.LOCK_CARD}>
+                  <p className={ACCUEIL_STYLES.LOCK_TEXT}>
+                    <span className={ACCUEIL_STYLES.LOCK_ICON}>🔒</span>
+                    <span className="text-center font-semibold">Connectez-vous pour voir vos statistiques</span>
                   </p>
-                  <button onClick={() => router.push(FRONT_ROUTES.AUTH)} className={`${GENERAL_STYLES.GREENBUTTON} titre-1 mt-4 w-full py-2 md:py-3 md:text-[20px] lg:px-5 shadow-lg transition-transform hover:scale-105`}>Se connecter</button>
+                  <button onClick={() => router.push(`${FRONT_ROUTES.AUTH}`)}
+                    className={`${GENERAL_STYLES.GREENBUTTON} ${GENERAL_STYLES.ZOOM_SURVOL} ${GENERAL_STYLES.TITRES_NOIR} mt-6 w-full py-3 md:text-[20px] shadow-lg`}
+                  >Se connecter</button>
                 </div>
               </div>
             )}
@@ -88,78 +83,67 @@ export default function HomePage() {
         </div>
 
         {/* --- CONTENU HERO --- */}
-        <div className="relative z-10 mt-8">
-          {/* Taille de police fluide pour le titre */}
-          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-titre leading-tight md:leading-none tracking-tighter mb-6 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
-            Vos statistiques <br className="hidden sm:block" />
+        <div className={ACCUEIL_STYLES.HERO_CONTENT}>
+          <h1 className={ACCUEIL_STYLES.HERO_H1}>
+            Vos statistiques <br className="hidden sm:block"/>
             <span className="text-vert">Spotify</span> en temps réel.
           </h1>
-          <p className="text-sm md:text-ss-titre max-w-2xl text-gray-400 mb-10 leading-relaxed mx-auto px-2">
+          <p className={ACCUEIL_STYLES.HERO_P}>
             Découvrez vos habitudes d'écoute, explorez vos artistes favoris et 
             plongez dans l'historique détaillé de votre bibliothèque musicale.
           </p>
           
-          {/* Boutons empilés sur mobile, côte à côte sur desktop */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center px-6 sm:px-0">
-            <button onClick={() => router.push(`${FRONT_ROUTES.MY_RANKINGS}/tracks`)} className={`${GENERAL_STYLES.GREENBUTTON} px-8 py-4 lg:text-lg shadow-lg texte-1 lg:px-5 lg:transition-transform lg:hover:scale-105`}>Commencer l'expérience</button>
-            <button 
-              className="border border-gray-700 px-8 py-4 rounded-full font-bold text-base md:text-lg hover:bg-white/5 transition-colors backdrop-blur-sm"
-            >En savoir plus</button>
+          <div className={ACCUEIL_STYLES.HERO_BUTTON_GROUP}>
+            <button className={`${GENERAL_STYLES.GREENBUTTON} px-8 py-4 lg:text-lg shadow-lg`}>Commencer l'expérience</button>
+            <button className={ACCUEIL_STYLES.BTN_SECONDARY}>En savoir plus</button>
           </div>
         </div>
       </section>
 
       {/* Grille des fonctionnalités */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl px-6 py-16 md:py-24 mx-auto"> 
-        <FeatureCard title="Top Musiques" description="..." icon="🎵" />
-        <FeatureCard title="Artistes Favoris" description="..." icon="👨‍🎤" />
-        <FeatureCard title="Historique Local" description="..." icon="💾" />
+      <section className={ACCUEIL_STYLES.FEATURE_GRID}> 
+        <FeatureCard title="Top Musiques" description="Visualisez vos morceaux les plus écoutés." icon="🎵" />
+        <FeatureCard title="Artistes Favoris" description="Le classement de vos artistes préférés." icon="👨‍🎤" />
+        <FeatureCard title="Historique Local" description="Gardez une trace de vos écoutes." icon="💾" />
       </section>
 
-      {/* Section Technique / "About" */}
-      <section className="py-6 md:py-6 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-s-titre mb-8 md:mb-12">Le Projet MyStats</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-xs md:text-sm opacity-70">
-            {["Next.js", "FastAPI", "SQLModel", "PostgreSQL"].map((tech) => (
-              <div key={tech} className="p-3 md:p-4 border border-white/10 rounded-xl bg-white/5">{tech}</div>
-            ))}
-          </div>
+      {/* Section Technique */}
+      <section className={ACCUEIL_STYLES.TECH_SECTION}>
+        <h2 className={ACCUEIL_STYLES.TECH_H2}>Le Projet MyStats</h2>
+        <div className={ACCUEIL_STYLES.TECH_GRID}>
+          {TECHNOS.map(tech => <div key={tech} className={ACCUEIL_STYLES.TECH_BADGE}>{tech}</div>)}
         </div>
       </section>
     </main>
   );
 }
 
+/* --- SOUS-COMPOSANTS --- */
+
 function FeatureCard({ title, description, icon }: { title: string, description: string, icon: string }) {
   return (
-    <div className="bg-bg2 p-6 md:p-8 rounded-2xl border border-white/5 hover:border-vert/30 transition-all group h-full">
-      <div className="text-3xl md:text-4xl mb-4 group-hover:scale-110 transition-transform inline-block">{icon}</div>
-      <h3 className="text-lg md:text-ss-titre mb-2 md:mb-3 text-white">{title}</h3>
-      <p className="text-sm md:text-base text-gray-400 leading-snug font-light">{description}</p>
+    <div className={ACCUEIL_STATS_STYLES.WRAPPER}>
+      <div>
+        <div className={ACCUEIL_FEATURE_STYLES.ICON}>{icon}</div>
+        <h3 className={ACCUEIL_FEATURE_STYLES.TITLE}>{title}</h3>
+        <p className={ACCUEIL_FEATURE_STYLES.DESCRIPTION}>{description}</p>
+      </div>
     </div>
   );
 }
 
 function StatPreviewCard({ title, value, detail }: { title: string, value: string, detail: string }) {
   return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 md:p-6 rounded-2xl md:rounded-3xl text-left hover:border-vert/40 transition-all hover:scale-[1.02] cursor-default group h-full flex flex-col justify-between">
+    <div className={ACCUEIL_STATS_STYLES.WRAPPER}>
+      <div className="absolute -inset-px bg-gradient-to-br from-vert/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
       <div>
-        <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-vert mb-3 md:mb-4">{title}</p>
-        <h3 className="text-lg md:text-xl mb-1 group-hover:text-vert transition-colors break-words">{value}</h3>
-        <p className="text-xs md:text-sm text-gray-400 font-light leading-relaxed">{detail}</p>
+        <p className={ACCUEIL_STATS_STYLES.LABEL}>{title}</p>
+        <h3 className={ACCUEIL_STATS_STYLES.VALUE}>{value}</h3>
+        <p className={ACCUEIL_STATS_STYLES.DETAIL}>{detail}</p>
       </div>
-      <div className="flex justify-end mt-4 md:mt-2 opacity-100 md:opacity-20 md:group-hover:opacity-100 md:transition-opacity">
-         <div className="h-1 w-8 md:w-12 bg-vert rounded-full"/>
+      <div className={ACCUEIL_STATS_STYLES.INDICATOR_WRAPPER}>
+         <div className={ACCUEIL_STATS_STYLES.INDICATOR_BAR}/>
       </div>
-    </div>
-  );
-}
-
-function StatCardSkeleton() {
-  return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/5 p-5 md:p-6 rounded-2xl md:rounded-3xl flex flex-col justify-center items-center">
-      <PulseSpinner/><p className="mt-4 text-xs text-gray-500 animate-pulse">Chargement des stats...</p>
     </div>
   );
 }
