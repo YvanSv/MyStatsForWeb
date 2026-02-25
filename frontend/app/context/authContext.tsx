@@ -17,6 +17,8 @@ interface AuthResponse {
 interface AuthContextType {
   user: AuthResponse | null;
   loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (newUsername: string) => Promise<void>;
@@ -45,6 +47,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Vérification au chargement initial de l'application
   useEffect(() => {refreshUser()}, [refreshUser]);
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await request(API_ENDPOINTS.LOGIN, {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      if (response.user) setUser(response.user)
+      else await refreshUser()
+    } catch (err) {throw err}
+  };
+
+  const register = async (username: string, email: string, password: string) => {
+    try {
+      await request(API_ENDPOINTS.REGISTER, {
+        method: 'POST',
+        body: JSON.stringify({ username, email, password }),
+      });
+      // Auto-login après inscription
+      await login(email, password);
+    } catch (err) {throw err}
+  };
 
   // Fonction de déconnexion
   const logout = async () => {
@@ -80,8 +104,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ 
       user,
-      loading, 
-      refreshUser, 
+      loading,
+      refreshUser,
+      login,
+      register,
       logout,
       updateUserProfile,
       loginSpotify,
