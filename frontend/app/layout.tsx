@@ -5,6 +5,7 @@ import "./globals.css";
 import { ViewModeProvider } from "./context/viewModeContext";
 import { ShowFiltersProvider } from "./context/showFiltersContext";
 import Content from "./content";
+import { AuthProvider } from "./context/authContext";
 
 const hHiasSans = localFont({
   src: "./fonts/Insanibc.ttf",
@@ -43,7 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${jost.variable} ${hHiasSans.variable} ${boldmarker.variable} ${insanibu.variable} ${insanibc.variable}flex bg-[#121212] min-h-screen`}>
         <ViewModeProvider>
           <ShowFiltersProvider>
-            <Content children={children}/>
+            <AuthProvider>
+              <Content children={children}/>
+            </AuthProvider>
           </ShowFiltersProvider>
         </ViewModeProvider>
       </body>

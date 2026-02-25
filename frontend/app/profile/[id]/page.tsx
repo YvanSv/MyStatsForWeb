@@ -1,8 +1,9 @@
 "use client";
 
 import { useApi } from "@/app/hooks/useApi";
-import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 interface UserProfile {
   display_name: string;
@@ -15,9 +16,18 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { id } = useParams();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const { getProfileData, loading } = useApi();
+  const { user: currentUser } = useAuth();
+
+  const isOwner = useMemo(() => {
+    if (!currentUser || !id) return false;
+    const profileId = Array.isArray(id) ? id[0] : id;
+    const currentUserId = currentUser.user?.id || currentUser.id;
+    return currentUserId?.toString() === profileId;
+  }, [currentUser, id]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -51,11 +61,31 @@ export default function ProfilePage() {
       <div className="max-w-6xl mx-auto px-6 -mt-24 relative z-10">
         {/* HEADER PROFIL */}
         <div className="flex flex-col md:flex-row items-end gap-6 mb-12">
-           <img src={profile.avatar} className="w-40 h-40 rounded-[35px] border-4 border-bg1 bg-bg2 object-cover" alt="Avatar" />
-           <div className="flex-1 mb-4">
-             <h1 className="text-[40px] font-semibold text-white leading-none mb-2">{profile.display_name}</h1>
-             <p className="text-vert font-hias tracking-[0.2em] text-sm uppercase">Membre Premium</p>
-           </div>
+          <img src={profile.avatar} className="w-40 h-40 rounded-[35px] border-4 border-bg1 bg-bg2 object-cover" alt="Avatar" />
+          <div className="flex-1 mb-4">
+            <h1 className="text-[40px] font-semibold text-white leading-none mb-2">{profile.display_name}</h1>
+            <p className="text-vert font-hias tracking-[0.2em] text-sm uppercase">Membre Premium</p>
+          </div>
+
+           {/* --- ACTIONS --- */}
+          <div className="flex gap-3 mb-4">
+            {isOwner ? (
+              <button 
+                onClick={() => router.push(`/profile/${id}/edit`)}
+                className="px-8 py-3 bg-vert hover:bg-vert/90 text-bg1 font-semibold rounded-2xl transition-all active:scale-95 flex items-center gap-2"
+              >
+                <EditIcon size={18} />
+                Modifier le profil
+              </button>
+            ) : (
+              <button className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-2xl text-white transition-all active:scale-95">
+                Suivre l'utilisateur
+              </button>
+            )}
+            <button className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-2xl text-white transition-all active:scale-95">
+              <ShareIcon size={20} />
+            </button>
+          </div>
         </div>
 
         {/* STATS */}
@@ -113,8 +143,12 @@ function StatCard({ title, value, sub, color }: {
   );
 }
 
-const PlayIcon = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-vert"><path d="M8 5v14l11-7z"/></svg>
+const EditIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+);
+
+const ShareIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
 );
 
 function ProfileSkeleton() {
