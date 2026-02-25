@@ -3,30 +3,23 @@
 @theme {
   /* FONTS */
   --font-jost: var(--font-jost);
-  --font-hias-sans: var(--font-hias-sans);
-  --font-bold-marker: var(--font-bold-marker);
-  --font-insanibu: var(--font-insanibu);
-  --font-insanibc: var(--font-insanibc);
   /*-------*/
   
   --color-vert: #1DD05D;
   --color-jaune: #D3F527;
   --color-rouge: #F54927;
+
   --color-bg2: #282828;
   --color-bg1: #1d1d1d;
 }
 
 @layer components {
-  .titre-1 {
-    @apply font-semibold text-white tracking-tighter;
-  }
-
   .titre-2 {
     @apply font-semibold text-white;
   }
 
   button {
-    @apply active:scale-95 transition-transform;
+    @apply active:scale-95;
   }
 }
 
