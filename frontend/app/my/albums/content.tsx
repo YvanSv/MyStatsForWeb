@@ -9,11 +9,6 @@ import { DEFAULT_METADATA } from "@/app/data/FiltresDefault";
 
 type SortKey = 'name' | 'total_minutes' | 'play_count' | 'rating' | 'engagement';
 
-const today = new Date();
-const formattedMonth = String(today.getMonth() + 1).padStart(2, '0');
-const formattedDay = String(today.getDate()).padStart(2, '0');
-const formattedYear = today.getFullYear();
-
 export default function AlbumsContent() {
   const router = useRouter();
   const pathname = usePathname();
