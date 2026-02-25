@@ -35,7 +35,7 @@ async def login_email(data: LoginSchema, response: Response, session: Session = 
 
     # Vérification de l'utilisateur et du mot de passe
     if not user or not user.password_hash:
-        # Note : user.password_hash peut être None si l'user s'est inscrit via Spotify uniquement
+        # user.password_hash peut être None si l'user s'est inscrit via Spotify uniquement
         raise HTTPException(status_code=401, detail="Identifiants incorrects")
     if not verify_password(password, user.password_hash):
         raise HTTPException(status_code=401, detail="Identifiants incorrects")
@@ -49,8 +49,7 @@ async def login_email(data: LoginSchema, response: Response, session: Session = 
 
     content = {
         "status": "success",
-        "user_name": user.display_name,
-        "has_spotify": user.spotify_id is not None
+        "user_id": user.id
     }
     response = JSONResponse(content=content)
     response.set_cookie(
