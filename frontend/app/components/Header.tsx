@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
 import { API_ENDPOINTS, FRONT_ROUTES } from "../config";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
+import { HEADER_STYLES } from "../styles/header";
+import { GENERAL_STYLES } from "../styles/general";
 
 export default function Header() {
   const router = useRouter();
@@ -78,13 +80,11 @@ export default function Header() {
   }
 
   return (
-    <header className="flex-centre justify-between sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl border-b border-white/5
-      py-3 md:py-4 px-4 md:px-6"
+    <header className={`${GENERAL_STYLES.LIGNE_CENTREE} ${HEADER_STYLES.HEADER_CONTAINER} ${HEADER_STYLES.BORDER_WHITE}`}
     >
       {/* GAUCHE : Logo + Titre */}
       <div 
-        className="flex-centre cursor-pointer titre-2 tracking-tighter hover:text-vert transition-all hover:scale-105
-          text-[24px] md:text-[40px] gap-2 md:gap-3"
+        className={`${HEADER_STYLES.ZOOM_SURVOL} ${HEADER_STYLES.VERT_SURVOL} ${GENERAL_STYLES.LIGNE_CENTREE} ${HEADER_STYLES.TITRE} md:gap-3 cursor-pointer `}
         onClick={() => navigate(FRONT_ROUTES.ACCUEIL)}
       >
         <Image src="/logo.png" alt="Logo" width={60} height={60} style={{ height: 'auto' }} priority className="w-10 md:w-13"/>
@@ -92,38 +92,38 @@ export default function Header() {
       </div>
 
       {/* CENTRE : Navigation (Masquée sur mobile, Burger en bas) */}
-      <nav className="hidden titre-2 lg:flex items-center gap-8 xl:gap-20 text-[24px]">
+      <nav className={`${GENERAL_STYLES.LIGNE_CENTREE} ${HEADER_STYLES.TITRE_NAV} ${HEADER_STYLES.HIDDEN_OR_FLEX} gap-8 xl:gap-20`}>
         {navigation_menu.map(item => 
           <button key={item} onClick={() => navigate(`${route_rankings}/${item.toLowerCase()}`)}
-            className="cursor-pointer hover:text-vert"
+            className={`${HEADER_STYLES.VERT_SURVOL} cursor-pointer`}
           >{item}</button>
         )}
       </nav>
 
       {/* DROITE : Toggles + Profil + Burger */}
-      <div className="flex-centre gap-2 md:gap-4">
+      <div className={`${GENERAL_STYLES.LIGNE_CENTREE} gap-2 md:gap-4`}>
         {/* View Mode */}
         <div ref={containerRef} className="relative">
           {/* Bouton Principal */}
-          <div className="bg-bg2/50 p-1 rounded-xl border border-white/5 backdrop-blur-sm">
+          <div className={`${HEADER_STYLES.BORDER_WHITE} ${HEADER_STYLES.VIEWMODE_BUTTON} bg-bg2/50`}>
             <button
               onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
-              className="p-2 rounded-lg text-vert bg-white/10 hover:bg-white/15 flex flex-col items-center justify-center"
+              className={`${GENERAL_STYLES.FLEX_COL} ${GENERAL_STYLES.LIGNE_CENTREE} p-2 rounded-lg ${HEADER_STYLES.VIEWMODE_HOVER} hover:bg-white/15 justify-center`}
             >
-              <div className="flex-centre justify-center">{activeView.icon}</div>
+              <div className={`${GENERAL_STYLES.LIGNE_CENTREE} justify-center`}>{activeView.icon}</div>
               <ChevronDown size={14} className={`opacity-50 transition-transform duration-300 ${isViewMenuOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
 
           {/* Liste déroulante */}
           {isViewMenuOpen && (
-            <div className="absolute right-0 mt-2 p-1 bg-bg2 border border-white/10 rounded-xl shadow-2xl backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex flex-col gap-1">
+            <div className={`${HEADER_STYLES.BORDER_WHITE} ${HEADER_STYLES.VIEWMODE_BUTTON} absolute right-0 mt-2 bg-bg2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150`}>
+              <div className={`${GENERAL_STYLES.FLEX_COL} gap-1`}>
                 {views.map((v) => (
                   <button key={v.id} onClick={() => { toggleViewMode(v.id); setIsViewMenuOpen(false); }}
-                    className={`p-2 rounded-lg flex-centre gap-3 ${
-                      viewMode === v.id ? 'bg-white/10 text-vert' : 'text-gray-500 hover:text-white hover:bg-white/5'
-                    } ${v.hideMobile ? 'hidden lg:flex' : 'flex'}`}
+                    className={`p-2 rounded-lg flex-centre gap-3 hover:bg-white/5 ${
+                      viewMode === v.id ? `${HEADER_STYLES.VIEWMODE_HOVER}` : 'text-gray-500 hover:text-white'
+                    } ${v.hideMobile ? `${HEADER_STYLES.HIDDEN_OR_FLEX}` : 'flex'}`}
                   >{v.icon}</button>
                 ))}
               </div>
@@ -136,39 +136,36 @@ export default function Header() {
           {isLoggedIn ? (
             <button 
               onClick={() => {setMenuOpen(!menuOpen); setIsMobileNavOpen(false);}}
-              className={`flex-centre gap-2 md:gap-3 bg-bg2 px-3 md:px-4 py-2 rounded-full text-sm font-medium border md:hover:border-vert ${menuOpen ? 'border-vert' : 'border-white/10'}`}
+              className={`${GENERAL_STYLES.LIGNE_CENTREE} gap-2 md:gap-3 bg-bg2 px-3 md:px-4 py-2 rounded-full text-sm font-medium border md:hover:border-vert ${menuOpen ? 'border-vert' : 'border-white/10'}`}
             >
-              <div className="w-6 h-6 rounded-full bg-vert/20 flex-centre justify-center text-vert font-bold text-[13px]">
+              <div className={`${GENERAL_STYLES.LIGNE_CENTREE} ${HEADER_STYLES.TEXTE_BASE} w-6 h-6 rounded-full bg-vert/20 justify-center text-vert`}>
                 {userName.charAt(0).toUpperCase()}
               </div>
-              <span className="hidden sm:block max-w-[80px] truncate">{userName}</span>
+              <span className={`${HEADER_STYLES.HIDDEN_OR_BLOCK} max-w-[80px] truncate`}>{userName}</span>
             </button>
           ) : (!loading && (
-              <div className="flex-centre justify-center gap-3">
-                <button onClick={handleLogin} className="greenbutton text-[13px] font-bold lg:px-5 lg:hover:scale-105">Se connecter</button>
-                <button onClick={handleSpotifyLogin} className="hidden lg:block greenbutton lg:hover:scale-105">{SpotifyIcon()}</button>
+              <div className={`${GENERAL_STYLES.LIGNE_CENTREE} justify-center gap-3`}>
+                <button onClick={handleLogin} className={`${HEADER_STYLES.TEXTE_BASE} ${GENERAL_STYLES.GREENBUTTON} lg:px-5 ${HEADER_STYLES.ZOOM_SURVOL}`}>Se connecter</button>
+                <button onClick={handleSpotifyLogin} className={`${HEADER_STYLES.HIDDEN_OR_BLOCK} ${GENERAL_STYLES.GREENBUTTON} ${HEADER_STYLES.ZOOM_SURVOL}`}>{SpotifyIcon()}</button>
               </div>
             )
           )}
           {/* MENU DROPDOWN PC */}
           {menuOpen && (
-            <div className="hidden lg:block absolute right-0 mt-3 w-48 bg-bg2 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className={`${HEADER_STYLES.BORDER_WHITE} ${HEADER_STYLES.HIDDEN_OR_BLOCK} absolute right-0 mt-3 w-48 bg-bg2 rounded-2xl shadow-2xl backdrop-blur-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
               <div className="p-2 space-y-1">
                 {dropdown_menu.map(v => 
-                  <button key={v.id} className="option-dropdown-pc text-[14px] flex-centre" onClick={v.click}>{v.icon}{v.id}</button>
+                  <button key={v.id} className={`${HEADER_STYLES.OPTION_OVERLAY} ${HEADER_STYLES.OPTION_OVERLAY_SAFE} ${GENERAL_STYLES.LIGNE_CENTREE}`} onClick={v.click}>{v.icon}{v.id}</button>
                 )}
-                <div className="h-[1px] bg-white/5 mx-2"/>
-                <button onClick={handleLogout} className="option-dropdown-pc-danger text-[14px] flex-centre"><LogoutIcon/>Déconnexion</button>
+                <div className={`${HEADER_STYLES.LIGNE_BLANCHE}`}/>
+                <button onClick={handleLogout} className={`${HEADER_STYLES.OPTION_OVERLAY} ${HEADER_STYLES.OPTION_OVERLAY_DANGER} ${GENERAL_STYLES.LIGNE_CENTREE}`}><LogoutIcon/>Déconnexion</button>
               </div>
             </div>
           )}
         </div>
 
         {/* BURGER BUTTON (Visible uniquement sur mobile/tablette) */}
-        <button 
-          className="lg:hidden p-2 text-white"
-          onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-        >
+        <button className="lg:hidden p-2" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
           <div className="space-y-1.5">
             <div className={`w-6 h-0.5 bg-white transition-all ${isMobileNavOpen ? 'rotate-45 translate-y-2' : ''}`} />
             <div className={`w-6 h-0.5 bg-white ${isMobileNavOpen ? 'opacity-0' : ''}`} />
@@ -179,10 +176,10 @@ export default function Header() {
 
       {/* MOBILE OVERLAY MENU NAVIGATION */}
       {isMobileNavOpen && (
-        <div className="absolute top-full left-0 w-full bg-bg1 border-b border-white/10 lg:hidden">
-          <nav className="flex flex-col p-4 space-y-4 text-center titre-2">
+        <div className={`${HEADER_STYLES.BORDER_BOTTOM_WHITE} ${HEADER_STYLES.OVERLAY_CONTAINER}`}>
+          <nav className={`${GENERAL_STYLES.FLEX_COL} ${HEADER_STYLES.OVERLAY_NAV_CONTAINER}`}>
             {navigation_menu.map(item => 
-              <button key={item} className="text-[14px] py-2" onClick={() => navigate(`${route_rankings}/${item.toLowerCase()}`)}>
+              <button key={item} className={`${HEADER_STYLES.OPTION_OVERLAY}`} onClick={() => navigate(`${route_rankings}/${item.toLowerCase()}`)}>
                 {item}
               </button>
             )}
@@ -192,13 +189,13 @@ export default function Header() {
 
       {/* MOBILE OVERLAY MENU */}
       {menuOpen && (
-        <div className="absolute top-full left-0 w-full bg-bg1 border-b border-white/10 lg:hidden">
-          <nav className="flex flex-col p-4 space-y-4 text-center titre-2">
+        <div className={`${HEADER_STYLES.BORDER_BOTTOM_WHITE} ${HEADER_STYLES.OVERLAY_CONTAINER}`}>
+          <nav className={`${GENERAL_STYLES.FLEX_COL} ${HEADER_STYLES.OVERLAY_NAV_CONTAINER}`}>
             {dropdown_menu.map(v => 
-              <button key={v.id} className="option-dropdown-pc text-[14px] flex-centre justify-center" onClick={v.click}>{v.icon}{v.id}</button>
+              <button key={v.id} className={`${HEADER_STYLES.OPTION_OVERLAY} ${HEADER_STYLES.OPTION_OVERLAY_SAFE} ${GENERAL_STYLES.LIGNE_CENTREE} justify-center`} onClick={v.click}>{v.icon}{v.id}</button>
             )}
-            <div className="h-[1px] bg-white/5 mx-2"/>
-            <button onClick={handleLogout} className="option-dropdown-pc-danger text-[14px] flex-centre justify-center"><LogoutIcon/>Déconnexion</button>
+            <div className={`${HEADER_STYLES.LIGNE_BLANCHE}`}/>
+            <button onClick={handleLogout} className={`${HEADER_STYLES.OPTION_OVERLAY} ${HEADER_STYLES.OPTION_OVERLAY_DANGER} ${GENERAL_STYLES.LIGNE_CENTREE} justify-center`}><LogoutIcon/>Déconnexion</button>
           </nav>
         </div>
       )}

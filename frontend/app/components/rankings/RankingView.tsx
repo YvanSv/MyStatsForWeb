@@ -7,6 +7,7 @@ import { DataInfo } from "@/app/data/DataInfos";
 import GridCell from "./GridCell";
 import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
+import { GENERAL_STYLES } from "@/app/styles/general";
 
 interface RankingViewProps {
   title: string;
@@ -44,7 +45,7 @@ export default function RankingView({title, type, items, sortConfig, onSort, loa
                   font-semibold border duration-300 flex-1 md:flex-none bg-bg2 text-white border-white/10"
               ><span className="text-sm md:text-base">⚙️ Filtres</span></button>
             ) : (
-              <button onClick={toggleShowFilters} className="greenbutton border-vert border flex-1 gap-2 px-4 flex items-center justify-center md:text-base texte-1 lg:px-5 lg:hover:scale-105"><CloseIcon/>Fermer</button>
+              <button onClick={toggleShowFilters} className={`${GENERAL_STYLES.GREENBUTTON} border-vert border flex-1 gap-2 px-4 flex items-center justify-center md:text-base texte-1 lg:px-5 lg:hover:scale-105`}><CloseIcon/>Fermer</button>
             )}
 
             {/* Conteneur Sélecteur de Tri : Aligné à côté sur mobile */}

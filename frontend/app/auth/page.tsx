@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { Suspense } from 'react';
 import { PulseSpinner } from "../components/small_elements/CustomSpinner";
+import { GENERAL_STYLES } from "../styles/general";
 
 export default function AuthPage() {
   return (
@@ -128,7 +129,7 @@ function AuthContent() {
               <p className="text-gray-500 text-md tracking-[0.2em] font-medium font-hias">Bon retour sur MyStats.</p>
             </div>
 
-            <button onClick={handleSpotifyLogin} className="greenbutton sm:text-base shadow-[0_0_20px_rgba(29,208,93,0.2)] w-full flex items-center justify-center gap-3 mb-8 py-4 sm:rounded-2xl hover:scale-[1.02]">{SpotifyIcon()}Continuer avec Spotify</button>
+            <button onClick={handleSpotifyLogin} className={`${GENERAL_STYLES.GREENBUTTON} sm:text-base shadow-[0_0_20px_rgba(29,208,93,0.2)] w-full flex items-center justify-center gap-3 mb-8 py-4 sm:rounded-2xl hover:scale-[1.02]`}>{SpotifyIcon()}Continuer avec Spotify</button>
             
             <div className="relative mb-8 text-center">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
@@ -216,7 +217,7 @@ function AuthContent() {
               </div>
 
               <div className="pt-4">
-                <button disabled={loading} className="greenbutton shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02] sm:rounded-2xl py-4 w-full sm:text-base">Créer mon compte</button>
+                <button disabled={loading} className={`${GENERAL_STYLES.GREENBUTTON} shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02] sm:rounded-2xl py-4 w-full sm:text-base`}>Créer mon compte</button>
               </div>
               
               <p className="text-[10px] text-gray-600 text-center mt-4 leading-relaxed px-4">

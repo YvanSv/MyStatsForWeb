@@ -10,7 +10,7 @@ interface ShowFiltersContextType {
 const ShowFiltersContext = createContext<ShowFiltersContextType | undefined>(undefined);
 
 export function ShowFiltersProvider({ children }: { children: React.ReactNode }) {
-  const [showFilters, setShowFilters] = useState<boolean>(true);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {

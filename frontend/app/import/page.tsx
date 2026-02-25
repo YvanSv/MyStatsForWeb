@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
+import { GENERAL_STYLES } from "../styles/general";
 
 export default function ImportPage() {
   const { uploadJson } = useApiMyDatas();
@@ -97,7 +98,7 @@ export default function ImportPage() {
                   className="w-full py-4 rounded-2xl font-bold active:scale-95 bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed"
                 >{loading ? "Importation en cours..." : "Lancer l'importation"}</button>
               ) : (
-                <button className="greenbutton sm:text-base w-full py-4 sm:rounded-2xl shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02]">Lancer l'importation</button>
+                <button className={`${GENERAL_STYLES.GREENBUTTON} sm:text-base w-full py-4 sm:rounded-2xl shadow-[0_10px_30px_rgba(29,208,93,0.15)] hover:scale-[1.02]`}>Lancer l'importation</button>
               )}
 
               <p className="text-[10px] text-gray-600 text-center leading-relaxed uppercase tracking-[0.12em] font-bold">

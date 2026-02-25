@@ -7,6 +7,7 @@ import { useApi } from "../hooks/useApi";
 import { useApiMyDatas } from "../hooks/useApiMyDatas";
 import { PulseSpinner } from "../components/small_elements/CustomSpinner";
 import { useSearchParams } from "next/navigation";
+import { GENERAL_STYLES } from "../styles/general";
 
 export default function EditProfilePage() {
   return (
@@ -191,7 +192,7 @@ function EditProfileContent() {
 									>Délier mon compte Spotify</button>
 								</div>
 							) : (
-                <button onClick={handleConnectSpotify} className="greenbutton sm:text-base w-full py-4 sm:rounded-2xl hover:scale-[1.02] shadow-[0_0_20px_rgba(29,208,93,0.2)]">Lier mon compte Spotify</button>
+                <button onClick={handleConnectSpotify} className={`${GENERAL_STYLES.GREENBUTTON} sm:text-base w-full py-4 sm:rounded-2xl hover:scale-[1.02] shadow-[0_0_20px_rgba(29,208,93,0.2)]`}>Lier mon compte Spotify</button>
 							)}
             </div>
 

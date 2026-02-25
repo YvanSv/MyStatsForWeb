@@ -56,7 +56,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
   };
 
   return (
-    <div className="group flex lg:grid lg:grid-cols-[40px_2fr_120px_120px_140px_100px_60px] items-center gap-3 md:gap-4 bg-bg2/30 backdrop-blur-sm p-3 md:p-4 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
+    <div className="group flex lg:grid lg:grid-cols-[45px_2fr_120px_120px_140px_100px_60px] items-center gap-3 md:gap-4 bg-bg2/30 backdrop-blur-sm p-2 rounded-2xl border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1">
       
       {/* Index */}
       <div className="sm:block text-gray-500 font-mono text-sm md:text-lg">#{index + 1}</div>
