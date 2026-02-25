@@ -8,7 +8,6 @@
 - page /dashboard
 - **page /help /faq ...**
 - page /user/[id]
-- **afficher le # sur les grid**
 - page de détail d'une donnée quand on clique dessus
 - Provider Apple Music
 - Data reader Apple Music

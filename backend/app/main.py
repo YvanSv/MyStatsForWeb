@@ -7,6 +7,7 @@ from app.data.my import router as my_data_router
 from app.data.everyone import router as all_data_router
 from app.scripts import router as scripts_router
 from app.spotify import router as status_router
+from app.profile import router as profile_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,6 +29,7 @@ app.include_router(my_data_router)
 app.include_router(all_data_router)
 app.include_router(scripts_router)
 app.include_router(status_router)
+app.include_router(profile_router)
 
 @app.get("/")
 def read_root():

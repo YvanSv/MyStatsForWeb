@@ -39,7 +39,9 @@ export const useApi = () => {
 
   const unlinkSpotify = useCallback(async () => request(`${API_ENDPOINTS.UNLINK_SPOTIFY}`, {method: 'POST'}), [request]);
 
+  const getProfileData = useCallback(async (id:string) => request(`${API_ENDPOINTS.PROFILE_DATA}/${id}`), [request]);
+
   return useMemo(() => ({ 
-    loading, request, getStatus, register, login, updateProfile, unlinkSpotify
-  }), [loading, getStatus, register, login, updateProfile, unlinkSpotify]);
+    loading, request, getStatus, register, login, updateProfile, unlinkSpotify, getProfileData
+  }), [loading, getStatus, register, login, updateProfile, unlinkSpotify, getProfileData]);
 };
