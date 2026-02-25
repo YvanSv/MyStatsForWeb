@@ -3,6 +3,8 @@
 - **page /about**
 - embellir l'accueil
 - **trouver un moyen de se rendre sur les pages /all/ quand on est connecté**
+- afficher des badges de filtres
+- /[id]/{tracks/albums/artistes} ?
 - **trouver un moyen de limiter un utilisateur déconnecté**
 - roles ?
 - page /dashboard

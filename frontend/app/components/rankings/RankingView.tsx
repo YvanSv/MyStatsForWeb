@@ -34,8 +34,8 @@ const RANKING_VIEW_STYLES = {
   BTN_FILTER_OFF: `flex items-center justify-center gap-2 px-4 py-2 md:px-5 md:py-2.5 
                    rounded-full text-xs md:text-sm font-semibold border duration-300 
                    flex-1 md:flex-none bg-bg2 text-white border-white/10 hover:border-white/30`,
-  BTN_FILTER_ON: `${GENERAL_STYLES.GREENBUTTON} border-vert border flex-1 gap-2 px-4 
-                  flex items-center justify-center md:text-base lg:px-5 lg:hover:scale-105`,
+  BTN_FILTER_ON: `${GENERAL_STYLES.GREENBUTTON} rounded-full border-vert border flex-1 gap-2 px-4 
+                  flex items-center justify-center md:text-base lg:px-5`,
 
   // Sélecteur de Tri (Select)
   SORT_SELECT_WRAPPER: "relative flex-[1.5] md:flex-none group",
