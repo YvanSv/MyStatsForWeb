@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { GENERAL_STYLES } from "../styles/general";
 import { useApiSpotifyData } from "../hooks/useApiSpotifyData";
+import ProtectedRoute from "../components/auth/ProtectedRoute";
+
+export default function ImportPage() {
+  return (
+    <ProtectedRoute skeleton={<SkeletonImport/>}>
+      <ImportContent/>
+    </ProtectedRoute>
+  );
+}
 
 const IMPORT_STYLES = {
   // Wrappers principaux
@@ -56,7 +65,7 @@ const IMPORT_STYLES = {
   TECH_NOTE_TITLE: "font-bold text-gray-400 not-italic uppercase tracking-wider block mb-1"
 };
 
-export default function ImportPage() {
+export function ImportContent() {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -185,6 +194,80 @@ export default function ImportPage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SKELETON_STYLES = {
+  PULSE: "animate-pulse bg-white/5 rounded-2xl",
+  TEXT_LG: "h-10 bg-white/10 rounded-xl animate-pulse",
+  TEXT_MD: "h-4 bg-white/5 rounded-lg animate-pulse",
+  TEXT_SM: "h-3 bg-white/5 rounded animate-pulse",
+};
+
+function SkeletonImport() {
+  return (
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20">
+      <div className="w-full max-w-6xl bg-bg2/20 backdrop-blur-2xl border border-white/5 rounded-[40px] overflow-hidden">
+        <div className="flex flex-col lg:flex-row">
+          
+          {/* COLONNE GAUCHE : SIMULATION FORMULAIRE */}
+          <div className="flex-1 p-8 md:p-12 lg:p-16 space-y-10">
+            <div className="space-y-4">
+              <div className="w-14 h-14 bg-white/10 rounded-2xl animate-pulse" />
+              <div className={`w-64 ${SKELETON_STYLES.TEXT_LG}`} />
+              <div className={`w-full max-w-sm ${SKELETON_STYLES.TEXT_MD}`} />
+            </div>
+
+            <div className="space-y-6">
+              {/* Zone Dropzone simulée */}
+              <div className="h-40 w-full border-2 border-dashed border-white/5 rounded-[30px] flex flex-col items-center justify-center space-y-3">
+                <div className="w-10 h-10 bg-white/5 rounded-full animate-pulse" />
+                <div className={`w-40 ${SKELETON_STYLES.TEXT_SM}`} />
+              </div>
+
+              {/* Bouton simulé */}
+              <div className="h-14 w-full bg-white/10 rounded-2xl animate-pulse" />
+              
+              <div className={`w-48 mx-auto ${SKELETON_STYLES.TEXT_SM}`} />
+            </div>
+          </div>
+
+          {/* SÉPARATEUR */}
+          <div className="hidden lg:flex items-center">
+            <div className="w-[1px] h-3/4 bg-white/5" />
+          </div>
+
+          {/* COLONNE DROITE : SIMULATION GUIDE */}
+          <div className="flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.01] space-y-10">
+            <div className="space-y-4">
+              <div className="w-14 h-14 bg-white/10 rounded-2xl animate-pulse" />
+              <div className={`w-32 ${SKELETON_STYLES.TEXT_LG}`} />
+              <div className={`w-48 ${SKELETON_STYLES.TEXT_MD}`} />
+            </div>
+
+            <div className="space-y-6">
+              {[1, 2, 3, 4].map((step) => (
+                <div key={step} className="flex gap-4 items-start">
+                  <div className="w-8 h-8 shrink-0 bg-white/5 rounded-full animate-pulse" />
+                  <div className="space-y-2 w-full">
+                    <div className={`w-full ${SKELETON_STYLES.TEXT_MD}`} />
+                    <div className={`w-2/3 ${SKELETON_STYLES.TEXT_MD}`} />
+                  </div>
+                </div>
+              ))}
+
+              {/* Note technique simulée */}
+              <div className="mt-8 p-6 bg-white/5 rounded-[30px] space-y-3">
+                <div className={`w-32 bg-white/10 ${SKELETON_STYLES.TEXT_SM}`} />
+                <div className={`w-full ${SKELETON_STYLES.TEXT_SM}`} />
+                <div className={`w-full ${SKELETON_STYLES.TEXT_SM}`} />
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
