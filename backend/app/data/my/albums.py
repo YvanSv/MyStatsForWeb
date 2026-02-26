@@ -125,9 +125,9 @@ async def get_user_albums_metadata(
     db: Session = Depends(get_session)
 ):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
-    user = db.exec(select(User).where(User.session_id == session_id)).first()
-    if not user: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
-    current_user_id = user.id
+    current_user_id = db.exec(select(User.id).where(User.session_id == session_id)).scalar()
+    if current_user_id is None: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    current_user_id = int(current_user_id)
 
     raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
     raw_duration = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)
@@ -148,19 +148,20 @@ async def get_user_albums_metadata(
             mins_calc.label("m"),
             rating_formula.label("r")
         )
+        .select_from(Album)
         .join(Track, Track.album_id == Album.spotify_id)
         .join(TrackHistory, Track.spotify_id == TrackHistory.spotify_id)
-        .where(TrackHistory.user_id == current_user_id)
+        .where(TrackHistory.user_id == current_user_id) 
         .group_by(Album.spotify_id)
     ).subquery()
 
     # Extraction des maximums et des dates
     metadata_query = select(
-        func.max(stats_subquery.c),
-        func.max(stats_subquery.m),
-        func.max(stats_subquery.r),
-        func.min(cast(TrackHistory.played_at, Date)),
-        func.max(cast(TrackHistory.played_at, Date))
+        func.max(stats_subquery.c.c),
+        func.max(stats_subquery.c.m),
+        func.max(stats_subquery.c.r),
+        select(func.min(cast(TrackHistory.played_at, Date))).where(TrackHistory.user_id == current_user_id).scalar_subquery(),
+        select(func.max(cast(TrackHistory.played_at, Date))).where(TrackHistory.user_id == current_user_id).scalar_subquery()
     )
     res = db.exec(metadata_query).first()
     
