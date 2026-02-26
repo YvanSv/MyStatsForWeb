@@ -5,6 +5,15 @@ import { GENERAL_STYLES } from "../styles/general";
 import { useAuth } from "../hooks/useAuth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FRONT_ROUTES } from "../config";
+import PublicRoute from "../components/auth/PublicRoute";
+
+export default function AuthPage() {
+  return (
+    <PublicRoute skeleton={<SkeletonAuth/>}>
+      <AuthContent/>
+    </PublicRoute>
+  );
+}
 
 const AUTH_STYLES = {
   WRAPPER: "min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20",
@@ -24,22 +33,10 @@ const AUTH_STYLES = {
   FOOTER_TEXT: "text-[10px] text-gray-600 text-center mt-4 leading-relaxed px-4"
 };
 
-export default function AuthPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-bg1">
-        <SkeletonAuth/>
-      </div>
-    }>
-      <AuthContent/>
-    </Suspense>
-  );
-}
-
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, register, loading: authLoading, loginSpotify } = useAuth();
+  const { login, register, loginSpotify } = useAuth();
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [regData, setRegData] = useState({ username: "", email: "", password: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
@@ -60,6 +57,7 @@ function AuthContent() {
     e.preventDefault();
     setLoading(true);
     setLoginMessage({ type: "", text: "" });
+    setRegisterMessage({ type: "", text: ""});
 
     try {
       await login(loginData.email, loginData.password);
@@ -71,6 +69,7 @@ function AuthContent() {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginMessage({ type: "", text: "" });
     if (regData.password !== regData.confirmPassword) {
       return setRegisterMessage({ type: "error", text: "Les mots de passe ne correspondent pas." });
     }
@@ -95,7 +94,7 @@ function AuthContent() {
               <p className={AUTH_STYLES.SUBTITLE}>Bon retour sur MyStats.</p>
             </div>
 
-            <button onClick={loginSpotify} className={`${GENERAL_STYLES.GREENBUTTON} sm:text-base shadow-[0_0_20px_rgba(29,208,93,0.2)] w-full flex items-center justify-center gap-3 mb-8 py-4 sm:rounded-2xl transition-transform`}>
+            <button onClick={loginSpotify} className={`${GENERAL_STYLES.GREENBUTTON} rounded-2xl sm:text-base shadow-[0_0_20px_rgba(29,208,93,0.2)] w-full flex items-center justify-center gap-3 mb-8 py-4 transition-transform`}>
               <SpotifyIcon/>Continuer avec Spotify
             </button>
             
@@ -198,7 +197,7 @@ function AuthContent() {
               </div>
 
               <div className="pt-4">
-                <button disabled={loading} className={`${GENERAL_STYLES.GREENBUTTON} shadow-[0_10px_30px_rgba(29,208,93,0.15)] sm:rounded-2xl py-4 w-full sm:text-base transition-transform`}>
+                <button disabled={loading} className={`${GENERAL_STYLES.GREENBUTTON} rounded-2xl shadow-[0_10px_30px_rgba(29,208,93,0.15)] py-4 w-full sm:text-base transition-transform`}>
                   {loading ? "Création..." : "Créer mon compte"}
                 </button>
               </div>
@@ -208,7 +207,6 @@ function AuthContent() {
               </p>
             </form>
           </div>
-
         </div>
       </div>
     </div>
