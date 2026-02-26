@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 import uuid
 from dotenv import load_dotenv
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 import httpx
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -102,20 +102,18 @@ async def callback(
         spotify_email = user_info.get("email")
 
     # --- LOGIQUE DE LIAISON / AUTHENTIFICATION ---
-
     # A. On vérifie si l'utilisateur est déjà loggé (Liaison de compte)
     current_session_id = request.cookies.get("session_id")
     user = None
-    if current_session_id: user = session.exec(select(User).where(User.session_id == current_session_id)).first()
-
+    endpoint = ""
+    if current_session_id:
+        user = session.exec(select(User).where(User.session_id == current_session_id)).first()
+        endpoint = "/account?linked=true"
     # B. Si pas loggé, on cherche par spotify_id (Connexion classique Spotify)
     if not user: user = session.exec(select(User).where(User.spotify_id == spotify_id)).first()
-
     # C. Si toujours rien, on tente la fusion par email (Sécurité de compte)
     if not user and spotify_email: user = session.exec(select(User).where(User.email == spotify_email)).first()
-
     # D. Traitement (Création ou Mise à jour)
-    endpoint = ""
     if not user:
         # Premier login Spotify (Nouvel utilisateur)
         user = User(
@@ -142,7 +140,6 @@ async def callback(
         user.expires_at = expiration_date
         if not user.session_id: user.session_id = str(uuid.uuid4())
         session.add(user)
-        endpoint = "/account?linked=true"
 
     session.commit()
     session.refresh(user)
