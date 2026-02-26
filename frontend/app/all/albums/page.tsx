@@ -1,15 +1,20 @@
-import { Suspense } from "react";
-import AlbumsContent from './content';
-import { PulseSpinner } from "../../components/small_elements/CustomSpinner";
+"use client";
+
+import RankingView from "../../components/rankings/RankingView";
+import { useRankingLogic } from "@/app/hooks/useRankingLogic";
+import { useApiAllDatas } from "@/app/hooks/useApiAllDatas";
 
 export default function AlbumsPage() {
+  const { getAlbums, getAlbumsMetadata } = useApiAllDatas();
+  const { items, status, currentSort, filterConfig, handleSort, fetchData } =
+    useRankingLogic(getAlbums, getAlbumsMetadata, 'album');
+
   return (
-    <main className="min-h-screen text-white relative overflow-hidden">
-      <div className="max-w-[1400px] mx-auto py-12 px-6">
-        <Suspense fallback={<PulseSpinner/>}>
-          <AlbumsContent />
-        </Suspense>
-      </div>
-    </main>
+    <RankingView 
+      title="Tous les" type="album" items={items}
+      sortConfig={currentSort} onSort={handleSort} loading={status.loading}
+      hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
+      filterConfig={filterConfig}
+    />
   );
 }

@@ -1,15 +1,20 @@
-import { Suspense } from "react";
-import MusiquesContent from "./content";
-import { PulseSpinner } from "../../components/small_elements/CustomSpinner";
+"use client";
 
-export default function MusiquesPage() {
+import RankingView from "../../components/rankings/RankingView";
+import { useRankingLogic } from "@/app/hooks/useRankingLogic";
+import { useApiAllDatas } from "@/app/hooks/useApiAllDatas";
+
+export default function TracksPage() {
+  const { getTracks, getTracksMetadata } = useApiAllDatas();
+  const { items, status, currentSort, filterConfig, handleSort, fetchData } =
+    useRankingLogic(getTracks, getTracksMetadata, 'track');
+
   return (
-    <main className="min-h-screen text-white relative overflow-x-hidden">
-      <div className="max-w-[1400px] mx-auto py-6 md:py-12 px-4 md:px-8">
-        <Suspense fallback={<div className="flex h-[60vh] items-center justify-center"><PulseSpinner/></div>}>
-          <MusiquesContent />
-        </Suspense>
-      </div>
-    </main>
+    <RankingView 
+      title="Tous les" type="track" items={items}
+      sortConfig={currentSort} onSort={handleSort} loading={status.loading}
+      hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
+      filterConfig={filterConfig}
+    />
   );
 }
