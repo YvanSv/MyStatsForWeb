@@ -113,14 +113,11 @@ async def get_artists(
     return all_artists
 
 @router.get('/metadata')
-async def get_artists_metadata(
-    *,
-    session_id: Optional[str] = Cookie(None),
-    db: Session = Depends(get_session)
-):
+async def get_artists_metadata(*, session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
-    user = db.exec(select(User).where(User.session_id == session_id)).first()
-    current_user_id = user.id
+    current_user_id = db.exec(select(User.id).where(User.session_id == session_id)).first()
+    if current_user_id is None: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    current_user_id = int(current_user_id)
 
     raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
     raw_duration = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)

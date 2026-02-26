@@ -126,10 +126,9 @@ async def get_user_musics(
 @router.get('/metadata')
 async def get_user_tracks_metadata(*, session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
-    # Identification de l'utilisateur
-    user = db.exec(select(User).where(User.session_id == session_id)).first()
-    if not user: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
-    current_user_id = user.id
+    current_user_id = db.exec(select(User.id).where(User.session_id == session_id)).scalar()
+    if current_user_id is None: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    current_user_id = int(current_user_id)
 
     # On calcule les agrégations pour chaque track unique
     raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
@@ -155,11 +154,11 @@ async def get_user_tracks_metadata(*, session_id: Optional[str] = Cookie(None), 
 
     # Requête finale pour extraire les MAX et les bornes de DATES
     metadata_query = select(
-        func.max(stats_subquery.c), # Max streams
-        func.max(stats_subquery.m), # Max minutes
-        func.max(stats_subquery.r), # Max rating
-        func.min(cast(TrackHistory.played_at, Date)), # Date min
-        func.max(cast(TrackHistory.played_at, Date))  # Date max
+        func.max(stats_subquery.c.c),
+        func.max(stats_subquery.c.m),
+        func.max(stats_subquery.c.r),
+        select(func.min(cast(TrackHistory.played_at, Date))).where(TrackHistory.user_id == current_user_id).scalar_subquery(),
+        select(func.max(cast(TrackHistory.played_at, Date))).where(TrackHistory.user_id == current_user_id).scalar_subquery()
     )
     
     res = db.exec(metadata_query).first()
