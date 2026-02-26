@@ -47,12 +47,7 @@ export default function HomePage() {
   ];
   const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
 
-  if (loading) return (
-    <div className={ACCUEIL_STYLES.LOADING_SCREEN}>
-      <PulseSpinner />
-      <p className="text-vert tracking-widest text-xs uppercase animate-pulse">Initialisation...</p>
-    </div>
-  );
+  if (loading) return <AccueilSkeleton/>;
 
   return (
     <main className={ACCUEIL_STYLES.MAIN}>
@@ -145,5 +140,83 @@ function StatPreviewCard({ title, value, detail }: { title: string, value: strin
          <div className={ACCUEIL_STATS_STYLES.INDICATOR_BAR}/>
       </div>
     </div>
+  );
+}
+
+const SKELETON_ACCUEIL = {
+  PULSE: "animate-pulse bg-white/5",
+  CARD: "bg-bg2/50 border border-white/5 rounded-3xl p-6 relative overflow-hidden",
+  // Hero
+  H1: "h-12 w-3/4 md:w-1/2 rounded-2xl mb-6",
+  P: "h-4 w-full md:w-2/3 rounded-lg mb-2",
+  // Badges & Buttons
+  BTN: "h-14 w-48 rounded-full",
+  BADGE: "h-8 w-24 rounded-full",
+};
+
+function AccueilSkeleton({ isLoggedIn = true }) {
+  return (
+    <main className={ACCUEIL_STYLES.MAIN}>
+      <section className={ACCUEIL_STYLES.HERO_SECTION}>
+        
+        {/* --- SKELETON STATS PREVIEW --- */}
+        <div className={ACCUEIL_STYLES.PREVIEW_CONTAINER}>
+          <div className={`${SKELETON_ACCUEIL.PULSE} h-5 w-48 rounded mb-6`} />
+          
+          <div className="relative">
+            <div className={ACCUEIL_STYLES.PREVIEW_GRID(isLoggedIn)}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className={SKELETON_ACCUEIL.CARD}>
+                  <div className={`${SKELETON_ACCUEIL.PULSE} h-3 w-20 mb-4 rounded`} />
+                  <div className={`${SKELETON_ACCUEIL.PULSE} h-10 w-32 mb-2 rounded-xl`} />
+                  <div className={`${SKELETON_ACCUEIL.PULSE} h-3 w-24 rounded`} />
+                  <div className="mt-6 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className={`${SKELETON_ACCUEIL.PULSE} h-full w-1/3 bg-vert/20`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* --- SKELETON HERO CONTENT --- */}
+        <div className={ACCUEIL_STYLES.HERO_CONTENT}>
+          <div className={`${SKELETON_ACCUEIL.H1} ${SKELETON_ACCUEIL.PULSE}`} />
+          <div className={`${SKELETON_ACCUEIL.H1} w-1/2 ${SKELETON_ACCUEIL.PULSE} -mt-4`} />
+          
+          <div className="mt-8 space-y-3">
+            <div className={`${SKELETON_ACCUEIL.P} ${SKELETON_ACCUEIL.PULSE}`} />
+            <div className={`${SKELETON_ACCUEIL.P} w-5/6 ${SKELETON_ACCUEIL.PULSE}`} />
+          </div>
+          
+          <div className={`${ACCUEIL_STYLES.HERO_BUTTON_GROUP} mt-10`}>
+            <div className={`${SKELETON_ACCUEIL.BTN} ${SKELETON_ACCUEIL.PULSE}`} />
+            <div className={`${SKELETON_ACCUEIL.BTN} w-32 ${SKELETON_ACCUEIL.PULSE} bg-white/5`} />
+          </div>
+        </div>
+      </section>
+
+      {/* --- SKELETON FEATURES --- */}
+      <section className={ACCUEIL_STYLES.FEATURE_GRID}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className={SKELETON_ACCUEIL.CARD}>
+             <div className="h-12 w-12 rounded-2xl bg-white/5 animate-pulse mb-6" />
+             <div className="h-6 w-32 bg-white/10 animate-pulse rounded-lg mb-3" />
+             <div className="h-4 w-full bg-white/5 animate-pulse rounded-lg mb-2" />
+             <div className="h-4 w-2/3 bg-white/5 animate-pulse rounded-lg" />
+          </div>
+        ))}
+      </section>
+
+      {/* --- SKELETON TECH SECTION --- */}
+      <section className={ACCUEIL_STYLES.TECH_SECTION}>
+        <div className="h-8 w-64 bg-white/5 animate-pulse rounded-xl mx-auto mb-10" />
+        <div className={ACCUEIL_STYLES.TECH_GRID}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className={`${SKELETON_ACCUEIL.BADGE} ${SKELETON_ACCUEIL.PULSE}`} />
+          ))}
+        </div>
+      </section>
+    </main>
   );
 }
