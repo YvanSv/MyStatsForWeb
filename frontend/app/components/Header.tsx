@@ -64,7 +64,7 @@ export default function Header() {
       {/* CENTRE : Navigation PC */}
       <nav className={HEADER_STYLES.NAV_PC}>
         {navigation_menu.map(item => (
-          <button key={item} onClick={() => navigate(`${FRONT_ROUTES.MY_RANKINGS}/${item.toLowerCase()}`)}
+          <button key={item} onClick={() => navigate(`${isLoggedIn ? FRONT_ROUTES.MY_RANKINGS:FRONT_ROUTES.ALL_RANKINGS}/${item.toLowerCase()}`) }
             className={HEADER_STYLES.NAV_LINK}
           >{item}</button>
         ))}
