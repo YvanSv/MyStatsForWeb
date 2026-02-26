@@ -23,8 +23,8 @@ interface RankingViewProps {
 
 const RANKING_VIEW_STYLES = {
   // Layout Principal
-  MAIN_CONTAINER: "flex flex-col lg:flex-row gap-8",
-  CONTENT_SECTION: "flex-1 w-full min-w-0 transition-all duration-500 ease-in-out",
+  MAIN_CONTAINER: "flex flex-col lg:flex-row gap-8 py-8 px-12 md:py-12 md:px-16 max-w-[1440px] mx-auto",
+  CONTENT_SECTION: "flex-1 space-y-10",
   
   // Header de la vue (Titre + Contrôles)
   HEADER_WRAPPER: "flex flex-col-reverse md:flex-row md:items-center justify-between lg:mb-4 gap-4",
@@ -69,87 +69,91 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
   const normalizedItems: DataInfo[] = items.map(item => ({ ...item, type }));
 
   return (
-    <div className={RANKING_VIEW_STYLES.MAIN_CONTAINER}>
-      <SidebarFilters 
-        config={filterConfig} 
-        loading={loading} 
-        isVisible={showFilters}
-        toggleShowFilters={toggleShowFilters}
-      />
-      
-      <section className={RANKING_VIEW_STYLES.CONTENT_SECTION}>
-        <div className={RANKING_VIEW_STYLES.HEADER_WRAPPER}>
-          <div className={RANKING_VIEW_STYLES.CONTROLS_GROUP}>
-            
-            {/* Bouton Filtres */}
-            {!showFilters ? (
-              <button onClick={toggleShowFilters} className={RANKING_VIEW_STYLES.BTN_FILTER_OFF}>
-                <span className="text-sm md:text-base">⚙️ Filtres</span>
-              </button>
-            ) : (
-              <button onClick={toggleShowFilters} className={RANKING_VIEW_STYLES.BTN_FILTER_ON}>
-                <CloseIcon /> Fermer
-              </button>
-            )}
+    <main className="min-h-screen text-white relative overflow-hidden">
+      <div className={RANKING_VIEW_STYLES.MAIN_CONTAINER}>
+        {/* SIDEBAR FILTERS */}
+        <SidebarFilters config={filterConfig} loading={loading}
+          isVisible={showFilters} toggleShowFilters={toggleShowFilters}
+        />
 
-            {/* Sélecteur de Tri */}
-            <div className={RANKING_VIEW_STYLES.SORT_SELECT_WRAPPER}>
-              <span className={RANKING_VIEW_STYLES.SORT_LABEL}>Trier par</span>
-              <div className="relative flex items-center">
-                <select 
-                  value={sortConfig.sort}
-                  onChange={(e) => onSort(e.target.value)}
-                  className={RANKING_VIEW_STYLES.SORT_SELECT}
-                >
-                  <option value={type === 'track' ? 'title' : 'name'}>Nom</option>
-                  <option value="play_count">Streams</option>
-                  <option value="total_minutes">Temps</option>
-                  <option value="engagement">Engagement</option>
-                  <option value="rating">Rating</option>
-                </select>
-                <div className={RANKING_VIEW_STYLES.SORT_ICON_POS}>
-                  <ChevronDownIcon />
+        {/* MAIN CONTENT SECTION */}
+        <section className={RANKING_VIEW_STYLES.CONTENT_SECTION}>
+          {/* HEADER CONTROLS */}
+          <div className={RANKING_VIEW_STYLES.HEADER_WRAPPER}>
+            <div className="flex items-center gap-3">
+              {/* Bouton Filtres */}
+              {!showFilters ? (
+                <button onClick={toggleShowFilters} className={RANKING_VIEW_STYLES.BTN_FILTER_OFF}>
+                  <span className="text-sm md:text-base">⚙️ Filtres</span>
+                </button>
+              ) : (
+                <button onClick={toggleShowFilters} className={RANKING_VIEW_STYLES.BTN_FILTER_ON}>
+                  <CloseIcon /> Fermer
+                </button>
+              )}
+
+              {/* Sélecteur Tri */}
+              <div className={RANKING_VIEW_STYLES.SORT_SELECT_WRAPPER}>
+                <span className={RANKING_VIEW_STYLES.SORT_LABEL}>Trier par</span>
+                <div className="relative flex items-center">
+                  <select 
+                    value={sortConfig.sort}
+                    onChange={(e) => onSort(e.target.value)}
+                    className={RANKING_VIEW_STYLES.SORT_SELECT}
+                  >
+                    <option value={type === 'track' ? 'title' : 'name'}>Nom</option>
+                    <option value="play_count">Streams</option>
+                    <option value="total_minutes">Temps</option>
+                    <option value="engagement">Engagement</option>
+                    <option value="rating">Rating</option>
+                  </select>
+                  <div className={RANKING_VIEW_STYLES.SORT_ICON_POS}>
+                    <ChevronDownIcon />
+                  </div>
                 </div>
               </div>
+
+              {/* Bouton Direction */}
+              <button onClick={() => onSort(sortConfig.sort)} className={RANKING_VIEW_STYLES.BTN_DIRECTION}>
+                <span className={`text-base md:text-xl transition-transform duration-300 ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`}>
+                  ⇅
+                </span>
+              </button>
             </div>
 
-            {/* Bouton Inverser */}
-            <button onClick={() => onSort(sortConfig.sort)} className={RANKING_VIEW_STYLES.BTN_DIRECTION}>
-              <span className={`text-base md:text-xl transition-transform duration-300 ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`}>
-                ⇅
-              </span>
-            </button>
+            {/* Titre de la page */}
+            <h1 className={RANKING_VIEW_STYLES.PAGE_TITLE}>
+              {title} <span className="text-vert">{type}s</span>
+            </h1>
           </div>
 
-          <h1 className={RANKING_VIEW_STYLES.PAGE_TITLE}>
-            {title} <span className="text-vert">{type}s</span>
-          </h1>
-        </div>
-
-        {/* Rendu des Cellules selon le ViewMode */}
-        <div className={
-          viewMode === 'list' ? RANKING_VIEW_STYLES.LIST_CONTAINER :
-          viewMode === 'grid_sm' ? RANKING_VIEW_STYLES.SMALL_GRID_CONTAINER :
-          RANKING_VIEW_STYLES.GRID_CONTAINER
-        }>
-          {normalizedItems.map((item, i) => {
-            const commonProps = { element: item, index: i, sort: sortConfig.sort };
-            const itemKey = item.spotify_id || item.id;
-            if (viewMode === 'list') return <ListCell key={itemKey} {...commonProps} />;
-            if (viewMode === 'grid_sm') return <SmallGridCell key={itemKey} {...commonProps} />;
-            return <GridCell key={itemKey} {...commonProps} />;
-          })}
-        </div>
-
-        {hasMore && (
-          <div className={RANKING_VIEW_STYLES.LOAD_MORE_WRAPPER}>
-            <button onClick={loadMore} disabled={loading} className={RANKING_VIEW_STYLES.BTN_LOAD_MORE}>
-              {loading ? "Chargement..." : "Charger plus"}
-            </button>
+          {/* ITEMS CONTAINER */}
+          <div className={
+            viewMode === 'list' ? RANKING_VIEW_STYLES.LIST_CONTAINER :
+            viewMode === 'grid_sm' ? RANKING_VIEW_STYLES.SMALL_GRID_CONTAINER :
+            RANKING_VIEW_STYLES.GRID_CONTAINER
+          }>
+            {normalizedItems.map((item, i) => {
+              const commonProps = { element: item, index: i, sort: sortConfig.sort };
+              const itemKey = item.spotify_id || item.id;
+              if (viewMode === 'list') return <ListCell key={itemKey} {...commonProps} />;
+              if (viewMode === 'grid_sm') return <SmallGridCell key={itemKey} {...commonProps} />;
+              console.log(items);
+              return <GridCell key={itemKey} {...commonProps} />;
+            })}
           </div>
-        )}
-      </section>
-    </div>
+
+          {/* LOAD MORE */}
+          {hasMore && (
+            <div className={RANKING_VIEW_STYLES.LOAD_MORE_WRAPPER}>
+              <button onClick={loadMore} disabled={loading} className={RANKING_VIEW_STYLES.BTN_LOAD_MORE}>
+                {loading ? "Chargement..." : "Charger plus"}
+              </button>
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }
 

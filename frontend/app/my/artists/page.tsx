@@ -1,15 +1,30 @@
-import { Suspense } from "react";
-import ArtistesContent from "./content";
-import { PulseSpinner } from "../../components/small_elements/CustomSpinner";
+"use client";
 
-export default function ArtistesPage() {
+import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
+import SkeletonRanking from "@/app/components/rankings/SkeletonRanking";
+import { useApiMyDatas } from "@/app/hooks/useApiMyDatas";
+import { useRankingLogic } from "@/app/hooks/useRankingLogic";
+import RankingView from "@/app/components/rankings/RankingView";
+
+export default function ArtistsPage() {
   return (
-    <main className="min-h-screen text-white relative overflow-hidden">
-      <div className="max-w-[1400px] mx-auto py-12 px-6">
-        <Suspense fallback={<PulseSpinner/>}>
-          <ArtistesContent />
-        </Suspense>
-      </div>
-    </main>
+    <ProtectedRoute skeleton={<SkeletonRanking/>}>
+      <ArtistsContent/>
+    </ProtectedRoute>
+  );
+}
+
+function ArtistsContent() {
+  const { getArtists, getArtistsMetadata } = useApiMyDatas();
+  const { items, status, currentSort, filterConfig, handleSort, fetchData } =
+    useRankingLogic(getArtists, getArtistsMetadata, 'artist');
+
+  return (
+    <RankingView 
+      title="Tous mes" type="artist" items={items}
+      sortConfig={currentSort} onSort={handleSort} loading={status.loading}
+      hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
+      filterConfig={filterConfig}
+    />
   );
 }

@@ -1,15 +1,30 @@
-import { Suspense } from "react";
-import MusiquesContent from "./content";
-import { PulseSpinner } from "../../components/small_elements/CustomSpinner";
+"use client";
 
-export default function MusiquesPage() {
+import SkeletonRanking from "@/app/components/rankings/SkeletonRanking";
+import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
+import RankingView from "../../components/rankings/RankingView";
+import { useApiMyDatas } from "@/app/hooks/useApiMyDatas";
+import { useRankingLogic } from "@/app/hooks/useRankingLogic";
+
+export default function TracksPage() {
   return (
-    <main className="min-h-screen text-white relative overflow-x-hidden">
-      <div className="max-w-[1400px] mx-auto py-6 md:py-12 px-4 md:px-8">
-        <Suspense fallback={<div className="flex h-[60vh] items-center justify-center"><PulseSpinner/></div>}>
-          <MusiquesContent />
-        </Suspense>
-      </div>
-    </main>
+    <ProtectedRoute skeleton={<SkeletonRanking/>}>
+      <TracksContent/>
+    </ProtectedRoute>
+  );
+}
+
+function TracksContent() {
+  const { getTracks, getTracksMetadata } = useApiMyDatas();
+  const { items, status, currentSort, filterConfig, handleSort, fetchData } =
+    useRankingLogic(getTracks, getTracksMetadata, 'track');
+
+  return (
+    <RankingView 
+      title="Tous mes" type="track" items={items}
+      sortConfig={currentSort} onSort={handleSort} loading={status.loading}
+      hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
+      filterConfig={filterConfig}
+    />
   );
 }
