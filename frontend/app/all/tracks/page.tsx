@@ -3,8 +3,10 @@
 import RankingView from "../../components/rankings/RankingView";
 import { useRankingLogic } from "@/app/hooks/useRankingLogic";
 import { useApiAllDatas } from "@/app/hooks/useApiAllDatas";
+import SkeletonRanking from "@/app/components/rankings/SkeletonRanking";
+import { Suspense } from "react";
 
-export default function TracksPage() {
+export function TracksPage() {
   const { getTracks, getTracksMetadata } = useApiAllDatas();
   const { items, status, currentSort, filterConfig, handleSort, fetchData } =
     useRankingLogic(getTracks, getTracksMetadata, 'track');
@@ -16,5 +18,13 @@ export default function TracksPage() {
       hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
       filterConfig={filterConfig}
     />
+  );
+}
+
+export default function TracksSuspense() {
+  return (
+    <Suspense fallback={<SkeletonRanking />}>
+      <TracksPage />
+    </Suspense>
   );
 }

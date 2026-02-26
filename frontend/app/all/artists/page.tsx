@@ -3,8 +3,10 @@
 import RankingView from "../../components/rankings/RankingView";
 import { useRankingLogic } from "@/app/hooks/useRankingLogic";
 import { useApiAllDatas } from "@/app/hooks/useApiAllDatas";
+import { Suspense } from "react";
+import SkeletonRanking from "@/app/components/rankings/SkeletonRanking";
 
-export default function ArtistsPage() {
+export function ArtistsPage() {
   const { getArtists, getArtistsMetadata } = useApiAllDatas();
   const { items, status, currentSort, filterConfig, handleSort, fetchData } =
     useRankingLogic(getArtists, getArtistsMetadata, 'artist');
@@ -16,5 +18,13 @@ export default function ArtistsPage() {
       hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
       filterConfig={filterConfig}
     />
+  );
+}
+
+export default function ArtistsSuspense() {
+  return (
+    <Suspense fallback={<SkeletonRanking />}>
+      <ArtistsPage />
+    </Suspense>
   );
 }
