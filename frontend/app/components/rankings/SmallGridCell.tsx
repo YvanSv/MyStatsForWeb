@@ -1,4 +1,5 @@
 import { DataInfo } from "@/app/data/DataInfos";
+import { GENERAL_STYLES } from "@/app/styles/general";
 import Image from "next/image";
 
 interface SmallGridCellProps {
@@ -16,9 +17,9 @@ const SMALL_GRID_STYLES = {
   `,
 
   // Badge d'index (Réduit pour la petite grille)
-  INDEX_BADGE: `absolute top-3 left-3 z-10 flex items-center justify-center 
+  INDEX_BADGE: `${GENERAL_STYLES.TEXT3} absolute top-3 left-3 z-10 flex items-center justify-center 
                 min-w-[18px] h-[18px] px-1 rounded-full text-[9px] 
-                font-black text-white/50 group-hover:text-vert transition-colors`,
+                font-black group-hover:text-vert transition-colors`,
 
   // Section Image
   IMAGE_CONTAINER: (isArtist: boolean) => `
@@ -38,23 +39,23 @@ const SMALL_GRID_STYLES = {
       : 'bg-black/60 backdrop-blur-md border border-white/10 top-0.75 right-0.75 md:top-2 md:right-2 px-0.75 md:px-1.5 py-0.37 rounded-md'}
   `,
   RATING_TEXT: (rating: number, isActive: boolean) => {
-    const color = rating >= 1.35 ? 'text-vert' : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
+    const color = rating >= 1.35 ? `${GENERAL_STYLES.TEXT2}`  : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
     return `${isActive ? 'font-bold' : 'font-medium'} ${color} text-[6px] md:text-xs`;
   },
 
   // Section Texte
   TEXT_CONTENT: "flex items-center gap-2",
-  TITLE: (isArtist: boolean) => `
+  TITLE: (isArtist: boolean) => `${GENERAL_STYLES.TEXT1} 
     font-bold truncate group-hover:text-vert transition-colors mb-0.5
     ${isArtist ? 'text-center text-[14px]' : 'text-[11px]'}
   `,
-  SUBTITLE: "text-gray-400 text-[10px] truncate",
+  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-[10px] truncate`,
 
   // Footer Stats (Grille 3 colonnes très serrée)
   FOOTER: "grid grid-cols-3 pt-1.5 mt-1 border-t border-white/5",
   STAT_BLOCK: "flex flex-col items-center",
-  STAT_VALUE: (isActive: boolean) => `text-[10px] font-bold leading-tight ${isActive ? 'text-vert' : 'text-gray-400'}`,
-  STAT_LABEL: "text-[7px] uppercase tracking-widest text-gray-500 font-medium"
+  STAT_VALUE: (isActive: boolean) => `text-[10px] font-bold leading-tight ${isActive ? `${GENERAL_STYLES.TEXT2}` : `${GENERAL_STYLES.TEXT3}`}`,
+  STAT_LABEL: `${GENERAL_STYLES.TEXT3} text-[7px] uppercase tracking-widest font-medium`
 };
 
 export default function SmallGridCell({ element, index, sort }: SmallGridCellProps) {

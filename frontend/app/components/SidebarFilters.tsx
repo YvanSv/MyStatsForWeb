@@ -1,69 +1,3 @@
-/*"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { GENERAL_STYLES } from "../styles/general";
-
-// Types pour configurer quels filtres afficher
-interface FilterConfig {
-  search?: {
-    track?: boolean;
-    artist?: boolean;
-    album?: boolean;
-  };
-  stats?: {
-    streams?: { min: number; max: number };
-    minutes?: { min: number; max: number };
-    engagement?: { min: number; max: number };
-    rating?: { min: number; max: number };
-  };
-  period?: {
-      // Format ISO "YYYY-MM-DD"
-      date_min?: string;
-      date_max?: string;
-  };
-}
-
-interface SidebarFiltersProps {
-  config: FilterConfig;
-  loading?: boolean;
-  isVisible: boolean;
-  toggleShowFilters: () => void;
-}
-
-export default function SidebarFilters({ config, loading, isVisible, toggleShowFilters }: SidebarFiltersProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  // État local pour les inputs avant de cliquer sur "Appliquer"
-  const [localFilters, setLocalFilters] = useState<Record<string, string>>({});
-  const handleLocalChange = (key: string, value: string) => {
-    setLocalFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const applyFilters = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    Object.entries(localFilters).forEach(([key, value]) => {
-      if (!value) params.delete(key);
-      else params.set(key, value);
-    });
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    if (window.innerWidth < 1024) toggleShowFilters();
-  };
-
-  const resetFilters = () => {
-    setLocalFilters({});
-    router.push(pathname);
-  };
-
-  useEffect(() => {
-    if (isVisible && window.innerWidth < 1024) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-  }, [isVisible]);
-}*/
 "use client";
 
 import { useEffect, useState } from "react";
@@ -86,22 +20,22 @@ const SIDEBAR_STYLES = {
   STICKY_CARD: "w-[280px] lg:w-full sticky top-24 bg-bg2/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6",
 
   // Typography & Header
-  TITLE: "text-xl font-hias text-vert",
-  RESET_BTN: "text-[10px] uppercase text-gray-500 hover:text-white transition-colors",
-  GROUP_TITLE_BTN: "w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70 hover:opacity-100 transition-opacity",
+  TITLE: `text-xl ${GENERAL_STYLES.TEXT2}`,
+  RESET_BTN: `text-[10px] uppercase hover:text-white transition-colors ${GENERAL_STYLES.TEXT3}`,
+  GROUP_TITLE_BTN: `${GENERAL_STYLES.TEXT1} w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70 hover:opacity-100 transition-opacity`,
   
   // Inputs
   SEARCH_INPUT: "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-vert/50 focus:bg-white/10 outline-none transition-all",
-  DATE_INPUT: "bg-neutral-900 text-white border border-neutral-800 rounded-md p-2 text-xs focus:ring-1 focus:ring-vert outline-none transition-colors w-full",
+  DATE_INPUT:  `${GENERAL_STYLES.TEXT1} bg-neutral-900 border border-neutral-800 rounded-md p-2 text-xs focus:ring-1 focus:ring-vert outline-none transition-colors w-full`,
   RANGE_TRACK: "w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert",
 
   // Range Stats
-  RANGE_LABEL: "text-xs text-gray-400 font-bold uppercase tracking-wider group-hover:text-gray-200 transition-colors",
-  RANGE_VALUE: "text-[10px] text-vert font-mono bg-vert/10 px-2 py-0.5 rounded-md",
+  RANGE_LABEL: `${GENERAL_STYLES.TEXT3} text-xs font-bold uppercase tracking-wider group-hover:text-gray-200 transition-colors`,
+  RANGE_VALUE: `${GENERAL_STYLES.TEXT2} text-[10px] font-mono bg-vert/10 px-2 py-0.5 rounded-md`,
   
   // Date Grid
   DATE_GRID: "grid grid-cols-2 gap-3",
-  DATE_LABEL: "text-[10px] text-gray-500 uppercase tracking-tight"
+  DATE_LABEL: `${GENERAL_STYLES.TEXT1} text-[10px] uppercase tracking-tight`
 };
 
 export default function SidebarFilters({ config, loading, isVisible, toggleShowFilters }: any) {
@@ -249,7 +183,7 @@ function FilterGroup({ title, children }: { title: string, children: React.React
   return (
     <div className="mb-4">
       <button onClick={() => setIsOpen(!isOpen)} className={SIDEBAR_STYLES.GROUP_TITLE_BTN}>
-        {title} <span className="text-vert">{isOpen ? '−' : '+'}</span>
+        {title} <span className={GENERAL_STYLES.TEXT2}>{isOpen ? '−' : '+'}</span>
       </button>
       <div className={`transition-all duration-300 overflow-hidden ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="flex flex-col gap-2 pb-4">{children}</div>

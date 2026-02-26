@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
+import { GENERAL_STYLES } from "@/app/styles/general";
 
 export default function EditProfilePage() {
   return (
@@ -18,7 +19,7 @@ const PROFILE_EDIT_STYLES = {
   // Banner Section
   BANNER_WRAPPER: "relative h-[250px] w-full group cursor-pointer overflow-hidden bg-bg2",
   BANNER_IMG: "w-full h-full object-cover opacity-40 transition-opacity group-hover:opacity-30",
-  BANNER_OVERLAY: "absolute inset-0 flex items-center justify-center text-white/50 font-medium",
+  BANNER_OVERLAY: `text-white/50 absolute inset-0 flex items-center justify-center font-medium`,
   BANNER_BADGE: "flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full backdrop-blur-md",
   BANNER_GRADIENT: "absolute inset-0 bg-gradient-to-t from-bg1 to-transparent",
 
@@ -26,32 +27,32 @@ const PROFILE_EDIT_STYLES = {
   CONTAINER: "max-w-4xl mx-auto px-6 -mt-20 relative z-10",
   HEADER_FLEX: "flex flex-col md:flex-row items-center md:items-end gap-6",
   TEXT_GROUP: "flex-1 text-center md:text-left mb-4",
-  TITLE: "text-3xl font-bold text-white mb-1",
-  SUBTITLE: "text-gray-500 text-sm",
+  TITLE: `${GENERAL_STYLES.TEXT1} text-3xl font-bold mb-1`,
+  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-sm`,
 
   // Avatar Edit
   AVATAR_WRAPPER: "relative w-40 h-40 group cursor-pointer mx-auto md:mx-0",
   AVATAR_IMG: "w-full h-full rounded-[35px] border-4 border-bg1 bg-bg2 object-cover shadow-2xl transition-all group-hover:brightness-50",
-  OVERLAY_ICON: "absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white",
+  OVERLAY_ICON: `${GENERAL_STYLES.TEXT1} absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`,
 
   // Form
   FORM_CARD: "bg-bg2/30 backdrop-blur-xl border border-white/5 rounded-[40px] p-8 mt-12",
   FIELD_GROUP: "mb-6",
-  LABEL: "block text-gray-400 text-xs font-hias uppercase tracking-widest mb-2 ml-1",
-  INPUT: "w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-vert/50 transition-all",
-  TEXTAREA: "w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-vert/50 transition-all resize-none",
+  LABEL: `${GENERAL_STYLES.TEXT3} block text-xs uppercase tracking-widest mb-2 ml-1`,
+  INPUT: `${GENERAL_STYLES.TEXT1} w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all`,
+  TEXTAREA: `${GENERAL_STYLES.TEXT1} w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all resize-none`,
   
   // Privacy Toggle
   TOGGLE_CARD: "mt-4 p-4 border border-white/5 bg-white/5 rounded-2xl flex items-center justify-between",
-  TOGGLE_LABEL: "text-white text-sm font-medium",
-  TOGGLE_DESC: "text-gray-500 text-xs",
+  TOGGLE_LABEL: `${GENERAL_STYLES.TEXT1} text-sm font-medium`,
+  TOGGLE_DESC: `${GENERAL_STYLES.TEXT3} text-xs`,
   TOGGLE_SWITCH: "w-12 h-6 bg-vert rounded-full relative cursor-pointer",
   TOGGLE_KNOB: "absolute right-1 top-1 w-4 h-4 bg-white rounded-full",
 
   // Footer Actions
   FOOTER: "flex items-center justify-end gap-4 mt-10",
-  BTN_SAVE: "px-10 py-3 bg-vert hover:bg-vert/90 text-bg1 font-bold rounded-2xl transition-all active:scale-95",
-  BTN_CANCEL: "px-6 py-3 text-gray-400 hover:text-white transition-colors"
+  BTN_SAVE: `${GENERAL_STYLES.GREENBUTTON} px-10 py-3`,
+  BTN_CANCEL: `${GENERAL_STYLES.TEXT3} px-6 py-3 text-gray-400 hover:text-white transition-colors`
 };
 
 function EditProfileContent() {

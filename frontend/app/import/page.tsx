@@ -27,10 +27,10 @@ const IMPORT_STYLES = {
 
   // En-têtes de colonnes
   HEADER_WRAPPER: "mb-10 text-center lg:text-left",
-  ICON_BOX_VERT: "inline-flex p-4 rounded-3xl bg-vert/10 text-vert mb-6",
+  ICON_BOX_VERT: `${GENERAL_STYLES.TEXT2} inline-flex p-4 rounded-3xl bg-vert/10 mb-6`,
   ICON_BOX_BLUE: "inline-flex p-4 rounded-3xl bg-blue-500/10 text-blue-400 mb-6",
-  TITLE: `${GENERAL_STYLES.DOUBLE_FRAME_TITLE}`,
-  SUBTITLE: "text-gray-500 text-md tracking-[0.08em] font-medium max-w-md",
+  TITLE: `${GENERAL_STYLES.TITRE_DOUBLE_FRAME}`,
+  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-md tracking-[0.08em] font-medium max-w-md`,
 
   // Dropzone
   DROPZONE: (hasFiles: boolean) => `border-2 border-dashed rounded-[30px] p-8 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${
@@ -39,30 +39,30 @@ const IMPORT_STYLES = {
   
   // Liste de fichiers
   FILE_LIST_WRAPPER: "flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2",
-  FILE_BADGE: "text-[9px] bg-white/5 px-3 py-1 rounded-full text-gray-400 border border-white/5 animate-in fade-in zoom-in-95",
+  FILE_BADGE: `${GENERAL_STYLES.TEXT3} text-[9px] bg-white/5 px-3 py-1 rounded-full border border-white/5 animate-in fade-in zoom-in-95`,
 
   // Alertes & Progress
   ALERT_ERROR: "bg-rouge/10 border border-rouge/20 text-rouge text-[10px] p-4 rounded-2xl animate-shake font-bold uppercase tracking-widest",
-  ALERT_SUCCESS: "bg-vert/10 border border-vert/20 text-vert text-[10px] p-4 rounded-2xl font-bold uppercase tracking-widest",
+  ALERT_SUCCESS: `${GENERAL_STYLES.TEXT2} bg-vert/10 border border-vert/20 text-[10px] p-4 rounded-2xl font-bold uppercase tracking-widest`,
   PROGRESS_CONTAINER: "w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4",
   PROGRESS_BAR: "bg-vert h-full animate-progress-fast",
 
   // Bouton
   BTN_SUBMIT: (isDisabled: boolean) => isDisabled 
-    ? "w-full py-4 rounded-2xl font-bold bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed active:scale-100"
-    : `${GENERAL_STYLES.GREENBUTTON} w-full py-4 sm:rounded-2xl shadow-[0_10px_30px_rgba(29,208,93,0.15)]`,
-  FOOTER_TEXT: "text-[10px] text-gray-600 text-center leading-relaxed uppercase tracking-[0.12em] font-bold",
+    ? `${GENERAL_STYLES.TEXT3} w-full py-4 rounded-full font-bold bg-white/5 border border-white/5 cursor-not-allowed active:scale-100`
+    : `${GENERAL_STYLES.GREENBUTTON} w-full py-4`,
+  FOOTER_TEXT: `${GENERAL_STYLES.TEXT3} text-[10px] text-center leading-relaxed uppercase tracking-[0.12em] font-bold`,
 
   // Guide (Droite)
   GUIDE_STEP_WRAPPER: "flex gap-4",
-  STEP_NUMBER: "flex-shrink-0 w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold",
-  STEP_TEXT: "text-gray-300 text-sm leading-relaxed",
-  EXTERNAL_LINK: "text-vert hover:underline break-all font-mono text-[12px] mt-2 block",
-  CODE_TAG: "text-vert bg-vert/5 px-1 rounded mx-1",
+  STEP_NUMBER: `${GENERAL_STYLES.TEXT1} flex-shrink-0 w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold`,
+  STEP_TEXT: `${GENERAL_STYLES.TEXT1} text-sm leading-relaxed`,
+  EXTERNAL_LINK: `${GENERAL_STYLES.TEXT2} hover:underline break-all font-mono text-[12px] mt-2 block`,
+  CODE_TAG: `${GENERAL_STYLES.TEXT2} bg-vert/5 px-1 rounded mx-1`,
   
   // Note technique
-  TECH_NOTE: "mt-8 p-6 bg-white/[0.03] border border-white/5 rounded-[30px] italic text-[11px] text-gray-500 space-y-3",
-  TECH_NOTE_TITLE: "font-bold text-gray-400 not-italic uppercase tracking-wider block mb-1"
+  TECH_NOTE: `${GENERAL_STYLES.TEXT3} mt-8 p-6 bg-white/[0.03] border border-white/5 rounded-[30px] italic text-[11px] space-y-3`,
+  TECH_NOTE_TITLE: `${GENERAL_STYLES.TEXT3} font-bold not-italic uppercase tracking-wider block mb-1`
 };
 
 export function ImportContent() {
@@ -113,7 +113,7 @@ export function ImportContent() {
                 <input type="file" multiple accept=".json" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                 <div className={IMPORT_STYLES.DROPZONE(files.length > 0)}>
                   <FileIcon size={40}/>
-                  <p className="text-xs text-gray-400 text-center">
+                  <p className={`${GENERAL_STYLES.TEXT3} text-xs text-center`}>
                     {files.length > 0 ? `${files.length} fichier(s) sélectionné(s)` : "Déposez vos fichiers .json ici"}
                   </p>
                 </div>
@@ -141,7 +141,7 @@ export function ImportContent() {
               </button>
 
               <p className={IMPORT_STYLES.FOOTER_TEXT}>
-                Seuls les fichiers <span className="text-vert">Streaming_History_Audio_X.json</span> sont supportés
+                Seuls les fichiers <span className={GENERAL_STYLES.TEXT2}>Streaming_History_Audio_X.json</span> sont supportés
               </p>
             </form>
           </div>
@@ -190,7 +190,7 @@ export function ImportContent() {
                 <span className={IMPORT_STYLES.TECH_NOTE_TITLE}>Processus d'import :</span>
                 <p>1. Les écoutes sont injectées presque instantanément dans la base de données de MyStats.</p>
                 <p>2. Un enrichissement automatique récupère les images et durées (env. 2 min / fichier).</p>
-                <p className="pt-2 text-vert/80">Vous pouvez quitter cette page une fois l'import lancé.</p>
+                <p className={`pt-2 ${GENERAL_STYLES.TEXT2}`}>Vous pouvez quitter cette page une fois l'import lancé.</p>
               </div>
             </div>
           </div>

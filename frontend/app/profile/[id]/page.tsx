@@ -2,11 +2,45 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { PROFILE_STYLES } from "@/app/styles/profile";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useProfile } from "@/app/hooks/useProfile";
 import { GENERAL_STYLES } from "@/app/styles/general";
 import { FRONT_ROUTES } from "@/app/config";
+
+const PROFILE_STYLES = {
+  MAIN_WRAPPER: "min-h-screen pb-20 bg-bg1",
+  
+  // BANNER
+  BANNER_WRAPPER: "relative h-[300px] w-full overflow-hidden",
+  BANNER_IMG: "w-full h-full object-cover opacity-50 grayscale-[20%]",
+  GRADIENT_OVERLAY: "absolute inset-0 bg-gradient-to-t from-bg1 via-bg1/20 to-transparent",
+
+  // CONTAINER & HEADER
+  CONTAINER: "max-w-6xl mx-auto px-6 -mt-24 relative z-10",
+  HEADER_FLEX: "flex flex-col md:flex-row items-end gap-6 mb-12",
+  AVATAR: "w-40 h-40 rounded-[35px] border-4 border-bg1 bg-bg2 object-cover shadow-2xl",
+  INFO_BLOCK: "flex-1 mb-4",
+  NAME: `${GENERAL_STYLES.TEXT1} text-[40px] font-semibold leading-none mb-2`,
+  BADGE: `${GENERAL_STYLES.TEXT2} tracking-[0.2em] text-sm uppercase`,
+
+  // ACTIONS
+  ACTION_GROUP: "flex gap-3 mb-4",
+  BTN_EDIT: `${GENERAL_STYLES.GREENBUTTON} px-8 py-3 flex items-center`,
+  BTN_FOLLOW: `py-3 px-8 ${GENERAL_STYLES.GRAYBUTTON2}`,
+  BTN_SHARE: `p-3 ${GENERAL_STYLES.GRAYBUTTON2}`,
+
+  // GRIDS & CARDS
+  STATS_GRID: "grid grid-cols-1 md:grid-cols-3 gap-6 mb-12",
+  RECENT_CONTAINER: "bg-bg2/30 backdrop-blur-xl border border-white/5 rounded-[40px] p-8",
+  SECTION_TITLE: `${GENERAL_STYLES.TEXT1} text-2xl mb-8 font-semibold`,
+
+  // TRACK ITEMS
+  TRACK_ITEM: "flex items-center gap-4 p-4 rounded-2xl hover:bg-white/[0.03] transition-all group",
+  TRACK_IMG: "w-12 h-12 rounded-lg object-cover shadow-lg",
+  TRACK_NAME: `${GENERAL_STYLES.TEXT1} ${GENERAL_STYLES.TRANSITION_TEXT_VERT} font-medium`,
+  TRACK_ARTIST: `${GENERAL_STYLES.TEXT3} text-sm`,
+  TRACK_DATE: `${GENERAL_STYLES.TEXT3} text-xs font-mono`
+};
 
 interface UserProfile {
   display_name: string;
@@ -47,7 +81,7 @@ export default function ProfilePage() {
 
   if (!profile)
     if (loading) return <ProfileSkeleton />;
-    else return <div className="text-center mt-20 text-white">Profil introuvable</div>;
+    else return <div className={`${GENERAL_STYLES.TEXT1} text-center mt-20`}>Profil introuvable</div>;
 
   return (
     <div className={PROFILE_STYLES.MAIN_WRAPPER}>
@@ -91,7 +125,7 @@ export default function ProfilePage() {
             title="Minutes d'écoute" 
             value={<>{profile.total_minutes.toLocaleString()} <span className="text-sm opacity-50 ml-2">({totalDays} j)</span></>} 
             sub="Total cumulé" 
-            color="text-vert"
+            color={GENERAL_STYLES.TEXT2}
           />
           <StatCard title="Artiste Favori" value={profile.top_artist} sub="Le plus écouté" color="text-blue-400" />
           <StatCard title="Genre de prédilection" value={profile.top_genre} sub="Analyse audio" color="text-purple-400" />
@@ -131,9 +165,9 @@ function StatCard({ title, value, sub, color }: {
   return (
     <div className="bg-bg2/40 backdrop-blur-md border border-white/5 p-8 rounded-[35px] hover:border-white/10 transition-all group relative overflow-hidden">
       <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 blur-3xl -mr-12 -mt-12 group-hover:bg-vert/5 transition-colors" />
-      <p className="text-gray-500 font-hias text-[10px] uppercase tracking-[0.2em] mb-4 relative z-10">{title}</p>
+      <p className={`${GENERAL_STYLES.TEXT3} text-[10px] uppercase tracking-[0.2em] mb-4 relative z-10`}>{title}</p>
       <h3 className={`text-3xl font-bold mb-1 relative z-10 ${color}`}>{value}</h3>
-      <p className="text-gray-600 text-[11px] italic relative z-10">{sub}</p>
+      <p className={`${GENERAL_STYLES.TEXT3} text-[11px] italic relative z-10`}>{sub}</p>
     </div>
   );
 }

@@ -1,31 +1,32 @@
 import Link from 'next/link';
 import { ApiStatusBadge } from './small_elements/StatusBadge';
 import { FRONT_ROUTES } from '../config';
+import { GENERAL_STYLES } from '../styles/general';
 
 const FOOTER_STYLES = {
   // Structure globale
-  MAIN: "w-full mt-auto pt-4",
+  MAIN: "w-full mt-auto",
   INNER_CONTAINER: "max-w-[1800px] mx-auto",
-  CONTENT_GRID: "bg-bg2 border-t border-white/5 p-6 pt-5 pb-4 grid grid-cols-1 md:grid-cols-3 items-center",
+  CONTENT_GRID: "bg-bg1/60 border-t border-white/5 p-6 pt-5 pb-4 grid grid-cols-1 md:grid-cols-3 items-center",
 
   // Section Logo (Gauche)
   LOGO_SECTION: "flex items-center gap-4 justify-start",
   LOGO_BOX: "w-10 h-10 bg-vert rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(29,208,93,0.2)] shrink-0",
-  LOGO_ICON: "text-black font-bold text-2xl",
-  BRAND_NAME: "text-white font-hias font-bold text-base leading-none tracking-tight",
-  BRAND_TAGLINE: "text-gray-500 text-[9px] uppercase tracking-[0.2em] mt-1",
+  LOGO_ICON: `${GENERAL_STYLES.TEXT4} font-bold text-2xl`,
+  BRAND_NAME: `${GENERAL_STYLES.TEXT1} font-bold text-base leading-none tracking-tight`,
+  BRAND_TAGLINE: `${GENERAL_STYLES.TEXT3} text-[9px] uppercase tracking-[0.2em] mt-1`,
 
   // Section Navigation (Centre)
   NAV_SECTION: "flex flex-col items-center py-4 md:py-0 my-4 md:my-0",
-  NAV_LINKS: "flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400",
-  LINK: "hover:text-vert transition-colors duration-300",
-  COPYRIGHT: "text-gray-400 text-[9px] font-mono font-medium pt-3 opacity-50 uppercase tracking-tighter",
+  NAV_LINKS: `${GENERAL_STYLES.TEXT3} flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.15em]`,
+  LINK: `${GENERAL_STYLES.TRANSITION_TEXT_VERT}`,
+  COPYRIGHT: `${GENERAL_STYLES.TEXT3} text-[9px] font-mono font-medium pt-3 opacity-50 uppercase tracking-tighter`,
 
   // Section Infos (Droite)
   INFO_SECTION: "flex items-center justify-end gap-6",
   INFO_TEXT_GROUP: "flex flex-col items-end gap-0.5",
-  INFO_TAGLINE: "text-gray-400 text-[9px] font-mono uppercase tracking-tight",
-  INFO_VERSION: "text-vert/70 text-[10px] font-mono font-bold italic"
+  INFO_TAGLINE: `${GENERAL_STYLES.TEXT3} text-[9px] font-mono uppercase tracking-tight`,
+  INFO_VERSION: `${GENERAL_STYLES.TEXT2} text-[10px] font-mono font-bold italic`
 };
 
 export default function Footer() {

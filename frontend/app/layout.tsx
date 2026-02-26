@@ -1,31 +1,12 @@
 import type { Metadata } from "next";
 import { Jost } from "next/font/google";
-import localFont from "next/font/local";
 import "./globals.css";
 import { ViewModeProvider } from "./context/viewModeContext";
 import { ShowFiltersProvider } from "./context/showFiltersContext";
-import Content from "./content";
 import { AuthProvider } from "./context/authContext";
-
-const hHiasSans = localFont({
-  src: "./fonts/Insanibc.ttf",
-  variable: "--font-hias-sans",
-});
-
-const boldmarker = localFont({
-  src: "./fonts/BoldMarker.ttf",
-  variable: "--font-bold-marker",
-});
-
-const insanibu = localFont({
-  src: "./fonts/Insanibc.ttf",
-  variable: "--font-insanibu",
-});
-
-const insanibc = localFont({
-  src: "./fonts/Insanibc.ttf",
-  variable: "--font-insanibc",
-});
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const jost = Jost({ 
   subsets: ["latin"],
@@ -41,11 +22,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body className={`${jost.variable} ${hHiasSans.variable} ${boldmarker.variable} ${insanibu.variable} ${insanibc.variable}flex bg-[#121212] min-h-screen`}>
+      <body>
         <ViewModeProvider>
           <ShowFiltersProvider>
             <AuthProvider>
-              <Content children={children}/>
+              <div className={`${jost.variable} bg-bg1 flex flex-1 flex-col min-h-screen overflow-x-hidden font-jost selection:bg-vert/20 selection:text-vert`}>
+                <Header />
+                {children}
+                <Footer />
+                <SpeedInsights />
+              </div>
             </AuthProvider>
           </ShowFiltersProvider>
         </ViewModeProvider>

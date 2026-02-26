@@ -8,16 +8,13 @@
   --color-vert: #1DD05D;
   --color-jaune: #D3F527;
   --color-rouge: #F54927;
+  --color-bleu: #2596BE;
 
-  --color-bg2: #282828;
-  --color-bg1: #1d1d1d;
+  --color-bg2: #202020;
+  --color-bg1: #050505;
 }
 
 @layer components {
-  .titre-2 {
-    @apply font-semibold text-white;
-  }
-
   button {
     @apply active:scale-95;
   }

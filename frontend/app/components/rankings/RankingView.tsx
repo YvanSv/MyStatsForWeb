@@ -31,24 +31,19 @@ const RANKING_VIEW_STYLES = {
   CONTROLS_GROUP: "flex flex-row gap-2 w-full md:w-auto items-center mb-6",
 
   // Boutons de Filtres
-  BTN_FILTER_OFF: `flex items-center justify-center gap-2 px-4 py-2 md:px-5 md:py-2.5 
-                   rounded-full text-xs md:text-sm font-semibold border duration-300 
-                   flex-1 md:flex-none bg-bg2 text-white border-white/10 hover:border-white/30`,
+  BTN_FILTER_OFF: `${GENERAL_STYLES.GRAYBUTTON} px-4 py-2 md:px-5 md:py-2.5`,
   BTN_FILTER_ON: `${GENERAL_STYLES.GREENBUTTON} rounded-full border-vert border flex-1 gap-2 px-4 
                   flex items-center justify-center md:text-base lg:px-5`,
 
   // Sélecteur de Tri (Select)
   SORT_SELECT_WRAPPER: "relative flex-[1.5] md:flex-none group",
-  SORT_LABEL: "absolute -top-2 left-4 px-1.5 bg-bg1 text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-gray-500 z-10",
-  SORT_SELECT: `w-full bg-bg2 pl-4 pr-8 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-medium 
-                border border-white/10 outline-none text-white appearance-none
-                focus:border-vert/50 transition-all cursor-pointer`,
-  SORT_ICON_POS: "absolute right-3 pointer-events-none text-gray-400",
+  SORT_LABEL: `${GENERAL_STYLES.TEXT3} absolute -top-2 left-4 px-1.5 bg-bg1 text-[8px] md:text-[10px] font-bold uppercase tracking-wider z-10`,
+  SORT_SELECT: `${GENERAL_STYLES.GRAYBUTTON} pl-4 pr-8 py-2 md:py-2.5 rounded-full text-xs md:text-sm
+                outline-none appearance-none`,
+  SORT_ICON_POS: `${GENERAL_STYLES.TEXT3} absolute right-3 pointer-events-none`,
 
   // Bouton Direction (Asc/Desc)
-  BTN_DIRECTION: `aspect-square h-[34px] md:h-[42px] flex items-center justify-center 
-                  bg-bg2 border border-white/10 rounded-full text-white shrink-0
-                  hover:border-white/30 transition-colors`,
+  BTN_DIRECTION: `aspect-square h-[34px] md:h-[42px] shrink-0 ${GENERAL_STYLES.GRAYBUTTON}`,
 
   // Titre de la page
   PAGE_TITLE: "text-3xl md:text-5xl font-hias tracking-tighter text-left md:text-right",
@@ -60,7 +55,7 @@ const RANKING_VIEW_STYLES = {
 
   // Footer / Load More
   LOAD_MORE_WRAPPER: "mt-12 flex justify-center pb-12",
-  BTN_LOAD_MORE: "bg-bg2 border border-white/10 px-8 py-4 rounded-full font-bold hover:border-vert/50 disabled:opacity-50 transition-all active:scale-95"
+  BTN_LOAD_MORE: `${GENERAL_STYLES.GRAYBUTTON} px-8 py-4 disabled:opacity-50`
 };
 
 export default function RankingView({ title, type, items, sortConfig, onSort, loading, hasMore, loadMore, filterConfig }: RankingViewProps) {
@@ -69,7 +64,7 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
   const normalizedItems: DataInfo[] = items.map(item => ({ ...item, type }));
 
   return (
-    <main className="min-h-screen text-white relative overflow-hidden">
+    <main className={`${GENERAL_STYLES.TEXT1} min-h-screen relative overflow-hidden`}>
       <div className={RANKING_VIEW_STYLES.MAIN_CONTAINER}>
         {/* SIDEBAR FILTERS */}
         <SidebarFilters config={filterConfig} loading={loading}
@@ -123,7 +118,7 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
 
             {/* Titre de la page */}
             <h1 className={RANKING_VIEW_STYLES.PAGE_TITLE}>
-              {title} <span className="text-vert">{type}s</span>
+              {title} <span className={GENERAL_STYLES.TEXT2}>{type}s</span>
             </h1>
           </div>
 

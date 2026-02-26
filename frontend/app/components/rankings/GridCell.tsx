@@ -1,4 +1,5 @@
 import { DataInfo } from "@/app/data/DataInfos";
+import { GENERAL_STYLES } from "@/app/styles/general";
 import Image from "next/image";
 
 interface GridCellProps {
@@ -16,9 +17,9 @@ const GRID_CELL_STYLES = {
   `,
 
   // Badge d'index (#1, #2...)
-  INDEX_BADGE: `absolute top-3 left-3 md:top-4.5 md:left-4.5 z-10 flex items-center justify-center 
+  INDEX_BADGE: `${GENERAL_STYLES.TEXT3} absolute top-3 left-3 md:top-4.5 md:left-4.5 z-10 flex items-center justify-center 
                 min-w-[20px] h-[20px] px-1.5 rounded-full text-[12px] md:text-[15px] 
-                font-black text-white/40 group-hover:text-vert transition-colors`,
+                font-black group-hover:text-vert transition-colors`,
 
   // Section Image
   IMAGE_CONTAINER: (isArtist: boolean) => `
@@ -38,7 +39,7 @@ const GRID_CELL_STYLES = {
       : 'bg-black/60 backdrop-blur-md border border-white/10 top-1 right-1 md:top-3 md:right-3 px-1 md:px-2 py-0.5 rounded-md'}
   `,
   RATING_TEXT: (rating: number, isActive: boolean) => {
-    const color = rating >= 1.35 ? 'text-vert' : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
+    const color = rating >= 1.35 ? `${GENERAL_STYLES.TEXT2}` : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
     return `${isActive ? 'font-black' : 'font-medium'} ${color} text-[7px] md:text-xs tracking-tighter`;
   },
 
@@ -48,17 +49,17 @@ const GRID_CELL_STYLES = {
     font-bold truncate group-hover:text-vert transition-colors md:mb-0.5
     ${isArtist ? 'text-center text-sm md:text-base' : 'text-[10px] md:text-sm'}
   `,
-  SUBTITLE: "text-gray-400 text-[9px] md:text-[11px] truncate mb-1 md:mb-0",
+  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-[9px] md:text-[11px] truncate mb-1 md:mb-0`,
 
   // Footer Desktop (Stats)
   FOOTER_PC: "hidden md:grid grid-cols-3 pt-3 mt-3 border-t border-white/5",
   STAT_BLOCK: "flex flex-col items-center",
-  STAT_VALUE: (isActive: boolean) => `text-[12px] font-bold leading-tight ${isActive ? 'text-vert' : 'text-gray-400'}`,
-  STAT_LABEL: "text-[9px] uppercase tracking-widest text-gray-500 font-medium",
+  STAT_VALUE: (isActive: boolean) => `text-[12px] font-bold leading-tight ${isActive ? `${GENERAL_STYLES.TEXT2}` : `${GENERAL_STYLES.TEXT3}`}`,
+  STAT_LABEL: `${GENERAL_STYLES.TEXT3} text-[9px] uppercase tracking-widest font-medium`,
 
   // Footer Mobile
   FOOTER_MOBILE: "md:hidden flex justify-between items-center text-[8px] font-bold uppercase border-t border-white/5 pt-1 mt-auto",
-  MOBILE_VALUE: (isActive: boolean) => isActive ? 'text-vert' : 'text-gray-500'
+  MOBILE_VALUE: (isActive: boolean) => isActive ? `${GENERAL_STYLES.TEXT2}` : `${GENERAL_STYLES.TEXT3}`
 };
 
 export default function GridCell({ element, index, sort }: GridCellProps) {
@@ -96,7 +97,7 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
             className={GRID_CELL_STYLES.IMAGE_RENDER(isArtist)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-700">?</div>
+          <div className={`${GENERAL_STYLES.TEXT3} w-full h-full flex items-center justify-center`}>?</div>
         )}
 
         {/* Badge Rating */}
@@ -134,7 +135,7 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
               </span>
               <span className={GRID_CELL_STYLES.STAT_LABEL}>min</span>
             </>
-          ) : (<span className="text-gray-400 font-bold">-</span>)}
+          ) : (<span className={`${GENERAL_STYLES.TEXT2} font-bold`}>-</span>)}
         </div>
 
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
