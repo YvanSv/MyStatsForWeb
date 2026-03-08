@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GENERAL_STYLES } from "../styles/general";
+import { BASE_UI, GENERAL_STYLES } from "../styles/general";
 import { useApiSpotifyData } from "../hooks/useApiSpotifyData";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 
@@ -15,53 +15,57 @@ export default function ImportPage() {
 
 const IMPORT_STYLES = {
   // Wrappers principaux
-  CONTAINER_WRAPPER: "min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20",
-  CARD: "w-full max-w-6xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden",
+  CONTAINER_WRAPPER: `min-h-[85vh] ${BASE_UI.common.flexCenter} px-4 py-12 md:py-20`,
+  CARD: `w-full max-w-6xl ${BASE_UI.common.glass} ${BASE_UI.rounded.large} shadow-2xl overflow-hidden bg-bg2/40`,
   CONTENT_FLEX: "flex flex-col lg:flex-row",
   
   // Colonnes
-  LEFT_COL: "flex-1 p-8 md:p-12 lg:p-16",
-  RIGHT_COL: "flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.02]",
+  COLUMN: "flex-1 p-8 md:p-12 lg:p-16",
+  get LEFT_COL() { return this.COLUMN },
+  get RIGHT_COL() { return `${this.COLUMN} bg-white/[0.02]` },
   SEPARATOR: "hidden lg:flex flex-col items-center justify-center",
   SEPARATOR_LINE: "w-[1px] h-3/4 bg-gradient-to-b from-transparent via-white/10 to-transparent",
 
   // En-têtes de colonnes
   HEADER_WRAPPER: "mb-10 text-center lg:text-left",
-  ICON_BOX_VERT: `${GENERAL_STYLES.TEXT2} inline-flex p-4 rounded-3xl bg-vert/10 mb-6`,
-  ICON_BOX_BLUE: "inline-flex p-4 rounded-3xl bg-blue-500/10 text-blue-400 mb-6",
-  TITLE: `${GENERAL_STYLES.TITRE_DOUBLE_FRAME}`,
+  ICON_BOX: "inline-flex p-4 rounded-3xl mb-6",
+  get ICON_BOX_VERT() { return `${this.ICON_BOX} ${GENERAL_STYLES.TEXT2} bg-vert/10` },
+  get ICON_BOX_BLUE() { return `${this.ICON_BOX} text-blue-400 bg-blue-500/10` },
+  TITLE: GENERAL_STYLES.TITRE_DOUBLE_FRAME,
   SUBTITLE: `${GENERAL_STYLES.TEXT3} text-md tracking-[0.08em] font-medium max-w-md`,
 
   // Dropzone
-  DROPZONE: (hasFiles: boolean) => `border-2 border-dashed rounded-[30px] p-8 transition-all duration-300 flex flex-col items-center justify-center gap-4 ${
+  DROPZONE: (hasFiles: boolean) => `border-2 border-dashed ${BASE_UI.rounded.medium} p-8 ${BASE_UI.anim.base} flex flex-col items-center justify-center gap-4 ${
     hasFiles ? "border-vert/50 bg-vert/5" : "border-white/10 bg-white/[0.02] group-hover:border-white/20"
   }`,
   
   // Liste de fichiers
   FILE_LIST_WRAPPER: "flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2",
-  FILE_BADGE: `${GENERAL_STYLES.TEXT3} text-[9px] bg-white/5 px-3 py-1 rounded-full border border-white/5 animate-in fade-in zoom-in-95`,
-
+  FILE_BADGE: `${GENERAL_STYLES.TEXT3} text-[9px] bg-white/5 px-3 py-1 ${BASE_UI.rounded.badge} border border-white/5 animate-in fade-in zoom-in-95`,
+  
   // Alertes & Progress
-  ALERT_ERROR: "bg-rouge/10 border border-rouge/20 text-rouge text-[10px] p-4 rounded-2xl animate-shake font-bold uppercase tracking-widest",
-  ALERT_SUCCESS: `${GENERAL_STYLES.TEXT2} bg-vert/10 border border-vert/20 text-[10px] p-4 rounded-2xl font-bold uppercase tracking-widest`,
+  ALERT_BASE: "border text-[10px] p-4 ${BASE_UI.rounded.input} font-bold uppercase tracking-widest",
+  get ALERT_ERROR() { return `${this.ALERT_BASE} bg-rouge/10 border-rouge/20 text-rouge animate-shake` },
+  get ALERT_SUCCESS() { return `${this.ALERT_BASE} bg-vert/10 border-vert/20 ${GENERAL_STYLES.TEXT2}` },
   PROGRESS_CONTAINER: "w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4",
-  PROGRESS_BAR: "bg-vert h-full animate-progress-fast",
+  PROGRESS_BAR: "w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4",
+  PROGRESS_FILL: "bg-vert h-full animate-progress-fast",
 
   // Bouton
   BTN_SUBMIT: (isDisabled: boolean) => isDisabled 
-    ? `${GENERAL_STYLES.TEXT3} w-full py-4 rounded-full font-bold bg-white/5 border border-white/5 cursor-not-allowed active:scale-100`
+    ? `${GENERAL_STYLES.TEXT3} w-full py-4 ${BASE_UI.rounded.badge} font-bold bg-white/5 border border-white/5 cursor-not-allowed`
     : `${GENERAL_STYLES.GREENBUTTON} w-full py-4`,
   FOOTER_TEXT: `${GENERAL_STYLES.TEXT3} text-[10px] text-center leading-relaxed uppercase tracking-[0.12em] font-bold`,
 
   // Guide (Droite)
   GUIDE_STEP_WRAPPER: "flex gap-4",
-  STEP_NUMBER: `${GENERAL_STYLES.TEXT1} flex-shrink-0 w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold`,
+  STEP_NUMBER: `${GENERAL_STYLES.TEXT1} flex-shrink-0 w-6 h-6 ${BASE_UI.rounded.badge} bg-white/5 border border-white/10 ${BASE_UI.common.flexCenter} text-[10px] font-bold`,
   STEP_TEXT: `${GENERAL_STYLES.TEXT1} text-sm leading-relaxed`,
   EXTERNAL_LINK: `${GENERAL_STYLES.TEXT2} hover:underline break-all font-mono text-[12px] mt-2 block`,
   CODE_TAG: `${GENERAL_STYLES.TEXT2} bg-vert/5 px-1 rounded mx-1`,
   
   // Note technique
-  TECH_NOTE: `${GENERAL_STYLES.TEXT3} mt-8 p-6 bg-white/[0.03] border border-white/5 rounded-[30px] italic text-[11px] space-y-3`,
+  TECH_NOTE: `${GENERAL_STYLES.TEXT3} mt-8 p-6 bg-white/[0.03] border border-white/5 ${BASE_UI.rounded.medium} italic text-[11px] space-y-3`,
   TECH_NOTE_TITLE: `${GENERAL_STYLES.TEXT3} font-bold not-italic uppercase tracking-wider block mb-1`
 };
 
@@ -201,10 +205,10 @@ export function ImportContent() {
 }
 
 const SKELETON_STYLES = {
-  PULSE: "animate-pulse bg-white/5 rounded-2xl",
-  TEXT_LG: "h-10 bg-white/10 rounded-xl animate-pulse",
-  TEXT_MD: "h-4 bg-white/5 rounded-lg animate-pulse",
-  TEXT_SM: "h-3 bg-white/5 rounded animate-pulse",
+  PULSE: `${BASE_UI.anim.base} animate-pulse bg-white/5 ${BASE_UI.rounded.input}`,
+  TEXT_LG: `h-10 bg-white/10 ${BASE_UI.rounded.item} animate-pulse`,
+  TEXT_MD: `h-4 bg-white/5 rounded-lg animate-pulse`,
+  TEXT_SM: `h-3 bg-white/5 rounded animate-pulse`,
 };
 
 function SkeletonImport() {
