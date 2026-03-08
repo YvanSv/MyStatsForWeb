@@ -22,13 +22,17 @@ const CustomBar = (props: any) => {
   );
 };
 
-function CustomTooltip({label, value, metric}:any) {
+function CustomTooltip({label, value, metric, color}:any) {
   const unit = metric === 'streams' ? 'streams' : 'minutes';
+  const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
+  try {
+    if (/^\d{4}-\d{2}-\d{2}/.test(label)) label = new Date(label).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch (e) {}
   return (
     <div className="bg-gray-950 border border-white/10 px-3 py-2 rounded-xl shadow-2xl backdrop-blur-md">
       <p className="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">{label}</p>
       <p className="text-white font-mono font-bold text-sm">
-        {value} <span className="text-purple-400 text-[10px]">{unit}</span>
+        {formatter.format(value)} <span className={`${color} text-[10px]`}>{unit}</span>
       </p>
     </div>
   );
@@ -36,13 +40,22 @@ function CustomTooltip({label, value, metric}:any) {
 
 const BarTooltip = ({ active, payload, metric }: any) => {
   if (active && payload && payload.length)
-    return <CustomTooltip label={payload[0].payload.month || payload[0].payload.day} value={payload[0].value} metric={metric}/>
+    return <CustomTooltip label={payload[0].payload.month || payload[0].payload.day}
+      value={payload[0].value} metric={metric} color="text-purple-400"/>
   return null;
 };
 
 const ClockTooltip = ({ active, payload, metric }: any) => {
   if (active && payload && payload.length)
-    return <CustomTooltip label={payload[0].payload.hour} value={payload[0].value} metric={metric}/>
+    return <CustomTooltip label={payload[0].payload.hour} value={payload[0].value}
+      metric={metric} color="text-purple-400"/>
+  return null;
+};
+
+const CumulativeToolTip = ({ active, payload, metric }: any) => {
+  if (active && payload && payload.length)
+    return <CustomTooltip label={payload[0].payload.full_date} value={payload[0].value}
+      metric={metric} color="text-vert"/>
   return null;
 };
 
@@ -59,7 +72,10 @@ function CustomBarChart({data,type,metric}:{data:any[],type:string,metric: 'stre
         >
           <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#ffffff05" />
           <XAxis dataKey={type} axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }} dy={10}/>
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }}/>
+          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }} tickFormatter={(str) => {
+            const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
+            return formatter.format(str);
+          }} width={65}/>
           <Tooltip content={<BarTooltip metric={metric}/>} cursor={{ fill: 'white', fillOpacity: 0.05 }}/>
           <Bar dataKey={metric === 'streams' ? 'streams' : 'value'} shape={<CustomBar />} barSize={24} animationDuration={1500} animationEasing="ease-out"/>
         </BarChart>
@@ -89,9 +105,9 @@ export function ClockChart({ data, metric = 'streams' }: { data: any[], metric: 
         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data} startAngle={90} endAngle={-270}>
           <PolarGrid stroke="#374151" />
           <PolarAngleAxis dataKey="hour" tickFormatter={formatTicks} tick={{ fill: '#9CA3AF', fontSize: 10 }}/>
-          <Tooltip content={<ClockTooltip metric={metric}/>} cursor={{ stroke: '#c084fc', strokeWidth: 1 }} />
+          <Tooltip content={<ClockTooltip metric={metric}/>} cursor={{ stroke: '#c084fc', strokeWidth: 1 }}/>
           <Radar name={metric === 'streams' ? 'Streams' : 'Minutes'} dataKey={metric === 'streams' ? 'streams' : 'value'} stroke="#c084fc"
-            fill="#6d4e8c" fillOpacity={0.5} animationDuration={1000}
+            fill="#5e4d6c" fillOpacity={0.5} animationDuration={1000}
           />
         </RadarChart>
       </ResponsiveContainer>
@@ -104,9 +120,8 @@ export function CumulativeChart({ data, metric }: { data: any[], metric: 'minute
   const color = '#1DD05D';
 
   return (
-    <div className="h-[400px] w-full bg-white/[0.02] rounded-3xl p-6 border border-white/10 mt-8">
+    <div className="h-[300px] w-full bg-white/[0.02] rounded-3xl p-8 border border-white/10">
       <h3 className="text-gray-400 text-xs font-bold uppercase mb-6">Évolution cumulée ({metric})</h3>
-      
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
@@ -117,20 +132,20 @@ export function CumulativeChart({ data, metric }: { data: any[], metric: 'minute
           </defs>
           
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
-          <XAxis dataKey="full_date" axisLine={false} tickLine={false} minTickGap={50}
+          <XAxis dataKey="full_date" axisLine={false} tickLine={false}
             tick={{ fill: '#4B5563', fontSize: 10 }} minTickGap={30}
             tickFormatter={(str) => {
               const date = new Date(str);
-              return `${date.getDate()}/${date.getMonth() + 1}`;
+              return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear().toString().substring(2)}`;
             }}
           />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }}/>
-          <Tooltip itemStyle={{ color: color }} labelFormatter={(value) => {
-              const date = new Date(value);
-              return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }}
+            tickFormatter={(str) => {
+              const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
+              return formatter.format(str);
             }}
-            contentStyle={{ backgroundColor: '#030712', borderRadius: '12px', border: '1px solid #ffffff10' }}
           />
+          <Tooltip content={<CumulativeToolTip metric={metric}/>} cursor={{ stroke: color, strokeWidth: 1 }}/>
           <Area type="monotone" dataKey={metric} stroke={color} fillOpacity={1} fill="url(#colorArea)" 
             strokeWidth={2} dot={false}/>
         </AreaChart>
