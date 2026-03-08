@@ -3,7 +3,7 @@ from sqlmodel import Session, select, func, desc
 from app.database import get_session
 from app.models import User, TrackHistory, Track, Artist, Album
 
-router = APIRouter(tags=["profile"])
+router = APIRouter()
 
 @router.get("/{user_id}")
 def get_user_profile(user_id: int, session: Session = Depends(get_session)):

@@ -13,7 +13,7 @@ from .spotify_auth import UpdateProfileSchema
 load_dotenv()
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 IS_PRODUCTION = os.getenv("RENDER") is not None or os.getenv("ENV") == "production"
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth")
 
 class LoginSchema(BaseModel):
     email: EmailStr

@@ -21,7 +21,7 @@ REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 IS_PRODUCTION = os.getenv("RENDER") is not None or os.getenv("ENV") == "production"
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth")
 
 class UpdateProfileSchema(BaseModel):
     username: Optional[str] = None

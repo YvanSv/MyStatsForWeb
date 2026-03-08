@@ -6,7 +6,7 @@ from sqlmodel import Session, col, select, func, desc
 from app.database import get_session
 from app.models import TrackHistory, Track
 
-router = APIRouter(tags=["dashboard"])
+router = APIRouter()
 
 @router.get("/{user_id}")
 def get_dashboard_data(
