@@ -120,7 +120,8 @@ def get_dashboard_data(
         running_ms += r.ms
         running_streams += r.streams
         cumulative_data.append({
-            "date": r.day.strftime("%d/%m"),
+            "full_date": r.day.isoformat(),
+            "display_date": r.day.strftime("%d/%m/%y"), 
             "minutes": round(running_ms / 60000, 1),
             "streams": running_streams
         })
