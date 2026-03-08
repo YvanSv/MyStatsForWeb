@@ -1,6 +1,4 @@
-/*"use client";
-
-import { useEffect, useState } from "react";
+/*
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
 
 export default function HomePage() {

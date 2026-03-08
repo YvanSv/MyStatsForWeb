@@ -31,36 +31,6 @@ export const GENERAL_STYLES = {
   TRANSITION_ZOOM: BASE_UI.anim.hoverZoom,
 };
 
-//// HEADER ////
-
-export const HEADER_STYLES = {
-  CONTAINER: `flex items-center justify-between sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-3 md:py-4 px-4 md:px-6 border-b border-white/10`,
-  
-  LOGO_WRAPPER: `${GENERAL_STYLES.TEXT1} ${GENERAL_STYLES.TRANSITION_TEXT_VERT} ${GENERAL_STYLES.TRANSITION_ZOOM} flex items-center ${BASE_UI.typo.tight} text-[24px] md:text-[40px] md:gap-3 cursor-pointer`,
-  
-  NAV_PC: `hidden lg:flex items-center font-semibold text-[24px] gap-8 xl:gap-20`,
-  NAV_LINK: `${GENERAL_STYLES.TEXT1} ${GENERAL_STYLES.TRANSITION_TEXT_VERT} cursor-pointer`,
-
-  RIGHT_SECTION: `flex items-center gap-2 md:gap-4`,
-
-  // Dropdowns unifiés
-  VIEW_DROPDOWN: `${BASE_UI.common.dropdown} min-w-[50px] duration-150`,
-  MENU_DROPDOWN: `${BASE_UI.common.dropdown} w-48 ${BASE_UI.rounded.input} duration-200 lg:block`,
-
-  VIEW_ITEM: (isActive: boolean) => `p-2 ${BASE_UI.rounded.item} ${BASE_UI.common.flexCenter} ${BASE_UI.anim.base} ${
-    isActive ? `${GENERAL_STYLES.TEXT2} bg-white/10` : `${GENERAL_STYLES.TEXT3} hover:text-white hover:bg-white/5`
-  }`,
-
-  USER_BTN: (isOpen: boolean) => `${GENERAL_STYLES.TEXT1} flex items-center gap-2 md:gap-3 bg-bg2 px-3 md:px-4 py-2 ${BASE_UI.rounded.badge} text-sm font-medium border ${BASE_UI.anim.base} md:hover:border-vert ${isOpen ? 'border-vert' : 'border-white/10'}`,
-
-  USER_AVATAR: `${GENERAL_STYLES.TEXT2} ${BASE_UI.common.flexCenter} text-[13px] font-bold w-6 h-6 ${BASE_UI.rounded.badge} bg-vert/20`,
-  
-  MENU_ITEM: `text-[14px] py-2.5 px-4 ${BASE_UI.rounded.item} ${BASE_UI.anim.base} gap-3 w-full flex items-center hover:bg-white/5 ${BASE_UI.text.white}`,
-  MENU_ITEM_DANGER: `text-[14px] py-2.5 px-4 ${BASE_UI.rounded.item} ${BASE_UI.anim.base} gap-3 w-full flex items-center hover:bg-red-500/10 ${BASE_UI.text.red}`,
-  
-  MOBILE_OVERLAY: `absolute top-full left-0 w-full bg-bg1 backdrop-blur-xl border-b border-white/10 lg:hidden animate-in slide-in-from-top-2`,
-};
-
 /////////////////////////////////////////////////////////
 // const titres = 'font-semibold tracking-tighter';
 // const temps_transitions = 'transition-all duration-300';
