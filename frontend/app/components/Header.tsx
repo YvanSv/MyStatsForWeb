@@ -7,6 +7,7 @@ import { useViewMode } from "../context/viewModeContext";
 import { FRONT_ROUTES } from "../config";
 import { GENERAL_STYLES } from "../styles/general";
 import { useAuth } from "../hooks/useAuth";
+import { ChartBar } from "lucide-react";
 
 const HEADER_STYLES = {
   // Conteneur principal fixe
@@ -80,6 +81,7 @@ export default function Header() {
     { id: 'list', icon: <ListIcon />, hideMobile: false },
   ] as const;
   const dropdown_menu = [
+    { id: 'Mon dashboard', icon: <ChartBar/>, path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
     { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}/${user?.id}` },
     { id: 'Import de datas', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
     { id: 'Mon compte', icon: <UserIcon/>, path: FRONT_ROUTES.ACCOUNT },

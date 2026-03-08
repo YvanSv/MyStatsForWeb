@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
   ALL_ALBUMS_METADATA:`${API_BASE_URL}/data/all/albums/metadata`,
   SPOTIFY_STATUS:`${API_BASE_URL}/spotify/status`,
   PROFILE_DATA: `${API_BASE_URL}/profile`,
+  DASHBOARD_DATA: `${API_BASE_URL}/profile/dashboard`,
 };
 
 export const FRONT_ROUTES = {
@@ -36,7 +37,7 @@ export const FRONT_ROUTES = {
   ALL_RANKINGS: '/all/',
   IMPORT: '/import',
   ACCOUNT: '/account',
-  DASHBOARD: '/dashboard',
+  DASHBOARD: '/profile/dashboard',
   ABOUT: '/about',
   PROFILE: '/profile',
   PROFILE_EDIT: '/profile/edit',

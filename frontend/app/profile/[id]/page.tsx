@@ -6,6 +6,7 @@ import { useAuth } from "@/app/hooks/useAuth";
 import { useProfile } from "@/app/hooks/useProfile";
 import { GENERAL_STYLES } from "@/app/styles/general";
 import { FRONT_ROUTES } from "@/app/config";
+import { BarChart3 } from "lucide-react";
 
 const PROFILE_STYLES = {
   MAIN_WRAPPER: "min-h-screen pb-20 bg-bg1",
@@ -30,7 +31,7 @@ const PROFILE_STYLES = {
   BTN_SHARE: `p-3 ${GENERAL_STYLES.GRAYBUTTON2}`,
 
   // GRIDS & CARDS
-  STATS_GRID: "grid grid-cols-1 md:grid-cols-3 gap-6 mb-12",
+  STATS_GRID: "grid grid-cols-1 md:grid-cols-3 gap-6 mb-4",
   RECENT_CONTAINER: "bg-bg2/30 backdrop-blur-xl border border-white/5 rounded-[40px] p-8",
   SECTION_TITLE: `${GENERAL_STYLES.TEXT1} text-2xl mb-8 font-semibold`,
 
@@ -129,6 +130,13 @@ export default function ProfilePage() {
           />
           <StatCard title="Artiste Favori" value={profile.top_artist} sub="Le plus écouté" color="text-blue-400" />
           <StatCard title="Genre de prédilection" value={profile.top_genre} sub="Analyse audio" color="text-purple-400" />
+        </div>
+
+        <div className="flex justify-end mb-8">
+          <span
+            onClick={() => router.push(`/profile/dashboard/${id}`)}
+            className={`${GENERAL_STYLES.TEXT3} ${GENERAL_STYLES.TRANSITION_TEXT_VERT} ${GENERAL_STYLES.TRANSITION_ZOOM} flex gap-2 px-2 text-sm font-medium cursor-pointer`}
+          ><BarChart3 size={18}/> Voir plus de statistiques détaillées</span>
         </div>
 
         {/* ÉCOUTES RÉCENTES */}

@@ -14,5 +14,17 @@ export const useProfile = () => {
     }
   }, []);
 
-  return { getProfile, loading };
+  const getDashboard = useCallback(async (id: string, start: string | null, end: string | null) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (start) params.append("start_date", start);
+      if (end) params.append("end_date", end);
+      return await apiRequest(`${API_ENDPOINTS.DASHBOARD_DATA}/${id}${params.toString() && `?${params.toString()}`}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { getProfile, getDashboard, loading };
 };
