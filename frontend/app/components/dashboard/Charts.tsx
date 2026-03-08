@@ -117,15 +117,14 @@ export function CumulativeChart({ data, metric }: { data: any[], metric: 'minute
           </defs>
           
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
-          <XAxis dataKey="full_date" axisLine={false} tickLine={false} 
+          <XAxis dataKey="full_date" axisLine={false} tickLine={false} minTickGap={50}
             tick={{ fill: '#4B5563', fontSize: 10 }} minTickGap={30}
-          />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }} minTickGap={50}
             tickFormatter={(str) => {
               const date = new Date(str);
               return `${date.getDate()}/${date.getMonth() + 1}`;
             }}
           />
+          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }}/>
           <Tooltip itemStyle={{ color: color }} labelFormatter={(value) => {
               const date = new Date(value);
               return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
