@@ -11,13 +11,15 @@ const TOP_ITEMS_STYLES = {
   ALBUM: "text-[11px] text-gray-500 truncate mt-0.5 italic"
 };
 
-export default function TopMediaCard({label,item,loading,type}:{label:string,item:any,loading:boolean,type:'track'|'album'|'artist'}) {
+export default function TopMediaCard({label,item,loading,type,metric}:
+  {label:string,item:any,loading:boolean,type:'track'|'album'|'artist',metric:string})
+{
   return (
     <div className={TOP_ITEMS_STYLES.CARD}>
       <div className={TOP_ITEMS_STYLES.IMAGE_WRAPPER}>
         {loading ? <LoadingSpinner /> : (
           <img 
-            src={item?.image || "/default-cover.png"} 
+            src={metric === 'minutes' ? item?.[0]?.image : item?.[1]?.image || "/default-cover.png"} 
             alt={label} 
             className={TOP_ITEMS_STYLES.IMAGE} 
           />
@@ -26,12 +28,14 @@ export default function TopMediaCard({label,item,loading,type}:{label:string,ite
       <div className={TOP_ITEMS_STYLES.CONTENT}>
         <span className={TOP_ITEMS_STYLES.LABEL}>{label}</span>
         <div className="flex flex-col min-w-0">
-          <h4 className={TOP_ITEMS_STYLES.TITLE}>{loading ? "..." : (item?.name || "Aucun")}</h4>
+          <h4 className={TOP_ITEMS_STYLES.TITLE}>{loading ? "..." : (metric === 'minutes' ? item?.[0]?.name : item?.[1]?.name || "Aucun")}</h4>
           <p className={TOP_ITEMS_STYLES.SUBTITLE}>
-            {loading ? "..." : item?.artist}
-            {!loading && type === 'track' && item?.album && (
-              <> ● <span className={TOP_ITEMS_STYLES.ALBUM}>{item.album}</span></>
-            )}
+            {loading ? "..." : metric === 'minutes' ? item?.[0]?.artist : item?.[1]?.artist}
+            {!loading && type === 'track' && (metric === 'minutes' ? (
+              <> ● <span className={TOP_ITEMS_STYLES.ALBUM}>{metric === 'minutes' ? item?.[0]?.album : item[1]?.album}</span></>
+            ) : (
+              <> ● <span className={TOP_ITEMS_STYLES.ALBUM}>{metric === 'minutes' ? item?.[0]?.album : item[1]?.album}</span></>
+            ))}
           </p>
         </div>
       </div>

@@ -149,59 +149,73 @@ def get_dashboard_data(
         .order_by(desc("total_ms"))
         .limit(1)
     )
-    t_res = session.exec(top_track_stmt).first()
-    top_track_data = {
-        "name": t_res.title if t_res else "Inconnu",
-        "artist": t_res.artist_name if t_res else "Inconnu",
-        "album": t_res.album_name if t_res else "Inconnu",
-        "image": t_res.image_url if t_res else None
-    } if t_res else None
-
-    # Top Album
-    top_album_stmt = (
+    top_track_count_stmt = (
         select(
+            Track.title,
             Artist.name.label("artist_name"),
             Album.name.label("album_name"),
             Album.image_url,
-            func.sum(TrackHistory.ms_played).label("total_ms"),
+            func.count(TrackHistory.id).label("total_streams"),
         )
         .select_from(TrackHistory)
         .join(Track, Track.spotify_id == TrackHistory.spotify_id)
         .join(Album, Track.album_id == Album.spotify_id)
         .join(Artist, Album.artist_id == Artist.spotify_id)
         .where(*filters)
-        .group_by(Album.spotify_id, Artist.name, Album.name, Album.image_url)
-        .order_by(desc("total_ms"))
+        .group_by(Track.spotify_id, Artist.name, Album.name, Album.image_url)
+        .order_by(desc("total_streams"))
         .limit(1)
     )
-    alb_res = session.exec(top_album_stmt).first()
-    top_album_data = {
-        "name": alb_res.album_name,
-        "artist": alb_res.artist_name,
-        "image": alb_res.image_url
-    } if alb_res else None
+
+    t_res = session.exec(top_track_stmt).first()
+    count_res = session.exec(top_track_count_stmt).first()
+    def format_track(res):
+        if not res: return None
+        return {
+            "name": res.title,
+            "artist": res.artist_name,
+            "album": res.album_name,
+            "image": res.image_url
+        }
+
+    # Top Album
+    top_album_ms_stmt = (
+        select(Artist.name.label("artist_name"), Album.name.label("album_name"), Album.image_url, func.sum(TrackHistory.ms_played).label("total_ms"))
+        .select_from(TrackHistory).join(Track).join(Album).join(Artist).where(*filters)
+        .group_by(Album.spotify_id, Artist.name, Album.name, Album.image_url).order_by(desc("total_ms")).limit(1)
+    )
+    # Top Album par Streams (Count)
+    top_album_count_stmt = (
+        select(Artist.name.label("artist_name"), Album.name.label("album_name"), Album.image_url, func.count(TrackHistory.id).label("total_count"))
+        .select_from(TrackHistory).join(Track).join(Album).join(Artist).where(*filters)
+        .group_by(Album.spotify_id, Artist.name, Album.name, Album.image_url).order_by(desc("total_count")).limit(1)
+    )
 
     # Top Artist
-    top_artist_stmt = (
-        select(
-            Artist.name.label("artist_name"),
-            Artist.image_url,
-            func.sum(TrackHistory.ms_played).label("total_ms"),
-        )
-        .select_from(TrackHistory)
-        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
-        .join(Album, Track.album_id == Album.spotify_id)
-        .join(Artist, Album.artist_id == Artist.spotify_id)
-        .where(*filters)
-        .group_by(Artist.spotify_id, Artist.name, Artist.image_url)
-        .order_by(desc("total_ms"))
-        .limit(1)
+    top_artist_ms_stmt = (
+        select(Artist.name.label("artist_name"), Artist.image_url, func.sum(TrackHistory.ms_played).label("total_ms"))
+        .select_from(TrackHistory).join(Track).join(Album).join(Artist).where(*filters)
+        .group_by(Artist.spotify_id, Artist.name, Artist.image_url).order_by(desc("total_ms")).limit(1)
     )
-    art_res = session.exec(top_artist_stmt).first()
-    top_artist_data = {
-        "name": art_res.artist_name,
-        "image": art_res.image_url
-    } if art_res else None
+    # Top Artiste par Streams (Count)
+    top_artist_count_stmt = (
+        select(Artist.name.label("artist_name"), Artist.image_url, func.count(TrackHistory.id).label("total_count"))
+        .select_from(TrackHistory).join(Track).join(Album).join(Artist).where(*filters)
+        .group_by(Artist.spotify_id, Artist.name, Artist.image_url).order_by(desc("total_count")).limit(1)
+    )
+
+    alb_ms_res = session.exec(top_album_ms_stmt).first()
+    alb_ct_res = session.exec(top_album_count_stmt).first()
+    art_ms_res = session.exec(top_artist_ms_stmt).first()
+    art_ct_res = session.exec(top_artist_count_stmt).first()
+
+    def format_item(res, is_artist=False):
+        if not res: return None
+        return {
+            "name": res.artist_name if is_artist else res.album_name,
+            "artist": res.artist_name if not is_artist else None,
+            "image": res.image_url
+        }
 
     return {
         "totalTime": f"{total_min:,}".replace(',', ' ') + " min",
@@ -219,7 +233,7 @@ def get_dashboard_data(
         "weeklyData": weekly_data,
         "monthlyData": monthly_data,
         "cumulativeData": cumulative_data,
-        "topTrack": top_track_data,
-        "topAlbum": top_album_data,
-        "topArtist": top_artist_data
+        "topTrack": [format_track(t_res),format_track(count_res)],
+        "topAlbum": [format_item(alb_ms_res),format_item(alb_ct_res)],
+        "topArtist": [format_item(art_ms_res,True),format_item(art_ct_res,True)]
     }

@@ -196,9 +196,9 @@ export default function UserStatsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <TopMediaCard type="track" label="Top Titre" item={extendedStats.topTrack} loading={loading} />
-              <TopMediaCard type="album" label="Top Album" item={extendedStats.topAlbum} loading={loading} />
-              <TopMediaCard type="artist" label="Top Artiste" item={extendedStats.topArtist} loading={loading} />
+              <TopMediaCard type="track" label="Top Titre" item={extendedStats.topTrack} loading={loading} metric={metric}/>
+              <TopMediaCard type="album" label="Top Album" item={extendedStats.topAlbum} loading={loading} metric={metric}/>
+              <TopMediaCard type="artist" label="Top Artiste" item={extendedStats.topArtist} loading={loading} metric={metric}/>
             </div>
           </AccordionItem>
 
@@ -212,7 +212,7 @@ export default function UserStatsPage() {
                 value={loading ? "..." : extendedStats.peakHour} />
               <CompactStatCard label="Jour favori" icon={<CalendarIcon className="text-purple-400" size={32}/>}
                 value={loading ? "..." : extendedStats.peakDay} />
-              {["season", "half", "year", "lifetime"].some(r => range.includes(r)) && 
+              {["3m", "season", "6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
                 <CompactStatCard label="Mois musical" icon={<CalendarDays className="text-purple-400" size={32}/>}
                   value={loading ? "..." : extendedStats.peakMonth} />
               }
@@ -220,7 +220,7 @@ export default function UserStatsPage() {
             <div className={STYLES.grid.habits(range)}>
               <ClockChart data={extendedStats.clockData} metric={metric}/>
               <WeeklyChart data={extendedStats.weeklyData} metric={metric}/>
-              {["season", "half", "year", "lifetime"].some(r => range.includes(r)) && 
+              {["3m", "season", "6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
                 <MonthlyChart data={extendedStats.monthlyData} metric={metric}/>
               }
             </div>
