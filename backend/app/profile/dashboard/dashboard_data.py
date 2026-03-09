@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 import sqlalchemy
 from sqlmodel import Session, col, select, func, desc
 from app.database import get_session
-from app.models import TrackHistory, Track
+from app.models import TrackHistory, Track, Album, Artist
 
 router = APIRouter()
 
@@ -130,6 +130,79 @@ def get_dashboard_data(
     effective_days = res.days_count or 1
     total_min = res.total_ms // 60000
 
+    ############################################
+    # Top Track
+    top_track_stmt = (
+        select(
+            Track.title,
+            Artist.name.label("artist_name"),
+            Album.name.label("album_name"),
+            Album.image_url,
+            func.sum(TrackHistory.ms_played).label("total_ms"),
+        )
+        .select_from(TrackHistory)
+        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
+        .join(Album, Track.album_id == Album.spotify_id)
+        .join(Artist, Album.artist_id == Artist.spotify_id)
+        .where(*filters)
+        .group_by(Track.spotify_id, Artist.name, Album.name, Album.image_url)
+        .order_by(desc("total_ms"))
+        .limit(1)
+    )
+    t_res = session.exec(top_track_stmt).first()
+    top_track_data = {
+        "name": t_res.title if t_res else "Inconnu",
+        "artist": t_res.artist_name if t_res else "Inconnu",
+        "album": t_res.album_name if t_res else "Inconnu",
+        "image": t_res.image_url if t_res else None
+    } if t_res else None
+
+    # Top Album
+    top_album_stmt = (
+        select(
+            Artist.name.label("artist_name"),
+            Album.name.label("album_name"),
+            Album.image_url,
+            func.sum(TrackHistory.ms_played).label("total_ms"),
+        )
+        .select_from(TrackHistory)
+        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
+        .join(Album, Track.album_id == Album.spotify_id)
+        .join(Artist, Album.artist_id == Artist.spotify_id)
+        .where(*filters)
+        .group_by(Album.spotify_id, Artist.name, Album.name, Album.image_url)
+        .order_by(desc("total_ms"))
+        .limit(1)
+    )
+    alb_res = session.exec(top_album_stmt).first()
+    top_album_data = {
+        "name": alb_res.album_name,
+        "artist": alb_res.artist_name,
+        "image": alb_res.image_url
+    } if alb_res else None
+
+    # Top Artist
+    top_artist_stmt = (
+        select(
+            Artist.name.label("artist_name"),
+            Artist.image_url,
+            func.sum(TrackHistory.ms_played).label("total_ms"),
+        )
+        .select_from(TrackHistory)
+        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
+        .join(Album, Track.album_id == Album.spotify_id)
+        .join(Artist, Album.artist_id == Artist.spotify_id)
+        .where(*filters)
+        .group_by(Artist.spotify_id, Artist.name, Artist.image_url)
+        .order_by(desc("total_ms"))
+        .limit(1)
+    )
+    art_res = session.exec(top_artist_stmt).first()
+    top_artist_data = {
+        "name": art_res.artist_name,
+        "image": art_res.image_url
+    } if art_res else None
+
     return {
         "totalTime": f"{total_min:,}".replace(',', ' ') + " min",
         "totalStreams": res.total_streams,
@@ -145,5 +218,8 @@ def get_dashboard_data(
         "clockData": clock_data,
         "weeklyData": weekly_data,
         "monthlyData": monthly_data,
-        "cumulativeData": cumulative_data
+        "cumulativeData": cumulative_data,
+        "topTrack": top_track_data,
+        "topAlbum": top_album_data,
+        "topArtist": top_artist_data
     }
