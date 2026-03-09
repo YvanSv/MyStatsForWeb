@@ -212,7 +212,7 @@ export default function UserStatsPage() {
                 value={loading ? "..." : extendedStats.peakHour} />
               <CompactStatCard label="Jour favori" icon={<CalendarIcon className="text-purple-400" size={32}/>}
                 value={loading ? "..." : extendedStats.peakDay} />
-              {["season", "year", "lifetime"].some(r => range.includes(r)) && 
+              {["season", "half", "year", "lifetime"].some(r => range.includes(r)) && 
                 <CompactStatCard label="Mois musical" icon={<CalendarDays className="text-purple-400" size={32}/>}
                   value={loading ? "..." : extendedStats.peakMonth} />
               }
@@ -220,7 +220,7 @@ export default function UserStatsPage() {
             <div className={STYLES.grid.habits(range)}>
               <ClockChart data={extendedStats.clockData} metric={metric}/>
               <WeeklyChart data={extendedStats.weeklyData} metric={metric}/>
-              {["half", "year", "lifetime"].some(r => range.includes(r)) && 
+              {["season", "half", "year", "lifetime"].some(r => range.includes(r)) && 
                 <MonthlyChart data={extendedStats.monthlyData} metric={metric}/>
               }
             </div>
