@@ -29,6 +29,7 @@ export const GENERAL_STYLES = {
   TEXT1: BASE_UI.text.white,
   TEXT2: BASE_UI.text.vert,
   TEXT3: BASE_UI.text.gray,
+  TEXT4: BASE_UI.text.dark,
   
   TITRE_DOUBLE_FRAME: `${BASE_UI.text.white} font-semibold mb-3 text-[16px] md:text-[24px]`,
   TRANSITION_TEXT_VERT: `transition-colors duration-300 hover:${BASE_UI.text.vert}`,
