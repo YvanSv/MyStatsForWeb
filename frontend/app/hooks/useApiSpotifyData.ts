@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useApi } from "./useApi";
-import { API_ENDPOINTS } from "../config";
+import { API_ENDPOINTS } from "../constants/routes";
 
 export const useApiSpotifyData = () => {
   const { request, loading } = useApi();

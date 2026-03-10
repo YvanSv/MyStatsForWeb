@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { API_ENDPOINTS } from "../config";
+import { API_ENDPOINTS } from "../constants/routes";
 import { useApi } from "./useApi";
 
 export const useApiAllDatas = () => {
@@ -48,6 +48,7 @@ export const useApiAllDatas = () => {
   const getTracksMetadata = useCallback(() => request(API_ENDPOINTS.ALL_TRACKS_METADATA), [request]);
   const getArtistsMetadata = useCallback(() => request(API_ENDPOINTS.ALL_ARTISTS_METADATA), [request]);
   const getAlbumsMetadata = useCallback(() => request(API_ENDPOINTS.ALL_ALBUMS_METADATA), [request]);
+  const getHomeData = useCallback(() => request(API_ENDPOINTS.HOME_DATA), [request]);
 
   return useMemo(() => ({
     loading,
@@ -57,7 +58,8 @@ export const useApiAllDatas = () => {
     getAlbums,
     getTracksMetadata,
     getArtistsMetadata,
-    getAlbumsMetadata
+    getAlbumsMetadata,
+    getHomeData
   }), [
     loading, 
     getHistory, 
@@ -66,6 +68,7 @@ export const useApiAllDatas = () => {
     getAlbums, 
     getTracksMetadata, 
     getArtistsMetadata, 
-    getAlbumsMetadata
+    getAlbumsMetadata,
+    getHomeData
   ]);
 };

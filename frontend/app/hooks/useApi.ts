@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { apiRequest } from "../services/api";
-import { API_ENDPOINTS } from "../config";
+import { API_ENDPOINTS } from "../constants/routes";
 
 export const useApi = () => {
   const [loading, setLoading] = useState(false);

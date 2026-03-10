@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { API_ENDPOINTS } from "../config";
+import { API_ENDPOINTS } from "../constants/routes";
 import { useApi } from "./useApi";
 
 export const useApiMyDatas = () => {
@@ -30,8 +30,6 @@ export const useApiMyDatas = () => {
   }, []);
 
   // --- CORE ---
-  const getOverview = useCallback(() => request(API_ENDPOINTS.STATS_OVERVIEW), [request]);
-
   const uploadJson = useCallback((formData: FormData) =>
     request(API_ENDPOINTS.IMPORT_DATA, { method: 'POST', body: formData }), [request]);
 
@@ -55,7 +53,6 @@ export const useApiMyDatas = () => {
 
   return useMemo(() => ({
     loading,
-    getOverview,
     uploadJson,
     getHistory,
     getTracks,
@@ -65,7 +62,7 @@ export const useApiMyDatas = () => {
     getArtistsMetadata,
     getAlbumsMetadata
   }), [
-    loading, getOverview, uploadJson, getHistory, getTracks, 
+    loading, uploadJson, getHistory, getTracks, 
     getArtists, getAlbums, getTracksMetadata, getArtistsMetadata, getAlbumsMetadata
   ]);
 };

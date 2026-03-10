@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { API_ENDPOINTS } from "../config";
+import { API_ENDPOINTS } from "../constants/routes";
 import { apiRequest } from "../services/api";
 
 export const useProfile = () => {
