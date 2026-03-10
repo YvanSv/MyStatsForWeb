@@ -52,17 +52,31 @@ const ClockTooltip = ({ active, payload, metric }: any) => {
   return null;
 };
 
-const CumulativeToolTip = ({ active, payload, metric }: any) => {
-  if (active && payload && payload.length)
-    return <CustomTooltip label={payload[0].payload.full_date} value={payload[0].value}
-      metric={metric} color="text-vert"/>
-  return null;
+const CumulativeToolTip = ({ active, payload, c1, c2 }: any) => {
+  if (active && payload && payload.length) {
+    let date = payload[0].payload.full_date;
+    const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
+    try {
+      if (/^\d{4}-\d{2}-\d{2}/.test(date)) date = new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {}
+    return (
+      <div className="bg-gray-950 border border-white/10 px-3 py-2 rounded-xl shadow-2xl backdrop-blur-md">
+        <p className="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">{date}</p>
+        <p className="text-white font-mono font-bold text-sm">
+          {formatter.format(payload[0].value)} <span style={{ color: c1 }} className={`text-[10px]`}>minutes</span>
+        </p>
+        <p className="text-white font-mono font-bold text-sm">
+          {formatter.format(payload[1].value)} <span style={{ color: c2 }} className={`text-[10px]`}>streams</span>
+        </p>
+      </div>
+    );
+  } return null;
 };
 
 function CustomBarChart({data,type,metric}:{data:any[],type:string,metric: 'streams' | 'minutes'}) {
-  const title = type === "day" ? "Activité hebdomadaire" : "Activité mensuelle"
+  const title = type === "day" ? "Activité hebdomadaire" : type === "month" ? "Activité mensuelle" : "Activité annuelle"
   return (
-    <div className="h-[300px] w-full bg-white/[0.02] rounded-3xl p-6 border border-white/10 flex flex-col">
+    <div className="h-[250px] w-full bg-white/[0.02] rounded-3xl p-6 border border-white/10 flex flex-col">
       <h3 className="text-gray-400 text-xs font-bold uppercase px-2">{title}</h3>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart 
@@ -92,6 +106,10 @@ export function MonthlyChart({ data, metric }: { data: any[], metric: 'streams' 
   return <CustomBarChart data={data} type="month" metric={metric}/>;
 };
 
+export function AnnualChart({ data, metric }: { data: any[], metric: 'streams' | 'minutes' }) {
+  return <CustomBarChart data={data} type="year" metric={metric}/>;
+};
+
 const formatTicks = (hour: string) => {
   const keys = ["0h", "6h", "12h", "18h"];
   return keys.includes(hour) ? hour : "";
@@ -99,7 +117,7 @@ const formatTicks = (hour: string) => {
 
 export function ClockChart({ data, metric = 'streams' }: { data: any[], metric: 'streams' | 'minutes' }) {
   return (
-    <div className="h-[300px] w-full bg-white/[0.02] rounded-3xl p-4 border border-white/10">
+    <div className="h-[250px] w-full bg-white/[0.02] rounded-3xl p-4 border border-white/10">
       <h3 className="text-gray-400 text-xs font-bold uppercase px-2">Activité horaire</h3>
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data} startAngle={90} endAngle={-270}>
@@ -115,19 +133,23 @@ export function ClockChart({ data, metric = 'streams' }: { data: any[], metric: 
   );
 }
 
-export function CumulativeChart({ data, metric }: { data: any[], metric: 'minutes' | 'streams' }) {
-  const isMinutes = metric === 'minutes';
-  const color = '#1DD05D';
+export function CumulativeChart({ data }: { data: any[] }) {
+  const color1 = '#1DD05D';
+  const color2 = '#065e25';
 
   return (
     <div className="h-[300px] w-full bg-white/[0.02] rounded-3xl p-8 border border-white/10">
-      <h3 className="text-gray-400 text-xs font-bold uppercase mb-6">Évolution cumulée ({metric})</h3>
+      <h3 className="text-gray-400 text-xs font-bold uppercase mb-6">Évolution cumulée</h3>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
-              <stop offset="95%" stopColor={color} stopOpacity={0}/>
+            <linearGradient id="colorArea1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color1} stopOpacity={0.3}/>
+              <stop offset="95%" stopColor={color1} stopOpacity={0}/>
+            </linearGradient>
+            <linearGradient id="colorArea2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color2} stopOpacity={0.3}/>
+              <stop offset="95%" stopColor={color2} stopOpacity={0}/>
             </linearGradient>
           </defs>
           
@@ -145,11 +167,78 @@ export function CumulativeChart({ data, metric }: { data: any[], metric: 'minute
               return formatter.format(str);
             }}
           />
-          <Tooltip content={<CumulativeToolTip metric={metric}/>} cursor={{ stroke: color, strokeWidth: 1 }}/>
-          <Area type="monotone" dataKey={metric} stroke={color} fillOpacity={1} fill="url(#colorArea)" 
+          <Tooltip content={<CumulativeToolTip c1={color1} c2={color2}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
+          <Area type="monotone" dataKey={"minutes"} stroke={color1} fillOpacity={1} fill="url(#colorArea1)" 
+            strokeWidth={2} dot={false}/>
+          <Area type="monotone" dataKey={"streams"} stroke={color2} fillOpacity={1} fill="url(#colorArea2)" 
             strokeWidth={2} dot={false}/>
         </AreaChart>
       </ResponsiveContainer>
     </div>
   );
 }
+
+import { LineChart, Line, Legend } from 'recharts';
+
+export const EvolutionChart = ({ data, loading }:{data: any[], loading: boolean}) => {
+  if (loading) return <div className="h-[370px] w-full bg-white/5 animate-pulse rounded-xl" />;
+
+  return (
+    <div className="h-[370px] w-full bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
+      <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-8">Évolution de mes découvertes</h3>
+      
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+          <XAxis 
+            dataKey="date" 
+            stroke="#666" 
+            fontSize={12}
+            tickFormatter={(str) => new Date(str).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}
+          />
+          <YAxis stroke="#666" fontSize={12} />
+          <Tooltip 
+            contentStyle={{ backgroundColor: '#121212', border: '1px solid #333', borderRadius: '8px' }}
+            itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+          />
+          <Legend iconType="circle" verticalAlign="bottom" height={36} align="right" wrapperStyle={{
+            marginBottom: "60px",
+            fontSize: "15px",
+            textTransform: "uppercase",
+          }}
+          formatter={(value) => (
+            <span className="font-bold ml-1 inline-flex items-center translate-y-[1px]">
+              {value}
+            </span>
+          )}/>
+          
+          <Line 
+            type="monotone" 
+            dataKey="tracks" 
+            name="Tracks"
+            stroke="#1DB954"
+            strokeWidth={3} 
+            dot={false}
+            activeDot={{ r: 6 }} 
+          />
+          <Line 
+            type="monotone" 
+            dataKey="albums" 
+            name="Albums"
+            stroke="#60a5fa" // Bleu
+            strokeWidth={3} 
+            dot={false} 
+          />
+          <Line 
+            type="monotone" 
+            dataKey="artists" 
+            name="Artistes"
+            stroke="#a78bfa" // Violet
+            strokeWidth={3} 
+            dot={false} 
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};

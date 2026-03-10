@@ -10,6 +10,7 @@ export interface DashboardStats {
   clockData: any[];
   weeklyData: any[];
   monthlyData: any[];
+  annualData: any[];
   cumulativeData: any[];
   uniqueTracks: number;
   uniqueAlbums: number;
@@ -17,6 +18,7 @@ export interface DashboardStats {
   topTrack: TopItem[] | null;
   topAlbum: TopItem[] | null;
   topArtist: TopItem[] | null;
+  entityEvolution: any[];
 }
 
 export const INITIAL_STATS = {
@@ -34,10 +36,12 @@ export const INITIAL_STATS = {
   clockData: [],
   weeklyData: [],
   monthlyData: [],
+  annualData: [],
   cumulativeData: [],
   topTrack: null,
   topAlbum: null,
-  topArtist: null
+  topArtist: null,
+  entityEvolution: [],
 };
 
 interface TopItem {

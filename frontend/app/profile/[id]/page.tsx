@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useProfile } from "@/app/hooks/useProfile";
 import { GENERAL_STYLES } from "@/app/styles/general";
-import { FRONT_ROUTES } from "@/app/config";
+import { FRONT_ROUTES } from "@/app/constants/routes";
 import { BarChart3 } from "lucide-react";
 
 const PROFILE_STYLES = {

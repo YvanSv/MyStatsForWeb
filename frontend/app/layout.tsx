@@ -27,17 +27,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ShowFiltersProvider>
             <AuthProvider>
               <div className={`${jost.variable} bg-bg1 flex flex-col min-h-screen font-jost overflow-x-hidden`}>
-                {/* 1. On utilise 100vw pour que le header fasse TOUJOURS la largeur de l'écran, 
-                      qu'il y ait une scrollbar ou non. */}
                 <header className="fixed top-0 left-0 w-[100vw] z-[100] backdrop-blur-md">
-                  {/* On centre le contenu du header à l'intérieur des 100vw */}
                   <div className="w-full h-full">
                     <Header />
                   </div>
                 </header>
-
                 <div className="h-[65px] w-full" />
-
                 <main className="flex-1 flex flex-col">
                   {children}
                 </main>

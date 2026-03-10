@@ -1,3 +1,5 @@
+import { MouseIcon, Plus, Pointer } from "lucide-react";
+
 const BASE_UI = {
   glass: "bg-white/[0.02] border border-white/5",
   glassHover: "hover:bg-white/[0.05] hover:border-white/10 transition-all",
@@ -19,6 +21,11 @@ const COMPONENT_STYLES = {
       p-8 h-full transition-opacity duration-500 delay-200
       ${isOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"}
     `,
+    indicator: (isOpen: boolean) => `
+      absolute bottom-8 left-1/2 -translate-x-1/2
+      transition-all duration-500 delay-300
+      ${isOpen ? 'opacity-0 translate-y-10' : 'opacity-100 translate-y-0'}
+    `,
   },
 }
 
@@ -30,6 +37,15 @@ export default function AccordionItem({ id, title, isOpen, onClick, icon, childr
         <span className="rotate-[-90deg] whitespace-nowrap text-gray-500 font-bold uppercase tracking-[0.2em] text-sm flex items-center gap-3">
           {icon} {title}
         </span>
+      </div>
+
+      {/* --- NOUVEL ÉLÉMENT : Indicateur de clic --- */}
+      <div className={COMPONENT_STYLES.accordion.indicator(isOpen)}>
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-white/5">
+            <Pointer size={16} className={icon.props.className} />
+          </div>
+        </div>
       </div>
 
       {/* Contenu (Ouvert) */}

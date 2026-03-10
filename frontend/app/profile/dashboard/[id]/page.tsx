@@ -4,8 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Timer, Music2, Mic2, Calendar, Disc, Play, Clock, Zap, CalendarIcon, Percent, CalendarDays } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProfile } from "@/app/hooks/useProfile";
-import {WeeklyChart, MonthlyChart, ClockChart, CumulativeChart} from "@/app/components/dashboard/Charts";
-import { MetricSwitch } from "./MatricSwitch";
+import {WeeklyChart, MonthlyChart, ClockChart, CumulativeChart, EvolutionChart, AnnualChart} from "@/app/components/dashboard/Charts";
+import { MetricSwitch } from "./MetricSwitch";
 import CompactStatCard from "./CompactStatCard";
 import AccordionItem from "./AccordionItem";
 import IntervalsSelector from "./IntervalSelector";
@@ -113,53 +113,52 @@ export default function UserStatsPage() {
               <p className={STYLES.nav.sub}>Plongée profonde dans les habitudes d'écoute.</p>
             </header>
           </div>
+          <div className="hidden lg:flex items-center justify-center">
+            <IntervalsSelector range={range} onIntervalChange={onIntervalChange}/>
+          </div>
         </div>
 
         {/* --- FILTRES --- */}
         <div className={FILTER_BAR_STYLES.WRAPPER}>
-          <div className={FILTER_BAR_STYLES.TOP_ROW}>
+          <div className={"grid grid-cols-3 items-center"}>
             <div/>
-            <div className="hidden lg:flex items-center justify-center">
-              <IntervalsSelector range={range} onIntervalChange={onIntervalChange}/>
+            <div className={FILTER_BAR_STYLES.NAV_CONTROLS}>
+              <button className={FILTER_BAR_STYLES.NAV_BTN} onClick={decreaseInterval}>−</button>
+              <div className="w-[1px] h-4 bg-white/10" />
+              <div className={FILTER_BAR_STYLES.DATE_GROUP}>
+                <Calendar size={14} className="text-vert flex-shrink-0" />
+                
+                {/* On enveloppe les deux états dans un conteneur qui stabilise la hauteur */}
+                <div className="flex items-center justify-center h-8 min-w-[210px]"> 
+                  {getRangeLabel(range, offset) ? (
+                    <span className="text-sm font-medium text-white text-center leading-none">
+                      {getRangeLabel(range, offset)}
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="date" 
+                        value={startDate.split('T')[0]} 
+                        className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
+                        onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                      />
+                      <span className="text-gray-600 leading-none">→</span>
+                      <input 
+                        type="date" 
+                        value={endDate.split('T')[0]} 
+                        className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
+                        onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="w-[1px] h-4 bg-white/10" />
+              <button className={FILTER_BAR_STYLES.NAV_BTN} onClick={increaseInterval}>+</button>
             </div>
             <div className="flex justify-end">
               <MetricSwitch value={metric} onChange={setMetric}/>
             </div>
-          </div>
-
-          <div className={FILTER_BAR_STYLES.NAV_CONTROLS}>
-            <button className={FILTER_BAR_STYLES.NAV_BTN} onClick={decreaseInterval}>−</button>
-            <div className="w-[1px] h-4 bg-white/10" />
-            <div className={FILTER_BAR_STYLES.DATE_GROUP}>
-              <Calendar size={14} className="text-vert flex-shrink-0" />
-              
-              {/* On enveloppe les deux états dans un conteneur qui stabilise la hauteur */}
-              <div className="flex items-center justify-center h-8 min-w-[210px]"> 
-                {getRangeLabel(range, offset) ? (
-                  <span className="text-sm font-medium text-white text-center leading-none">
-                    {getRangeLabel(range, offset)}
-                  </span>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="date" 
-                      value={startDate.split('T')[0]} 
-                      className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
-                      onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
-                    />
-                    <span className="text-gray-600 leading-none">→</span>
-                    <input 
-                      type="date" 
-                      value={endDate.split('T')[0]} 
-                      className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
-                      onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="w-[1px] h-4 bg-white/10" />
-            <button className={FILTER_BAR_STYLES.NAV_BTN} onClick={increaseInterval}>+</button>
           </div>
         </div>
 
@@ -178,7 +177,7 @@ export default function UserStatsPage() {
               <CompactStatCard label="Engagement" icon={<Percent size={32} className="text-vert"/>}
                 value={loading ? "..." : extendedStats.ratio} />
             </div>
-            <CumulativeChart data={extendedStats.cumulativeData} metric={metric}/>
+            <CumulativeChart data={extendedStats.cumulativeData}/>
           </AccordionItem>
 
           {/* SECTION 2 : BIBLIOTHÈQUE */}
@@ -195,11 +194,13 @@ export default function UserStatsPage() {
                 value={loading ? "..." : formatter.format(extendedStats.uniqueArtists)} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={STYLES.grid.stats}>
               <TopMediaCard type="track" label="Top Titre" item={extendedStats.topTrack} loading={loading} metric={metric}/>
               <TopMediaCard type="album" label="Top Album" item={extendedStats.topAlbum} loading={loading} metric={metric}/>
               <TopMediaCard type="artist" label="Top Artiste" item={extendedStats.topArtist} loading={loading} metric={metric}/>
             </div>
+
+            <EvolutionChart data={extendedStats.entityEvolution} loading={false}/>
           </AccordionItem>
 
           {/* SECTION 3 : HABITUDES */}
@@ -224,6 +225,9 @@ export default function UserStatsPage() {
                 <MonthlyChart data={extendedStats.monthlyData} metric={metric}/>
               }
             </div>
+            {["lifetime"].some(r => range.includes(r)) &&
+              <AnnualChart data={extendedStats.annualData} metric={metric}/>
+            }
           </AccordionItem>
         </div>
       </div>

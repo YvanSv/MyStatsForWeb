@@ -51,7 +51,7 @@ def get_dashboard_data(
     peak_h_val, max_ms_h = None, 0
     for r in clock_res:
         h_int = int(r.hour)
-        clock_data[h_int]["value"] = round(r.ms / 60000, 1)
+        clock_data[h_int]["value"] = round(r.ms / 60000)
         clock_data[h_int]["streams"] = r.streams
         if r.ms > max_ms_h:
             max_ms_h, peak_h_val = r.ms, h_int
@@ -71,7 +71,7 @@ def get_dashboard_data(
     peak_d_idx, max_ms_d = None, 0
     for r in day_res:
         d_idx = int(r.day)
-        weekly_data[d_idx]["value"] = round(r.ms / 60000, 1)
+        weekly_data[d_idx]["value"] = round(r.ms / 60000)
         weekly_data[d_idx]["streams"] = r.streams
         if r.ms > max_ms_d:
             max_ms_d, peak_d_idx = r.ms, d_idx
@@ -94,12 +94,32 @@ def get_dashboard_data(
 
     for r in month_res:
         month_idx = int(r.month) - 1
-        val_min = round(r.ms / 60000, 1)
+        val_min = round(r.ms / 60000)
         monthly_data[month_idx]["value"] = val_min
         monthly_data[month_idx]["streams"] = r.streams
         if val_min > peak_month_value:
             peak_month_value = val_min
             peak_month_name = months_names[month_idx]
+
+
+    annual_res = session.exec(
+        select(
+            func.extract('year', TrackHistory.played_at).label("year"), 
+            func.sum(TrackHistory.ms_played).label("ms"),
+            func.count(TrackHistory.id).label("streams")
+        )
+        .where(*filters).group_by("year").order_by("year")
+    ).all()
+
+    years_present = sorted([int(r.year) for r in annual_res])
+    annual_data = []
+    if years_present:
+        for y in range(min(years_present), max(years_present) + 1):
+            annual_data.append({"year": str(y), "value": 0, "streams": 0})
+    start_year = min(years_present) if years_present else 0
+    for r in annual_res:
+        annual_data[int(r.year) - start_year]["value"] = round(r.ms / 60000)
+        annual_data[int(r.year) - start_year]["streams"] = r.streams
 
     # --- NOUVEAU : 6. Graphique Cumulé (AreaChart) ---
     daily_res = session.exec(
@@ -125,6 +145,90 @@ def get_dashboard_data(
             "minutes": round(running_ms / 60000, 1),
             "streams": running_streams
         })
+    
+
+    def get_discovery_evolution(id_column):
+        # Sous-requête : Trouve la date de 1ère écoute pour chaque ID unique
+        first_appearances = (
+            select(
+                id_column.label("item_id"),
+                func.min(TrackHistory.played_at).label("first_seen")
+            )
+            .where(TrackHistory.user_id == user_id)
+            .where(*filters)
+            .group_by(id_column)
+            .subquery()
+        )
+
+        # Requête principale : Compte combien d'items ont leur "first_seen" chaque jour
+        return session.exec(
+            select(
+                func.date(first_appearances.c.first_seen).label("day"),
+                func.count(first_appearances.c.item_id).label("count")
+            )
+            .group_by("day")
+            .order_by("day")
+        ).all()
+
+    # On utilise les colonnes de TrackHistory ou des jointures si nécessaire
+    # Pour les tracks, c'est direct via spotify_id
+    daily_tracks = get_discovery_evolution(TrackHistory.spotify_id)
+
+    # Pour les albums/artistes, on doit joindre Track pour accéder à album_id/artist_id
+    def get_complex_discovery(join_col):
+        first_appearances = (
+            select(
+                join_col.label("item_id"),
+                func.min(TrackHistory.played_at).label("first_seen")
+            )
+            .join(Track, Track.spotify_id == TrackHistory.spotify_id)
+            .where(TrackHistory.user_id == user_id)
+            .where(*filters)
+            .group_by(join_col)
+            .subquery()
+        )
+        return session.exec(
+            select(
+                func.date(first_appearances.c.first_seen).label("day"),
+                func.count(first_appearances.c.item_id).label("count")
+            )
+            .group_by("day")
+            .order_by("day")
+        ).all()
+
+    daily_albums = get_complex_discovery(Track.album_id)
+    daily_artists = get_complex_discovery(Track.artist_id)
+
+    # Fusionner les dates pour avoir un seul tableau de graphe
+    entity_evolution = {}
+
+    def process_evolution(data, key):
+        current_total = 0
+        for r in data:
+            current_total += r.count
+            d_str = r.day.isoformat()
+            if d_str not in entity_evolution:
+                entity_evolution[d_str] = {"date": d_str, "tracks": 0, "albums": 0, "artists": 0}
+            entity_evolution[d_str][key] = current_total
+
+    process_evolution(daily_tracks, "tracks")
+    process_evolution(daily_albums, "albums")
+    process_evolution(daily_artists, "artists")
+
+    # Trier et remplir les "trous" (garder la dernière valeur connue si pas d'ajout un jour J)
+    evolution_sorted = sorted(entity_evolution.values(), key=lambda x: x["date"])
+    
+    # Remplissage intelligent (forward fill)
+    last_t, last_al, last_ar = 0, 0, 0
+    for entry in evolution_sorted:
+        if entry["tracks"] == 0: entry["tracks"] = last_t
+        else: last_t = entry["tracks"]
+        
+        if entry["albums"] == 0: entry["albums"] = last_al
+        else: last_al = entry["albums"]
+        
+        if entry["artists"] == 0: entry["artists"] = last_ar
+        else: last_ar = entry["artists"]
 
     # 7. Formatage final
     effective_days = res.days_count or 1
@@ -232,8 +336,10 @@ def get_dashboard_data(
         "clockData": clock_data,
         "weeklyData": weekly_data,
         "monthlyData": monthly_data,
+        "annualData": annual_data,
         "cumulativeData": cumulative_data,
         "topTrack": [format_track(t_res),format_track(count_res)],
         "topAlbum": [format_item(alb_ms_res),format_item(alb_ct_res)],
-        "topArtist": [format_item(art_ms_res,True),format_item(art_ct_res,True)]
+        "topArtist": [format_item(art_ms_res,True),format_item(art_ct_res,True)],
+        "entityEvolution": evolution_sorted,
     }
