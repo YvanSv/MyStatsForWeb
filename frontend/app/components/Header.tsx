@@ -4,18 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
-import { FRONT_ROUTES } from "../config";
+import { FRONT_ROUTES } from "../constants/routes";
 import { BASE_UI, GENERAL_STYLES } from "../styles/general";
 import { useAuth } from "../hooks/useAuth";
-import { ChartBar } from "lucide-react";
+import { ChartBar, Disc, Mic2, Music2 } from "lucide-react";
 
 export const HEADER_STYLES = {
-  CONTAINER: `flex items-center justify-between sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-3 md:py-4 px-4 md:px-6 border-b border-white/10`,
+  CONTAINER: `flex items-center justify-between sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-0.5 px-4 md:px-6 border-b border-white/10`,
   
   LOGO_WRAPPER: `${GENERAL_STYLES.TEXT1} ${GENERAL_STYLES.TRANSITION_TEXT_VERT} ${GENERAL_STYLES.TRANSITION_ZOOM} flex items-center ${BASE_UI.typo.tight} text-[24px] md:text-[40px] md:gap-3 cursor-pointer`,
   
   NAV_PC: `hidden lg:flex items-center font-semibold text-[24px] gap-8 xl:gap-20`,
   NAV_LINK: `${GENERAL_STYLES.TEXT1} ${GENERAL_STYLES.TRANSITION_TEXT_VERT} cursor-pointer`,
+  NAV_ITEM_WRAPPER: "relative group py-2", // Le 'group' permet de contrôler l'enfant au survol
+  POPOVER: "absolute top-full left-1/2 -translate-x-1/2 mt-1 w-44 bg-[#121212] border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden p-1",
+  POPOVER_ITEM: "flex items-center w-full px-4 py-2.5 text-sm text-gray-400 hover:text-vert hover:bg-white/[0.05] rounded-lg transition-colors text-left gap-4",
 
   RIGHT_SECTION: `flex items-center gap-2 md:gap-4`,
 
@@ -53,18 +56,24 @@ export default function Header() {
   // --- MENUS DEROULANTS ---
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const navigation_menu = [
+    {id: 'Rankings', path: `${isLoggedIn ? FRONT_ROUTES.MY_RANKINGS:FRONT_ROUTES.ALL_RANKINGS}`},
+    {id: 'Mon dashboard', path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
+    {id: 'Aide', path: `${FRONT_ROUTES.HELP}`},
+  ] as const;
   const views = [
     { id: 'grid_sm', icon: <Grid3x3Icon />, hideMobile: true },
     { id: 'grid', icon: <GridIcon />, hideMobile: false },
     { id: 'list', icon: <ListIcon />, hideMobile: false },
   ] as const;
   const dropdown_menu = [
-    { id: 'Mon dashboard', icon: <ChartBar/>, path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
     { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}/${user?.id}` },
+    { id: 'Mon dashboard', icon: <ChartBar/>, path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
     { id: 'Import de datas', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
     { id: 'Mon compte', icon: <UserIcon/>, path: FRONT_ROUTES.ACCOUNT },
   ] as const;
   const activeView = views.find(v => v.id === viewMode) || views[1];
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node))
@@ -75,8 +84,6 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const navigation_menu = ['Tracks', 'Albums', 'Artists', 'History'] as const;
 
   const navigate = (path: string) => {
     router.push(path);
@@ -95,11 +102,39 @@ export default function Header() {
 
       {/* CENTRE : Navigation PC */}
       <nav className={HEADER_STYLES.NAV_PC}>
-        {navigation_menu.map(item => (
-          <button key={item} onClick={() => navigate(`${isLoggedIn ? FRONT_ROUTES.MY_RANKINGS:FRONT_ROUTES.ALL_RANKINGS}/${item.toLowerCase()}`) }
-            className={HEADER_STYLES.NAV_LINK}
-          >{item}</button>
-        ))}
+        {navigation_menu.map((item) => {
+          if (item.id === "Rankings") {
+            return (
+              <div key={item.id} className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
+                {/* Bouton Principal */}
+                <button 
+                  onClick={() => navigate(item.path)}
+                  className={HEADER_STYLES.NAV_LINK}
+                >{item.id}</button>
+
+                {/* Menu Popover */}
+                <div className={HEADER_STYLES.POPOVER}>
+                  <button onClick={() => navigate(`${FRONT_ROUTES.MY_RANKINGS}/tracks`)} className={HEADER_STYLES.POPOVER_ITEM}>
+                    <Music2 size={18}/> Tracks
+                  </button>
+                  <button onClick={() => navigate(`${FRONT_ROUTES.MY_RANKINGS}/albums`)} className={HEADER_STYLES.POPOVER_ITEM}>
+                    <Disc size={18}/> Albums
+                  </button>
+                  <button onClick={() => navigate(`${FRONT_ROUTES.MY_RANKINGS}/artists`)} className={HEADER_STYLES.POPOVER_ITEM}>
+                    <Mic2 size={18}/> Artistes
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          // Bouton standard pour les autres items
+          return (
+            <button key={item.id} onClick={() => navigate(item.path)}
+              className={HEADER_STYLES.NAV_LINK}
+            >{item.id}</button>
+          );
+        })}
       </nav>
 
       {/* DROITE : Toggles + Profil + Burger */}
@@ -119,9 +154,7 @@ export default function Header() {
                 {views.map((v) => (
                   <button key={v.id} onClick={() => { toggleViewMode(v.id); setIsViewMenuOpen(false); }}
                     className={`${HEADER_STYLES.VIEW_ITEM(viewMode === v.id)} ${v.hideMobile ? 'hidden lg:flex' : 'flex'}`}
-                  >
-                    {v.icon}
-                  </button>
+                  >{v.icon}</button>
                 ))}
               </div>
             </div>
@@ -174,8 +207,8 @@ export default function Header() {
         <div className={HEADER_STYLES.MOBILE_OVERLAY}>
           <nav className={HEADER_STYLES.MOBILE_NAV}>
             {navigation_menu.map(item => 
-              <button key={item} className={HEADER_STYLES.MOBILE_ITEM} onClick={() => navigate(`${FRONT_ROUTES.MY_RANKINGS}/${item.toLowerCase()}`)}>
-                {item}
+              <button key={item.id} className={HEADER_STYLES.MOBILE_ITEM} onClick={() => navigate(item.path)}>
+                {item.id}
               </button>
             )}
           </nav>

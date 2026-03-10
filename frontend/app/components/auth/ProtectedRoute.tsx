@@ -1,6 +1,6 @@
 "use client";
 
-import { FRONT_ROUTES } from "@/app/config";
+import { FRONT_ROUTES } from "@/app/constants/routes";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";

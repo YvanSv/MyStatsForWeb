@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { GENERAL_STYLES } from "../styles/general";
 import { useAuth } from "../hooks/useAuth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FRONT_ROUTES } from "../config";
+import { FRONT_ROUTES } from "../constants/routes";
 import PublicRoute from "../components/auth/PublicRoute";
 
 export default function AuthPage() {

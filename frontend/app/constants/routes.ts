@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
   EDIT_INFOS: `${API_BASE_URL}/auth/update`,
   SPOTIFY_LOGIN: `${API_BASE_URL}/auth/spotify-login`,
   UNLINK_SPOTIFY: `${API_BASE_URL}/auth/unlink-spotify`,
-  STATS_OVERVIEW: `${API_BASE_URL}/data/my/overview`,
+  HOME_DATA: `${API_BASE_URL}/data/overview`,
   HISTORY:`${API_BASE_URL}/data/my/history`,
   TRACKS:`${API_BASE_URL}/data/my/tracks`,
   TRACKS_METADATA:`${API_BASE_URL}/data/my/tracks/metadata`,
@@ -41,4 +41,5 @@ export const FRONT_ROUTES = {
   ABOUT: '/about',
   PROFILE: '/profile',
   PROFILE_EDIT: '/profile/edit',
+  HELP: '/faq',
 }

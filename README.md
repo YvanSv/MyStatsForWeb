@@ -4,12 +4,11 @@
 - embellir l'accueil
 - **trouver un moyen de se rendre sur les pages /all/ quand on est connecté**
 - afficher des badges de filtres
+- système de cache pour les requêtes API
 - /[id]/{tracks/albums/artistes} ?
 - **trouver un moyen de limiter un utilisateur déconnecté**
 - roles ?
-- page /dashboard
 - **page /help /faq ...**
-- page /user/[id]
 - page de détail d'une donnée quand on clique dessus
 - Provider Apple Music
 - Data reader Apple Music

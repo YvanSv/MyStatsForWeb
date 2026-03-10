@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useApi } from '@/app/hooks/useApi';
-import { API_ENDPOINTS } from '@/app/config';
+import { API_ENDPOINTS } from '@/app/constants/routes';
 import { useRouter } from 'next/navigation';
 
 // Structure exacte de ce que renvoie /me

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ApiStatusBadge } from './small_elements/StatusBadge';
-import { FRONT_ROUTES } from '../config';
+import { FRONT_ROUTES } from '../constants/routes';
 import { GENERAL_STYLES } from '../styles/general';
 
 const FOOTER_STYLES = {
