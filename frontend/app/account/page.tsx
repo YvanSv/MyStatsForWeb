@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { GENERAL_STYLES } from "../styles/general";
 import { useAuth } from "../hooks/useAuth";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
+import { PrimaryButton, TertiaryButton } from "../components/Atomic/Buttons";
 
 export default function AccountPage() {
   return (
@@ -14,24 +15,24 @@ export default function AccountPage() {
 }
 
 const PROFILE_STYLES = {
-  WRAPPER: "min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20",
-  CARD: "w-full max-w-5xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden",
+  WRAPPER: "min-h-[80vh] flex items-center justify-center",
+  CARD: "w-full max-w-6xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden",
   CONTAINER_FLEX: "flex flex-col lg:flex-row",
   COL_LEFT: "flex-1 p-8 md:p-12 lg:p-16",
   COL_RIGHT: "flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.02] flex flex-col",
   HEADER_SECTION: "mb-10",
   TITLE: `${GENERAL_STYLES.TITRE_DOUBLE_FRAME}`,
-  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-md tracking-[0.2em] font-medium`,
-  INPUT_LABEL: `${GENERAL_STYLES.TEXT2} text-[10px] uppercase font-bold ml-2`,
-  INPUT_FIELD: `${GENERAL_STYLES.TEXT1} w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:border-vert/50 outline-none transition-all focus:bg-white/10`,
-  BTN_SAVE: `${GENERAL_STYLES.TEXT1} w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold border border-white/5 mt-4 transition-all`,
+  SUBTITLE: `text3 text-md tracking-[0.2em] font-medium`,
+  INPUT_LABEL: `text2 text-[10px] uppercase font-bold ml-2`,
+  INPUT_FIELD: `text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:border-vert/50 outline-none transition-all focus:bg-white/10`,
+  BTN_SAVE: `text1 w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold border border-white/5 mt-4 transition-all`,
   SEPARATOR: "hidden lg:flex flex-col items-center justify-center",
   SEPARATOR_LINE: "w-[1px] h-3/4 bg-gradient-to-b from-transparent via-white/10 to-transparent",
   SERVICE_CARD: (hasSpotify: boolean) => `p-6 rounded-[30px] border transition-all duration-500 ${hasSpotify ? 'bg-vert/5 border-vert/20' : 'bg-white/5 border-white/10'}`,
-  SPOTIFY_ICON_BOX: (hasSpotify: boolean) => `p-4 rounded-2xl ${hasSpotify ? `bg-vert ${GENERAL_STYLES.TEXT4}` : `${GENERAL_STYLES.TEXT1} bg-white/10`}`,
-  BADGE_SUCCESS: `${GENERAL_STYLES.TEXT2} flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest rounded-xl justify-center`,
+  SPOTIFY_ICON_BOX: (hasSpotify: boolean) => `p-4 rounded-2xl ${hasSpotify ? `bg-vert text4` : `text1 bg-white/10`}`,
+  BADGE_SUCCESS: `text2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest rounded-xl justify-center`,
   BADGE_ERROR: "flex items-center gap-2 text-rouge text-[11px] font-bold uppercase tracking-widest rounded-xl justify-center",
-  BTN_UNLINK: `${GENERAL_STYLES.TEXT3} w-full bg-white/5 hover:bg-rouge/10 hover:text-rouge hover:border-rouge/20 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/10 active:scale-95 transition-all`,
+  BTN_UNLINK: `text3 w-full bg-white/5 hover:bg-rouge/10 hover:text-rouge hover:border-rouge/20 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/10 active:scale-95 transition-all`,
   SKELETON: "animate-pulse bg-white/5 rounded-2xl",
   MESSAGE_CONTAINER: "mb-6 min-h-[45px] transition-all duration-300 ease-in-out",
   BADGE_ANIM: "animate-in fade-in slide-in-from-top-2 duration-300",
@@ -140,7 +141,7 @@ function AccountContent() {
                   <SpotifyIcon />
                 </div>
                 <div>
-                  <h3 className={`${GENERAL_STYLES.TEXT1} font-bold text-lg`}>Spotify</h3>
+                  <h3 className={`text1 font-bold text-lg`}>Spotify</h3>
                   {user.has_spotify ?
                     <div className={PROFILE_STYLES.BADGE_SUCCESS}>
                       <CheckIcon/> Votre compte est synchronisé
@@ -155,19 +156,19 @@ function AccountContent() {
 
               {user.has_spotify ? (
                 <div className="space-y-4">
-                  <button onClick={unlinkSpotify}
-                    className={PROFILE_STYLES.BTN_UNLINK}
-                  >Délier mon compte Spotify</button>
+                  <TertiaryButton onClick={unlinkSpotify}
+                    additional="text3 w-full hover:text-rouge hover:bg-rouge/10 hover:border-rouge/20 py-3 text-[10px] font-bold uppercase tracking-widest"
+                  >Délier mon compte Spotify</TertiaryButton>
                 </div>
               ) : (
-                <button onClick={loginSpotify}
-                  className={`${GENERAL_STYLES.GREENBUTTON} sm:text-base w-full py-4 sm:rounded-2xl shadow-[0_0_20px_rgba(29,208,93,0.2)]`}
-                >Lier mon compte Spotify</button>
+                <PrimaryButton onClick={loginSpotify} additional="w-full py-4 sm:rounded-2xl">
+                  Lier mon compte Spotify
+                </PrimaryButton>
               )}
             </div>
 
             {/* Note en bas */}
-            <p className={`${GENERAL_STYLES.TEXT3} text-[10px] text-center mt-8 leading-relaxed font-hias uppercase tracking-tighter`}>
+            <p className={`text3 text-[10px] text-center mt-8 leading-relaxed font-hias uppercase tracking-tighter`}>
               La liaison Spotify permet à MyStats de récupérer vos écoutes.
             </p>
           </div>

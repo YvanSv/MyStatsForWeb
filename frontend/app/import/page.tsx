@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BASE_UI, GENERAL_STYLES } from "../styles/general";
 import { useApiSpotifyData } from "../hooks/useApiSpotifyData";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
+import { PrimaryButton } from "../components/Atomic/Buttons";
 
 export default function ImportPage() {
   return (
@@ -29,10 +30,10 @@ const IMPORT_STYLES = {
   // En-têtes de colonnes
   HEADER_WRAPPER: "mb-10 text-center lg:text-left",
   ICON_BOX: "inline-flex p-4 rounded-3xl mb-6",
-  get ICON_BOX_VERT() { return `${this.ICON_BOX} ${GENERAL_STYLES.TEXT2} bg-vert/10` },
+  get ICON_BOX_VERT() { return `${this.ICON_BOX} text2 bg-vert/10` },
   get ICON_BOX_BLUE() { return `${this.ICON_BOX} text-blue-400 bg-blue-500/10` },
   TITLE: GENERAL_STYLES.TITRE_DOUBLE_FRAME,
-  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-md tracking-[0.08em] font-medium max-w-md`,
+  SUBTITLE: `text3 text-md tracking-[0.08em] font-medium max-w-md`,
 
   // Dropzone
   DROPZONE: (hasFiles: boolean) => `border-2 border-dashed ${BASE_UI.rounded.medium} p-8 ${BASE_UI.anim.base} flex flex-col items-center justify-center gap-4 ${
@@ -41,32 +42,29 @@ const IMPORT_STYLES = {
   
   // Liste de fichiers
   FILE_LIST_WRAPPER: "flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2",
-  FILE_BADGE: `${GENERAL_STYLES.TEXT3} text-[9px] bg-white/5 px-3 py-1 ${BASE_UI.rounded.badge} border border-white/5 animate-in fade-in zoom-in-95`,
+  FILE_BADGE: `text3 text-[9px] bg-white/5 px-3 py-1 ${BASE_UI.rounded.badge} border border-white/5 animate-in fade-in zoom-in-95`,
   
   // Alertes & Progress
   ALERT_BASE: "border text-[10px] p-4 ${BASE_UI.rounded.input} font-bold uppercase tracking-widest",
   get ALERT_ERROR() { return `${this.ALERT_BASE} bg-rouge/10 border-rouge/20 text-rouge animate-shake` },
-  get ALERT_SUCCESS() { return `${this.ALERT_BASE} bg-vert/10 border-vert/20 ${GENERAL_STYLES.TEXT2}` },
+  get ALERT_SUCCESS() { return `${this.ALERT_BASE} bg-vert/10 border-vert/20 text2` },
   PROGRESS_CONTAINER: "w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4",
   PROGRESS_BAR: "w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4",
   PROGRESS_FILL: "bg-vert h-full animate-progress-fast",
 
   // Bouton
-  BTN_SUBMIT: (isDisabled: boolean) => isDisabled 
-    ? `${GENERAL_STYLES.TEXT3} w-full py-4 ${BASE_UI.rounded.badge} font-bold bg-white/5 border border-white/5 cursor-not-allowed`
-    : `${GENERAL_STYLES.GREENBUTTON} w-full py-4`,
-  FOOTER_TEXT: `${GENERAL_STYLES.TEXT3} text-[10px] text-center leading-relaxed uppercase tracking-[0.12em] font-bold`,
+  FOOTER_TEXT: `text3 text-[10px] text-center leading-relaxed uppercase tracking-[0.12em] font-bold`,
 
   // Guide (Droite)
   GUIDE_STEP_WRAPPER: "flex gap-4",
-  STEP_NUMBER: `${GENERAL_STYLES.TEXT1} flex-shrink-0 w-6 h-6 ${BASE_UI.rounded.badge} bg-white/5 border border-white/10 ${BASE_UI.common.flexCenter} text-[10px] font-bold`,
-  STEP_TEXT: `${GENERAL_STYLES.TEXT1} text-sm leading-relaxed`,
-  EXTERNAL_LINK: `${GENERAL_STYLES.TEXT2} hover:underline break-all font-mono text-[12px] mt-2 block`,
-  CODE_TAG: `${GENERAL_STYLES.TEXT2} bg-vert/5 px-1 rounded mx-1`,
+  STEP_NUMBER: `text1 flex-shrink-0 w-6 h-6 ${BASE_UI.rounded.badge} bg-white/5 border border-white/10 ${BASE_UI.common.flexCenter} text-[10px] font-bold`,
+  STEP_TEXT: `text1 text-sm leading-relaxed`,
+  EXTERNAL_LINK: `text2 hover:underline break-all font-mono text-[12px] mt-2 block`,
+  CODE_TAG: `text2 bg-vert/5 px-1 rounded mx-1`,
   
   // Note technique
-  TECH_NOTE: `${GENERAL_STYLES.TEXT3} mt-8 p-6 bg-white/[0.03] border border-white/5 ${BASE_UI.rounded.medium} italic text-[11px] space-y-3`,
-  TECH_NOTE_TITLE: `${GENERAL_STYLES.TEXT3} font-bold not-italic uppercase tracking-wider block mb-1`
+  TECH_NOTE: `text3 mt-8 p-6 bg-white/[0.03] border border-white/5 ${BASE_UI.rounded.medium} italic text-[11px] space-y-3`,
+  TECH_NOTE_TITLE: `text3 font-bold not-italic uppercase tracking-wider block mb-1`
 };
 
 export function ImportContent() {
@@ -117,7 +115,7 @@ export function ImportContent() {
                 <input type="file" multiple accept=".json" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                 <div className={IMPORT_STYLES.DROPZONE(files.length > 0)}>
                   <FileIcon size={40}/>
-                  <p className={`${GENERAL_STYLES.TEXT3} text-xs text-center`}>
+                  <p className={`text3 text-xs text-center`}>
                     {files.length > 0 ? `${files.length} fichier(s) sélectionné(s)` : "Déposez vos fichiers .json ici"}
                   </p>
                 </div>
@@ -140,12 +138,18 @@ export function ImportContent() {
                 </div>
               )}
 
-              <button type="submit" disabled={loading || files.length === 0} className={IMPORT_STYLES.BTN_SUBMIT(loading || files.length === 0)}>
-                {loading ? "Importation en cours..." : "Lancer l'importation"}
-              </button>
+              {(loading || files.length === 0) ? (
+                <button type="submit" disabled={true} className="text3 w-full py-4 rounded-full font-bold bg-white/5 border border-white/5 cursor-not-allowed">
+                  {loading ? "Importation en cours..." : "Lancer l'importation"}
+                </button>
+              ) : (
+                <PrimaryButton type="submit" additional="w-full py-4">
+                  Lancer l'importation
+                </PrimaryButton>
+              )}
 
               <p className={IMPORT_STYLES.FOOTER_TEXT}>
-                Seuls les fichiers <span className={GENERAL_STYLES.TEXT2}>Streaming_History_Audio_X.json</span> sont supportés
+                Seuls les fichiers <span className="text2">Streaming_History_Audio_X.json</span> sont supportés
               </p>
             </form>
           </div>
@@ -194,7 +198,7 @@ export function ImportContent() {
                 <span className={IMPORT_STYLES.TECH_NOTE_TITLE}>Processus d'import :</span>
                 <p>1. Les écoutes sont injectées presque instantanément dans la base de données de MyStats.</p>
                 <p>2. Un enrichissement automatique récupère les images et durées (env. 2 min / fichier).</p>
-                <p className={`pt-2 ${GENERAL_STYLES.TEXT2}`}>Vous pouvez quitter cette page une fois l'import lancé.</p>
+                <p className={`pt-2 text2`}>Vous pouvez quitter cette page une fois l'import lancé.</p>
               </div>
             </div>
           </div>

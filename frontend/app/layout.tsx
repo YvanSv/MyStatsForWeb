@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ViewModeProvider>
           <ShowFiltersProvider>
             <AuthProvider>
-              <div className={`${jost.variable} bg-bg1 flex flex-col min-h-screen font-jost overflow-x-hidden`}>
+              <div className={`${jost.variable} bg-bg1 flex flex-col min-h-screen overflow-x-hidden`}>
                 <header className="fixed top-0 left-0 w-[100vw] z-[100] backdrop-blur-md">
                   <div className="w-full h-full">
                     <Header />

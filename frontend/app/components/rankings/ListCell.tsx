@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { DataInfo } from "@/app/data/DataInfos";
-import { GENERAL_STYLES } from "@/app/styles/general";
 
 interface ListCellProps {
   element: DataInfo;
@@ -15,7 +14,7 @@ const LIST_CELL_STYLES = {
             border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1`,
 
   // Index (#1, #2...)
-  INDEX: `${GENERAL_STYLES.TEXT3} sm:block font-mono text-sm md:text-lg`,
+  INDEX: `text3 sm:block font-mono text-sm md:text-lg`,
 
   // Image & Titres
   CONTENT_BLOCK: "flex items-center gap-3 md:gap-4 flex-1 min-w-0",
@@ -24,12 +23,12 @@ const LIST_CELL_STYLES = {
     bg-bg2 border border-white/10 ${isArtist ? 'rounded-full' : 'rounded-lg'}
   `,
   TITLE: "font-bold text-sm md:text-base truncate group-hover:text-vert transition-colors",
-  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-[10px] md:text-xs truncate`,
+  SUBTITLE: `text3 text-[10px] md:text-xs truncate`,
 
   // Colonnes Desktop (Stats)
   COLUMN_DESKTOP: (isActive: boolean) => `
     hidden lg:block text-center transition-colors
-    ${isActive ? `${GENERAL_STYLES.TEXT2} text-medium font-bold` : `${GENERAL_STYLES.TEXT3} text-sm`}
+    ${isActive ? `text2 text-medium font-bold` : `text3 text-sm`}
   `,
   
   // Barre d'engagement
@@ -38,11 +37,11 @@ const LIST_CELL_STYLES = {
 
   // Bloc de droite (Mobile & Rating)
   RIGHT_BLOCK: "flex flex-col items-end md:items-center justify-center gap-0.5 min-w-[70px] md:min-w-0",
-  MOBILE_STAT_CONTAINER: `${GENERAL_STYLES.TEXT2} font-bold text-sm lg:text-gray-300 lg:font-normal`,
+  MOBILE_STAT_CONTAINER: `text2 font-bold text-sm lg:text-gray-300 lg:font-normal`,
   
   // Rating (Couleurs conditionnelles)
   RATING: (rating: number, isActive: boolean) => {
-    const color = rating >= 1.35 ? `${GENERAL_STYLES.TEXT2}` : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
+    const color = rating >= 1.35 ? `text2` : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
     return `text-xs text-right md:text-base w-full lg:text-center ${color} ${isActive ? 'font-bold' : 'text-sm'}`;
   }
 };
@@ -95,7 +94,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
           {displayImage ? (
             <Image src={displayImage} alt={displayName} fill sizes="56px" className="object-cover" />
           ) : (
-            <div className={`${GENERAL_STYLES.TEXT3} w-full h-full flex items-center justify-center`}>?</div>
+            <div className={`text3 w-full h-full flex items-center justify-center`}>?</div>
           )}
         </div>
         <div className="min-w-0">
@@ -115,7 +114,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
 
       <div className="hidden lg:flex justify-center">
         <div className="flex items-center gap-2">
-          <span className={sort === 'engagement' ? `${GENERAL_STYLES.TEXT2} font-bold` : `${GENERAL_STYLES.TEXT3} text-sm`}>
+          <span className={sort === 'engagement' ? `text2 font-bold` : `text3 text-sm`}>
             {element.engagement.toLocaleString('fr-FR')}%
           </span>
           <div className={LIST_CELL_STYLES.ENGAGEMENT_BAR_CONTAINER}>

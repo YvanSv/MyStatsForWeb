@@ -1,42 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
 import { FRONT_ROUTES } from "../constants/routes";
 import { BASE_UI, GENERAL_STYLES } from "../styles/general";
 import { useAuth } from "../hooks/useAuth";
 import { ChartBar, Disc, Mic2, Music2 } from "lucide-react";
+import { PrimaryButton, TertiaryButton } from "./Atomic/Buttons";
+import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Atomic/Nav/Navbar";
 
 export const HEADER_STYLES = {
   CONTAINER: `flex items-center justify-between sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-0.5 px-4 md:px-6 border-b border-white/10`,
   
-  LOGO_WRAPPER: `${GENERAL_STYLES.TEXT1} ${GENERAL_STYLES.TRANSITION_TEXT_VERT} ${GENERAL_STYLES.TRANSITION_ZOOM} flex items-center ${BASE_UI.typo.tight} text-[24px] md:text-[40px] md:gap-3 cursor-pointer`,
-  
   NAV_PC: `hidden lg:flex items-center font-semibold text-[24px] gap-8 xl:gap-20`,
-  NAV_LINK: `${GENERAL_STYLES.TEXT1} ${GENERAL_STYLES.TRANSITION_TEXT_VERT} cursor-pointer`,
-  NAV_ITEM_WRAPPER: "relative group py-2", // Le 'group' permet de contrôler l'enfant au survol
-  POPOVER: "absolute top-full left-1/2 -translate-x-1/2 mt-1 w-44 bg-[#121212] border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden p-1",
-  POPOVER_ITEM: "flex items-center w-full px-4 py-2.5 text-sm text-gray-400 hover:text-vert hover:bg-white/[0.05] rounded-lg transition-colors text-left gap-4",
+  NAV_ITEM_WRAPPER: "relative group py-2",
 
   RIGHT_SECTION: `flex items-center gap-2 md:gap-4`,
 
-  VIEW_DROPDOWN: `${BASE_UI.common.dropdown} min-w-[50px] duration-150`,
-  MENU_DROPDOWN: `${BASE_UI.common.dropdown} w-48 ${BASE_UI.rounded.input} duration-200 lg:block`,
-  VIEW_BOX: `border border-white/10 ${BASE_UI.rounded.item} backdrop-blur-sm p-1 bg-bg2/50`,
-  VIEW_BTN: `${GENERAL_STYLES.TEXT2} flex flex-col items-center p-2 ${BASE_UI.rounded.item} bg-white/10 hover:bg-white/15 justify-center transition-colors`,
+  USER_BTN: (isOpen: boolean) => `text1 flex items-center gap-2 md:gap-3 bg-bg2 px-3 md:px-4 py-2 ${BASE_UI.rounded.badge} text-sm font-medium border ${BASE_UI.anim.base} md:hover:border-vert ${isOpen ? 'border-vert' : 'border-white/10'}`,
 
-  VIEW_ITEM: (isActive: boolean) => `p-2 ${BASE_UI.rounded.item} ${BASE_UI.common.flexCenter} ${BASE_UI.anim.base} ${
-    isActive ? `${GENERAL_STYLES.TEXT2} bg-white/10` : `${GENERAL_STYLES.TEXT3} hover:text-white hover:bg-white/5`
-  }`,
-
-  USER_BTN: (isOpen: boolean) => `${GENERAL_STYLES.TEXT1} flex items-center gap-2 md:gap-3 bg-bg2 px-3 md:px-4 py-2 ${BASE_UI.rounded.badge} text-sm font-medium border ${BASE_UI.anim.base} md:hover:border-vert ${isOpen ? 'border-vert' : 'border-white/10'}`,
-
-  USER_AVATAR: `${GENERAL_STYLES.TEXT2} ${BASE_UI.common.flexCenter} text-[13px] font-bold w-6 h-6 ${BASE_UI.rounded.badge} bg-vert/20`,
-  
-  MENU_ITEM: `text-[14px] py-2.5 px-4 ${BASE_UI.rounded.item} ${BASE_UI.anim.base} gap-3 w-full flex items-center hover:bg-white/5 ${BASE_UI.text.white}`,
-  MENU_ITEM_DANGER: `text-[14px] py-2.5 px-4 ${BASE_UI.rounded.item} ${BASE_UI.anim.base} gap-3 w-full flex items-center hover:bg-red-500/10 ${BASE_UI.text.red}`,
+  USER_AVATAR: `text2 ${BASE_UI.common.flexCenter} text-[13px] font-bold w-6 h-6 ${BASE_UI.rounded.badge} bg-vert/20`,
   
   MOBILE_OVERLAY: `absolute top-full left-0 w-full bg-bg1 backdrop-blur-xl border-b border-white/10 lg:hidden animate-in slide-in-from-top-2`,
   MOBILE_NAV: `flex flex-col p-4 space-y-1 text-center`,
@@ -61,6 +45,11 @@ export default function Header() {
     {id: 'Mon dashboard', path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
     {id: 'Aide', path: `${FRONT_ROUTES.HELP}`},
   ] as const;
+  const sous_menu_ranking = [
+    {id: 'Tracks', path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18}/>},
+    {id: 'Albums', path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18}/>},
+    {id: 'Artists', path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18}/>},
+  ]
   const views = [
     { id: 'grid_sm', icon: <Grid3x3Icon />, hideMobile: true },
     { id: 'grid', icon: <GridIcon />, hideMobile: false },
@@ -94,45 +83,32 @@ export default function Header() {
 
   return (
     <header className={HEADER_STYLES.CONTAINER}>
-      {/* GAUCHE : Logo + Titre */}
-      <div className={HEADER_STYLES.LOGO_WRAPPER} onClick={() => navigate(FRONT_ROUTES.ACCUEIL)}>
-        <Image src="/logo.png" alt="Logo" width={60} height={60} priority className="w-10 md:w-13 h-auto" />
-        MyStats
-      </div>
-
-      {/* CENTRE : Navigation PC */}
+      <HeaderLogo onClick={() => navigate("/")}/>
+      {/* Navigation PC */}
       <nav className={HEADER_STYLES.NAV_PC}>
         {navigation_menu.map((item) => {
           if (item.id === "Rankings") {
             return (
               <div key={item.id} className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
-                {/* Bouton Principal */}
-                <button 
-                  onClick={() => navigate(item.path)}
-                  className={HEADER_STYLES.NAV_LINK}
-                >{item.id}</button>
+                <NavButton key={item.id} onClick={() => navigate(item.path)}>
+                  {item.id}
+                </NavButton>
 
-                {/* Menu Popover */}
-                <div className={HEADER_STYLES.POPOVER}>
-                  <button onClick={() => navigate(`${FRONT_ROUTES.MY_RANKINGS}/tracks`)} className={HEADER_STYLES.POPOVER_ITEM}>
-                    <Music2 size={18}/> Tracks
-                  </button>
-                  <button onClick={() => navigate(`${FRONT_ROUTES.MY_RANKINGS}/albums`)} className={HEADER_STYLES.POPOVER_ITEM}>
-                    <Disc size={18}/> Albums
-                  </button>
-                  <button onClick={() => navigate(`${FRONT_ROUTES.MY_RANKINGS}/artists`)} className={HEADER_STYLES.POPOVER_ITEM}>
-                    <Mic2 size={18}/> Artistes
-                  </button>
-                </div>
+                <PopoverMenu>
+                  {sous_menu_ranking.map(v => (
+                    <MenuButton key={v.id} onClick={() => navigate(v.path)} additional="text3">
+                      {v.icon} {v.id}
+                    </MenuButton>
+                  ))}
+                </PopoverMenu>
               </div>
             );
           }
 
-          // Bouton standard pour les autres items
           return (
-            <button key={item.id} onClick={() => navigate(item.path)}
-              className={HEADER_STYLES.NAV_LINK}
-            >{item.id}</button>
+            <NavButton key={item.id} onClick={() => navigate(item.path)}>
+              {item.id}
+            </NavButton>
           );
         })}
       </nav>
@@ -140,57 +116,50 @@ export default function Header() {
       {/* DROITE : Toggles + Profil + Burger */}
       <div className={HEADER_STYLES.RIGHT_SECTION}>
         {/* View Mode Selector */}
-        <div ref={containerRef} className="relative">
-          <div className={HEADER_STYLES.VIEW_BOX}>
-            <button onClick={() => setIsViewMenuOpen(!isViewMenuOpen)} className={HEADER_STYLES.VIEW_BTN}>
-              <div className="flex items-center justify-center">{activeView.icon}</div>
-              <ChevronDown size={14} className={`opacity-50 transition-transform ${isViewMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
+        <div className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
+          <TertiaryButton onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
+            additional="text2 flex flex-col items-center p-2 justify-center"
+          >
+            <div className="flex items-center justify-center">{activeView.icon}</div>
+            <ChevronDown size={14} className={`opacity-50 transition-transform ${isViewMenuOpen ? 'rotate-180' : ''}`} />
+          </TertiaryButton>
 
-          {isViewMenuOpen && (
-            <div className={HEADER_STYLES.VIEW_DROPDOWN}>
-              <div className="flex flex-col gap-1">
-                {views.map((v) => (
-                  <button key={v.id} onClick={() => { toggleViewMode(v.id); setIsViewMenuOpen(false); }}
-                    className={`${HEADER_STYLES.VIEW_ITEM(viewMode === v.id)} ${v.hideMobile ? 'hidden lg:flex' : 'flex'}`}
-                  >{v.icon}</button>
-                ))}
-              </div>
-            </div>
-          )}
+          <PopoverMenu>
+            {views.map(v => (
+              <MenuButton key={v.id} onClick={() => toggleViewMode(v.id)} additional={`duration-300 ease-out
+                  ${viewMode === v.id ? `text2 bg-white/5` : `text3 hover:text-white hover:bg-white/5`}
+                  ${v.hideMobile ? 'hidden lg:flex' : 'flex'}
+                `}
+              >{v.icon}</MenuButton>
+            ))}
+          </PopoverMenu>
         </div>
 
         {/* Profil Section */}
-        <div className="relative" ref={menuRef}>
-          {isLoggedIn ? (
+        {isLoggedIn ? (
+          <div className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
             <button onClick={() => setMenuOpen(!menuOpen)} className={HEADER_STYLES.USER_BTN(menuOpen)}>
               <div className={HEADER_STYLES.USER_AVATAR}>{userName.charAt(0).toUpperCase()}</div>
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
             </button>
-          ) : (
-            <button onClick={() => navigate(FRONT_ROUTES.AUTH)} className={`${GENERAL_STYLES.GREENBUTTON} text-[13px] font-bold px-5`}>
-              Se connecter
-            </button>
-          )}
 
-          {/* DROPDOWN */}
-          {menuOpen && isLoggedIn && (
-            <div className={HEADER_STYLES.MENU_DROPDOWN}>
-              <div className="p-2 space-y-1">
-                {dropdown_menu.map(v => (
-                  <button key={v.id} className={HEADER_STYLES.MENU_ITEM} onClick={() => navigate(v.path)}>
-                    {v.icon}{v.id}
-                  </button>
-                ))}
-                <div className="h-[1px] bg-white/5 mx-2"/>
-                <button onClick={() => logout()} className={HEADER_STYLES.MENU_ITEM_DANGER}>
-                  <LogoutIcon/>Déconnexion
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+            <PopoverMenu>
+              {dropdown_menu.map(v => (
+                <MenuButton key={v.id} onClick={() => navigate(v.path)}
+                  additional={`transition-all duration-300 ease-out text1`}
+                >{v.icon}{v.id}</MenuButton>
+              ))}
+              <div className="h-[1px] bg-white/5 mx-2"/>
+              <MenuButtonDanger onClick={() => logout()}
+                additional={`transition-all duration-300 ease-out`}
+              ><LogoutIcon/>Déconnexion</MenuButtonDanger>
+            </PopoverMenu>
+          </div>
+        ) : (
+          <PrimaryButton onClick={() => navigate(FRONT_ROUTES.AUTH)} additional="text-[13px] font-bold px-5 py-2">
+            Se connecter
+          </PrimaryButton>
+        )}
 
         {/* BURGER BUTTON MOBILE */}
         <button className="lg:hidden p-2" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>

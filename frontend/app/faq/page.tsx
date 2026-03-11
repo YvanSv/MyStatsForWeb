@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, HelpCircle, MessageCircle, ShieldCheck, Zap } from 'lucide-react';
-import { GENERAL_STYLES } from '../styles/general';
+import { PrimaryButton } from '../components/Atomic/Buttons';
 
 const faqData = [
   {
@@ -81,9 +81,9 @@ export default function FAQPage() {
       {/* Footer Contact */}
       <div className="flex flex-col mt-16 p-8 rounded-2xl border border-dashed border-white/10 items-center">
         <p className="text-gray-500 mb-4">Vous ne trouvez pas votre réponse ?</p>
-        <button className={`${GENERAL_STYLES.GREENBUTTON}`}>
+        <PrimaryButton additional='px-4 py-2'>
           Nous contacter
-        </button>
+        </PrimaryButton>
       </div>
     </div>
   );

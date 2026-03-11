@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { GENERAL_STYLES, BASE_UI } from "./styles/general";
+import { BASE_UI } from "./styles/general";
 import { useApiAllDatas } from "./hooks/useApiAllDatas";
+import { PrimaryButton, SecondaryButton } from "./components/Atomic/Buttons";
 
 export default function HomePage() {
   const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
@@ -26,44 +27,36 @@ export default function HomePage() {
   return (
     <main className={ACCUEIL_STYLES.MAIN}>
       <section className={ACCUEIL_STYLES.HERO_SECTION}>
-        {/* LA COUCHE DE TEXTURE */}
-        <div className={ACCUEIL_STYLES.HERO_NOISE}/>
-
         {/* TEXTES DU HERO */}
-        <div className={ACCUEIL_STYLES.HERO_CONTENT}>
-          <h1 className={ACCUEIL_STYLES.HERO_H1}>
-            Votre musique,<br/>
-            <span className={GENERAL_STYLES.TEXT2}>décryptée.</span>
-          </h1>
-          <p className={ACCUEIL_STYLES.HERO_P}>
-            Analysez vos habitudes d'écoute avec une précision chirurgicale. 
-            Découvrez ce qui fait vibrer votre algorithme.
-          </p>
-          
-          {/* BOUTONS D'ACTION */}
-          <div className={ACCUEIL_STYLES.HERO_BUTTON_GROUP}>
-            <button className={ACCUEIL_STYLES.BTN_PRIMARY}>
-              Analyser mon profil
-            </button>
-            <button className={`${ACCUEIL_STYLES.BTN_SECONDARY} group`}>
-              En savoir plus 
-              <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </button>
-          </div>
+        <h1 className={ACCUEIL_STYLES.HERO_H1}>
+          Votre musique,<br/>
+          <span className="text2">décryptée.</span>
+        </h1>
+        <p className={ACCUEIL_STYLES.HERO_P}>
+          Analysez vos habitudes d'écoute avec une précision chirurgicale. 
+          Découvrez ce qui fait vibrer votre algorithme.
+        </p>
+        
+        {/* BOUTONS D'ACTION */}
+        <div className={ACCUEIL_STYLES.HERO_BUTTON_GROUP}>
+          <PrimaryButton additional="px-10 py-5 text-lg">Analyser mon profil</PrimaryButton>
+          <SecondaryButton additional="group px-8 py-5 text-lg">
+            En savoir plus <span className="group-hover:translate-x-1 transition-transform">→</span>
+          </SecondaryButton>
         </div>
+      </section>
 
-        {/* SECTION STATISTIQUES GÉNÉRALES */}
-        <section className={ACCUEIL_STYLES.STATS_SECTION}>
-          <div className={ACCUEIL_STYLES.STATS_GRID}>
-            <StatCard value={loading ? "..." : formatter.format(stats.streams)} label="Streams analysés"/>
-            <StatCard value={loading ? "..." : formatter.format(stats.users)} label="Utilisateurs"/>
-          </div>
-          <div className={ACCUEIL_STYLES.STATS_GRID}>
-            <StatCard value={loading ? "..." : formatter.format(stats.tracks)} label="Musiques"/>
-            <StatCard value={loading ? "..." : formatter.format(stats.albums)} label="Albums"/>
-            <StatCard value={loading ? "..." : formatter.format(stats.artists)} label="Artistes"/>
-          </div>
-        </section>
+      {/* SECTION STATISTIQUES GÉNÉRALES */}
+      <section className={ACCUEIL_STYLES.STATS_SECTION}>
+        <div className={ACCUEIL_STYLES.STATS_GRID}>
+          <StatCard value={loading ? "..." : formatter.format(stats.streams)} label="Streams analysés"/>
+          <StatCard value={loading ? "..." : formatter.format(stats.users)} label="Utilisateurs"/>
+        </div>
+        <div className={ACCUEIL_STYLES.STATS_GRID}>
+          <StatCard value={loading ? "..." : formatter.format(stats.tracks)} label="Musiques"/>
+          <StatCard value={loading ? "..." : formatter.format(stats.albums)} label="Albums"/>
+          <StatCard value={loading ? "..." : formatter.format(stats.artists)} label="Artistes"/>
+        </div>
       </section>
 
       {/* SECTION TECHNIQUE */}
@@ -93,28 +86,24 @@ const StatCard = ({ value, label }: { value: string, label: string }) => (
 );
 
 export const ACCUEIL_STYLES = {
-  MAIN: `${GENERAL_STYLES.TEXT1} flex-1 flex flex-col min-h-screen selection:bg-vert/30 selection:text-vert overflow-x-hidden`,
+  MAIN: `text1 flex-1 flex flex-col min-h-screen selection:bg-vert/30 selection:text-vert overflow-x-hidden`,
   
   // Structure & Layouts
-  HERO_SECTION: "relative flex flex-col items-center justify-center pt-24 pb-32 px-6 isolate",
-  HERO_NOISE: "absolute inset-0 opacity-[0.03] pointer-events-none -z-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]",
-  HERO_CONTENT: "relative z-10 text-center mt-12",
+  HERO_SECTION: "flex flex-col relative text-center pt-24 px-6 mt-12 z-10",
   HERO_BUTTON_GROUP: "flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center px-6 sm:px-0",
-
-  TECH_SECTION: "py-24 px-6 bg-white/[0.02]",
-  TECH_GRID: "flex flex-wrap justify-center gap-4 max-w-4xl mx-auto",
   
   // Reste du bloc
-  HERO_H1: `${GENERAL_STYLES.TEXT1} text-5xl md:text-8xl ${BASE_UI.typo.hero} mb-8`,
-  HERO_P: `${GENERAL_STYLES.TEXT3} text-lg md:text-xl max-w-xl mb-12 leading-relaxed mx-auto font-light`,
-  TECH_H2: `${GENERAL_STYLES.TEXT3} text-sm ${BASE_UI.typo.wide} text-center mb-16`,
+  HERO_H1: `text1 text-5xl md:text-8xl ${BASE_UI.typo.hero} mb-8`,
+  HERO_P: `text3 text-lg md:text-xl max-w-xl mb-12 leading-relaxed mx-auto font-light`,
+  TECH_H2: `text3 text-sm ${BASE_UI.typo.wide} text-center mb-16`,
   TECH_BADGE: `px-6 py-3 border border-white/5 ${BASE_UI.rounded.badge} bg-white/5 font-mono text-sm hover:border-vert/30 transition-colors`,
-  BTN_PRIMARY: `${GENERAL_STYLES.GREENBUTTON} px-10 py-5 text-lg`,
-  BTN_SECONDARY: `${GENERAL_STYLES.GRAYBUTTON} px-8 py-5 text-lg`,
 
-  STATS_SECTION: "mt-24 w-full max-w-6xl mx-auto px-6 py-8 border-t border-white/5",
+  STATS_SECTION: "mt-24 w-full max-w-6xl mx-auto px-6 pt-8 border-t border-white/5",
   STATS_GRID: "flex justify-center gap-12 md:gap-24 pt-12",
   STAT_ITEM: "flex flex-col items-center md:items-start space-y-2",
   STAT_NUMBER: "text-4xl md:text-5xl font-black tracking-tighter text-white",
   STAT_LABEL: "text-xs uppercase tracking-[0.3em] text-gray-500 font-bold",
+
+  TECH_SECTION: "py-18 mt-24 px-6 bg-white/[0.02]",
+  TECH_GRID: "flex flex-wrap justify-center gap-4 max-w-4xl mx-auto",
 };

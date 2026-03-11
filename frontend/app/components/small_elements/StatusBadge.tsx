@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useApi } from "../../hooks/useApi";
-import { GENERAL_STYLES } from "@/app/styles/general";
 
 const BADGE_STYLES = {
   // Conteneur principal
@@ -22,7 +21,7 @@ const BADGE_STYLES = {
   `,
 
   // Typographie
-  TEXT: `${GENERAL_STYLES.TEXT3} text-[10px] font-mono uppercase whitespace-nowrap tracking-wider`,
+  TEXT: `text3 text-[10px] font-mono uppercase whitespace-nowrap tracking-wider`,
   TIMER: "text-rouge ml-1 font-bold",
   UNIT: "lowercase font-normal opacity-70"
 };
@@ -64,9 +63,7 @@ export const ApiStatusBadge = () => {
               <span className={BADGE_STYLES.UNIT}>s</span>
             </span>
           </>
-        ) : (
-          "System Active"
-        )}
+        ) : ("System Active")}
       </span>
     </div>
   );

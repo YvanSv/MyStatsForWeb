@@ -1,9 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* FONTS */
   --font-jost: var(--font-jost);
-  /*-------*/
   
   --color-vert: #1DD05D;
   --color-jaune: #D3F527;
@@ -15,20 +13,39 @@
 }
 
 @layer components {
-  button {
-    @apply active:scale-95;
+  * {
+    font-family: var(--font-jost);
+  }
+
+  .text1 {
+    @apply text-white;
+  }
+
+  .text2 {
+    @apply text-vert;
+  }
+
+  .text3 {
+    @apply text-gray-500;
+  }
+
+  .text4 {
+    @apply text-bg1;
+  }
+
+  .textred {
+    @apply text-rouge;
   }
 }
 
 :root {
-  --background: #1d1d1d;
-  --foreground: #ffffff;
-  --primary: #1DD05D;
+  --background: #050505;
 }
 
 body {
   background-color: var(--background);
-  color: var(--foreground);
+  background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+  background-repeat: repeat;
 }
 
 @keyframes blob {

@@ -22,15 +22,6 @@ export const BASE_UI = {
 };
 
 export const GENERAL_STYLES = {
-  GREENBUTTON: `flex items-center justify-center gap-2 px-6 py-2 ${BASE_UI.anim.base} ${BASE_UI.anim.click} bg-vert ${BASE_UI.rounded.badge} font-semibold ${BASE_UI.text.dark} hover:bg-vert/90 hover:shadow-[0_0_30px_rgba(30,215,96,0.3)]`,
-  GRAYBUTTON: `flex items-center justify-center gap-2 px-6 py-2 ${BASE_UI.anim.base} ${BASE_UI.anim.click} ${BASE_UI.rounded.badge} font-semibold ${BASE_UI.text.white} border border-white/10 hover:bg-white/5 hover:border-white/20`,
-  GRAYBUTTON2: `${BASE_UI.text.white} bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md ${BASE_UI.rounded.input} ${BASE_UI.anim.base}`,
-
-  TEXT1: BASE_UI.text.white,
-  TEXT2: BASE_UI.text.vert,
-  TEXT3: BASE_UI.text.gray,
-  TEXT4: BASE_UI.text.dark,
-  
   TITRE_DOUBLE_FRAME: `${BASE_UI.text.white} font-semibold mb-3 text-[16px] md:text-[24px]`,
   TRANSITION_TEXT_VERT: `transition-colors duration-300 hover:${BASE_UI.text.vert}`,
   TRANSITION_ZOOM: BASE_UI.anim.hoverZoom,

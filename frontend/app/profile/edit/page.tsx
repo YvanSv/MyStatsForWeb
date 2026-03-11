@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import { GENERAL_STYLES } from "@/app/styles/general";
+import { PrimaryButton } from "@/app/components/Atomic/Buttons";
 
 export default function EditProfilePage() {
   return (
@@ -27,32 +28,31 @@ const PROFILE_EDIT_STYLES = {
   CONTAINER: "max-w-4xl mx-auto px-6 -mt-20 relative z-10",
   HEADER_FLEX: "flex flex-col md:flex-row items-center md:items-end gap-6",
   TEXT_GROUP: "flex-1 text-center md:text-left mb-4",
-  TITLE: `${GENERAL_STYLES.TEXT1} text-3xl font-bold mb-1`,
-  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-sm`,
+  TITLE: `text1 text-3xl font-bold mb-1`,
+  SUBTITLE: `text3 text-sm`,
 
   // Avatar Edit
   AVATAR_WRAPPER: "relative w-40 h-40 group cursor-pointer mx-auto md:mx-0",
   AVATAR_IMG: "w-full h-full rounded-[35px] border-4 border-bg1 bg-bg2 object-cover shadow-2xl transition-all group-hover:brightness-50",
-  OVERLAY_ICON: `${GENERAL_STYLES.TEXT1} absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`,
+  OVERLAY_ICON: `text1 absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`,
 
   // Form
   FORM_CARD: "bg-bg2/30 backdrop-blur-xl border border-white/5 rounded-[40px] p-8 mt-12",
   FIELD_GROUP: "mb-6",
-  LABEL: `${GENERAL_STYLES.TEXT3} block text-xs uppercase tracking-widest mb-2 ml-1`,
-  INPUT: `${GENERAL_STYLES.TEXT1} w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all`,
-  TEXTAREA: `${GENERAL_STYLES.TEXT1} w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all resize-none`,
+  LABEL: `text3 block text-xs uppercase tracking-widest mb-2 ml-1`,
+  INPUT: `text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all`,
+  TEXTAREA: `text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all resize-none`,
   
   // Privacy Toggle
   TOGGLE_CARD: "mt-4 p-4 border border-white/5 bg-white/5 rounded-2xl flex items-center justify-between",
-  TOGGLE_LABEL: `${GENERAL_STYLES.TEXT1} text-sm font-medium`,
-  TOGGLE_DESC: `${GENERAL_STYLES.TEXT3} text-xs`,
+  TOGGLE_LABEL: `text1 text-sm font-medium`,
+  TOGGLE_DESC: `text3 text-xs`,
   TOGGLE_SWITCH: "w-12 h-6 bg-vert rounded-full relative cursor-pointer",
   TOGGLE_KNOB: "absolute right-1 top-1 w-4 h-4 bg-white rounded-full",
 
   // Footer Actions
   FOOTER: "flex items-center justify-end gap-4 mt-10",
-  BTN_SAVE: `${GENERAL_STYLES.GREENBUTTON} px-10 py-3`,
-  BTN_CANCEL: `${GENERAL_STYLES.TEXT3} px-6 py-3 text-gray-400 hover:text-white transition-colors`
+  BTN_CANCEL: `text3 px-6 py-3 text-gray-400 hover:text-white transition-colors cursor-pointer`
 };
 
 function EditProfileContent() {
@@ -140,9 +140,9 @@ function EditProfileContent() {
             <button onClick={() => router.back()} className={PROFILE_EDIT_STYLES.BTN_CANCEL}>
               Annuler
             </button>
-            <button onClick={handleSave} className={PROFILE_EDIT_STYLES.BTN_SAVE}>
+            <PrimaryButton onClick={handleSave} additional="px-6 py-2.5">
               Enregistrer les modifications
-            </button>
+            </PrimaryButton>
           </div>
         </div>
       </div>

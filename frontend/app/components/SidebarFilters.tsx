@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GENERAL_STYLES } from "../styles/general";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { PrimaryButton } from "./Atomic/Buttons";
 
 const SIDEBAR_STYLES = {
   // Wrappers
@@ -20,22 +20,22 @@ const SIDEBAR_STYLES = {
   STICKY_CARD: "w-[280px] lg:w-full sticky top-24 bg-bg2/50 backdrop-blur-xl border border-white/5 rounded-3xl p-6",
 
   // Typography & Header
-  TITLE: `text-xl ${GENERAL_STYLES.TEXT2}`,
-  RESET_BTN: `text-[10px] uppercase hover:text-white transition-colors ${GENERAL_STYLES.TEXT3}`,
-  GROUP_TITLE_BTN: `${GENERAL_STYLES.TEXT1} w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70 hover:opacity-100 transition-opacity`,
+  TITLE: `text-xl text2`,
+  RESET_BTN: `text-[10px] uppercase hover:text-white transition-colors text3`,
+  GROUP_TITLE_BTN: `text1 w-full flex justify-between items-center mb-3 font-bold text-sm tracking-widest uppercase opacity-70 hover:opacity-100 transition-opacity`,
   
   // Inputs
   SEARCH_INPUT: "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-vert/50 focus:bg-white/10 outline-none transition-all",
-  DATE_INPUT:  `${GENERAL_STYLES.TEXT1} bg-neutral-900 border border-neutral-800 rounded-md p-2 text-xs focus:ring-1 focus:ring-vert outline-none transition-colors w-full`,
+  DATE_INPUT:  `text1 bg-neutral-900 border border-neutral-800 rounded-md p-2 text-xs focus:ring-1 focus:ring-vert outline-none transition-colors w-full`,
   RANGE_TRACK: "w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert",
 
   // Range Stats
-  RANGE_LABEL: `${GENERAL_STYLES.TEXT3} text-xs font-bold uppercase tracking-wider group-hover:text-gray-200 transition-colors`,
-  RANGE_VALUE: `${GENERAL_STYLES.TEXT2} text-[10px] font-mono bg-vert/10 px-2 py-0.5 rounded-md`,
+  RANGE_LABEL: `text3 text-xs font-bold uppercase tracking-wider group-hover:text-gray-200 transition-colors`,
+  RANGE_VALUE: `text2 text-[10px] font-mono bg-vert/10 px-2 py-0.5 rounded-md`,
   
   // Date Grid
   DATE_GRID: "grid grid-cols-2 gap-3",
-  DATE_LABEL: `${GENERAL_STYLES.TEXT1} text-[10px] uppercase tracking-tight`
+  DATE_LABEL: `text2 text-[10px] uppercase tracking-tight`
 };
 
 export default function SidebarFilters({ config, loading, isVisible, toggleShowFilters }: any) {
@@ -80,9 +80,9 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
       <aside className={SIDEBAR_STYLES.ASIDE(isVisible)}>
         <div className={SIDEBAR_STYLES.STICKY_CARD}>
           <div className="pb-4 mb-2 border-b border-white/5">
-            <button onClick={applyFilters} disabled={loading}
-              className={`${GENERAL_STYLES.GREENBUTTON} rounded-2xl md:text-base disabled:opacity-50 w-full py-3`}
-            >{loading ? 'Chargement...' : "Appliquer les filtres"}</button>
+            <PrimaryButton disabled={loading} onClick={applyFilters} additional="md:text-base disabled:opacity-50 w-full py-3">
+              {loading ? 'Chargement...' : "Appliquer les filtres"}
+            </PrimaryButton>
           </div>
 
           <div className="flex items-center justify-between mb-6">
@@ -183,7 +183,7 @@ function FilterGroup({ title, children }: { title: string, children: React.React
   return (
     <div className="mb-4">
       <button onClick={() => setIsOpen(!isOpen)} className={SIDEBAR_STYLES.GROUP_TITLE_BTN}>
-        {title} <span className={GENERAL_STYLES.TEXT2}>{isOpen ? '−' : '+'}</span>
+        {title} <span className="text2">{isOpen ? '−' : '+'}</span>
       </button>
       <div className={`transition-all duration-300 overflow-hidden ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="flex flex-col gap-2 pb-4">{children}</div>

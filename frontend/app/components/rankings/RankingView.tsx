@@ -8,6 +8,7 @@ import GridCell from "./GridCell";
 import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
 import { GENERAL_STYLES } from "@/app/styles/general";
+import { PrimaryButton, SecondaryButton } from "../Atomic/Buttons";
 
 interface RankingViewProps {
   title: string;
@@ -30,20 +31,10 @@ const RANKING_VIEW_STYLES = {
   HEADER_WRAPPER: "flex flex-col-reverse md:flex-row md:items-center justify-between lg:mb-4 gap-4",
   CONTROLS_GROUP: "flex flex-row gap-2 w-full md:w-auto items-center mb-6",
 
-  // Boutons de Filtres
-  BTN_FILTER_OFF: `${GENERAL_STYLES.GRAYBUTTON} px-4 py-2 md:px-5 md:py-2.5`,
-  BTN_FILTER_ON: `${GENERAL_STYLES.GREENBUTTON} rounded-full border-vert border flex-1 gap-2 px-4 
-                  flex items-center justify-center md:text-base lg:px-5`,
-
   // Sélecteur de Tri (Select)
   SORT_SELECT_WRAPPER: "relative flex-[1.5] md:flex-none group",
-  SORT_LABEL: `${GENERAL_STYLES.TEXT3} absolute -top-2 left-4 px-1.5 bg-bg1 text-[8px] md:text-[10px] font-bold uppercase tracking-wider z-10`,
-  SORT_SELECT: `${GENERAL_STYLES.GRAYBUTTON} pl-4 pr-8 py-2 md:py-2.5 rounded-full text-xs md:text-sm
-                outline-none appearance-none`,
-  SORT_ICON_POS: `${GENERAL_STYLES.TEXT3} absolute right-3 pointer-events-none`,
-
-  // Bouton Direction (Asc/Desc)
-  BTN_DIRECTION: `aspect-square h-[34px] md:h-[42px] shrink-0 ${GENERAL_STYLES.GRAYBUTTON}`,
+  SORT_LABEL: `text3 absolute -top-2 left-4 px-1.5 bg-bg1 text-[8px] md:text-[10px] font-bold uppercase tracking-wider z-10`,
+  SORT_ICON_POS: `text3 absolute right-3 pointer-events-none`,
 
   // Titre de la page
   PAGE_TITLE: "text-3xl md:text-5xl font-hias tracking-tighter text-left md:text-right",
@@ -52,10 +43,6 @@ const RANKING_VIEW_STYLES = {
   LIST_CONTAINER: "space-y-3",
   SMALL_GRID_CONTAINER: "grid grid-cols-5 md:grid-cols-7 xl:grid-cols-8 gap-1 md:gap-4",
   GRID_CONTAINER: "grid grid-cols-3 md:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6",
-
-  // Footer / Load More
-  LOAD_MORE_WRAPPER: "mt-12 flex justify-center pb-12",
-  BTN_LOAD_MORE: `${GENERAL_STYLES.GRAYBUTTON} px-8 py-4 disabled:opacity-50`
 };
 
 export default function RankingView({ title, type, items, sortConfig, onSort, loading, hasMore, loadMore, filterConfig }: RankingViewProps) {
@@ -64,7 +51,7 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
   const normalizedItems: DataInfo[] = items.map(item => ({ ...item, type }));
 
   return (
-    <main className={`${GENERAL_STYLES.TEXT1} min-h-screen relative overflow-hidden`}>
+    <main className={`text1 min-h-screen relative overflow-hidden`}>
       <div className={RANKING_VIEW_STYLES.MAIN_CONTAINER}>
         {/* SIDEBAR FILTERS */}
         <SidebarFilters config={filterConfig} loading={loading}
@@ -78,13 +65,13 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
             <div className="flex items-center gap-3">
               {/* Bouton Filtres */}
               {!showFilters ? (
-                <button onClick={toggleShowFilters} className={RANKING_VIEW_STYLES.BTN_FILTER_OFF}>
+                <SecondaryButton onClick={toggleShowFilters} additional="px-4 py-2 md:px-5 md:py-2.5">
                   <span className="text-sm md:text-base">⚙️ Filtres</span>
-                </button>
+                </SecondaryButton>
               ) : (
-                <button onClick={toggleShowFilters} className={RANKING_VIEW_STYLES.BTN_FILTER_ON}>
+                <PrimaryButton onClick={toggleShowFilters} additional="border border-vert gap-2 px-4 py-2 md:px-5 md:py-2.5 md:text-base">
                   <CloseIcon /> Fermer
-                </button>
+                </PrimaryButton>
               )}
 
               {/* Sélecteur Tri */}
@@ -94,7 +81,7 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
                   <select 
                     value={sortConfig.sort}
                     onChange={(e) => onSort(e.target.value)}
-                    className={RANKING_VIEW_STYLES.SORT_SELECT}
+                    className={"pl-4 pr-8 py-2 md:py-2.5 rounded-full text-xs md:text-sm outline-none appearance-none cursor-pointer border border-white/10 hover:border-white/20 hover:bg-white/5 font-semibold text1"}
                   >
                     <option value={type === 'track' ? 'title' : 'name'}>Nom</option>
                     <option value="play_count">Streams</option>
@@ -109,16 +96,16 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
               </div>
 
               {/* Bouton Direction */}
-              <button onClick={() => onSort(sortConfig.sort)} className={RANKING_VIEW_STYLES.BTN_DIRECTION}>
+              <SecondaryButton onClick={() => onSort(sortConfig.sort)} additional="aspect-square h-[34px] md:h-[42px] shrink-0">
                 <span className={`text-base md:text-xl transition-transform duration-300 ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`}>
                   ⇅
                 </span>
-              </button>
+              </SecondaryButton>
             </div>
 
             {/* Titre de la page */}
             <h1 className={RANKING_VIEW_STYLES.PAGE_TITLE}>
-              {title} <span className={GENERAL_STYLES.TEXT2}>{type}s</span>
+              {title} <span className="text2">{type}s</span>
             </h1>
           </div>
 
@@ -139,11 +126,11 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
           </div>
 
           {/* LOAD MORE */}
-          {hasMore && (
-            <div className={RANKING_VIEW_STYLES.LOAD_MORE_WRAPPER}>
-              <button onClick={loadMore} disabled={loading} className={RANKING_VIEW_STYLES.BTN_LOAD_MORE}>
+          {(hasMore && !loading) && (
+            <div className="flex justify-center">
+              <SecondaryButton onClick={loadMore} additional="px-8 py-4 disabled:opacity-50">
                 {loading ? "Chargement..." : "Charger plus"}
-              </button>
+              </SecondaryButton>
             </div>
           )}
         </section>
