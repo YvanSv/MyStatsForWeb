@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
 import { FRONT_ROUTES } from "../constants/routes";
-import { BASE_UI, GENERAL_STYLES } from "../styles/general";
+import { BASE_UI } from "../styles/general";
 import { useAuth } from "../hooks/useAuth";
 import { ChartBar, Disc, Mic2, Music2 } from "lucide-react";
 import { PrimaryButton, TertiaryButton } from "./Atomic/Buttons";
@@ -57,7 +57,7 @@ export default function Header() {
   ] as const;
   const dropdown_menu = [
     { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}/${user?.id}` },
-    { id: 'Mon dashboard', icon: <ChartBar/>, path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
+    { id: 'Mon dashboard', icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
     { id: 'Import de datas', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
     { id: 'Mon compte', icon: <UserIcon/>, path: FRONT_ROUTES.ACCOUNT },
   ] as const;
@@ -138,12 +138,12 @@ export default function Header() {
         {/* Profil Section */}
         {isLoggedIn ? (
           <div className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
-            <button onClick={() => setMenuOpen(!menuOpen)} className={HEADER_STYLES.USER_BTN(menuOpen)}>
+            <button onClick={() => setMenuOpen(!menuOpen)} className={HEADER_STYLES.USER_BTN(false)}>
               <div className={HEADER_STYLES.USER_AVATAR}>{userName.charAt(0).toUpperCase()}</div>
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
             </button>
 
-            <PopoverMenu>
+            <PopoverMenu additional="-ml-4">
               {dropdown_menu.map(v => (
                 <MenuButton key={v.id} onClick={() => navigate(v.path)}
                   additional={`transition-all duration-300 ease-out text1`}

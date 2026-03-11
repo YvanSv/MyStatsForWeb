@@ -27,14 +27,14 @@ export function NavButton({children,onClick}:any) {
   );
 }
 
-export function PopoverMenu({children}:any) {
-  const agencement = 'absolute top-full left-1/2 -translate-x-1/2 z-50 overflow-hidden';
+export function PopoverMenu({children,additional}:any) {
+  const agencement = 'absolute top-full left-1/2 -translate-x-1/2 z-50 overflow-hidden whitespace-nowrap';
   const forme = 'rounded-xl mt-1 p-1';
   const couleur = 'bg-bg2 border border-white/10 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible';
   const transformation = 'transition-all duration-200';
 
   return (
-    <div className={`${agencement} ${couleur} ${transformation} ${forme}`}>
+    <div className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`}>
       {children}
     </div>
   );
