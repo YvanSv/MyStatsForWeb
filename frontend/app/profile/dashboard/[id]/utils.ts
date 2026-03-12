@@ -19,6 +19,7 @@ export interface DashboardStats {
   topAlbum: TopItem[] | null;
   topArtist: TopItem[] | null;
   entityEvolution: any[];
+  streamsEvolution: any[];
 }
 
 export const INITIAL_STATS = {
@@ -42,6 +43,7 @@ export const INITIAL_STATS = {
   topAlbum: null,
   topArtist: null,
   entityEvolution: [],
+  streamsEvolution: [],
 };
 
 interface TopItem {

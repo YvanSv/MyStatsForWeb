@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Timer, Music2, Mic2, Calendar, Disc, Play, Clock, Zap, CalendarIcon, Percent, CalendarDays } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProfile } from "@/app/hooks/useProfile";
-import {WeeklyChart, MonthlyChart, ClockChart, CumulativeChart, EvolutionChart, AnnualChart} from "@/app/components/dashboard/Charts";
+import {WeeklyChart, MonthlyChart, ClockChart, CumulativeChart, EvolutionChart, AnnualChart, EvolutionStreamsChart} from "@/app/components/dashboard/Charts";
 import { MetricSwitch } from "./MetricSwitch";
 import CompactStatCard from "./CompactStatCard";
 import AccordionItem from "./AccordionItem";
@@ -178,6 +178,7 @@ export default function UserStatsPage() {
                 value={loading ? "..." : extendedStats.ratio} />
             </div>
             <CumulativeChart data={extendedStats.cumulativeData}/>
+            <EvolutionStreamsChart data={extendedStats.streamsEvolution} loading={loading}/>
           </AccordionItem>
 
           {/* SECTION 2 : BIBLIOTHÈQUE */}

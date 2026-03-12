@@ -342,4 +342,58 @@ def get_dashboard_data(
         "topAlbum": [format_item(alb_ms_res),format_item(alb_ct_res)],
         "topArtist": [format_item(art_ms_res,True),format_item(art_ct_res,True)],
         "entityEvolution": evolution_sorted,
+        "streamsEvolution": get_streams_evolution(user_id,start_date,end_date,session)
     }
+
+def get_streams_evolution(
+    user_id: int,
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+    session: Session = Depends(get_session)
+):
+    filters = [TrackHistory.user_id == user_id]
+    if start_date: filters.append(TrackHistory.played_at >= start_date)
+    if end_date: filters.append(TrackHistory.played_at <= end_date)
+
+    daily_streams_stmt = (
+        select(
+            func.date(TrackHistory.played_at).label("day"),
+            func.count(TrackHistory.id).label("streams"),
+            func.sum(TrackHistory.ms_played).label("ms")
+        )
+        .where(*filters)
+        .group_by("day")
+        .order_by("day")
+    )
+    results = session.exec(daily_streams_stmt).all()
+    
+    if not results: return []
+    evolution_data = []
+    
+    # Dictionnaire pour accès rapide : {date_str: {streams, minutes}}
+    data_map = {
+        r.day.isoformat(): {
+            "streams": r.streams,
+            "minutes": round(r.ms / 60000, 1)
+        } for r in results
+    }
+    
+    start_day = results[0].day
+    end_day = results[-1].day
+    current_day = start_day
+    
+    from datetime import timedelta
+    
+    while current_day <= end_day:
+        d_str = current_day.isoformat()
+        day_data = data_map.get(d_str, {"streams": 0, "minutes": 0})
+        
+        evolution_data.append({
+            "date": d_str,
+            "display_date": current_day.strftime("%d/%m"),
+            "streams": day_data["streams"],
+            "minutes": day_data["minutes"]
+        })
+        current_day += timedelta(days=1)
+
+    return evolution_data
