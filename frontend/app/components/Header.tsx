@@ -18,8 +18,6 @@ export const HEADER_STYLES = {
 
   RIGHT_SECTION: `flex items-center gap-2 md:gap-4`,
 
-  USER_BTN: (isOpen: boolean) => `text1 flex items-center gap-2 md:gap-3 bg-bg2 px-3 md:px-4 py-2 ${BASE_UI.rounded.badge} text-sm font-medium border ${BASE_UI.anim.base} md:hover:border-vert ${isOpen ? 'border-vert' : 'border-white/10'}`,
-
   USER_AVATAR: `text2 ${BASE_UI.common.flexCenter} text-[13px] font-bold w-6 h-6 ${BASE_UI.rounded.badge} bg-vert/20`,
   
   MOBILE_OVERLAY: `absolute top-full left-0 w-full bg-bg1 backdrop-blur-xl border-b border-white/10 lg:hidden animate-in slide-in-from-top-2`,
@@ -138,10 +136,10 @@ export default function Header() {
         {/* Profil Section */}
         {isLoggedIn ? (
           <div className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
-            <button onClick={() => setMenuOpen(!menuOpen)} className={HEADER_STYLES.USER_BTN(false)}>
+            <TertiaryButton onClick={() => setMenuOpen(!menuOpen)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-3 py-1.5 text-sm font-medium md:hover:border-vert">
               <div className={HEADER_STYLES.USER_AVATAR}>{userName.charAt(0).toUpperCase()}</div>
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
-            </button>
+            </TertiaryButton>
 
             <PopoverMenu additional="-ml-4">
               {dropdown_menu.map(v => (
