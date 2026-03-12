@@ -39,7 +39,7 @@ export default function IntervalsSelector({ range, onIntervalChange }: {range:st
       {/* BOUTON BASCULE */}
       <button onClick={() => setIsOpen(!isOpen)}
         className={`${COMPONENT_STYLES.selector.btn(false, true)} z-10`}
-      >{isOpen ? '>' : '<'}</button>
+      >{isOpen ? '>' : '< Filtres'}</button>
 
       {/* CONTENU ANIMÉ */}
       <AnimatePresence>
