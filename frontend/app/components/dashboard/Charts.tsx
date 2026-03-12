@@ -73,25 +73,21 @@ const formatTicks = (hour: string) => {
 
 export function ClockChart({ data, metric = 'streams' }: { data: any[], metric: 'streams' | 'minutes' }) {
   return (
-    <div className="h-[250px] w-full bg-white/[0.02] rounded-3xl p-4 border border-white/10">
-      <h3 className="text-gray-400 text-xs font-bold uppercase px-2">Activité horaire</h3>
-      <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data} startAngle={90} endAngle={-270}>
-          <PolarGrid stroke="#374151" />
-          <PolarAngleAxis dataKey="hour" tickFormatter={formatTicks} tick={{ fill: '#9CA3AF', fontSize: 10 }}/>
-          <Tooltip content={<ChartToolTip/>} cursor={{ stroke: '#c084fc', strokeWidth: 1 }}/>
-          <Radar name={metric === 'streams' ? 'Streams' : 'Minutes'} dataKey={metric === 'streams' ? 'streams' : 'value'} stroke="#c084fc"
-            fill="#5e4d6c" fillOpacity={0.5} animationDuration={1000}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
-    </div>
+    <GraphContainer height={250} title="Activité horaire">
+      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data} startAngle={90} endAngle={-270}>
+        <PolarGrid stroke="#374151" />
+        <PolarAngleAxis dataKey="hour" tickFormatter={formatTicks} tick={{ fill: '#9CA3AF', fontSize: 10 }}/>
+        <Tooltip content={<ChartToolTip/>} cursor={{ stroke: '#c084fc', strokeWidth: 1 }}/>
+        <Radar name={metric === 'streams' ? 'Streams' : 'Minutes'} dataKey={metric === 'streams' ? 'streams' : 'value'} stroke="#c084fc"
+          fill="#5e4d6c" fillOpacity={0.5} animationDuration={1000}
+        />
+      </RadarChart>
+    </GraphContainer>
   );
 }
 
 export function CumulativeChart({ data }: { data: any[] }) {
   const color1 = '#1DD05D', color2 = '#065e25';
-
   return (
     <GraphContainer height={250} title={"Évolution cumulée"}>
       <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -109,7 +105,7 @@ export function CumulativeChart({ data }: { data: any[] }) {
         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
         <GraphXAxis data={"full_date"}/>
         <GraphYAxis/>
-        <GraphLegend marginBottom={'180px'}/>
+        <GraphLegend/>
         <Tooltip content={<ChartToolTip c1={color1} c2={color2}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
         <Area type="monotone" dataKey={"minutes"} stroke={color1} fillOpacity={1} fill="url(#colorArea1)" strokeWidth={2} dot={false}/>
         <Area type="monotone" dataKey={"streams"} stroke={color2} fillOpacity={1} fill="url(#colorArea2)" strokeWidth={2} dot={false}/>
@@ -119,16 +115,13 @@ export function CumulativeChart({ data }: { data: any[] }) {
 }
 
 export const EvolutionChart = ({ data, loading }:{data: any[], loading: boolean}) => {
-  if (loading) return <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl" />;
-
   const color1 = "#1DB954", color2 = "#60a5fa", color3 = "#a78bfa";
-
   return (
     <GraphContainer height={300} title={"Évolution de mes découvertes"}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
         <Tooltip content={<ChartToolTip c1={color1} c2={color2} c3={color3}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
-        <GraphLegend marginBottom={'230px'}/>
+        <GraphLegend/>
         <GraphXAxis data={"date"}/>
         <GraphYAxis/>
         <Line type="monotone" dataKey="tracks" name="Tracks" stroke={color1} strokeWidth={3} dot={false}/>
@@ -140,17 +133,14 @@ export const EvolutionChart = ({ data, loading }:{data: any[], loading: boolean}
 };
 
 export const EvolutionStreamsChart = ({ data, loading }:{data: any[], loading: boolean}) => {
-  if (loading) return <div className="h-[280px] w-full bg-white/5 animate-pulse rounded-xl" />;
-  const color1 = '#1DD05D';
-  const color2 = '#065e25';
-
+  const color1 = '#1DD05D', color2 = '#065e25';
   return (
     <GraphContainer height={280} title="Évolution du nombre d'écoutes">
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
           <GraphXAxis data={"date"}/>
           <GraphYAxis/>
-          <GraphLegend marginBottom='210px'/>
+          <GraphLegend/>
           <Tooltip content={<ChartToolTip c1={color1} c2={color2}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
           <Line type="monotone" dataKey="minutes" name="Minutes" stroke={`${color1}`} strokeWidth={3} dot={false}/>
           <Line type="monotone" dataKey="streams" name="Streams" stroke={`${color2}`} strokeWidth={3} dot={false} />
@@ -159,9 +149,8 @@ export const EvolutionStreamsChart = ({ data, loading }:{data: any[], loading: b
   );
 };
 
-const GraphLegend = ({marginBottom}:{marginBottom:string}) => (
-  <Legend iconType="circle" verticalAlign="bottom" height={36} align="right" wrapperStyle={{
-      marginBottom: `${marginBottom}`,
+const GraphLegend = () => (
+  <Legend iconType="circle" verticalAlign="top" height={36} align="right" wrapperStyle={{
       fontSize: "15px",
       textTransform: "uppercase",
     }}
@@ -189,8 +178,8 @@ const GraphYAxis = () => (
 
 function GraphContainer({children, height, title, additional}:any) {
   return (
-    <div className={`h-[${height}px] w-full bg-white/[0.02] border border-white/5 p-5 rounded-2xl ${additional}`}>
-      <h3 className="text-gray-400 text-xs font-bold uppercase mb-6">{title}</h3>
+    <div className={`h-[${height}px] w-full bg-white/[0.02] border border-white/5 p-4 rounded-2xl ${additional}`}>
+      <h3 className={`text-gray-400 text-xs font-bold uppercase`}>{title}</h3>
       <ResponsiveContainer width="100%" height="100%">
         {children}
       </ResponsiveContainer>
