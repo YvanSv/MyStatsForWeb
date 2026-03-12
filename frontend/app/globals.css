@@ -9,7 +9,7 @@
   --color-bleu: #2596BE;
 
   --color-bg2: #202020;
-  --color-bg1: #050505;
+  --color-bg1: #080808;
 }
 
 @layer components {
@@ -39,7 +39,7 @@
 }
 
 :root {
-  --background: #050505;
+  --background: #080808;
 }
 
 body {
