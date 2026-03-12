@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FRONT_ROUTES } from "../constants/routes";
 import PublicRoute from "../components/auth/PublicRoute";
+import { PrimaryButton } from "../components/Atomic/Buttons";
 
 export default function AuthPage() {
   return (
@@ -21,16 +22,16 @@ const AUTH_STYLES = {
   COL_LEFT: "flex-1 p-8 md:p-12 lg:p-16",
   COL_RIGHT: "flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.02]",
   TITLE: GENERAL_STYLES.TITRE_DOUBLE_FRAME,
-  SUBTITLE: `${GENERAL_STYLES.TEXT3} text-md tracking-[0.1em] font-medium`,
-  INPUT_LABEL: `${GENERAL_STYLES.TEXT3} text-[10px] uppercase font-bold ml-2`,
-  INPUT_FIELD: `${GENERAL_STYLES.TEXT1} w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:border-vert/50 outline-none transition-all focus:bg-white/10 placeholder:text-gray-700`,
+  SUBTITLE: `text3 text-md tracking-[0.1em] font-medium`,
+  INPUT_LABEL: `text3 text-[10px] uppercase font-bold ml-2`,
+  INPUT_FIELD: `text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:border-vert/50 outline-none transition-all focus:bg-white/10 placeholder:text-gray-700`,
   SEPARATOR_CONTAINER: "relative mb-8 text-center",
   SEPARATOR_LINE: "absolute inset-0 flex items-center",
-  SEPARATOR_TEXT: `${GENERAL_STYLES.TEXT3} relative px-4 bg-bg2 text-[9px] uppercase tracking-widest`,
+  SEPARATOR_TEXT: `text3 relative px-4 bg-bg2 text-[9px] uppercase tracking-widest`,
   ERROR_BOX: "bg-rouge/10 border border-rouge/20 text-rouge text-[10px] p-3 rounded-xl animate-shake",
   SUCCESS_BOX: "bg-vert/10 border border-vert/20 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500",
-  PRIMARY_BUTTON: `${GENERAL_STYLES.TEXT1} w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold border border-white/5 mt-4 transition-all active:scale-[0.98]`,
-  FOOTER_TEXT: `${GENERAL_STYLES.TEXT3} text-[10px] text-center mt-4 leading-relaxed px-4`
+  PRIMARY_BUTTON: `text1 w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold border border-white/5 mt-4 transition-all active:scale-[0.98]`,
+  FOOTER_TEXT: `text3 text-[10px] text-center mt-4 leading-relaxed px-4`
 };
 
 function AuthContent() {
@@ -94,9 +95,9 @@ function AuthContent() {
               <p className={AUTH_STYLES.SUBTITLE}>Bon retour sur MyStats.</p>
             </div>
 
-            <button onClick={loginSpotify} className={`${GENERAL_STYLES.GREENBUTTON} sm:text-base shadow-[0_0_20px_rgba(29,208,93,0.2)] w-full flex items-center justify-center gap-3 mb-8 py-4`}>
+            <PrimaryButton onClick={loginSpotify} additional="sm:text-base w-full gap-3 mb-8 py-4">
               <SpotifyIcon/>Continuer avec Spotify
-            </button>
+            </PrimaryButton>
             
             <div className={AUTH_STYLES.SEPARATOR_CONTAINER}>
               <div className={AUTH_STYLES.SEPARATOR_LINE}>
@@ -197,9 +198,9 @@ function AuthContent() {
               </div>
 
               <div className="pt-4">
-                <button disabled={loading} className={`${GENERAL_STYLES.GREENBUTTON} py-4 w-full sm:text-base`}>
+                <PrimaryButton disabled={loading} additional="py-4 w-full sm:text-base">
                   {loading ? "Création..." : "Créer mon compte"}
-                </button>
+                </PrimaryButton>
               </div>
               
               <p className={AUTH_STYLES.FOOTER_TEXT}>

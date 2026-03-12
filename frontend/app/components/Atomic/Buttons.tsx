@@ -21,8 +21,6 @@ export function PrimaryButton({children,additional,onClick,disabled,type}:Props)
       {children}
     </button>
   );
-
-  
 }
 
 export function SecondaryButton({children,additional,onClick}:Props) {
