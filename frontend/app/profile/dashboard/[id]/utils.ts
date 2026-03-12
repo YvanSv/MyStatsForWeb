@@ -77,22 +77,12 @@ export const getDateRange = (range: string, offset:number = 0) => {
       end.setHours(23, 59, 59, 999);
       break;
 
-    case '24h':
-      start.setHours(start.getHours() + (offset * 24) - 24);
-      end.setHours(end.getHours() + (offset * 24));
-      break;
-
     case 'week':
       const currentDay = start.getDay();
       start.setDate(start.getDate() - currentDay + (offset * 7));
       start.setHours(0, 0, 0, 0);
       end.setDate(start.getDate() + 6);
       end.setHours(23, 59, 59, 999);
-      break;
-
-    case '7d':
-      start.setDate(start.getDate() + (offset * 7) - 7);
-      end.setDate(end.getDate() + (offset * 7));
       break;
 
     case 'month':
@@ -127,27 +117,6 @@ export const getDateRange = (range: string, offset:number = 0) => {
       break;
     }
 
-    case '3m':
-      start.setDate(start.getDate() + (offset * 90) - 90);
-      end.setDate(end.getDate() + (offset * 90));
-      break;
-
-    case 'half': {
-      // 1. Déterminer le début du semestre (Janvier ou Juillet)
-      const isFirstHalf = start.getMonth() < 6;
-      const startMonth = isFirstHalf ? 0 : 6;
-      
-      // 2. Appliquer l'offset (1 unité = 6 mois)
-      start.setMonth(startMonth + (offset * 6), 1);
-      start.setHours(0, 0, 0, 0);
-      
-      // La fin du semestre est 6 mois après le début, moins 1 jour
-      end.setTime(start.getTime());
-      end.setMonth(start.getMonth() + 6, 0);
-      end.setHours(23, 59, 59, 999);
-      break;
-    }
-
     case '6m':
       start.setDate(start.getDate() + (offset * 180) - 180);
       end.setDate(end.getDate() + (offset * 180));
@@ -158,11 +127,6 @@ export const getDateRange = (range: string, offset:number = 0) => {
       start.setHours(0, 0, 0, 0);
       end.setFullYear(start.getFullYear(), 11, 31);
       end.setHours(23, 59, 59, 999);
-      break;
-
-    case '1y':
-      start.setFullYear(start.getFullYear() + offset - 1);
-      end.setFullYear(end.getFullYear() + offset);
       break;
 
     case 'lifetime':
@@ -180,7 +144,7 @@ export const getDateRange = (range: string, offset:number = 0) => {
 
 export const getRangeLabel = (range: string, offset: number) => {
   const { start } = getDateRange(range, offset);
-  if (!start && range === 'lifetime') return "Tout le temps";
+  if (!start && range === 'lifetime') return "Tout l'historique";
   
   const date = new Date(start!);
   const year = date.getFullYear();
@@ -198,14 +162,8 @@ export const getRangeLabel = (range: string, offset: number) => {
       if (months === 5) return `Été ${year}`;
       if (months === 8) return `Automne ${year}`;
       return `Hiver ${year}`;
-    
-    case 'half':
-      const month = date.getMonth();
-      if (month < 6) return `1ère moitié ${year}`;
-      return `2ème moitié ${year}`
 
     case 'year': return `${year}`;
-    case 'lifetime': return "Lifetime";
     default: return null;
   }
 };

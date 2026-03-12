@@ -13,3 +13,13 @@ export interface DataInfo {
   rating: number;
   type: 'track' | 'album' | 'artist';
 }
+
+export interface UserProfile {
+  display_name: string;
+  avatar: string;
+  banner: string;
+  total_minutes: number;
+  top_artist: string;
+  top_genre: string;
+  recent_tracks: any[];
+}

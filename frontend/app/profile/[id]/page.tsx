@@ -8,6 +8,8 @@ import { GENERAL_STYLES } from "@/app/styles/general";
 import { FRONT_ROUTES } from "@/app/constants/routes";
 import { BarChart3 } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "@/app/components/Atomic/Buttons";
+import { UserProfile } from "@/app/data/DataInfos";
+import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 
 const PROFILE_STYLES = {
   MAIN_WRAPPER: "min-h-screen pb-20 bg-bg1",
@@ -19,11 +21,10 @@ const PROFILE_STYLES = {
 
   // CONTAINER & HEADER
   CONTAINER: "max-w-6xl mx-auto px-6 -mt-24 relative z-10",
-  HEADER_FLEX: "flex flex-col md:flex-row items-end gap-6 mb-12",
-  AVATAR: "w-40 h-40 rounded-[35px] border-4 border-bg1 bg-bg2 object-cover shadow-2xl",
-  INFO_BLOCK: "flex-1 mb-4",
-  NAME: `text1 text-[40px] font-semibold leading-none mb-2`,
-  BADGE: `text2 tracking-[0.2em] text-sm uppercase`,
+  HEADER_FLEX: "profile-header",
+  INFO_BLOCK: "info-block-profile",
+  NAME: `username-profile`,
+  BADGE: `badge-profile`,
 
   // ACTIONS
   ACTION_GROUP: "flex gap-3 mb-4",
@@ -40,16 +41,6 @@ const PROFILE_STYLES = {
   TRACK_ARTIST: `text3 text-sm`,
   TRACK_DATE: `text3 text-xs font-mono`
 };
-
-interface UserProfile {
-  display_name: string;
-  avatar: string;
-  banner: string;
-  total_minutes: number;
-  top_artist: string;
-  top_genre: string;
-  recent_tracks: any[];
-}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -92,14 +83,7 @@ export default function ProfilePage() {
 
       <div className={PROFILE_STYLES.CONTAINER}>
         {/* HEADER PROFIL */}
-        <div className={PROFILE_STYLES.HEADER_FLEX}>
-          <img src={profile.avatar} className={PROFILE_STYLES.AVATAR} alt="Avatar" />
-          
-          <div className={PROFILE_STYLES.INFO_BLOCK}>
-            <h1 className={PROFILE_STYLES.NAME}>{profile.display_name}</h1>
-            <p className={PROFILE_STYLES.BADGE}>Membre Premium</p>
-          </div>
-
+        <AvatarContainer url={profile.avatar} username={profile.display_name} additional="mb-12">
           {/* --- ACTIONS --- */}
           <div className={PROFILE_STYLES.ACTION_GROUP}>
             {isOwner ? (
@@ -116,7 +100,7 @@ export default function ProfilePage() {
               <ShareIcon size={20} />
             </SecondaryButton>
           </div>
-        </div>
+        </AvatarContainer>
 
         {/* STATS */}
         <div className={PROFILE_STYLES.STATS_GRID}>

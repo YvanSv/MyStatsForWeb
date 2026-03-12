@@ -132,19 +132,19 @@ export const EvolutionChart = ({ data, loading }:{data: any[], loading: boolean}
   );
 };
 
-export const EvolutionStreamsChart = ({ data, loading }:{data: any[], loading: boolean}) => {
+export const EvolutionStreamsChart = ({ data }:{data: any[]}) => {
   const color1 = '#1DD05D', color2 = '#065e25';
   return (
     <GraphContainer height={280} title="Évolution du nombre d'écoutes">
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <GraphXAxis data={"date"}/>
-          <GraphYAxis/>
-          <GraphLegend/>
-          <Tooltip content={<ChartToolTip c1={color1} c2={color2}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
-          <Line type="monotone" dataKey="minutes" name="Minutes" stroke={`${color1}`} strokeWidth={3} dot={false}/>
-          <Line type="monotone" dataKey="streams" name="Streams" stroke={`${color2}`} strokeWidth={3} dot={false} />
-        </LineChart>
+      <LineChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+        <GraphXAxis data={"date"}/>
+        <GraphYAxis/>
+        <GraphLegend/>
+        <Tooltip content={<ChartToolTip c1={color1} c2={color2}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
+        <Line type="monotone" dataKey="minutes" name="Minutes" stroke={`${color1}`} strokeWidth={3} dot={false}/>
+        <Line type="monotone" dataKey="streams" name="Streams" stroke={`${color2}`} strokeWidth={3} dot={false} />
+      </LineChart>
     </GraphContainer>
   );
 };
@@ -178,11 +178,13 @@ const GraphYAxis = () => (
 
 function GraphContainer({children, height, title, additional}:any) {
   return (
-    <div className={`h-[${height}px] w-full bg-white/[0.02] border border-white/5 p-4 rounded-2xl ${additional}`}>
+    <div style={{ height: `${height}px` }} className={`flex flex-col w-full bg-white/[0.02] border border-white/5 p-4 rounded-2xl ${additional}`}>
       <h3 className={`text-gray-400 text-xs font-bold uppercase`}>{title}</h3>
-      <ResponsiveContainer width="100%" height="100%">
-        {children}
-      </ResponsiveContainer>
+      <div className='flex-1 min-h-0 w-full'>
+        <ResponsiveContainer width="100%" height="100%">
+          {children}
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

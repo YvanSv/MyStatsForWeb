@@ -11,6 +11,9 @@ import AccordionItem from "./AccordionItem";
 import IntervalsSelector from "./IntervalSelector";
 import TopMediaCard from "./TopMediaCard";
 import { DashboardStats, formatToInputDate, getDateRange, getRangeLabel, INITIAL_STATS } from "./utils";
+import { UserProfile } from "@/app/data/DataInfos";
+import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
+import { SecondaryButton } from "@/app/components/Atomic/Buttons";
 
 const STYLES = {
   main: "min-h-screen bg-bg1 text-white",
@@ -27,7 +30,7 @@ const STYLES = {
     container: "flex flex-col lg:flex-row min-h-[200px] w-full items-stretch rounded-[32px] overflow-hidden border border-white/5",
     stats: "grid grid-cols-1 md:grid-cols-3 gap-4",
     habits: (range: string) => {
-      const isWide = ["season","3m","half","6m","year","1y","lifetime"].includes(range);
+      const isWide = ["6m","year","1y","lifetime"].includes(range);
       return `gap-4 grid grid-cols-1 ${isWide ? "md:grid-cols-3" : "md:grid-cols-2"}`;
     },
   }
@@ -35,9 +38,9 @@ const STYLES = {
 
 export const FILTER_BAR_STYLES = {
   // Le conteneur principal (Effet de verre + Fond sombre)
-  WRAPPER: `flex flex-col px-6 mx-7`,
+  WRAPPER: `flex flex-col`,
   // Conteneur des inputs de date
-  DATE_GROUP: `flex items-center gap-3 px-4 py-2`,
+  DATE_GROUP: `flex items-center gap-3`,
   // Style de l'input date natif
   DATE_INPUT: `bg-transparent text-sm text-white outline-none [color-scheme:dark] appearance-none appearance-none
     [&::-webkit-calendar-picker-indicator]:absolute
@@ -47,15 +50,10 @@ export const FILTER_BAR_STYLES = {
     m-0
     p-0
     w-[90px]`,
-  // Barre de navigation du bas (+ / -)
-  NAV_CONTROLS: `flex items-center justify-center gap-4 pt-2`,
-  // Boutons + et -
-  NAV_BTN: `text-xl font-bold text-gray-500 hover:text-vert active:scale-95 cursor-pointer transition-all duration-300 px-4`,
 };
 
-export default function UserStatsPage() {
+export default function DashboardPage() {
   const { id } = useParams();
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -64,7 +62,8 @@ export default function UserStatsPage() {
   const [extendedStats, setExtendedStats] = useState(INITIAL_STATS as DashboardStats);
   const [activeTab, setActiveTab] = useState<'activite' | 'diversite' | 'habitudes'>("activite");
   const [metric, setMetric] = useState<'streams' | 'minutes'>('minutes');
-  const { getDashboard } = useProfile();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { getDashboard, getProfile, loading: profileLoading } = useProfile();
 
   const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
 
@@ -76,6 +75,13 @@ export default function UserStatsPage() {
   };
 
   useEffect(() => {
+    if (!id) return;
+    const getProfileData = async () => {setProfile(await getProfile(`${id}`))};
+    getProfileData();
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
     setLoading(true);
     const fetchStats = async () => {
       const { start, end } = getDateRange(range, offset);
@@ -86,36 +92,32 @@ export default function UserStatsPage() {
       finally { setTimeout(() => setLoading(false), 150) }
     };
 
-    if (id) fetchStats();
-  }, [id, range, offset, getDashboard]);
+    fetchStats();
+  }, [id, range, offset]);
 
   return (
     <main className={STYLES.main}>
       <div className={STYLES.container}>
         {/* --- HEADER --- */}
         <div className={STYLES.nav.bar}>
-          <div className="flex flex-row gap-12 items-center">
-            <button onClick={() => router.back()} className={STYLES.nav.back}>
-              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> 
-              <span>Retour</span>
-            </button>
+          <div className="flex flex-row gap-12 items-center pl-8">
             <header>
               <h1 className={STYLES.nav.title}>Analyse Détaillée</h1>
               <p className={STYLES.nav.sub}>Plongée profonde dans les habitudes d'écoute.</p>
             </header>
           </div>
-          <div className="hidden lg:flex items-center justify-center">
-            <IntervalsSelector range={range} onIntervalChange={onIntervalChange}/>
-          </div>
         </div>
 
         {/* --- FILTRES --- */}
         <div className={FILTER_BAR_STYLES.WRAPPER}>
-          <div className={"grid grid-cols-3 items-center"}>
-            <div/>
-            <div className={FILTER_BAR_STYLES.NAV_CONTROLS}>
-              <button className={FILTER_BAR_STYLES.NAV_BTN} onClick={decreaseInterval}>−</button>
-              <div className="w-[1px] h-4 bg-white/10" />
+          <div className={"grid grid-cols-3 items-end mb-3"}>
+            <AvatarContainer url={profile?.avatar} username={profile?.display_name}/>
+
+            <div className="flex items-center justify-center gap-4">
+              <SecondaryButton onClick={decreaseInterval} additional="text-xl hover:text-vert px-2.5 pb-1">
+                −
+              </SecondaryButton>
+              <div className="w-[1px] h-4 bg-white/10"/>
               <div className={FILTER_BAR_STYLES.DATE_GROUP}>
                 <Calendar size={14} className="text-vert flex-shrink-0" />
                 
@@ -144,11 +146,19 @@ export default function UserStatsPage() {
                   )}
                 </div>
               </div>
-              <div className="w-[1px] h-4 bg-white/10" />
-              <button className={FILTER_BAR_STYLES.NAV_BTN} onClick={increaseInterval}>+</button>
+              <div className="w-[1px] h-4 bg-white/10"/>
+              <SecondaryButton onClick={increaseInterval} additional="text-xl hover:text-vert px-2.5 pb-1">
+                +
+              </SecondaryButton>
             </div>
-            <div className="flex justify-end">
-              <MetricSwitch value={metric} onChange={setMetric}/>
+
+            <div className="flex flex-col gap-4">
+              <div className="hidden lg:flex justify-end">
+                <IntervalsSelector range={range} onIntervalChange={onIntervalChange}/>
+              </div>
+              <div className="flex w-full justify-end">
+                <MetricSwitch value={metric} onChange={setMetric}/>
+              </div>
             </div>
           </div>
         </div>
@@ -169,7 +179,7 @@ export default function UserStatsPage() {
                 value={loading ? "..." : extendedStats.ratio} />
             </div>
             <CumulativeChart data={extendedStats.cumulativeData}/>
-            <EvolutionStreamsChart data={extendedStats.streamsEvolution} loading={loading}/>
+            <EvolutionStreamsChart data={extendedStats.streamsEvolution}/>
           </AccordionItem>
 
           {/* SECTION 2 : BIBLIOTHÈQUE */}
@@ -205,7 +215,7 @@ export default function UserStatsPage() {
                 value={loading ? "..." : extendedStats.peakHour} />
               <CompactStatCard label="Jour favori" icon={<CalendarIcon className="text-purple-400" size={32}/>}
                 value={loading ? "..." : extendedStats.peakDay} />
-              {["3m", "season", "6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
+              {["6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
                 <CompactStatCard label="Mois musical" icon={<CalendarDays className="text-purple-400" size={32}/>}
                   value={loading ? "..." : extendedStats.peakMonth} />
               }
@@ -213,7 +223,7 @@ export default function UserStatsPage() {
             <div className={STYLES.grid.habits(range)}>
               <ClockChart data={extendedStats.clockData} metric={metric}/>
               <WeeklyChart data={extendedStats.weeklyData} metric={metric}/>
-              {["3m", "season", "6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
+              {["6m", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
                 <MonthlyChart data={extendedStats.monthlyData} metric={metric}/>
               }
             </div>
