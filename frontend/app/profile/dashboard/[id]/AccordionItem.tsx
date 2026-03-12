@@ -1,4 +1,4 @@
-import { MouseIcon, Plus, Pointer } from "lucide-react";
+import { Pointer } from "lucide-react";
 
 const BASE_UI = {
   glass: "bg-white/[0.02] border border-white/5",

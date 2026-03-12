@@ -23,11 +23,6 @@ const STYLES = {
     sub: "text-gray-400",
   },
   
-  inputs: {
-    container: "flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2",
-    date: "bg-transparent text-xs text-gray-300 outline-none cursor-pointer [color-scheme:dark]",
-  },
-  
   grid: {
     container: "flex flex-col lg:flex-row min-h-[200px] w-full items-stretch rounded-[32px] overflow-hidden border border-white/5",
     stats: "grid grid-cols-1 md:grid-cols-3 gap-4",
@@ -41,8 +36,6 @@ const STYLES = {
 export const FILTER_BAR_STYLES = {
   // Le conteneur principal (Effet de verre + Fond sombre)
   WRAPPER: `flex flex-col px-6 mx-7`,
-  // La ligne principale (Switch | Intervals | Dates)
-  TOP_ROW: "grid grid-cols-[1fr_auto_1fr] items-center gap-6",
   // Conteneur des inputs de date
   DATE_GROUP: `flex items-center gap-3 px-4 py-2`,
   // Style de l'input date natif
@@ -58,8 +51,6 @@ export const FILTER_BAR_STYLES = {
   NAV_CONTROLS: `flex items-center justify-center gap-4 pt-2`,
   // Boutons + et -
   NAV_BTN: `text-xl font-bold text-gray-500 hover:text-vert active:scale-95 cursor-pointer transition-all duration-300 px-4`,
-  // Séparateur vertical entre les boutons + et -
-  NAV_SEPARATOR: "w-[1px] h-4 bg-white/10"
 };
 
 export default function UserStatsPage() {
