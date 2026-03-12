@@ -29,7 +29,7 @@ const COMPONENT_STYLES = {
   },
 }
 
-export default function AccordionItem({ id, title, isOpen, onClick, icon, children }: any) {
+export default function AccordionItem({ title, isOpen, onClick, icon, children, switchOption }: any) {
   return (
     <div onClick={onClick} className={COMPONENT_STYLES.accordion.item(isOpen)}>
       {/* Label Vertical (Fermé) */}
@@ -39,7 +39,7 @@ export default function AccordionItem({ id, title, isOpen, onClick, icon, childr
         </span>
       </div>
 
-      {/* --- NOUVEL ÉLÉMENT : Indicateur de clic --- */}
+      {/* Indicateur de clic */}
       <div className={COMPONENT_STYLES.accordion.indicator(isOpen)}>
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-white/5">
@@ -53,6 +53,7 @@ export default function AccordionItem({ id, title, isOpen, onClick, icon, childr
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-xl bg-white/5">{icon}</div>
           <h2 className="text-2xl font-bold">{title}</h2>
+          {switchOption}
         </div>
         <div className="flex flex-col gap-8">{children}</div>
       </div>

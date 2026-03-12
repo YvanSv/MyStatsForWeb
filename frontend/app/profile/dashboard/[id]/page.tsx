@@ -37,8 +37,6 @@ const STYLES = {
 };
 
 export const FILTER_BAR_STYLES = {
-  // Le conteneur principal (Effet de verre + Fond sombre)
-  WRAPPER: `flex flex-col`,
   // Conteneur des inputs de date
   DATE_GROUP: `flex items-center gap-3`,
   // Style de l'input date natif
@@ -99,67 +97,55 @@ export default function DashboardPage() {
     <main className={STYLES.main}>
       <div className={STYLES.container}>
         {/* --- HEADER --- */}
-        <div className={STYLES.nav.bar}>
-          <div className="flex flex-row gap-12 items-center pl-8">
+        <div className={"flex flex-row justify-between items-end mb-3"}>
+          <AvatarContainer url={profile?.avatar} username={profile?.display_name} title={
             <header>
               <h1 className={STYLES.nav.title}>Analyse Détaillée</h1>
               <p className={STYLES.nav.sub}>Plongée profonde dans les habitudes d'écoute.</p>
             </header>
+          }/>
+
+          <div className="flex items-center justify-center gap-4">
+            <SecondaryButton onClick={decreaseInterval} additional="text-xl hover:text-vert px-2.5 pb-1">
+              −
+            </SecondaryButton>
+            <div className="w-[1px] h-4 bg-white/10"/>
+            <div className={FILTER_BAR_STYLES.DATE_GROUP}>
+              <Calendar size={14} className="text-vert flex-shrink-0" />
+              
+              {/* On enveloppe les deux états dans un conteneur qui stabilise la hauteur */}
+              <div className="flex items-center justify-center h-8 min-w-[210px]"> 
+                {getRangeLabel(range, offset) ? (
+                  <span className="text-sm font-medium text-white text-center leading-none">
+                    {getRangeLabel(range, offset)}
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="date" 
+                      value={startDate.split('T')[0]} 
+                      className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
+                      onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                    />
+                    <span className="text-gray-600 leading-none">→</span>
+                    <input 
+                      type="date" 
+                      value={endDate.split('T')[0]} 
+                      className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
+                      onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="w-[1px] h-4 bg-white/10"/>
+            <SecondaryButton onClick={increaseInterval} additional="text-xl hover:text-vert px-2.5 pb-1">
+              +
+            </SecondaryButton>
           </div>
-        </div>
 
-        {/* --- FILTRES --- */}
-        <div className={FILTER_BAR_STYLES.WRAPPER}>
-          <div className={"grid grid-cols-3 items-end mb-3"}>
-            <AvatarContainer url={profile?.avatar} username={profile?.display_name}/>
-
-            <div className="flex items-center justify-center gap-4">
-              <SecondaryButton onClick={decreaseInterval} additional="text-xl hover:text-vert px-2.5 pb-1">
-                −
-              </SecondaryButton>
-              <div className="w-[1px] h-4 bg-white/10"/>
-              <div className={FILTER_BAR_STYLES.DATE_GROUP}>
-                <Calendar size={14} className="text-vert flex-shrink-0" />
-                
-                {/* On enveloppe les deux états dans un conteneur qui stabilise la hauteur */}
-                <div className="flex items-center justify-center h-8 min-w-[210px]"> 
-                  {getRangeLabel(range, offset) ? (
-                    <span className="text-sm font-medium text-white text-center leading-none">
-                      {getRangeLabel(range, offset)}
-                    </span>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="date" 
-                        value={startDate.split('T')[0]} 
-                        className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
-                        onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
-                      />
-                      <span className="text-gray-600 leading-none">→</span>
-                      <input 
-                        type="date" 
-                        value={endDate.split('T')[0]} 
-                        className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
-                        onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="w-[1px] h-4 bg-white/10"/>
-              <SecondaryButton onClick={increaseInterval} additional="text-xl hover:text-vert px-2.5 pb-1">
-                +
-              </SecondaryButton>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div className="hidden lg:flex justify-end">
-                <IntervalsSelector range={range} onIntervalChange={onIntervalChange}/>
-              </div>
-              <div className="flex w-full justify-end">
-                <MetricSwitch value={metric} onChange={setMetric}/>
-              </div>
-            </div>
+          <div className="hidden lg:flex flex-col items-end min-w-[305px]">
+            <IntervalsSelector range={range} onIntervalChange={onIntervalChange}/>
           </div>
         </div>
 
@@ -185,8 +171,13 @@ export default function DashboardPage() {
           {/* SECTION 2 : BIBLIOTHÈQUE */}
           <AccordionItem id="diversite" title="Bibliothèque"
             isOpen={activeTab === "diversite"} onClick={() => setActiveTab("diversite")}
-            icon={<Disc className="text-blue-400" />}
+            icon={<Disc className="text-blue-400" />} switchOption={
+              <div className="flex w-full justify-end mb-1">
+                <MetricSwitch value={metric} onChange={setMetric}/>
+              </div>
+            }
           >
+            
             <div className={STYLES.grid.stats}>
               <CompactStatCard label="Musiques" icon={<Music2 size={32} className="text-blue-400"/>}
                 value={loading ? "..." : formatter.format(extendedStats.uniqueTracks)} />
@@ -208,7 +199,11 @@ export default function DashboardPage() {
           {/* SECTION 3 : HABITUDES */}
           <AccordionItem id="habitudes" title="Habitudes"
             isOpen={activeTab === "habitudes"} onClick={() => setActiveTab("habitudes")}
-            icon={<Zap className="text-purple-400" />}
+            icon={<Zap className="text-purple-400" />} switchOption={
+              <div className="flex w-full justify-end mb-1">
+                <MetricSwitch value={metric} onChange={setMetric}/>
+              </div>
+            }
           >
             <div className={STYLES.grid.habits(range)}>
               <CompactStatCard label="Heure de pointe" icon={<Clock className="text-purple-400" size={32}/>}

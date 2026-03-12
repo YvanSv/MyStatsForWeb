@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar1, CalendarDays, CalendarDaysIcon, Clock1, Flower2, Infinity } from "lucide-react";
+import { Infinity } from "lucide-react";
 import { useState } from "react";
 
 const BASE_UI = {
@@ -9,7 +9,7 @@ const BASE_UI = {
 
 const COMPONENT_STYLES = {
   selector: {
-    container: "flex bg-white/[0.03] border border-white/10 rounded-xl shadow-inner overflow-hidden",
+    container: "inline-flex bg-white/[0.03] border border-white/10 rounded-xl shadow-inner overflow-hidden",
     btn: (isActive: boolean, isLifetime = false) => `
       px-2 py-1 text-xs font-medium ${BASE_UI.transition} whitespace-nowrap ${BASE_UI.flexCenter} border-white/[0.05] border-l
       ${isLifetime ? "row-span-2" : ""}
@@ -35,7 +35,7 @@ export default function IntervalsSelector({ range, onIntervalChange }: {range:st
   ];
 
   return (
-    <div className={`${COMPONENT_STYLES.selector.container} mr-2`}>
+    <div className={`${COMPONENT_STYLES.selector.container}`}>
       {/* BOUTON BASCULE */}
       <button onClick={() => setIsOpen(!isOpen)}
         className={`${COMPONENT_STYLES.selector.btn(false, true)} z-10`}
