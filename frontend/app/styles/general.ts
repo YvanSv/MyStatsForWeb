@@ -22,7 +22,6 @@ export const BASE_UI = {
 };
 
 export const GENERAL_STYLES = {
-  TITRE_DOUBLE_FRAME: `${BASE_UI.text.white} font-semibold mb-3 text-[16px] md:text-[24px]`,
   TRANSITION_TEXT_VERT: `transition-colors duration-300 hover:${BASE_UI.text.vert}`,
   TRANSITION_ZOOM: BASE_UI.anim.hoverZoom,
 };
