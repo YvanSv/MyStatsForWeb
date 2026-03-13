@@ -89,7 +89,7 @@ export const ACCUEIL_STYLES = {
   MAIN: `text1 flex-1 flex flex-col min-h-screen selection:bg-vert/30 selection:text-vert overflow-x-hidden`,
   
   // Structure & Layouts
-  HERO_SECTION: "flex flex-col relative text-center pt-24 px-6 mt-12 z-10",
+  HERO_SECTION: "flex flex-col relative text-center pt-14 md:pt-24 px-6 mt-12 z-10",
   HERO_BUTTON_GROUP: "flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center px-6 sm:px-0",
   
   // Reste du bloc
@@ -101,9 +101,9 @@ export const ACCUEIL_STYLES = {
   STATS_SECTION: "mt-24 w-full max-w-6xl mx-auto px-6 pt-8 border-t border-white/5",
   STATS_GRID: "flex justify-center gap-12 md:gap-24 pt-12",
   STAT_ITEM: "flex flex-col items-center md:items-start space-y-2",
-  STAT_NUMBER: "text-4xl md:text-5xl font-black tracking-tighter text-white",
-  STAT_LABEL: "text-xs uppercase tracking-[0.3em] text-gray-500 font-bold",
+  STAT_NUMBER: "text-2xl md:text-4xl md:text-5xl font-black tracking-tighter text-white",
+  STAT_LABEL: "text-[10px] md:text-xs uppercase tracking-[0.3em] text-gray-500 font-bold",
 
-  TECH_SECTION: "py-18 mt-24 px-6 bg-white/[0.02]",
-  TECH_GRID: "flex flex-wrap justify-center gap-4 max-w-4xl mx-auto",
+  TECH_SECTION: "py-12 md:py-18 mt-24 px-6 bg-white/[0.02]",
+  TECH_GRID: "grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto justify-items-center",
 };

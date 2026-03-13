@@ -116,7 +116,7 @@ export default function Header() {
         {/* View Mode Selector */}
         <div className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
           <TertiaryButton onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
-            additional="text2 flex flex-col items-center p-2 justify-center"
+            additional="text2 flex flex-col items-center p-1 md:p-2 justify-center"
           >
             <div className="flex items-center justify-center">{activeView.icon}</div>
             <ChevronDown size={14} className={`opacity-50 transition-transform ${isViewMenuOpen ? 'rotate-180' : ''}`} />
@@ -136,7 +136,7 @@ export default function Header() {
         {/* Profil Section */}
         {isLoggedIn ? (
           <div className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
-            <TertiaryButton onClick={() => setMenuOpen(!menuOpen)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-3 py-1.5 text-sm font-medium md:hover:border-vert">
+            <TertiaryButton onClick={() => setMenuOpen(!menuOpen)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 md:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
               <div className={HEADER_STYLES.USER_AVATAR}>{userName.charAt(0).toUpperCase()}</div>
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
             </TertiaryButton>
@@ -160,7 +160,7 @@ export default function Header() {
         )}
 
         {/* BURGER BUTTON MOBILE */}
-        <button className="lg:hidden p-2" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
+        <button className="lg:hidden p-1" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
           <div className="space-y-1.5">
             <div className={`w-6 h-0.5 bg-white transition-all ${isMobileNavOpen ? 'rotate-45 translate-y-2' : ''}`} />
             <div className={`w-6 h-0.5 bg-white ${isMobileNavOpen ? 'opacity-0' : ''}`} />

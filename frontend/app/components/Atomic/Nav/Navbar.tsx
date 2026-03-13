@@ -3,12 +3,12 @@ import Image from "next/image";
 export function HeaderLogo({onClick}:any) {
   const agencement = "flex items-center";
   const forme = 'md:gap-3';
-  const couleur = 'text1 text-[24px] md:text-[40px] tracking-tighter font-semibold';
+  const couleur = 'text1 text-[28px] md:text-[40px] tracking-tighter font-semibold';
   const transformation = 'cursor-pointer transition-all duration-300 hover:text-vert hover:scale-105';
 
   return (
     <div className={`${agencement} ${couleur} ${transformation} ${forme}`} onClick={onClick}>
-      <Image src="/logo.png" alt="Logo" width={60} height={60} priority className="w-10 md:w-13 h-auto" />
+      <Image src="/logo.png" alt="Logo" width={60} height={60} priority className="w-8 md:w-13 h-auto" />
       MyStats
     </div>
   );
