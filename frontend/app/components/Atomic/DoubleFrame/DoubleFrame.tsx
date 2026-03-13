@@ -17,7 +17,7 @@ export function DoubleFrame({icons,titles,subtitles,contents}:any) {
       <div className={STYLE.CARD}>
         <div className={STYLE.CONTAINER_FLEX}>
           <div className={STYLE.COL_LEFT}>
-            <ContentDF icon={icons[0]} title={titles[0]} subtitle={subtitles[0]} content={contents[0]}/>
+            <ContentDF icon={icons && icons[0]} title={titles[0]} subtitle={subtitles[0]} content={contents[0]}/>
           </div>
 
           <div className={STYLE.SEPARATOR}>
@@ -25,7 +25,7 @@ export function DoubleFrame({icons,titles,subtitles,contents}:any) {
           </div>
 
           <div className={STYLE.COL_RIGHT}>
-            <ContentDF icon={icons[1]} title={titles[1]} subtitle={subtitles[1]} content={contents[1]}/>
+            <ContentDF icon={icons && icons[1]} title={titles[1]} subtitle={subtitles[1]} content={contents[1]}/>
           </div>
         </div>
       </div>

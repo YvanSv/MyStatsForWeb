@@ -60,7 +60,7 @@ export default function HomePage() {
       </section>
 
       {/* SECTION TECHNIQUE */}
-      <section className={ACCUEIL_STYLES.TECH_SECTION}>
+      <section className={ACCUEIL_STYLES.STATS_SECTION}>
         <h2 className={ACCUEIL_STYLES.TECH_H2}>Le Projet MyStats</h2>
         <div className={ACCUEIL_STYLES.TECH_GRID}>
           {TECHNOS.map(tech => (
@@ -104,6 +104,5 @@ export const ACCUEIL_STYLES = {
   STAT_NUMBER: "text-2xl md:text-4xl md:text-5xl font-black tracking-tighter text-white",
   STAT_LABEL: "text-[10px] md:text-xs uppercase tracking-[0.3em] text-gray-500 font-bold",
 
-  TECH_SECTION: "py-12 md:py-18 mt-24 px-6 bg-white/[0.02]",
-  TECH_GRID: "grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto justify-items-center",
+  TECH_GRID: "grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto justify-items-center my-12",
 };
