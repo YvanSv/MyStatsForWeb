@@ -13,8 +13,8 @@ import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from
 export const HEADER_STYLES = {
   CONTAINER: `grid grid-cols-2 lg:grid-cols-3 items-center sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-0.5 px-4 md:px-6 border-b border-white/10`,
   
-  NAV_PC: 'hidden lg:grid grid-cols-3 justify-items-center h-fit text-[24px] font-semibold',  
-  NAV_ITEM_WRAPPER: "relative group mx-auto flex",
+  NAV_PC: 'hidden lg:flex justify-between h-fit text-[24px] font-semibold',  
+  NAV_ITEM_WRAPPER: "relative group flex",
 
   RIGHT_SECTION: `flex justify-end items-center gap-2 md:gap-4`,
   USER_AVATAR: `text2 ${BASE_UI.common.flexCenter} text-[13px] font-bold w-6 h-6 ${BASE_UI.rounded.badge} bg-vert/20`,

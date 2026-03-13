@@ -86,7 +86,7 @@ const StatCard = ({ value, label }: { value: string, label: string }) => (
 );
 
 export const ACCUEIL_STYLES = {
-  MAIN: `text1 flex-1 flex flex-col min-h-screen selection:bg-vert/30 selection:text-vert overflow-x-hidden`,
+  MAIN: `text1 flex-1 flex flex-col min-h-screen overflow-x-hidden`,
   
   // Structure & Layouts
   HERO_SECTION: "flex flex-col relative text-center pt-14 md:pt-24 px-6 mt-12 z-10",
