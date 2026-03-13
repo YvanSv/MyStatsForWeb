@@ -31,7 +31,7 @@ const STYLES = {
     stats: "grid grid-cols-1 md:grid-cols-3 gap-4",
     habits: (range: string) => {
       const isWide = ["6m","year","1y","lifetime"].includes(range);
-      return `gap-4 grid grid-cols-1 ${isWide ? "md:grid-cols-3" : "md:grid-cols-2"}`;
+      return `gap-4 grid grid-cols-1 ${isWide ? "md:grid-cols-3" : range === "today" ? "md:grid-cols-1" : "md:grid-cols-2"}`;
     },
   }
 };
@@ -164,8 +164,12 @@ export default function DashboardPage() {
               <CompactStatCard label="Engagement" icon={<Percent size={32} className="text-vert"/>}
                 value={loading ? "..." : extendedStats.ratio} />
             </div>
-            <CumulativeChart data={extendedStats.cumulativeData}/>
-            <EvolutionStreamsChart data={extendedStats.streamsEvolution}/>
+            {range !== "today" && (
+              <>
+                <CumulativeChart data={extendedStats.cumulativeData}/>
+                <EvolutionStreamsChart data={extendedStats.streamsEvolution}/>
+              </>
+            )}
           </AccordionItem>
 
           {/* SECTION 2 : BIBLIOTHÈQUE */}
@@ -193,7 +197,7 @@ export default function DashboardPage() {
               <TopMediaCard type="artist" label="Top Artiste" item={extendedStats.topArtist} loading={loading} metric={metric}/>
             </div>
 
-            <EvolutionChart data={extendedStats.entityEvolution} loading={false}/>
+            {range !== "today" && <EvolutionChart data={extendedStats.entityEvolution} loading={false}/>}
           </AccordionItem>
 
           {/* SECTION 3 : HABITUDES */}
@@ -208,8 +212,8 @@ export default function DashboardPage() {
             <div className={STYLES.grid.habits(range)}>
               <CompactStatCard label="Heure de pointe" icon={<Clock className="text-purple-400" size={32}/>}
                 value={loading ? "..." : extendedStats.peakHour} />
-              <CompactStatCard label="Jour favori" icon={<CalendarIcon className="text-purple-400" size={32}/>}
-                value={loading ? "..." : extendedStats.peakDay} />
+              {range !== "today" && <CompactStatCard label="Jour favori" icon={<CalendarIcon className="text-purple-400" size={32}/>}
+                value={loading ? "..." : extendedStats.peakDay} />}
               {["6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
                 <CompactStatCard label="Mois musical" icon={<CalendarDays className="text-purple-400" size={32}/>}
                   value={loading ? "..." : extendedStats.peakMonth} />
@@ -217,7 +221,7 @@ export default function DashboardPage() {
             </div>
             <div className={STYLES.grid.habits(range)}>
               <ClockChart data={extendedStats.clockData} metric={metric}/>
-              <WeeklyChart data={extendedStats.weeklyData} metric={metric}/>
+              {range !== "today" && <WeeklyChart data={extendedStats.weeklyData} metric={metric}/>}
               {["6m", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
                 <MonthlyChart data={extendedStats.monthlyData} metric={metric}/>
               }

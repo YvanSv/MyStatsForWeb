@@ -9,38 +9,40 @@ const STYLE = {
   SUBTITLE: `text3 text-md tracking-[0.2em] font-medium`,
   SEPARATOR: "hidden lg:flex flex-col items-center justify-center",
   SEPARATOR_LINE: "w-[1px] h-3/4 bg-gradient-to-b from-transparent via-white/10 to-transparent",
-  SKELETON: "animate-pulse bg-white/5 rounded-2xl",
 }
 
-export function DoubleFrame({titles,subtitles,contents}:any) {
+export function DoubleFrame({icons,titles,subtitles,contents}:any) {
   return (
     <div className={STYLE.WRAPPER}>
       <div className={STYLE.CARD}>
         <div className={STYLE.CONTAINER_FLEX}>
-          {/* COLONNE GAUCHE */}
           <div className={STYLE.COL_LEFT}>
-            <div className={STYLE.HEADER_SECTION}>
-              <p className={STYLE.TITLE}>{titles[0]}</p>
-              <p className={STYLE.SUBTITLE}>{subtitles[0]}</p>
-            </div>
-            {contents[0]}
+            <ContentDF icon={icons[0]} title={titles[0]} subtitle={subtitles[0]} content={contents[0]}/>
           </div>
 
           <div className={STYLE.SEPARATOR}>
             <div className={STYLE.SEPARATOR_LINE}/>
           </div>
 
-          {/* COLONNE DROITE : SERVICES */}
           <div className={STYLE.COL_RIGHT}>
-            <div className={STYLE.HEADER_SECTION}>
-              <h2 className={STYLE.TITLE}>{titles[1]}</h2>
-              <p className={STYLE.SUBTITLE}>{subtitles[1]}</p>
-            </div>
-            {contents[1]}
+            <ContentDF icon={icons[1]} title={titles[1]} subtitle={subtitles[1]} content={contents[1]}/>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ContentDF({icon,title,subtitle,content}:any) {
+  return (
+    <>
+      <div className={STYLE.HEADER_SECTION}>
+        {icon}
+        <p className={STYLE.TITLE}>{title}</p>
+        <p className={STYLE.SUBTITLE}>{subtitle}</p>
+      </div>
+      {content}
+    </>
   );
 }
 
@@ -49,33 +51,33 @@ export function SkeletonDoubleFrame({contents}:any) {
     <div className={STYLE.WRAPPER}>
       <div className={STYLE.CARD}>
         <div className={STYLE.CONTAINER_FLEX}>
-          {/* COLONNE GAUCHE */}
           <div className={STYLE.COL_LEFT}>
-            <div className={STYLE.HEADER_SECTION}>
-              <div className="space-y-3">
-                <div className="h-10 w-32 bg-white/10 rounded-xl animate-pulse" />
-                <div className="h-4 w-48 bg-white/5 rounded-lg animate-pulse" />
-              </div>
-            </div>
-            {contents[0]}
+            <SkeletonContentDF content={contents[0]}/>
           </div>
 
           <div className={STYLE.SEPARATOR}>
             <div className={STYLE.SEPARATOR_LINE}/>
           </div>
 
-          {/* COLONNE DROITE : SERVICES */}
           <div className={STYLE.COL_RIGHT}>
-            <div className={STYLE.HEADER_SECTION}>
-              <div className="space-y-3">
-                <div className="h-10 w-32 bg-white/10 rounded-xl animate-pulse"/>
-                <div className="h-4 w-48 bg-white/5 rounded-lg animate-pulse"/>
-              </div>
-            </div>
-            {contents[1]}
+            <SkeletonContentDF content={contents[1]}/>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function SkeletonContentDF({content}:any) {
+  return (
+    <>
+      <div className={STYLE.HEADER_SECTION}>
+        <div className="space-y-3">
+          <div className="h-10 w-32 bg-white/10 rounded-xl animate-pulse" />
+          <div className="h-4 w-48 bg-white/5 rounded-lg animate-pulse" />
+        </div>
+      </div>
+      {content}
+    </>
   );
 }
