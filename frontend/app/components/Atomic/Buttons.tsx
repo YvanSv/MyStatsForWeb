@@ -23,14 +23,15 @@ export function PrimaryButton({children,additional,onClick,disabled,type}:Props)
   );
 }
 
-export function SecondaryButton({children,additional,onClick}:Props) {
+export function SecondaryButton({children,additional,onClick,disabled}:Props) {
   const agencement = agencement_base;
   const forme = forme_base;
-  const couleur = 'border border-white/10 hover:border-white/20 hover:bg-white/5 font-semibold text1';
-  const transformation = transformation_base;
+  const couleur = `border font-semibold ${disabled ? 'border-gray-500/10 text3' :
+    'border-white/10 hover:border-white/20 hover:bg-white/5 text1'}`;
+  const transformation = !disabled && transformation_base;
 
   return (
-    <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick}>
+    <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );

@@ -45,9 +45,7 @@ export const FILTER_BAR_STYLES = {
     [&::-webkit-calendar-picker-indicator]:inset-0
     [&::-webkit-calendar-picker-indicator]:opacity-0
     [&::-webkit-calendar-picker-indicator]:cursor-pointer
-    m-0
-    p-0
-    w-[90px]`,
+    m-0 p-0 w-[90px]`,
 };
 
 export default function DashboardPage() {
@@ -93,6 +91,8 @@ export default function DashboardPage() {
     fetchStats();
   }, [id, range, offset]);
 
+  console.log(offset)
+
   return (
     <main className={STYLES.main}>
       <div className={STYLES.container}>
@@ -106,7 +106,8 @@ export default function DashboardPage() {
           }/>
 
           <div className="flex items-center justify-center gap-4">
-            <SecondaryButton onClick={decreaseInterval} additional="text-xl hover:text-vert px-2.5 pb-1">
+            <SecondaryButton onClick={decreaseInterval} disabled={range === "lifetime"}
+              additional={`${range !== "lifetime" && 'hover:text-vert'} text-xl px-2.5 pb-1`}>
               −
             </SecondaryButton>
             <div className="w-[1px] h-4 bg-white/10"/>
@@ -139,7 +140,8 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="w-[1px] h-4 bg-white/10"/>
-            <SecondaryButton onClick={increaseInterval} additional="text-xl hover:text-vert px-2.5 pb-1">
+            <SecondaryButton onClick={increaseInterval} disabled={offset === 0}
+              additional={`${offset !== 0 && 'hover:text-vert'} text-xl px-2.5 pb-1`}>
               +
             </SecondaryButton>
           </div>
