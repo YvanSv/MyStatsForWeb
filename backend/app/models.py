@@ -1,14 +1,29 @@
 from datetime import datetime
-from typing import Optional, List
-from sqlmodel import Field, Relationship, SQLModel
+from typing import Optional, List, Dict, Any
+from sqlmodel import Field, Relationship, SQLModel, JSON, Column
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     # --- IDENTITÉ (Email de connexion) ---
-    # C'est l'email utilisé pour le login classique
     email: str = Field(index=True, unique=True) 
     password_hash: Optional[str] = Field(default=None)
     display_name: str
+
+    # --- PERSONNALISATION DU PROFIL ---
+    avatar_url: Optional[str] = Field(default=None)
+    banner_url: Optional[str] = Field(default=None)
+    bio: Optional[str] = Field(default=None, max_length=500)
+    perms: Dict[str, bool] = Field(
+        default={
+            "profile": True,
+            "stats": True,
+            "favorites": True,
+            "history": True,
+            "dashboard": True
+        },
+        sa_column=Column(JSON)
+    )
+
     # --- LIEN SPOTIFY (Email technique Spotify) ---
     # On stocke l'email renvoyé par Spotify ici. 
     # Il peut être différent de l'email ci-dessus.

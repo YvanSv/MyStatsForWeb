@@ -1,18 +1,33 @@
 import { useState, useCallback } from "react";
 import { API_ENDPOINTS } from "../constants/routes";
 import { apiRequest } from "../services/api";
+import { EditableProfile } from "../data/DataInfos";
 
 export const useProfile = () => {
   const [loading, setLoading] = useState(false);
 
   const getProfile = useCallback(async (id: string) => {
     setLoading(true);
-    try {
-      return await apiRequest(`${API_ENDPOINTS.PROFILE_DATA}/${id}`);
-    } finally {
-      setLoading(false);
-    }
+    try {return await apiRequest(`${API_ENDPOINTS.PROFILE_DATA}/${id}`)}
+    finally {setLoading(false)}
   }, []);
+
+  const getEditableProfile = useCallback(async (id: string) => {
+    setLoading(true);
+    try {return await apiRequest(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${id}`)}
+    finally {setLoading(false)}
+  }, []);
+
+  const patchProfile = useCallback(async (id: string, data: Partial<EditableProfile>) => {
+    setLoading(true);
+    try {
+      return await apiRequest(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+        headers: {'Content-Type': 'application/json',}
+      });
+    } finally {setLoading(false)}
+  }, [apiRequest]);
 
   const getDashboard = useCallback(async (id: string, start: string | null, end: string | null) => {
     setLoading(true);
@@ -26,5 +41,5 @@ export const useProfile = () => {
     }
   }, []);
 
-  return { getProfile, getDashboard, loading };
+  return { getProfile, getEditableProfile, patchProfile, getDashboard, loading };
 };

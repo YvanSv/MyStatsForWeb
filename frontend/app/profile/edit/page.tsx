@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import { GENERAL_STYLES } from "@/app/styles/general";
 import { PrimaryButton } from "@/app/components/Atomic/Buttons";
+import { useAuth } from "@/app/hooks/useAuth";
+import { useProfile } from "@/app/hooks/useProfile";
+import { API_ENDPOINTS } from "@/app/constants/routes";
+import toast from "react-hot-toast";
 
 export default function EditProfilePage() {
   return (
@@ -19,13 +23,13 @@ const PROFILE_EDIT_STYLES = {
   
   // Banner Section
   BANNER_WRAPPER: "relative h-[250px] w-full group cursor-pointer overflow-hidden bg-bg2",
-  BANNER_IMG: "w-full h-full object-cover opacity-40 transition-opacity group-hover:opacity-30",
+  BANNER_IMG: "w-full h-full object-cover opacity-40 transition-opacity group-hover:opacity-30 duration-300",
   BANNER_OVERLAY: `text-white/50 absolute inset-0 flex items-center justify-center font-medium`,
-  BANNER_BADGE: "flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full backdrop-blur-md",
+  BANNER_BADGE: "flex items-center text1/10 z-10 gap-2 bg-black/10 px-4 py-2 rounded-full backdrop-blur-md",
   BANNER_GRADIENT: "absolute inset-0 bg-gradient-to-t from-bg1 to-transparent",
 
   // Profile Header
-  CONTAINER: "max-w-4xl mx-auto px-6 -mt-20 relative z-10",
+  CONTAINER: "max-w-5xl mx-auto px-6 -mt-20 relative z-10",
   HEADER_FLEX: "flex flex-col md:flex-row items-center md:items-end gap-6",
   TEXT_GROUP: "flex-1 text-center md:text-left mb-4",
   TITLE: `text1 text-3xl font-bold mb-1`,
@@ -44,7 +48,7 @@ const PROFILE_EDIT_STYLES = {
   TEXTAREA: `text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all resize-none`,
   
   // Privacy Toggle
-  TOGGLE_CARD: "mt-4 p-4 border border-white/5 bg-white/5 rounded-2xl flex items-center justify-between",
+  TOGGLE_CARD: "flex items-center justify-between",
   TOGGLE_LABEL: `text1 text-sm font-medium`,
   TOGGLE_DESC: `text3 text-xs`,
   TOGGLE_SWITCH: "w-12 h-6 bg-vert rounded-full relative cursor-pointer",
@@ -57,19 +61,86 @@ const PROFILE_EDIT_STYLES = {
 
 function EditProfileContent() {
   const router = useRouter();
-
-  // --- ÉTATS MOCKÉS ---
+  const { user } = useAuth();
+  const { getEditableProfile } = useProfile();
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    display_name: "Alexandre",
-    bio: "Fan de Daft Punk et de Synthwave 🚀",
+    display_name: "...",
+    bio: "...",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
     banner: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+    perms: {
+      profile: true,
+      stats: true,
+      favorites: true,
+      history: true,
+      dashboard: true
+    }
   });
 
-  const handleSave = () => {
-    console.log("Saving data:", formData);
-    router.back();
+  useEffect(() => {
+    if (!user || !user.id) return;
+
+    const fetchSettings = async () => {
+      try {
+        const data = await getEditableProfile(''+user.id);
+        
+        setFormData({
+          display_name: data.display_name || "",
+          bio: data.bio || "",
+          avatar: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.display_name}`,
+          banner: data.banner_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+          perms: data.perms || {
+            profile: true,
+            stats: true,
+            favorites: true,
+            history: true,
+            dashboard: true
+          }
+        });
+      } catch (error) {
+        console.error(error);
+      } finally {setLoading(false)}
+    };
+
+    fetchSettings();
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!user || !user.id) return;
+    const response = await fetch(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${user.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+    if (!response.ok) throw new Error("Erreur lors de la sauvegarde");
+    
+    toast.success("Profil modifié !", {
+      style: {
+        borderRadius: '15px',
+        background: '#1A1A1A',
+        color: '#fff',
+        border: '1px solid rgba(255,255,255,0.1)'
+      },
+      iconTheme: {
+        primary: '#1DD05D',
+        secondary: '#fff',
+      },
+    });
+    router.push(`/profile/${user?.id}`);
   };
+
+  const updatePerm = (key: keyof typeof formData.perms, value: boolean) => {
+    setFormData({
+      ...formData,
+      perms: {
+        ...formData.perms,
+        [key]: value
+      }
+    });
+  };
+
+  if (loading) return <EditProfileSkeleton />;
 
   return (
     <main className={PROFILE_EDIT_STYLES.MAIN}>
@@ -114,24 +185,35 @@ function EditProfileContent() {
           </div>
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
-            <label className={PROFILE_EDIT_STYLES.LABEL}>Bio / Description</label>
-            <textarea 
-              rows={4}
-              className={PROFILE_EDIT_STYLES.TEXTAREA}
-              value={formData.bio}
-              onChange={(e) => setFormData({...formData, bio: e.target.value})}
-              placeholder="Dites-en un peu plus sur vos goûts musicaux..."
+            <div className="flex justify-between">
+              <label className={PROFILE_EDIT_STYLES.LABEL}>Description</label>
+              <p className={`block text-xs mb-2 ml-1 ${formData.bio.length === 500 ? 'text-rouge' : 'text2'}`}>{formData.bio.length}/500</p>
+            </div>
+            <textarea rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
+              value={formData.bio} placeholder="Dites-en un peu plus sur vos goûts musicaux..."
+              onChange={(e) => e.target.value.length < 500 && setFormData({...formData, bio: e.target.value})}
             />
           </div>
 
           {/* --- RÉGLAGES PRIVAUTÉ --- */}
-          <div className={PROFILE_EDIT_STYLES.TOGGLE_CARD}>
-            <div>
-              <p className={PROFILE_EDIT_STYLES.TOGGLE_LABEL}>Profil Public</p>
-              <p className={PROFILE_EDIT_STYLES.TOGGLE_DESC}>Autoriser les autres à voir vos statistiques</p>
-            </div>
-            <div className={PROFILE_EDIT_STYLES.TOGGLE_SWITCH}>
-              <div className={PROFILE_EDIT_STYLES.TOGGLE_KNOB} />
+          <div className="flex flex-col justify-center mt-4">
+            <p className={PROFILE_EDIT_STYLES.LABEL}>Permissions et accès</p>
+            <div className="flex flex-col gap-8 p-4 border border-white/5 bg-white/5 rounded-2xl w-full">
+              <OptionToggle title="Profil public" description="Autoriser les autres à accéder à votre profil"
+                active={formData.perms.profile} onChange={(v:boolean) => updatePerm('profile',v)}
+              />
+              <OptionToggle title="Statistiques public" description="Autoriser les autres à voir vos statistiques"
+                active={formData.perms.stats} onChange={(v:boolean) => updatePerm('stats',v)}
+              />
+              <OptionToggle title="Favoris public" description="Autoriser les autres à voir vos 50 favoris (tracks, albums et artistes)"
+                active={formData.perms.favorites} onChange={(v:boolean) => updatePerm('favorites',v)}
+              />
+              <OptionToggle title="Historique public" description="Autoriser les autres à voir votre historique"
+                active={formData.perms.history} onChange={(v:boolean) => updatePerm('history',v)}
+              />
+              <OptionToggle title="Dashboard public" description="Autoriser les autres à accéder à votre dashboard"
+                active={formData.perms.dashboard} onChange={(v:boolean) => updatePerm('dashboard',v)}
+              />
             </div>
           </div>
 
@@ -147,6 +229,28 @@ function EditProfileContent() {
         </div>
       </div>
     </main>
+  );
+}
+
+function OptionToggle({title,description,active,onChange}:any) {
+  return (
+    <div className={PROFILE_EDIT_STYLES.TOGGLE_CARD}>
+      <div>
+        <p className={PROFILE_EDIT_STYLES.TOGGLE_LABEL}>{title}</p>
+        <p className={PROFILE_EDIT_STYLES.TOGGLE_DESC}>{description}</p>
+      </div>
+      <div className={`
+        ${PROFILE_EDIT_STYLES.TOGGLE_SWITCH} 
+        transition-colors duration-200
+        ${active ? 'bg-vert' : 'bg-white/10'} 
+      `} onClick={() => onChange(!active)}>
+        <div className={`
+          ${PROFILE_EDIT_STYLES.TOGGLE_KNOB}
+          transition-transform duration-200 ease-in-out
+          ${active ? 'translate-x-0' : '-translate-x-6'}
+        `}/>
+      </div>
+    </div>
   );
 }
 

@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/authContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Toaster } from "react-hot-toast";
 
 const jost = Jost({ 
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="h-[47px] md:h-[65px] w-full" />
                 <main className="flex-1 flex flex-col">
                   {children}
+                  <Toaster position="bottom-right" reverseOrder={false}/>
                 </main>
                 <Footer />
                 <SpeedInsights />

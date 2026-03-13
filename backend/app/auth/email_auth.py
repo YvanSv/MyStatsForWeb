@@ -2,7 +2,7 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
 from sqlmodel import Session, select
 from app.database import get_session
