@@ -16,11 +16,11 @@ export default function AccountPage() {
 
 const PROFILE_STYLES = {
   WRAPPER: "min-h-[80vh] flex items-center justify-center",
-  CARD: "w-full max-w-6xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden",
+  CARD: "w-full m-3 max-w-6xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden",
   CONTAINER_FLEX: "flex flex-col lg:flex-row",
   COL_LEFT: "flex-1 p-8 md:p-12 lg:p-16",
   COL_RIGHT: "flex-1 p-8 md:p-12 lg:p-16 bg-white/[0.02] flex flex-col",
-  HEADER_SECTION: "mb-10",
+  HEADER_SECTION: "mb-5 lg:mb-10",
   TITLE: `${GENERAL_STYLES.TITRE_DOUBLE_FRAME}`,
   SUBTITLE: `text3 text-md tracking-[0.2em] font-medium`,
   INPUT_LABEL: `text2 text-[10px] uppercase font-bold ml-2`,
