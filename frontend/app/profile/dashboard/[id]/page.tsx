@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Timer, Music2, Mic2, Calendar, Disc, Play, Clock, Zap, CalendarIcon, Percent, CalendarDays } from "lucide-react";
+import { useParams } from "next/navigation";
+import { Timer, Music2, Mic2, Calendar, Disc, Play, Clock, Zap, CalendarIcon, Percent, CalendarDays } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProfile } from "@/app/hooks/useProfile";
 import {WeeklyChart, MonthlyChart, ClockChart, CumulativeChart, EvolutionChart, AnnualChart, EvolutionStreamsChart} from "@/app/components/dashboard/Charts";
@@ -14,6 +14,7 @@ import { DashboardStats, formatToInputDate, getDateRange, getRangeLabel, INITIAL
 import { UserProfile } from "@/app/data/DataInfos";
 import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 import { SecondaryButton } from "@/app/components/Atomic/Buttons";
+import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 
 const STYLES = {
   main: "min-h-screen bg-bg1 text-white",
@@ -59,7 +60,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'activite' | 'diversite' | 'habitudes'>("activite");
   const [metric, setMetric] = useState<'streams' | 'minutes'>('minutes');
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const { getDashboard, getProfile, loading: profileLoading } = useProfile();
+  const { getDashboard, getProfile } = useProfile();
 
   const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
 
@@ -91,7 +92,7 @@ export default function DashboardPage() {
     fetchStats();
   }, [id, range, offset]);
 
-  console.log(offset)
+  if (loading || !profile) return <LoadingSpinner/>
 
   return (
     <main className={STYLES.main}>

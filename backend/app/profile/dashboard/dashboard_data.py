@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query
 import sqlalchemy
 from sqlmodel import Session, col, select, func, desc
 from app.database import get_session
-from app.models import TrackHistory, Track, Album, Artist
+from app.models import TrackHistory, Track, Album, Artist, User
 
 router = APIRouter()
 
@@ -12,9 +12,21 @@ router = APIRouter()
 def get_dashboard_data(
     user_id: int, 
     start_date: Optional[datetime] = Query(None), 
-    end_date: Optional[datetime] = Query(None), 
+    end_date: Optional[datetime] = Query(None),
+    session_id: Optional[str] = Cookie(None),
     session: Session = Depends(get_session)
 ):
+    # Récupérer le propriétaire du profil
+    target_user = session.get(User, user_id)
+    if not target_user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    # Identifier le visiteur via le cookie
+    visitor = None
+    if session_id: visitor = session.exec(select(User).where(User.session_id == session_id)).first()
+    is_owner = visitor is not None and visitor.id == target_user.id
+    # Vérification de la permission Dashboard
+    if not is_owner and not target_user.perms.get("dashboard", True):
+        raise HTTPException(status_code=403, detail="Ce dashboard est privé")
+
     # 1. Filtres communs
     filters = [TrackHistory.user_id == user_id]
     if start_date: filters.append(TrackHistory.played_at >= start_date)
