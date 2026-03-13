@@ -11,14 +11,14 @@ import { PrimaryButton, TertiaryButton } from "./Atomic/Buttons";
 import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Atomic/Nav/Navbar";
 
 export const HEADER_STYLES = {
-  CONTAINER: `flex items-center justify-between sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-0.5 px-4 md:px-6 border-b border-white/10`,
+  CONTAINER: `grid grid-cols-2 lg:grid-cols-3 items-center sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-0.5 px-4 md:px-6 border-b border-white/10`,
   
-  NAV_PC: `hidden lg:flex items-center font-semibold text-[24px] gap-8 xl:gap-20`,
-  NAV_ITEM_WRAPPER: "relative group py-2",
+  NAV_PC: 'hidden lg:grid grid-cols-3 justify-items-center h-fit text-[24px] font-semibold',  
+  NAV_ITEM_WRAPPER: "relative group mx-auto flex",
 
-  RIGHT_SECTION: `flex items-center gap-2 md:gap-4`,
-
+  RIGHT_SECTION: `flex justify-end items-center gap-2 md:gap-4`,
   USER_AVATAR: `text2 ${BASE_UI.common.flexCenter} text-[13px] font-bold w-6 h-6 ${BASE_UI.rounded.badge} bg-vert/20`,
+  RIGHT_WRAPPER: "relative group",
   
   MOBILE_OVERLAY: `absolute top-full left-0 w-full bg-bg1 backdrop-blur-xl border-b border-white/10 lg:hidden animate-in slide-in-from-top-2`,
   MOBILE_NAV: `flex flex-col p-4 space-y-1 text-center`,
@@ -40,7 +40,7 @@ export default function Header() {
   const menuRef = useRef<HTMLDivElement>(null);
   const navigation_menu = [
     {id: 'Rankings', path: `${isLoggedIn ? FRONT_ROUTES.MY_RANKINGS:FRONT_ROUTES.ALL_RANKINGS}`},
-    {id: 'Mon dashboard', path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
+    {id: 'Dashboard', path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
     {id: 'Aide', path: `${FRONT_ROUTES.HELP}`},
   ] as const;
   const sous_menu_ranking = [
@@ -114,7 +114,7 @@ export default function Header() {
       {/* DROITE : Toggles + Profil + Burger */}
       <div className={HEADER_STYLES.RIGHT_SECTION}>
         {/* View Mode Selector */}
-        <div className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
+        <div className={HEADER_STYLES.RIGHT_WRAPPER}>
           <TertiaryButton onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
             additional="text2 flex flex-col items-center p-1 md:p-2 justify-center"
           >
@@ -135,7 +135,7 @@ export default function Header() {
 
         {/* Profil Section */}
         {isLoggedIn ? (
-          <div className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
+          <div className={HEADER_STYLES.RIGHT_WRAPPER}>
             <TertiaryButton onClick={() => setMenuOpen(!menuOpen)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 md:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
               <div className={HEADER_STYLES.USER_AVATAR}>{userName.charAt(0).toUpperCase()}</div>
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
