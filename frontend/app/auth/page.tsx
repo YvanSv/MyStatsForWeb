@@ -201,8 +201,7 @@ function AuthContent() {
 }
 
 const SKELETON_STYLES = {
-  PULSE: "animate-pulse bg-white/5 rounded-2xl",
-  TEXT_MD: "h-4 bg-white/5 rounded-lg animate-pulse",
+  PULSE: "animate-pulse bg-white/5 rounded-2xl h-12 w-full",
   TEXT_SM: "h-3 bg-white/5 rounded animate-pulse",
 };
 
@@ -219,7 +218,7 @@ function SkeletonAuth() {
         {[1, 2].map((i) => (
           <div key={i} className="space-y-2">
             <div className={`w-16 ml-2 ${SKELETON_STYLES.TEXT_SM}`} />
-            <div className={`h-12 w-full ${SKELETON_STYLES.PULSE}`} />
+            <div className={SKELETON_STYLES.PULSE}/>
           </div>
         ))}
         <div className="h-14 w-full bg-white/10 rounded-2xl animate-pulse mt-4" />
@@ -229,7 +228,7 @@ function SkeletonAuth() {
       {[1, 2].map((i) => (
         <div key={i} className="space-y-2">
           <div className={`w-24 ml-2 ${SKELETON_STYLES.TEXT_SM}`} />
-          <div className={`h-12 w-full ${SKELETON_STYLES.PULSE}`} />
+          <div className={SKELETON_STYLES.PULSE}/>
         </div>
       ))}
       
@@ -237,7 +236,7 @@ function SkeletonAuth() {
         {[1,2].map(i => (
           <div key={i} className="space-y-2">
             <div className={`w-20 ml-2 ${SKELETON_STYLES.TEXT_SM}`} />
-            <div className={`h-12 w-full ${SKELETON_STYLES.PULSE}`} />
+            <div className={SKELETON_STYLES.PULSE}/>
           </div>
         ))}
       </div>
