@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 import uuid
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Request, Response
+import requests
 from fastapi.responses import RedirectResponse
 import httpx
 from sqlmodel import Session, select
@@ -80,7 +81,7 @@ def spotify_login(response: Response):
         "state": state,
         "show_dialog": "true"
     }
-    
+
     return RedirectResponse(f"https://accounts.spotify.com/authorize?{urlencode(params)}")
 
 # @router.post(
@@ -168,25 +169,44 @@ async def callback(
     if not code: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=missing_code")
 
     async with httpx.AsyncClient() as client:
-        # 1. Échange du code contre les tokens
-        token_res = await client.post(
-            "https://accounts.spotify.com/api/token",
-            data={
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": REDIRECT_URI,
-                "client_id": CLIENT_ID,
-                "client_secret": CLIENT_SECRET,
-            },
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
+        # # 1. Échange du code contre les tokens
+        # token_res = await client.post(
+        #     "https://accounts.spotify.com/api/token",
+        #     data={
+        #         "grant_type": "authorization_code",
+        #         "code": code,
+        #         "redirect_uri": REDIRECT_URI,
+        #         "client_id": CLIENT_ID,
+        #         "client_secret": CLIENT_SECRET,
+        #     },
+        #     headers={"Content-Type": "application/x-www-form-urlencoded"},
+        #     auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+        #     headers={"Authorization": f"Basic {auth_header}", "Content-Type": "application/x-www-form-urlencoded"}
+        # )
         
-        if token_res.status_code != 200: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=spotify_token_error")
+        # if token_res.status_code != 200: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=spotify_token_error")
 
-        token_data = token_res.json()
-        access_token = token_data["access_token"]
-        refresh_token = token_data.get("refresh_token")
-        expires_in = token_data.get("expires_in", 3600)
+        # token_data = token_res.json()
+        # access_token = token_data["access_token"]
+        # refresh_token = token_data.get("refresh_token")
+        
+        # 2. Échange du code contre Token
+        token_url = "https://accounts.spotify.com/api/token"
+        auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+        
+        payload = {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": REDIRECT_URI,
+        }
+        
+        headers = {"Authorization": f"Basic {auth_header}", "Content-Type": "application/x-www-form-urlencoded"}
+        
+        # Appel à Spotify pour les tokens
+        token_res = requests.post(token_url, data=payload, headers=headers).json()
+        access_token = token_res.get("access_token")
+        refresh_token = token_res.get("refresh_token")
+        expires_in = token_res.get("expires_in", 3600)
         # Calcul de la date d'expiration
         expiration_date = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
