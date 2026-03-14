@@ -118,6 +118,7 @@ async def get_me(session_id: Optional[str] = Cookie(None), db: Session = Depends
 
     return {
         "id": user.id,
+        "slug": user.slug,
         "user_name": user.display_name,
         "has_spotify": user.spotify_id is not None,
         "is_logged_in": True,

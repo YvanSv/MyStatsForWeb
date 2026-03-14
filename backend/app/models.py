@@ -13,6 +13,7 @@ class User(SQLModel, table=True):
     avatar_url: Optional[str] = Field(default=None, sa_column=Column(Text))
     banner_url: Optional[str] = Field(default=None, sa_column=Column(Text))
     bio: Optional[str] = Field(default=None, max_length=500)
+    slug: Optional[str] = Field(default=None, unique=True, index=True, max_length=30)
     perms: Dict[str, bool] = Field(
         default={
             "profile": True,

@@ -50,8 +50,11 @@ export default function ProfilePage({ id }: { id: string }) {
   const { user: currentUser } = useAuth();
 
   const isOwner = useMemo(() => {
-    if (!currentUser || !id) return false;
-    return currentUser.id?.toString() === id;
+  if (!currentUser || !id) return false;
+    const profileIdOrSlug = id.toString().toLowerCase();
+    const currentUserId = currentUser.id?.toString().toLowerCase();
+    const currentUserSlug = currentUser.slug?.toLowerCase();
+    return currentUserId === profileIdOrSlug || currentUserSlug === profileIdOrSlug;
   }, [currentUser, id]);
 
   useEffect(() => {

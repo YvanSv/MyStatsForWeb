@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 interface AuthResponse {
   id: number;
   user_name: string;
+  slug: string;
   has_spotify: boolean;
   is_logged_in: boolean;
   email: string;

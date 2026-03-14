@@ -18,6 +18,7 @@ export interface UserProfile {
   display_name: string;
   avatar: string;
   bio: string;
+  slug: string;
   banner: string;
   total_minutes: number;
   total_streams: number;

@@ -54,7 +54,7 @@ export default function Header() {
     { id: 'list', icon: <ListIcon />, hideMobile: false },
   ] as const;
   const dropdown_menu = [
-    { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}/${user?.id}` },
+    { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}/${user?.slug}` },
     { id: 'Mon dashboard', icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`},
     { id: 'Import de datas', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
     { id: 'Mon compte', icon: <UserIcon/>, path: FRONT_ROUTES.ACCOUNT },

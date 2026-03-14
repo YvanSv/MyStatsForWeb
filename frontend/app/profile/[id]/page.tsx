@@ -12,8 +12,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = params.id;
   if (!id || id === 'undefined') return { title: "Profil - MyStats" };
 
-  // On récupère les données du profil (depuis ton API FastAPI)
-  // Note : Il est préférable d'avoir un endpoint public "getProfile"
   const response = await fetch(`${API_ENDPOINTS.PROFILE_DATA}/${id}`, {
     next: { revalidate: 3600 } // Cache d'une heure pour les robots
   });

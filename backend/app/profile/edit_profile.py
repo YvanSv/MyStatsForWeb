@@ -8,31 +8,35 @@ from typing import Dict, Optional
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
     bio: Optional[str] = None
+    slug: Optional[str] = None
     avatar_url: Optional[str] = None
     banner_url: Optional[str] = None
     perms: Optional[Dict[str, bool]] = None
 
-def verify_owner(user_id: int, session_id: str, db: Session):
+def verify_owner(slug: str, session_id: str, db: Session):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
-
     # On cherche l'utilisateur qui possède ce session_id
     current_user = db.exec(select(User).where(User.session_id == session_id)).first()
-    
-    if not current_user or current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Action non autorisée sur ce profil")
-    
+
+    if slug.isdigit():
+        # On cherche d'abord par ID, si rien on cherche par slug (au cas où l'ID 123 n'existe pas mais le slug "123" oui)
+        current_user = db.get(User, int(slug))
+        if not current_user: current_user = db.exec(select(User).where(User.slug == slug)).first()
+    else: current_user = db.exec(select(User).where(User.slug == slug)).first()
+    if not current_user: raise HTTPException(status_code=404, detail="Profil introuvable")
+    if not current_user or current_user.id != current_user.id: raise HTTPException(status_code=403, detail="Action non autorisée sur ce profil")
     return current_user
 
 router = APIRouter()
 
-@router.patch("/{user_id}")
+@router.patch("/{slug}")
 def update_user_profile(
-    user_id: int, 
+    slug: str, 
     user_data: UserUpdate,
     session_id: Optional[str] = Cookie(None),
     session: Session = Depends(get_session)
 ):
-    db_user = verify_owner(user_id, session_id, session)
+    db_user = verify_owner(slug, session_id, session)
 
     update_data = user_data.model_dump(exclude_unset=True)
     for key, value in update_data.items(): setattr(db_user, key, value)
@@ -46,22 +50,24 @@ def update_user_profile(
         "user": {
             "display_name": db_user.display_name,
             "bio": db_user.bio,
+            "slug": db_user.slug,
             "avatar_url": db_user.avatar_url,
             "banner_url": db_user.banner_url,
             "perms": db_user.perms
         }
     }
 
-@router.get("/{user_id}")
+@router.get("/{slug}")
 def get_user_settings(
-    user_id: int,
+    slug: str,
     session_id: Optional[str] = Cookie(None),
     session: Session = Depends(get_session)
 ):
-    db_user = verify_owner(user_id, session_id, session)
+    db_user = verify_owner(slug, session_id, session)
     return {
         "display_name": db_user.display_name,
         "bio": db_user.bio,
+        "slug": db_user.slug,
         "avatar_url": db_user.avatar_url,
         "banner_url": db_user.banner_url,
         "perms": db_user.perms

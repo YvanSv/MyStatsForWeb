@@ -57,9 +57,11 @@ const PROFILE_EDIT_STYLES = {
   BTN_CANCEL: `text3 px-6 py-3 text-gray-400 hover:text-white transition-colors cursor-pointer`
 };
 
+const RESERVED_SLUGS = ["dashboard", "edit", "settings", "admin", "login", "api"];
+
 function EditProfileContent() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { getEditableProfile, patchProfile } = useProfile();
@@ -67,6 +69,7 @@ function EditProfileContent() {
   const [formData, setFormData] = useState({
     display_name: "...",
     bio: "...",
+    slug: "",
     avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
     banner_url: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
     perms: {
@@ -90,6 +93,7 @@ function EditProfileContent() {
           bio: data.bio || "",
           avatar_url: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.display_name}`,
           banner_url: data.banner_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+          slug: data.slug,
           perms: data.perms || {
             profile: true,
             stats: true,
@@ -108,7 +112,16 @@ function EditProfileContent() {
 
   const handleSave = async () => {
     if (!user || !user.id) return;
-    await patchProfile(''+user.id,formData);
+    const finalSlug = formData.slug.trim();
+    const payload = {
+      display_name: formData.display_name,
+      bio: formData.bio,
+      avatar_url: formData.avatar,
+      banner_url: formData.banner,
+      slug: finalSlug,
+      perms: formData.perms
+    };
+    await patchProfile('' + user.id, payload);
     
     toast.success("Profil modifié !", {
       style: {
@@ -122,7 +135,8 @@ function EditProfileContent() {
         secondary: '#fff',
       },
     });
-    router.push(`/profile/${user?.id}`);
+    await refreshUser();
+    router.push(`/profile/${finalSlug === ""  ? user.id : finalSlug}`);
   };
 
   const updatePerm = (key: string, value: boolean) => {
@@ -229,16 +243,49 @@ function EditProfileContent() {
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
             <div className="flex justify-between">
               <label className={PROFILE_EDIT_STYLES.LABEL}>Description</label>
-              <p className={`block text-xs mb-2 ml-1 ${formData.bio.length === 500 ? 'text-rouge' : 'text2'}`}>{formData.bio.length}/500</p>
+              <p className={`block text-xs mb-2 ml-1
+                ${formData.bio.length > 400 ? (formData.bio.length > 450 ? (formData.bio.length === 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{formData.bio.length}/500</p>
             </div>
             <textarea rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
               value={formData.bio} placeholder="Dites-en un peu plus sur vos goûts musicaux..."
-              onChange={(e) => e.target.value.length < 500 && setFormData({...formData, bio: e.target.value})}
+              onChange={(e) => e.target.value.length <= 500 && setFormData({...formData, bio: e.target.value})}
             />
           </div>
 
+          <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
+            <div className="flex justify-between">
+              <label className={PROFILE_EDIT_STYLES.LABEL}>URL personnalisée</label>
+              <p className={`block text-xs mb-2 ml-1
+                ${formData.slug.length > 20 ? (formData.slug.length > 25 ? (formData.slug.length === 30 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{formData.slug.length}/30</p>
+            </div>
+            <div className="relative flex items-center">
+              {/* Préfixe de l'URL */}
+              <span className="absolute left-4 text-white/30 text-sm font-medium pointer-events-none">
+                mystatsfy.com/profile/
+              </span>
+              
+              <input 
+                type="text" 
+                className={`${PROFILE_EDIT_STYLES.INPUT} pl-[145px] text-md tracking-wider`} 
+                value={formData.slug || ""}
+                placeholder="votre-url"
+                onChange={(e) => {
+                  let value = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                  // Nombre pur et Mot réservé et taille <= 30
+                  if (!/^\d+$/.test(value) && !RESERVED_SLUGS.includes(value) && value.length <= 30) setFormData({...formData, slug: value});
+                  else if (value === "") setFormData({...formData, slug: ""})
+                }}
+              />
+            </div>
+            <p className="text-[10px] text-white/40 mt-2 ml-1">
+              Utilisez uniquement des lettres, des chiffres et des tirets.
+            </p>
+          </div>
+
           {/* --- RÉGLAGES PRIVAUTÉ --- */}
-          <div className="flex flex-col justify-center mt-4">
+          <div className="flex flex-col justify-center mt-8">
             <p className={PROFILE_EDIT_STYLES.LABEL}>Permissions et accès</p>
             <div className="flex flex-col gap-8 p-4 border border-white/5 bg-white/5 rounded-2xl w-full">
               <OptionToggle title="Profil public" description="Autoriser les autres à accéder à votre profil"

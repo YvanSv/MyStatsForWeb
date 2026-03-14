@@ -8,17 +8,19 @@ from app.models import TrackHistory, Track, Album, Artist, User
 
 router = APIRouter()
 
-@router.get("/{user_id}")
+@router.get("/{slug}")
 def get_dashboard_data(
-    user_id: int, 
+    slug: str, 
     start_date: Optional[datetime] = Query(None), 
     end_date: Optional[datetime] = Query(None),
     session_id: Optional[str] = Cookie(None),
     session: Session = Depends(get_session)
 ):
     # Récupérer le propriétaire du profil
-    target_user = session.get(User, user_id)
+    if slug.isdigit(): target_user = session.get(User, int(slug))
+    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
     if not target_user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    user_id = target_user.id
     # Identifier le visiteur via le cookie
     visitor = None
     if session_id: visitor = session.exec(select(User).where(User.session_id == session_id)).first()

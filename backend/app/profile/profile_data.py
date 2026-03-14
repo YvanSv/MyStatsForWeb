@@ -12,10 +12,16 @@ def get_optional_user(session_id: Optional[str], db: Session):
 
 router = APIRouter()
 
-@router.get("/{user_id}")
-def get_user_profile(user_id: int, session: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
-    target_user = session.get(User, user_id)
-    if not target_user:  raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+@router.get("/{slug}")
+def get_user_profile(slug: str, session: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
+    if slug.isdigit():
+        # On cherche d'abord par ID, si rien on cherche par slug (au cas où l'ID 123 n'existe pas mais le slug "123" oui)
+        target_user = session.get(User, int(slug))
+        if not target_user: target_user = session.exec(select(User).where(User.slug == slug)).first()
+    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
+    if not target_user: raise HTTPException(status_code=404, detail="Profil introuvable")
+    user_id = target_user.id
+
     # Identifier qui regarde (le visiteur)
     visitor = get_optional_user(session_id, session)
     is_owner = visitor is not None and visitor.id == target_user.id

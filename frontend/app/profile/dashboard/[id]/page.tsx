@@ -92,8 +92,6 @@ export default function DashboardPage() {
     fetchStats();
   }, [id, range, offset]);
 
-  if (loading || !profile) return <LoadingSpinner/>
-
   return (
     <main className={STYLES.main}>
       <div className={STYLES.container}>
