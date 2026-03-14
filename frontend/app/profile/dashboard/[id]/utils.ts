@@ -1,7 +1,7 @@
 export interface DashboardStats {
-  totalTime: string;
-  avgTimePerDay: string;
-  totalStreams: string;
+  totalTime: number;
+  avgTimePerDay: number;
+  totalStreams: number;
   avgStreamsPerDay: number;
   peakHour: string;
   peakDay: string;
@@ -23,9 +23,9 @@ export interface DashboardStats {
 }
 
 export const INITIAL_STATS = {
-  totalTime: "-- min",
-  avgTimePerDay: "-- min",
-  totalStreams: "0",
+  totalTime: 0,
+  avgTimePerDay: 0,
+  totalStreams: 0,
   avgStreamsPerDay: 0,
   uniqueTracks: 0,
   uniqueAlbums: 0,

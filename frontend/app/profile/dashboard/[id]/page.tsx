@@ -10,13 +10,11 @@ import CompactStatCard from "./CompactStatCard";
 import AccordionItem from "./AccordionItem";
 import IntervalsSelector from "./IntervalSelector";
 import TopMediaCard from "./TopMediaCard";
-import { PrimaryButton } from "../../../components/Atomic/Buttons";
 import { DashboardStats, formatToInputDate, getDateRange, getRangeLabel, INITIAL_STATS } from "./utils";
 import { UserProfile } from "@/app/data/DataInfos";
 import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 import { SecondaryButton } from "@/app/components/Atomic/Buttons";
 import { ErrorState } from "@/app/components/Atomic/Error/Error";
-import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { ApiError } from "@/app/services/api";
 
 const STYLES = {
@@ -180,9 +178,9 @@ export default function DashboardPage() {
           >
             <div className={STYLES.grid.stats}>
               <CompactStatCard label="Temps d'écoute" icon={<Timer size={32} className="text-vert"/>}
-                value={loading ? "..." : `${formatter.format(parseFloat(extendedStats.totalTime.replace(" ","")))} min`} />
+                value={loading ? "..." : `${formatter.format(extendedStats.totalTime)} min`} />
               <CompactStatCard label="Streams" icon={<Play size={32} className="text-vert"/>}
-                value={loading ? "..." : formatter.format(parseFloat(extendedStats.totalStreams))} />
+                value={loading ? "..." : formatter.format(extendedStats.totalStreams)} />
               <CompactStatCard label="Engagement" icon={<Percent size={32} className="text-vert"/>}
                 value={loading ? "..." : extendedStats.ratio} />
             </div>
