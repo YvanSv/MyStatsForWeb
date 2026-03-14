@@ -48,7 +48,7 @@ const PROFILE_EDIT_STYLES = {
   TEXTAREA: `text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all resize-none`,
   
   // Privacy Toggle
-  TOGGLE_CARD: "flex items-center justify-between",
+  TOGGLE_CARD: (disabled:boolean) => `flex items-center justify-between ${disabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`,
   TOGGLE_LABEL: `text1 text-sm font-medium`,
   TOGGLE_DESC: `text3 text-xs`,
   TOGGLE_SWITCH: "w-12 h-6 bg-vert rounded-full relative cursor-pointer",
@@ -62,7 +62,7 @@ const PROFILE_EDIT_STYLES = {
 function EditProfileContent() {
   const router = useRouter();
   const { user } = useAuth();
-  const { getEditableProfile } = useProfile();
+  const { getEditableProfile, patchProfile } = useProfile();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     display_name: "...",
@@ -108,12 +108,7 @@ function EditProfileContent() {
 
   const handleSave = async () => {
     if (!user || !user.id) return;
-    const response = await fetch(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${user.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-    if (!response.ok) throw new Error("Erreur lors de la sauvegarde");
+    await patchProfile(''+user.id,formData);
     
     toast.success("Profil modifié !", {
       style: {
@@ -130,13 +125,12 @@ function EditProfileContent() {
     router.push(`/profile/${user?.id}`);
   };
 
-  const updatePerm = (key: keyof typeof formData.perms, value: boolean) => {
-    setFormData({
-      ...formData,
-      perms: {
-        ...formData.perms,
-        [key]: value
-      }
+  const updatePerm = (key: string, value: boolean) => {
+    setFormData(prev => {
+      const newPerms = { ...prev.perms, [key]: value };
+      if (key === 'profile' && value === false)
+        Object.keys(newPerms).forEach(k => newPerms[k as keyof typeof newPerms] = false);
+      return { ...prev, perms: newPerms };
     });
   };
 
@@ -203,16 +197,16 @@ function EditProfileContent() {
                 active={formData.perms.profile} onChange={(v:boolean) => updatePerm('profile',v)}
               />
               <OptionToggle title="Statistiques public" description="Autoriser les autres à voir vos statistiques"
-                active={formData.perms.stats} onChange={(v:boolean) => updatePerm('stats',v)}
+                active={formData.perms.stats} onChange={(v:boolean) => updatePerm('stats',v)} disabled={!formData.perms.profile}
               />
               <OptionToggle title="Favoris public" description="Autoriser les autres à voir vos 50 favoris (tracks, albums et artistes)"
-                active={formData.perms.favorites} onChange={(v:boolean) => updatePerm('favorites',v)}
+                active={formData.perms.favorites} onChange={(v:boolean) => updatePerm('favorites',v)} disabled={!formData.perms.profile}
               />
               <OptionToggle title="Historique public" description="Autoriser les autres à voir votre historique"
-                active={formData.perms.history} onChange={(v:boolean) => updatePerm('history',v)}
+                active={formData.perms.history} onChange={(v:boolean) => updatePerm('history',v)} disabled={!formData.perms.profile}
               />
               <OptionToggle title="Dashboard public" description="Autoriser les autres à accéder à votre dashboard"
-                active={formData.perms.dashboard} onChange={(v:boolean) => updatePerm('dashboard',v)}
+                active={formData.perms.dashboard} onChange={(v:boolean) => updatePerm('dashboard',v)} disabled={!formData.perms.profile}
               />
             </div>
           </div>
@@ -232,9 +226,9 @@ function EditProfileContent() {
   );
 }
 
-function OptionToggle({title,description,active,onChange}:any) {
+function OptionToggle({title,description,active,onChange,disabled}:any) {
   return (
-    <div className={PROFILE_EDIT_STYLES.TOGGLE_CARD}>
+    <div className={PROFILE_EDIT_STYLES.TOGGLE_CARD(disabled)}>
       <div>
         <p className={PROFILE_EDIT_STYLES.TOGGLE_LABEL}>{title}</p>
         <p className={PROFILE_EDIT_STYLES.TOGGLE_DESC}>{description}</p>
@@ -242,8 +236,8 @@ function OptionToggle({title,description,active,onChange}:any) {
       <div className={`
         ${PROFILE_EDIT_STYLES.TOGGLE_SWITCH} 
         transition-colors duration-200
-        ${active ? 'bg-vert' : 'bg-white/10'} 
-      `} onClick={() => onChange(!active)}>
+        ${active ? 'bg-vert' : 'bg-white/10'}
+      `} onClick={() => !disabled && onChange(!active)}>
         <div className={`
           ${PROFILE_EDIT_STYLES.TOGGLE_KNOB}
           transition-transform duration-200 ease-in-out
@@ -302,7 +296,7 @@ function EditProfileSkeleton() {
           </div>
 
           {/* Privacy Toggle Skeleton */}
-          <div className={PROFILE_EDIT_STYLES.TOGGLE_CARD}>
+          <div className={PROFILE_EDIT_STYLES.TOGGLE_CARD(false)}>
             <div className="space-y-2">
               <div className={`${SKELETON_STYLES.LABEL} w-20 ${SKELETON_STYLES.PULSE}`} />
               <div className={`${SKELETON_STYLES.TEXT_SM} w-40 ${SKELETON_STYLES.PULSE}`} />

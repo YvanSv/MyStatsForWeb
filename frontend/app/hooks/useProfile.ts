@@ -27,7 +27,7 @@ export const useProfile = () => {
         headers: {'Content-Type': 'application/json',}
       });
     } finally {setLoading(false)}
-  }, [apiRequest]);
+  }, []);
 
   const getDashboard = useCallback(async (id: string, start: string | null, end: string | null) => {
     setLoading(true);
