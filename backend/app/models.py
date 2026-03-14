@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Any
-from sqlmodel import Field, Relationship, SQLModel, JSON, Column
+from typing import Optional, List, Dict
+from sqlmodel import Field, Relationship, SQLModel, JSON, Column, Text
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -10,8 +10,8 @@ class User(SQLModel, table=True):
     display_name: str
 
     # --- PERSONNALISATION DU PROFIL ---
-    avatar_url: Optional[str] = Field(default=None)
-    banner_url: Optional[str] = Field(default=None)
+    avatar_url: Optional[str] = Field(default=None, sa_column=Column(Text))
+    banner_url: Optional[str] = Field(default=None, sa_column=Column(Text))
     bio: Optional[str] = Field(default=None, max_length=500)
     perms: Dict[str, bool] = Field(
         default={

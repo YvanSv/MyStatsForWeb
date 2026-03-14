@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import { PrimaryButton } from "@/app/components/Atomic/Buttons";
@@ -60,13 +60,14 @@ const PROFILE_EDIT_STYLES = {
 function EditProfileContent() {
   const router = useRouter();
   const { user } = useAuth();
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   const { getEditableProfile, patchProfile } = useProfile();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     display_name: "...",
     bio: "...",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-    banner: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
+    banner_url: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
     perms: {
       profile: true,
       stats: true,
@@ -86,8 +87,8 @@ function EditProfileContent() {
         setFormData({
           display_name: data.display_name || "",
           bio: data.bio || "",
-          avatar: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.display_name}`,
-          banner: data.banner_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+          avatar_url: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.display_name}`,
+          banner_url: data.banner_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
           perms: data.perms || {
             profile: true,
             stats: true,
@@ -132,14 +133,38 @@ function EditProfileContent() {
     });
   };
 
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Vérification de la taille (ex: 2MB max)
+      if (file.size > 2 * 1024 * 1024) {
+        alert("L'image est trop lourde (max 2MB)");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, banner_url: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (loading) return <ProfileEditSkeleton />;
 
   return (
     <main className={PROFILE_EDIT_STYLES.MAIN}>
       {/* --- ÉDITION BANNIÈRE --- */}
       <div className={PROFILE_EDIT_STYLES.BANNER_WRAPPER}>
-        <img src={formData.banner} className={PROFILE_EDIT_STYLES.BANNER_IMG} alt="Banner Preview" />
-        <div className={PROFILE_EDIT_STYLES.BANNER_OVERLAY}>
+        <input 
+          type="file" 
+          ref={bannerInputRef}
+          onChange={handleBannerChange}
+          accept="image/*"
+          className="hidden" 
+        />
+        <img src={formData.banner_url} className={PROFILE_EDIT_STYLES.BANNER_IMG} alt="Banner Preview" />
+        <div className={PROFILE_EDIT_STYLES.BANNER_OVERLAY} onClick={() => bannerInputRef.current?.click()} style={{ cursor: 'pointer' }}>
           <div className={PROFILE_EDIT_STYLES.BANNER_BADGE}>
             <CameraIcon size={18} /> Changer la bannière
           </div>
@@ -151,7 +176,7 @@ function EditProfileContent() {
         {/* --- ÉDITION AVATAR --- */}
         <div className={PROFILE_EDIT_STYLES.HEADER_FLEX}>
           <div className={PROFILE_EDIT_STYLES.AVATAR_WRAPPER}>
-            <img src={formData.avatar} className={PROFILE_EDIT_STYLES.AVATAR_IMG} alt="Avatar Preview" />
+            <img src={formData.avatar_url} className={PROFILE_EDIT_STYLES.AVATAR_IMG} alt="Avatar Preview" />
             <div className={PROFILE_EDIT_STYLES.OVERLAY_ICON}>
               <CameraIcon size={32} />
             </div>
