@@ -18,10 +18,7 @@ def verify_owner(slug: str, session_id: str, db: Session):
     # On cherche l'utilisateur qui possède ce session_id
     current_user = db.exec(select(User).where(User.session_id == session_id)).first()
 
-    if slug.isdigit():
-        # On cherche d'abord par ID, si rien on cherche par slug (au cas où l'ID 123 n'existe pas mais le slug "123" oui)
-        current_user = db.get(User, int(slug))
-        if not current_user: current_user = db.exec(select(User).where(User.slug == slug)).first()
+    if slug.isdigit(): current_user = db.get(User, int(slug))
     else: current_user = db.exec(select(User).where(User.slug == slug)).first()
     if not current_user: raise HTTPException(status_code=404, detail="Profil introuvable")
     if not current_user or current_user.id != current_user.id: raise HTTPException(status_code=403, detail="Action non autorisée sur ce profil")
