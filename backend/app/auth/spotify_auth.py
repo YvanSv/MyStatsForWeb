@@ -54,11 +54,11 @@ def spotify_login(response: Response):
     - `user-top-read` : Utilisé pour générer les classements des 50 meilleurs titres/artistes.
     - `user-read-private` / `user-read-email` : Essentiel pour la création et la liaison du compte MyStatsfy.
     """
-    state = secrets.token_urlsafe(16)
+    # state = secrets.token_urlsafe(16)
 
     response.set_cookie(
         key="spotify_auth_state",
-        value=state,
+        # value=state,
         httponly=True,
         max_age=600, 
         samesite="none",
@@ -78,7 +78,7 @@ def spotify_login(response: Response):
         "response_type": "code",
         "scope": " ".join(scopes),
         "redirect_uri": REDIRECT_URI,
-        "state": state,
+        # "state": state,
         "show_dialog": "true"
     }
 
@@ -154,9 +154,9 @@ async def callback(
     - Vers `/` pour une connexion standard.
     - Vers `/account?error=...` en cas de conflit (compte Spotify déjà lié ailleurs).
     """
-    # 1. Vérification du STATE (Anti-CSRF)
-    stored_state = request.cookies.get("spotify_auth_state")
-    if IS_PRODUCTION and (not state or state != stored_state): return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=state_mismatch")
+    # # 1. Vérification du STATE (Anti-CSRF)
+    # stored_state = request.cookies.get("spotify_auth_state")
+    # if IS_PRODUCTION and (not state or state != stored_state): return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=state_mismatch")
 
     # --- GESTION DE L'ANNULATION OU DES ERREURS SPOTIFY ---
     if error:
@@ -169,44 +169,44 @@ async def callback(
     if not code: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=missing_code")
 
     async with httpx.AsyncClient() as client:
-        # # 1. Échange du code contre les tokens
-        # token_res = await client.post(
-        #     "https://accounts.spotify.com/api/token",
-        #     data={
-        #         "grant_type": "authorization_code",
-        #         "code": code,
-        #         "redirect_uri": REDIRECT_URI,
-        #         "client_id": CLIENT_ID,
-        #         "client_secret": CLIENT_SECRET,
-        #     },
-        #     headers={"Content-Type": "application/x-www-form-urlencoded"},
-        #     auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
-        #     headers={"Authorization": f"Basic {auth_header}", "Content-Type": "application/x-www-form-urlencoded"}
-        # )
+        # 1. Échange du code contre les tokens
+        token_res = await client.post(
+            "https://accounts.spotify.com/api/token",
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": REDIRECT_URI,
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
         
-        # if token_res.status_code != 200: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=spotify_token_error")
+        if token_res.status_code != 200: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=spotify_token_error")
 
-        # token_data = token_res.json()
-        # access_token = token_data["access_token"]
-        # refresh_token = token_data.get("refresh_token")
+        token_data = token_res.json()
+        access_token = token_data["access_token"]
+        refresh_token = token_data.get("refresh_token")
         
-        # 2. Échange du code contre Token
-        token_url = "https://accounts.spotify.com/api/token"
-        auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+        # # 2. Échange du code contre Token
+        # token_url = "https://accounts.spotify.com/api/token"
+        # auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
         
-        payload = {
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": REDIRECT_URI,
-        }
+        # payload = {
+        #     "grant_type": "authorization_code",
+        #     "code": code,
+        #     "redirect_uri": REDIRECT_URI,
+        # }
         
-        headers = {"Authorization": f"Basic {auth_header}", "Content-Type": "application/x-www-form-urlencoded"}
+        # headers = {"Authorization": f"Basic {auth_header}", "Content-Type": "application/x-www-form-urlencoded"}
         
-        # Appel à Spotify pour les tokens
-        token_res = requests.post(token_url, data=payload, headers=headers).json()
-        access_token = token_res.get("access_token")
-        refresh_token = token_res.get("refresh_token")
-        expires_in = token_res.get("expires_in", 3600)
+        # # Appel à Spotify pour les tokens
+        # token_res = requests.post(token_url, data=payload, headers=headers).json()
+        # access_token = token_res.get("access_token")
+        # refresh_token = token_res.get("refresh_token")
+
+        
+        expires_in = token_data.get("expires_in", 3600)
         # Calcul de la date d'expiration
         expiration_date = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
