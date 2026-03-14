@@ -1,15 +1,18 @@
 from .utils.metadata import get_date_metadata
 from app.database import get_session
 from app.models import TrackHistory, Track, Artist, Album
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends
 from sqlalchemy import Date, Float, cast, func, select, text
 from sqlmodel import Session
+from app.response_message import AlbumStatsResponse, AlbumMetadataResponse
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
-@router.get('')
-async def get_user_albums(
+@router.get("", response_model=List[AlbumStatsResponse])
+@cache(expire=300)
+async def get_all_albums(
     *,
     db: Session = Depends(get_session),
     offset: int = 0,
@@ -29,6 +32,21 @@ async def get_user_albums(
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
+    """
+    Calcule et récupère les statistiques d'écoute par album pour l'utilisateur.
+
+    **Fonctionnalités avancées :**
+    - **Calcul d'engagement** : Ratio entre le temps écouté et la durée réelle des pistes.
+    - **Score de Rating** : Algorithme personnalisé basé sur l'engagement, le volume d'écoute et la régularité.
+    - **Filtrage SQL (HAVING)** : Les filtres de volume (streams/minutes) sont appliqués au niveau de la base de données pour plus de performance.
+    - **Filtrage Post-Calcul** : Les filtres de rating sont appliqués après le calcul algorithmique.
+
+    **Algorithme de Rating :**
+    Le score est calculé uniquement pour les albums ayant plus de 5 écoutes. Il prend en compte :
+    - L'engagement moyen (le fait d'écouter les morceaux jusqu'au bout).
+    - Le temps total passé sur l'album.
+    - Une pondération par le nombre d'écoutes pour éviter les biais sur les albums courts.
+    """
     sum_played = func.sum(TrackHistory.ms_played)
     sum_duration = func.sum(Track.duration_ms)
     engagement_sql = (cast(sum_played, Float) / func.nullif(cast(sum_duration, Float), 0)).label("engagement")
@@ -86,8 +104,35 @@ async def get_user_albums(
         final_list.sort(key=lambda x: x[sort], reverse=(direction == "desc"))
     return final_list[offset : offset + limit]
 
-@router.get("/metadata")
+@router.get(
+    "/metadata",
+    summary="Récupérer les bornes maximales des albums",
+    response_model=AlbumMetadataResponse,
+    responses={
+        200: {
+            "description": "Retourne les valeurs maximales pour calibrer les filtres du frontend.",
+            "model": AlbumMetadataResponse
+        }
+    }
+)
+@cache(expire=300)
 async def get_albums_metadata(db: Session = Depends(get_session)):
+    """
+    Analyse l'ensemble de la bibliothèque pour extraire les records et les périodes d'écoute.
+    
+    **Utilité :**
+    Cette route est conçue pour alimenter les composants de filtrage (sliders) sur le Frontend. 
+    Elle calcule dynamiquement :
+    - Le record de streams sur un seul album.
+    - Le record de temps passé sur un seul album.
+    - Le score de rating le plus élevé atteint.
+    - La plage de dates disponible dans l'historique.
+
+    **Logique de calcul :**
+    - Effectue une agrégation SQL (SUM/COUNT) groupée par album.
+    - Calcule le rating de l'album 'leader' en utilisant la même formule que la route principale.
+    - En cas de base de données vide, renvoie des valeurs par défaut sécurisées pour éviter les crashs d'UI.
+    """
     # On récupère les stats de l'album recordman
     stats = db.exec(
         select(

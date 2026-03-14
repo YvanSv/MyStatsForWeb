@@ -2,14 +2,25 @@ import math
 from fastapi import APIRouter, Depends
 from sqlalchemy import Date, Float, cast, text
 from sqlmodel import Session, select, func
-from typing import Optional
+from typing import Optional, List
 from app.database import get_session
-from app.models import User, Artist, Track, TrackHistory
+from app.models import Artist, Track, TrackHistory
 from .utils.metadata import get_date_metadata
+from app.response_message import ArtistStatsResponse, ArtistMetadataResponse, DetailMessage
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
-@router.get('')
+@router.get(
+    "",
+    summary="Récupérer les statistiques des artistes",
+    response_model=List[ArtistStatsResponse],
+    responses={
+        200: {"description": "Liste triée et filtrée des artistes avec scores d'engagement et de rating"},
+        400: {"model": DetailMessage, "description": "Erreur dans les paramètres de filtrage"}
+    }
+)
+@cache(expire=300)
 async def get_artists(
     *,
     db: Session = Depends(get_session),
@@ -29,6 +40,19 @@ async def get_artists(
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
+    """
+    Génère un classement des artistes basé sur l'historique d'écoute.
+
+    **Indicateurs calculés :**
+    - **Engagement** : Pourcentage moyen de complétion des morceaux de l'artiste.
+    - **Total Minutes** : Temps d'écoute cumulé converti en minutes.
+    - **Rating** : Score de fidélité calculé via une fonction logarithmique pondérée par l'engagement.
+
+    **Logique de filtrage :**
+    - Les filtres temporels et volumétriques (streams/minutes) sont exécutés via SQL `HAVING` pour optimiser les performances.
+    - Le calcul du `rating` incluant un logarithme mathématique, il est finalisé en Python avant le tri final.
+    - Seuls les artistes avec au moins 2 écoutes reçoivent un rating non nul.
+    """
     sum_played = func.sum(TrackHistory.ms_played)
     sum_duration = func.sum(Track.duration_ms)
     engagement_sql = (cast(sum_played, Float) / func.nullif(cast(sum_duration, Float), 0)).label("engagement")
@@ -79,8 +103,32 @@ async def get_artists(
         all_artists.sort(key=lambda x: x[sort], reverse=(direction == "desc"))
     return all_artists[offset : offset + limit]
 
-@router.get("/metadata")
+@router.get(
+    "/metadata",
+    summary="Récupérer les bornes maximales des artistes",
+    response_model=ArtistMetadataResponse,
+    responses={
+        200: {
+            "description": "Retourne les records (streams, temps, rating) pour configurer les filtres artistes du frontend.",
+            "model": ArtistMetadataResponse
+        }
+    }
+)
+@cache(expire=300)
 async def get_artists_metadata(db: Session = Depends(get_session)):
+    """
+    Analyse l'historique pour déterminer les valeurs plafonds spécifiques aux artistes.
+    
+    **Calculs effectués :**
+    - Identifie l'artiste ayant le plus grand nombre d'écoutes (**max_streams**).
+    - Calcule le temps total en minutes pour cet artiste (**max_minutes**).
+    - Applique l'algorithme de score logarithmique sur cet artiste pour définir le **max_rating**.
+    - Récupère la période couverte par les données (date_min/max).
+
+    **Pourquoi cette route ?**
+    Le rating des artistes utilise une échelle différente de celle des albums (logarithmique vs linéaire). 
+    Utiliser cette route permet au Frontend d'adapter ses Sliders dynamiquement, évitant ainsi des échelles de filtrage non pertinentes.
+    """
     # On récupère les stats de l'artiste le plus écouté
     # On doit joindre Track pour grouper par artist_id
     stats = db.exec(

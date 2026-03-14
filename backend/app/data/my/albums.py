@@ -1,14 +1,22 @@
-from .utils.metadata import get_date_metadata
 from app.database import get_session
 from app.models import TrackHistory, User, Track, Artist, Album
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from sqlalchemy import Date, Float, Numeric, case, cast, func, select, text
+from sqlalchemy import Date, Float, Numeric, case, cast, func, select
 from sqlmodel import Session
+from app.response_message import AlbumStatsResponse, AlbumMetadataResponse, DetailMessage
 
 router = APIRouter()
 
-@router.get('')
+@router.get(
+    "",
+    summary="Récupérer les statistiques d'albums (SQL Optimisé)",
+    response_model=List[AlbumStatsResponse],
+    responses={
+        200: {"description": "Liste paginée des albums triée par score"},
+        401: {"model": DetailMessage, "description": "Session invalide ou utilisateur non connecté"}
+    }
+)
 async def get_user_albums(
     *,
     session_id: Optional[str] = Cookie(None),
@@ -30,6 +38,15 @@ async def get_user_albums(
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
+    """
+    Récupère les albums de l'utilisateur avec calcul de score en temps réel.
+    
+    **Optimisations SQL :**
+    - **Calculs Natifs** : Le rating et l'engagement sont calculés via des fonctions SQL (`CASE`, `CAST`, `SUM`).
+    - **Filtrage HAVING** : Les bornes (min/max) sont appliquées sur les agrégats avant le retour des données.
+    - **Tri Hiérarchique** : En cas d'égalité sur le critère principal, un tri secondaire (ex: minutes ou ID) est appliqué pour une pagination stable.
+    - **Sécurité** : Filtrage automatique par `current_user_id` extrait de la session.
+    """
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     user_result = db.exec(select(User).where(User.session_id == session_id)).first()
     if not user_result: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
@@ -118,12 +135,31 @@ async def get_user_albums(
         })
     return final_list
 
-@router.get('/metadata')
+@router.get(
+    '/metadata',
+    summary="Métadonnées d'albums personnalisées",
+    response_model=AlbumMetadataResponse,
+    responses={
+        200: {"description": "Bornes minimales et maximales calculées pour l'utilisateur."},
+        401: {"description": "Session absente ou utilisateur non reconnu."}
+    }
+)
 async def get_user_albums_metadata(
     *,
     session_id: Optional[str] = Cookie(None),
     db: Session = Depends(get_session)
 ):
+    """
+    Calcule les limites supérieures pour les filtres de recherche d'albums.
+    
+    **Logique interne :**
+    1. **Isolation** : Filtre uniquement les écoutes liées à l'utilisateur courant via son `session_id`.
+    2. **Agrégation par Album** : Utilise une sous-requête pour regrouper les écoutes par album et calculer les scores (streams, minutes, rating).
+    3. **Analyse Globale** : Extrait les valeurs `MAX()` de cette sous-requête et les dates `MIN/MAX` de l'historique complet.
+    
+    **Valeurs par défaut :**
+    Si l'utilisateur n'a aucune donnée, les dates sont fixées par défaut (1890-01-01 à 2026-12-31) pour éviter les plantages du sélecteur de date.
+    """
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     current_user_id = db.exec(select(User.id).where(User.session_id == session_id)).scalar()
     if current_user_id is None: raise HTTPException(status_code=401, detail="Utilisateur introuvable")

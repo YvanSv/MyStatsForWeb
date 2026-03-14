@@ -4,6 +4,7 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useApi } from '@/app/hooks/useApi';
 import { API_ENDPOINTS } from '@/app/constants/routes';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 // Structure exacte de ce que renvoie /me
 interface AuthResponse {
@@ -13,6 +14,7 @@ interface AuthResponse {
   has_spotify: boolean;
   is_logged_in: boolean;
   email: string;
+  spotify_email: string;
 }
 
 interface AuthContextType {
@@ -24,7 +26,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (newUsername: string) => Promise<void>;
   loginSpotify: () => void;
-  unlinkSpotify: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   isLoggedIn: boolean;
 }
 
@@ -73,12 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Fonction de déconnexion
   const logout = async () => {
-    try {await request(API_ENDPOINTS.LOGOUT)}
+    try {await request(API_ENDPOINTS.LOGOUT, {method: 'POST'})}
     catch (error) {console.error("Logout error:", error)}
-    finally {
-      setUser(null);
-      router.push('/');
-    }
+    finally {setUser(null); router.push('/');}
   };
 
   const updateUserProfile = async (newUsername: string) => {
@@ -94,11 +93,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginSpotify = () => {window.location.href = API_ENDPOINTS.SPOTIFY_LOGIN};
 
-  const unlinkSpotify = async () => {
-    try {setUser(prev => prev ? { ...prev, has_spotify: false } : null)}
-    catch (err) {
-      console.error("Erreur lors du déliage :", err);
-      throw err; 
+  // const unlinkSpotify = async () => {
+  //   try {setUser(prev => prev ? { ...prev, has_spotify: false } : null)}
+  //   catch (err) {
+  //     console.error("Erreur lors du déliage :", err);
+  //     throw err; 
+  //   }
+  // };
+
+  const deleteAccount = async () => {
+    try {
+      await request(API_ENDPOINTS.DELETE_ACCOUNT, {method: 'DELETE'});
+      setUser(null);
+      router.push('/');
+      toast.success("Votre compte a été supprimé avec succès.");
+    } catch (err: any) {
+      // Si l'erreur est une 401, le compte est probablement déjà supprimé ou la session expirée
+      if (err.status === 401) {
+        setUser(null);
+        router.push('/');
+      }
+      console.error("Erreur suppression compte:", err);
+      throw err;
     }
   };
 
@@ -112,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       updateUserProfile,
       loginSpotify,
-      unlinkSpotify,
+      deleteAccount,
       isLoggedIn: !!user
     }}>
       {children}

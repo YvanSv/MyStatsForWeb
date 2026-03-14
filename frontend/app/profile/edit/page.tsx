@@ -121,22 +121,20 @@ function EditProfileContent() {
       slug: finalSlug === "" ? null : finalSlug,
       perms: formData.perms
     };
-    await patchProfile('' + user.id, payload);
-    
-    toast.success("Profil modifié !", {
-      style: {
-        borderRadius: '15px',
-        background: '#1A1A1A',
-        color: '#fff',
-        border: '1px solid rgba(255,255,255,0.1)'
-      },
-      iconTheme: {
-        primary: '#1DD05D',
-        secondary: '#fff',
-      },
-    });
-    await refreshUser();
-    router.push(`/profile/${finalSlug === ""  ? user.id : finalSlug}`);
+    try {
+      await patchProfile('' + user.id, payload);
+      toast.success("Profil modifié !", {
+        style: {borderRadius: '15px',background: '#1A1A1A',
+          color: '#fff',border: '1px solid rgba(255,255,255,0.1)'
+        },
+        iconTheme: {primary: '#1DD05D',secondary: '#fff'}
+      });
+      await refreshUser();
+      router.push(`/profile/${finalSlug === ""  ? user.id : finalSlug}`);
+    } catch (err: any) {
+      if (err.status === 422) return;// setMessage({type: "error",text: "Votre pseudonyme doit faire au moins 3 caractères"});
+      else return; // setMessage({type: "error",text: err.message});
+    }
   };
 
   const updatePerm = (key: string, value: boolean) => {

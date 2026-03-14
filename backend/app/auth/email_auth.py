@@ -2,13 +2,13 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr
+from sqlalchemy.exc import IntegrityError
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User
 from .utils.auth_utils import create_uuid_session, get_password_hash, verify_password
-from .spotify_auth import UpdateProfileSchema
+from app.response_message import DetailMessage, UpdateSuccessResponse, UserMeResponse, LogoutResponse, RegisterSuccessResponse, LoginSuccessResponse
 
 load_dotenv()
 FRONTEND_URL = os.getenv("FRONTEND_URL")
@@ -20,38 +20,47 @@ class LoginSchema(BaseModel):
     password: str
 
 class RegisterSchema(BaseModel):
-    username: str
+    username: str = Field(..., min_length=3, max_length=30)
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8)
 
-@router.post("/login")
+class UpdateProfileSchema(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    @field_validator('username')
+    def username_not_empty(cls, v):
+        if v is not None and not v.strip():
+            raise ValueError('Le nom d\'utilisateur ne peut pas être vide')
+        return v.strip() if v else v
+
+@router.post("/login", response_model=LoginSuccessResponse)
 async def login_email(data: LoginSchema, response: Response, session: Session = Depends(get_session)):
-    email = data.email
-    password = data.password
-    if not email or not password: raise HTTPException(status_code=400, detail="Email et mot de passe requis")
-
-    statement = select(User).where(User.email == email)
+    """
+    Authentifie l'utilisateur et initialise une session :
+    1. Vérifie si l'utilisateur existe.
+    2. Compare le hachage du mot de passe.
+    3. Génère un **UUID** de session stocké en base.
+    4. Renvoie un cookie **HttpOnly** sécurisé.
+    
+    *Note : Si l'utilisateur s'est inscrit via Spotify, il doit se connecter via le flux Spotify.*
+    """
+    statement = select(User).where(User.email == data.email)
     user = session.exec(statement).first()
 
     # Vérification de l'utilisateur et du mot de passe
-    if not user or not user.password_hash:
-        # user.password_hash peut être None si l'user s'est inscrit via Spotify uniquement
-        raise HTTPException(status_code=401, detail="Identifiants incorrects")
-    if not verify_password(password, user.password_hash):
+    if not user or not user.password_hash or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Identifiants incorrects")
 
     # Génération d'un nouvel ID de session (UUID)
     new_session_id = create_uuid_session()
     user.session_id = new_session_id
-    session.add(user)
-    session.commit()
-    session.refresh(user)
+    
+    try:
+        session.add(user)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Erreur lors de la création de la session.")
 
-    content = {
-        "status": "success",
-        "user_id": user.id
-    }
-    response = JSONResponse(content=content)
     response.set_cookie(
         key="session_id",
         value=new_session_id,
@@ -61,91 +70,159 @@ async def login_email(data: LoginSchema, response: Response, session: Session = 
         max_age=3600 * 24 * 30,
         path="/"
     )
-    return response
 
-@router.post("/register")
+    return LoginSuccessResponse(user_id=user.id)
+
+@router.post(
+    "/register",
+    summary="Créer un nouveau compte",
+    response_model=RegisterSuccessResponse,
+    status_code=201
+)
 async def register(data: RegisterSchema, session: Session = Depends(get_session)):
-    statement = select(User).where(User.email == data.email)
-    existing_user = session.exec(statement).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=400, 
-            detail="Un compte avec cet email existe déjà."
-        )
+    """
+    Inscrit un nouvel utilisateur dans la base de données :
+    - **email**: Identifiant unique pour la connexion.
+    - **password**: Sera haché avant le stockage (BCrypt/Argon2).
+    - **username**: Nom d'affichage initial sur le profil.
+    
+    Vérifie d'abord si l'email existe déjà pour éviter les doublons.
+    """
+    existing_user = session.exec(select(User).where(User.email == data.email)).first()
+    if existing_user: raise HTTPException(status_code=400,detail="Un compte avec cet email existe déjà.")
 
-    hashed_password = get_password_hash(data.password)
+    # Création de l'utilisateur
     new_user = User(
         email=data.email,
-        password_hash=hashed_password,
-        display_name=data.username,
-        session_id=None,
-        spotify_id=None,
-        refresh_token=None,
-        access_token=None
+        password_hash=get_password_hash(data.password),
+        display_name=data.username
     )
 
     try:
         session.add(new_user)
         session.commit()
         session.refresh(new_user)
-        
-        return {
-            "status": "success",
-            "message": "Utilisateur créé avec succès",
-            "user_id": new_user.id
-        }
-    except Exception as e:
+        return RegisterSuccessResponse(
+            user_id=new_user.id,
+            message="Compte créé avec succès"
+        )
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Ce nom d'utilisateur est déjà pris.")
+    except Exception:
         session.rollback()
         raise HTTPException(status_code=500, detail="Erreur lors de la création du compte.")
 
-@router.get("/logout")
-async def logout():
-    response = JSONResponse(content={ "status": "success" })
-    response.delete_cookie(key="session_id", path="/")
-    return response
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(response: Response,session: Session = Depends(get_session),session_id: Optional[str] = Cookie(None)):
+    """
+    Supprime la session côté client en invalidant le cookie **session_id**.
+    - **Côté Client** : Le navigateur supprimera automatiquement le cookie grâce à l'instruction `Set-Cookie` avec une date d'expiration passée.
+    - **Note** : Il est conseillé de rediriger l'utilisateur vers la page d'accueil ou de login après cet appel.
+    """
+    if session_id:
+        statement = select(User).where(User.session_id == session_id)
+        user = session.exec(statement).first()
+        if user:
+            user.session_id = None
+            session.add(user)
+            session.commit()
+    response.delete_cookie(key="session_id",path="/")
+    return LogoutResponse()
 
-@router.get("/me")
-async def get_me(session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)):
+@router.get(
+    "/me",
+    summary="Récupérer l'utilisateur actuel",
+    response_model=UserMeResponse,
+    responses={401: {"model": DetailMessage}}
+)
+async def get_me(response: Response, session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)):
+    """
+    Vérifie la session de l'utilisateur via le cookie :
+    - Si le cookie est absent : 401.
+    - Si le cookie est présent mais inconnu : 401 + suppression du cookie.
+    - Si valide : Renvoie les informations essentielles du profil.
+    """
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
 
-    statement = select(User).where(User.session_id == session_id)
-    user = db.exec(statement).first()
+    user = db.exec(select(User).where(User.session_id == session_id)).first()
 
     if not user:
-        response = JSONResponse(content={"detail": "Session invalide"}, status_code=401)
-        response.delete_cookie(key="session_id")
-        return response
+        response.delete_cookie(key="session_id", path="/")
+        raise HTTPException(status_code=401, detail="Session expirée ou invalide")
 
-    return {
-        "id": user.id,
-        "slug": user.slug,
-        "user_name": user.display_name,
-        "has_spotify": user.spotify_id is not None,
-        "is_logged_in": True,
-    }
+    return UserMeResponse(
+        id=user.id,
+        slug=user.slug,
+        user_name=user.display_name,
+        has_spotify=user.spotify_id is not None,
+        is_logged_in=True,
+        spotify_email=user.spotify_email
+    )
 
-@router.patch("/update")
-async def update_profile(
+@router.patch(
+    "/update",
+    summary="Mettre à jour le compte utilisateur",
+    response_model=UpdateSuccessResponse
+)
+async def update_account(
     data: UpdateProfileSchema, 
     session_id: Optional[str] = Cookie(None), 
     session: Session = Depends(get_session)
 ):
+    """
+    Permet de modifier les informations de compte de l'utilisateur connecté.
+    - **username**: Change le nom d'affichage public (display_name).
+    """
     if not session_id: raise HTTPException(status_code=401, detail="Non authentifié")
-    # Trouver l'utilisateur
-    statement = select(User).where(User.session_id == session_id)
-    user = session.exec(statement).first()
-    if not user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-
-    # Mettre à jour les champs fournis
+    user = session.exec(select(User).where(User.session_id == session_id)).first()
+    if not user: raise HTTPException(status_code=401, detail="Session invalide ou expirée")
     if data.username: user.display_name = data.username
 
-    # Sauvegarder
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-
-    return {
-        "status": "success", 
-        "message": "Profil mis à jour",
-        "user_name": user.display_name
+    try:
+        session.add(user)
+        session.commit()
+        return UpdateSuccessResponse(
+            status="success",
+            message="Profil mis à jour",
+            user_name=user.display_name
+        )
+    except Exception:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Erreur lors de la mise à jour du compte")
+    
+@router.delete(
+    "/delete",
+    summary="Suppression définitive du compte",
+    responses={
+        200: {"description": "Compte et données supprimés."},
+        401: {"description": "Non authentifié."}
     }
+)
+async def delete_account(
+    response: Response,
+    session_id: Optional[str] = Cookie(None), 
+    session: Session = Depends(get_session)
+):
+    """
+    Supprime intégralement l'utilisateur et ses données associées.
+    """
+    if not session_id: raise HTTPException(status_code=401, detail="Non authentifié")
+    user = session.exec(select(User).where(User.session_id == session_id)).first()
+    if not user: raise HTTPException(status_code=401, detail="Session invalide")
+
+    try:
+        # Suppression de l'utilisateur
+        session.delete(user)
+        session.commit()
+        # Nettoyage du cookie côté client
+        response.delete_cookie(
+            key="session_id",
+            path="/",
+            samesite="none" if IS_PRODUCTION else "lax",
+            secure=IS_PRODUCTION
+        )
+        return {"status": "success", "message": "Votre compte et toutes vos données ont été supprimés."}
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Erreur lors de la suppression du compte.")

@@ -10,11 +10,14 @@ import CompactStatCard from "./CompactStatCard";
 import AccordionItem from "./AccordionItem";
 import IntervalsSelector from "./IntervalSelector";
 import TopMediaCard from "./TopMediaCard";
+import { PrimaryButton } from "../../../components/Atomic/Buttons";
 import { DashboardStats, formatToInputDate, getDateRange, getRangeLabel, INITIAL_STATS } from "./utils";
 import { UserProfile } from "@/app/data/DataInfos";
 import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 import { SecondaryButton } from "@/app/components/Atomic/Buttons";
+import { ErrorState } from "@/app/components/Atomic/Error/Error";
 import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
+import { ApiError } from "@/app/services/api";
 
 const STYLES = {
   main: "min-h-screen bg-bg1 text-white",
@@ -60,6 +63,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'activite' | 'diversite' | 'habitudes'>("activite");
   const [metric, setMetric] = useState<'streams' | 'minutes'>('minutes');
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const { getDashboard, getProfile } = useProfile();
 
   const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
@@ -72,25 +76,42 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (!id) return;
-    const getProfileData = async () => {setProfile(await getProfile(`${id}`))};
-    getProfileData();
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getProfile(id+'');
+        setProfile(data);
+      } catch (err: any) {setError(err)}
+      finally {setLoading(false)}
+    };
+    loadData();
   }, [id]);
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
+    
     const fetchStats = async () => {
+      setLoading(true);
+      setError(null);
+      
       const { start, end } = getDateRange(range, offset);
       setStartDate(formatToInputDate(start));
       setEndDate(formatToInputDate(end));
-      try { setExtendedStats(await getDashboard(`${id}`, start, end)) }
-      catch (error) { console.error("Erreur:", error) }
-      finally { setTimeout(() => setLoading(false), 150) }
+
+      try {
+        const stats = await getDashboard(`${id}`, start, end);
+        setExtendedStats(stats);
+      } catch (err: any) {
+        setError(err);
+        setExtendedStats(INITIAL_STATS);
+      } finally {setTimeout(() => setLoading(false), 150)}
     };
 
     fetchStats();
   }, [id, range, offset]);
+
+  if (error && error.status === 404 && !profile) return <ErrorState title="Dashboard introuvable" status={error.status}/>;
 
   return (
     <main className={STYLES.main}>

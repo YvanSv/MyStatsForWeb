@@ -8,7 +8,15 @@ from app.models import TrackHistory, Track, Album, Artist, User
 
 router = APIRouter()
 
-@router.get("/{slug}")
+@router.get(
+    "/{slug}",
+    summary="Récupérer l'analyse complète d'un profil",
+    responses={
+        200: {"description": "Calcul complet des statistiques et graphiques"},
+        403: {"description": "Dashboard privé"},
+        404: {"description": "Utilisateur non trouvé"}
+    }
+)
 def get_dashboard_data(
     slug: str, 
     start_date: Optional[datetime] = Query(None), 
@@ -16,6 +24,19 @@ def get_dashboard_data(
     session_id: Optional[str] = Cookie(None),
     session: Session = Depends(get_session)
 ):
+    """
+    Génère une vue analytique profonde du comportement d'écoute.
+
+    **Fonctionnalités Clés :**
+    - **Contrôle d'Accès** : Gère la visibilité publique/privée via les `perms` de l'utilisateur.
+    - **Normalisation Temporelle** : Ajustement automatique (Timezone +1h) pour le graphique de l'horloge.
+    - **Analyse de Découverte** : Calcule l'évolution du catalogue (quand un artiste/album a été vu pour la première fois).
+    - **Dualité des Tops** : Retourne les favoris selon deux métriques : le temps passé (`ms_played`) et la fréquence (`count`).
+
+    **Indicateurs de Performance :**
+    - **Ratio de complétion** : Pourcentage moyen d'écoute des morceaux (écoute intégrale vs zapping).
+    - **Intensité** : Moyennes quotidiennes de temps et de streams.
+    """
     # Récupérer le propriétaire du profil
     if slug.isdigit(): target_user = session.get(User, int(slug))
     else: target_user = session.exec(select(User).where(User.slug == slug)).first()
@@ -336,7 +357,7 @@ def get_dashboard_data(
         }
 
     return {
-        "totalTime": f"{total_min:,}".replace(',', ' ') + " min",
+        "totalTime": total_min,
         "totalStreams": res.total_streams,
         "uniqueTracks": res.unique_tracks,
         "uniqueAlbums": res.unique_albums,
@@ -344,9 +365,9 @@ def get_dashboard_data(
         "peakHour": f"{peak_h_val}h" if peak_h_val is not None else "--h",
         "peakDay": days_names[peak_d_idx] if peak_d_idx is not None else "--",
         "peakMonth": peak_month_name,
-        "avgTimePerDay": f"{total_min // effective_days} min",
+        "avgTimePerDay": total_min // effective_days,
         "avgStreamsPerDay": round(res.total_streams / effective_days, 1),
-        "ratio": f"{min(round(res.completion or 0, 1), 100.0)}%",
+        "ratio": min(round(res.completion or 0, 1), 100.0),
         "clockData": clock_data,
         "weeklyData": weekly_data,
         "monthlyData": monthly_data,

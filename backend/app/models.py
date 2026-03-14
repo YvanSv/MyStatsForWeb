@@ -26,8 +26,6 @@ class User(SQLModel, table=True):
     )
 
     # --- LIEN SPOTIFY (Email technique Spotify) ---
-    # On stocke l'email renvoyé par Spotify ici. 
-    # Il peut être différent de l'email ci-dessus.
     spotify_email: Optional[str] = Field(default=None) 
     spotify_id: Optional[str] = Field(default=None, index=True, unique=True)
     # Tokens et sessions
@@ -36,7 +34,13 @@ class User(SQLModel, table=True):
     access_token: Optional[str] = Field(default=None)
     expires_at: Optional[datetime] = Field(default=None)
 
-    history: List["TrackHistory"] = Relationship(back_populates="user")
+    history: List["TrackHistory"] = Relationship(
+        back_populates="user", 
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "passive_deletes": True
+        }
+    )
 
 class Artist(SQLModel, table=True):
     spotify_id: str = Field(primary_key=True)
@@ -72,7 +76,7 @@ class TrackHistory(SQLModel, table=True):
     played_at: datetime = Field(index=True)
     ms_played: int
     
-    user_id: int = Field(foreign_key="user.id")
+    user_id: int = Field(foreign_key="user.id", ondelete="CASCADE")
     spotify_id: str = Field(foreign_key="track.spotify_id")
     
     user: User = Relationship(back_populates="history")

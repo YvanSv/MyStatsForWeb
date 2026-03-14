@@ -7,12 +7,30 @@ from app.models import Artist
 from app.spotify.utils.spotify_status import spotify_status
 from app.spotify.utils.spotify_api import get_spotify_client
 from app.database import engine
+from app.response_message import MaintenanceTaskResponse
 
 router = APIRouter()
 
-@router.post('')
+@router.post(
+    "",
+    summary="Lancer le rattrapage des métadonnées",
+    response_model=MaintenanceTaskResponse,
+    responses={
+        202: {"description": "Tâche ajoutée à la file d'attente avec succès."}
+    }
+)
 async def fix_missing_covers(background_tasks: BackgroundTasks):
-    """Endpoint pour lancer le rattrapage en arrière-plan"""
+    """
+    Déclenche un processus de maintenance asynchrone pour compléter les données manquantes.
+
+    **Opérations effectuées en arrière-plan (`catch_up_maintenance`) :**
+    - **Images manquantes** : Analyse les albums sans `image_url` et tente une récupération via l'API Spotify.
+    - **Durées manquantes** : Complète les `duration_ms` des morceaux pour fiabiliser les calculs de statistiques.
+    - **Nettoyage** : Optimise la cohérence des relations entre Tracks et Albums.
+
+    **Fonctionnement asynchrone :**
+    L'API répond immédiatement avec un statut `started`. Le traitement réel s'effectue sur un thread séparé géré par FastAPI, ce qui évite les timeouts HTTP sur des gros volumes de données.
+    """
     background_tasks.add_task(catch_up_maintenance)
     return {"status": "started", "message": "Le rattrapage des images et de la durée a commencé."}
 

@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
 from app.database import create_db_and_tables
 from app.auth import router as auth_router
 from app.data.my import router as my_data_router
@@ -13,6 +15,7 @@ from app.data import router as overview_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    FastAPICache.init(InMemoryBackend())
     yield
 
 app = FastAPI(title="MyStats Spotify API",lifespan=lifespan)
@@ -34,5 +37,4 @@ app.include_router(profile_router)
 app.include_router(overview_router)
 
 @app.get("/")
-def read_root():
-    return {"status": "online", "message": "API MyStatsWeb opérationnelle"}
+def read_root(): return {"status": "online", "message": "API MyStatsWeb opérationnelle"}

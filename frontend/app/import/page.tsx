@@ -1,11 +1,12 @@
 "use client";
-
 import { useState } from "react";
-import { BASE_UI, GENERAL_STYLES } from "../styles/general";
+import { BASE_UI } from "../styles/general";
 import { useApiSpotifyData } from "../hooks/useApiSpotifyData";
+import { ApiError } from "../services/api";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
-import { DoubleFrame, SkeletonDoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
+import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
+import { SkeletonImport } from "./Skeleton";
 
 export default function ImportPage() {
   return (
@@ -61,7 +62,15 @@ export function ImportContent() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFiles(Array.from(e.target.files));
+      const selectedFiles = Array.from(e.target.files);
+      
+      // OPTIONNEL : Validation locale du type de fichier
+      const invalidFiles = selectedFiles.filter(f => !f.name.endsWith('.json'));
+      if (invalidFiles.length > 0) return setError("Seuls les fichiers .json sont acceptés.");
+
+      setFiles(selectedFiles);
+      setError("");
+      setSuccess("");
       e.target.value = "";
     }
   };
@@ -70,17 +79,21 @@ export function ImportContent() {
     e.preventDefault();
     if (files.length === 0) return setError("Veuillez sélectionner au moins un fichier.");
     setError("");
-    setSuccess("");
-    const formData = new FormData();
-    files.forEach(file => formData.append("files", file));
 
     try {
+      // On passe les fichiers. Note: uploadSpotifyJson doit gérer le FormData en interne
       const res = await uploadSpotifyJson(files);
-      res.added && setSuccess(`${res.added} écoutes importées !`);
-      res.message && setSuccess(`${res.message} écoutes importées !`);
+
+      // Gestion des différents formats de réponse possibles
+      const count = res.added ?? res.count ?? 0;
+      const msg = res.message || `${count} écoutes importées avec succès !`;
+
+      setSuccess(msg);
       setFiles([]);
+    } catch (err: any) {
+      // Ici err.message contient le message propre extrait par ta classe ApiError
+      setError(err instanceof ApiError ? err.message : "Erreur lors de l'importation.");
     }
-    catch (err: any) {setError(err.message || "Erreur lors de l'importation.")}
   };
 
   const left_col = {
@@ -184,45 +197,6 @@ export function ImportContent() {
       contents={[left_col.content,right_col.content]}
     />
   );
-}
-
-const SKELETON_STYLES = {
-  PULSE: `${BASE_UI.anim.base} animate-pulse bg-white/5 ${BASE_UI.rounded.input}`,
-  TEXT_LG: `h-10 bg-white/10 ${BASE_UI.rounded.item} animate-pulse`,
-  TEXT_MD: `h-4 bg-white/5 rounded-lg animate-pulse`,
-  TEXT_SM: `h-3 bg-white/5 rounded animate-pulse`,
-};
-
-function SkeletonImport() {
-  const contents = [
-    <div className="space-y-6">
-      <div className="h-40 w-full border-2 border-dashed border-white/5 rounded-[30px] flex flex-col items-center justify-center space-y-3">
-        <div className="w-10 h-10 bg-white/5 rounded-full animate-pulse" />
-        <div className={`w-40 ${SKELETON_STYLES.TEXT_SM}`} />
-      </div>
-      <div className="h-14 w-full bg-white/10 rounded-2xl animate-pulse" />
-      <div className={`w-48 mx-auto ${SKELETON_STYLES.TEXT_SM}`} />
-    </div>,
-    <div className="space-y-6">
-      {[1, 2, 3, 4].map((step) => (
-        <div key={step} className="flex gap-4 items-start">
-          <div className="w-8 h-8 shrink-0 bg-white/5 rounded-full animate-pulse" />
-          <div className="space-y-2 w-full">
-            <div className={`w-full ${SKELETON_STYLES.TEXT_MD}`} />
-            <div className={`w-2/3 ${SKELETON_STYLES.TEXT_MD}`} />
-          </div>
-        </div>
-      ))}
-
-      {/* Note technique simulée */}
-      <div className="mt-8 p-6 bg-white/5 rounded-[30px] space-y-3">
-        <div className={`w-32 bg-white/10 ${SKELETON_STYLES.TEXT_SM}`} />
-        <div className={`w-full ${SKELETON_STYLES.TEXT_SM}`} />
-        <div className={`w-full ${SKELETON_STYLES.TEXT_SM}`} />
-      </div>
-    </div>
-  ];
-  return <SkeletonDoubleFrame contents={contents}/>;
 }
 
 // --- ICONS ---

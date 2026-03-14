@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FRONT_ROUTES } from "../constants/routes";
 import PublicRoute from "../components/auth/PublicRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
-import { DoubleFrame, SkeletonDoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
+import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
+import { SkeletonAuth } from "./Skeleton";
+import toast from "react-hot-toast";
 
 export default function AuthPage() {
   return (
@@ -38,12 +40,23 @@ function AuthContent() {
   const [registerMessage, setRegisterMessage] = useState({ type: "", text: "" });
 
   useEffect(() => {
-    const registered = searchParams.get("registered");
-    if (registered === "true") {
+    const error = searchParams.get("error");
+    if (error) {
+      const errorMap: Record<string, string> = {
+        "spotify_cancelled": "Connexion Spotify annulée.",
+        "spotify_token_error": "Impossible de récupérer l'accès Spotify.",
+        "spotify_profile_error": "Échec de la récupération du profil Spotify.",
+        "missing_code": "Paramètres d'authentification manquants."
+      };
+      
       setLoginMessage({ 
-        type: "success", 
-        text: "Compte créé avec succès ! Connectez-vous." 
+        type: "error", 
+        text: errorMap[error] || `Erreur Spotify : ${error}` 
       });
+
+      // Nettoie l'URL sans recharger la page
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
     }
   }, [searchParams]);
 
@@ -51,28 +64,38 @@ function AuthContent() {
     e.preventDefault();
     setLoading(true);
     setLoginMessage({ type: "", text: "" });
-    setRegisterMessage({ type: "", text: ""});
 
     try {
       await login(loginData.email, loginData.password);
       router.push(FRONT_ROUTES.ACCUEIL);
       router.refresh();
-    } catch (err: any) {setLoginMessage({ type: "error", text: "Email ou mot de passe incorrect." })}
-    finally {setLoading(false)}
+    } catch (err: any) {
+      // Utilise le message extrait par ApiError (ex: "Email ou mot de passe incorrect")
+      setLoginMessage({ 
+        type: "error", 
+        text: err.message || "Une erreur est survenue lors de la connexion." 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginMessage({ type: "", text: "" });
+    setRegisterMessage({ type: "", text: "" });
+
     if (regData.password !== regData.confirmPassword)
       return setRegisterMessage({ type: "error", text: "Les mots de passe ne correspondent pas." });
 
     setLoading(true);
     try {
       await register(regData.username, regData.email, regData.password);
-      setRegisterMessage({ type: "success", text: "Inscription réussie !" });
-    } catch (err: any) {setRegisterMessage({ type: "error", text: err.message || "Erreur lors de l'inscription." })}
-    finally {setLoading(false)}
+      toast.success("Bienvenue !");
+    } catch (err: any) {
+      if (err.status === 422) setRegisterMessage({type: "error",text: "Le mot de passe doit faire au moins 8 caractères."});
+      else if (err.status === 400) setRegisterMessage({type: "error",text: err.message});
+      else setRegisterMessage({type: "error",text: "Une erreur est survenue. Impossible de créer le compte."});
+    } finally {setLoading(false)}
   };
 
   const left_col = {
@@ -198,54 +221,6 @@ function AuthContent() {
       contents={[left_col.content,right_col.content]}
     />
   );
-}
-
-const SKELETON_STYLES = {
-  PULSE: "animate-pulse bg-white/5 rounded-2xl h-12 w-full",
-  TEXT_SM: "h-3 bg-white/5 rounded animate-pulse",
-};
-
-function SkeletonAuth() {
-  const contents = [
-    <>
-      <div className="h-14 w-full bg-vert/10 rounded-full animate-pulse" />
-      
-      <div className="relative py-4">
-          <div className="w-full border-t border-white/5" />
-      </div>
-
-      <div className="space-y-6">
-        {[1, 2].map((i) => (
-          <div key={i} className="space-y-2">
-            <div className={`w-16 ml-2 ${SKELETON_STYLES.TEXT_SM}`} />
-            <div className={SKELETON_STYLES.PULSE}/>
-          </div>
-        ))}
-        <div className="h-14 w-full bg-white/10 rounded-2xl animate-pulse mt-4" />
-      </div>
-    </>,
-    <div className="space-y-4">
-      {[1, 2].map((i) => (
-        <div key={i} className="space-y-2">
-          <div className={`w-24 ml-2 ${SKELETON_STYLES.TEXT_SM}`} />
-          <div className={SKELETON_STYLES.PULSE}/>
-        </div>
-      ))}
-      
-      <div className="grid grid-cols-2 gap-4">
-        {[1,2].map(i => (
-          <div key={i} className="space-y-2">
-            <div className={`w-20 ml-2 ${SKELETON_STYLES.TEXT_SM}`} />
-            <div className={SKELETON_STYLES.PULSE}/>
-          </div>
-        ))}
-      </div>
-
-      <div className="h-14 w-full bg-vert/10 rounded-2xl animate-pulse mt-6" />
-      <div className={`w-3/4 mx-auto mt-4 ${SKELETON_STYLES.TEXT_SM}`} />
-    </div>
-  ]
-  return <SkeletonDoubleFrame contents={contents}/>;
 }
 
 // --- ICONES ---

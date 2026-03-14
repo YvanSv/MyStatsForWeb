@@ -9,6 +9,7 @@
 - **trouver un moyen de limiter un utilisateur déconnecté**
 - roles ?
 - **page /help /faq ...**
+- optimisation appel SQL (calcul rating) sur les routes data/all/ et data/my/
 - page de détail d'une donnée quand on clique dessus
 - Provider Apple Music
 - Data reader Apple Music

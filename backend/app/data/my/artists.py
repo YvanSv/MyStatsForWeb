@@ -1,14 +1,22 @@
 from fastapi import APIRouter, Depends, Cookie, HTTPException
-from sqlalchemy import Date, Float, Numeric, case, cast, text
+from sqlalchemy import Date, Float, Numeric, case, cast
 from sqlmodel import Session, select, func
-from typing import Optional
+from typing import Optional, List
 from app.database import get_session
 from app.models import User, Artist, Track, TrackHistory
-from .utils.metadata import get_date_metadata
+from app.response_message import ArtistStatsResponse, ArtistMetadataResponse, DetailMessage
 
 router = APIRouter()
 
-@router.get('')
+@router.get(
+    "",
+    summary="Statistiques des artistes (Calcul SQL)",
+    response_model=List[ArtistStatsResponse],
+    responses={
+        200: {"description": "Liste paginée des artistes avec scores de fidélité."},
+        401: {"model": DetailMessage, "description": "Session invalide ou utilisateur non connecté"}
+    }
+)
 async def get_artists(
     *,
     session_id: Optional[str] = Cookie(None),
@@ -29,6 +37,20 @@ async def get_artists(
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
+    """
+    Génère le classement des artistes écoutés par l'utilisateur via une agrégation SQL complexe.
+
+    **Logique de calcul intégrée (SQL) :**
+    - **Engagement** : Ratio temps écouté / durée totale des pistes de l'artiste (en %).
+    - **Rating Artiste** : Formule logarithmique pondérée par l'engagement et le volume. 
+      - Utilise `func.log()` pour lisser l'impact des minutes d'écoute.
+      - Utilise `func.greatest()` pour éviter les erreurs mathématiques sur les valeurs nulles.
+    - **Tri Hiérarchique** : Système de "tie-breaker" (si les écoutes sont égales, on trie par minutes, puis par ID) pour une pagination stable.
+
+    **Sécurité et Performance :**
+    - Filtrage par `user_id` obligatoire.
+    - Pagination exécutée côté base de données (`offset`, `limit`).
+    """
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     user = db.exec(select(User).where(User.session_id == session_id)).first()
     if not user: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
@@ -112,8 +134,27 @@ async def get_artists(
         })
     return all_artists
 
-@router.get('/metadata')
+@router.get(
+    '/metadata',
+    summary="Métadonnées d'artistes personnalisées",
+    response_model=ArtistMetadataResponse,
+    responses={
+        200: {"description": "Bornes maximales (streams, minutes, rating) pour les filtres artistes."},
+        401: {"description": "Session invalide ou utilisateur introuvable."}
+    }
+)
 async def get_artists_metadata(*, session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)):
+    """
+    Calcule les records personnels de l'utilisateur pour calibrer les outils de filtrage.
+
+    **Processus analytique :**
+    1. **Agrégation par Artiste** : Une sous-requête calcule les statistiques de chaque artiste écouté par l'utilisateur (Streams, Minutes, et le Rating logarithmique).
+    2. **Extraction des Sommets** : La requête principale extrait les valeurs maximales de ces agrégats.
+    3. **Bornes Temporelles** : Récupère les dates de la première et dernière écoute enregistrées.
+
+    **Calcul du Rating Max :**
+    Le score utilise la fonction `func.log()` et `func.greatest()` pour traiter les données de manière non-linéaire. Une marge de sécurité de **+0.05** est ajoutée au maximum pour une meilleure ergonomie des sliders UI.
+    """
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     current_user_id = db.exec(select(User.id).where(User.session_id == session_id)).first()
     if current_user_id is None: raise HTTPException(status_code=401, detail="Utilisateur introuvable")

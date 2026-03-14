@@ -3,10 +3,12 @@ import json
 import hashlib
 from typing import List, Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException, UploadFile, File
+from sqlalchemy import insert
 from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User, Track, TrackHistory
 from app.spotify.utils.SpotifyWorker import spotify_worker
+from app.response_message import UploadSuccessResponse
 
 router = APIRouter()
 
@@ -15,12 +17,31 @@ def stable_hash(text: str) -> str:
     normalized = text.strip().lower()
     return f"gen_{hashlib.md5(normalized.encode()).hexdigest()[:16]}"
 
-@router.post('')
+@router.post(
+    "",
+    summary="Importer l'historique JSON de Spotify",
+    response_model=UploadSuccessResponse,
+    responses={
+        200: {"model": UploadSuccessResponse, "description": "Importation réussie, traitement asynchrone lancé."},
+        401: {"description": "Utilisateur non connecté (cookie session_id manquant)."},
+    }
+)
 async def upload_spotify_json(
     files: List[UploadFile] = File(...),
     session_id: Optional[str] = Cookie(None),
     db: Session = Depends(get_session)
 ):
+    """
+    Traite et importe les fichiers d'historique d'écoute Spotify.
+
+    **Fonctionnement du pipeline :**
+    1. **Dédoublonnage intelligent** : Compare chaque entrée avec l'historique existant (`played_at` + `spotify_id`) pour éviter les doublons.
+    2. **Filtrage de qualité** : Ignore les écoutes de moins de 3 secondes (souvent des zappings).
+    3. **Insertion optimisée** : Utilise `add_all` et `flush` pour gérer les relations entre les nouvelles pistes et l'historique.
+    4. **Enrichissement asynchrone** : Les pistes inconnues sont créées avec un titre temporaire, puis envoyées à un **Worker** qui récupère les images et détails via l'API Spotify.
+
+    **Note :** Cette route peut prendre du temps selon la taille des fichiers. Le traitement des images se fait en arrière-plan pour ne pas bloquer l'utilisateur.
+    """
     # Authentification de l'utilisateur
     user = db.exec(select(User).where(User.session_id == session_id)).first()
     if not user: raise HTTPException(status_code=401, detail="Non connecté")
@@ -84,9 +105,17 @@ async def upload_spotify_json(
         ))
 
     # 4. COMMIT IMMEDIAT
-    db.add_all(to_add_tracks.values())
-    db.flush()
-    db.add_all(to_add_history)
+    if to_add_tracks:
+        db.add_all(to_add_tracks.values())
+        db.flush()
+    if to_add_history:
+        history_data = [{
+            "user_id": h.user_id,
+            "spotify_id": h.spotify_id,
+            "played_at": h.played_at,
+            "ms_played": h.ms_played
+        } for h in to_add_history]
+        db.exec(insert(TrackHistory).values(history_data))
     db.commit()
 
     # 5. APPEL AU WORKER (Asynchrone)

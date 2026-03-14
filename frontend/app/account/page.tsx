@@ -1,9 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { ApiError } from "../services/api";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton, TertiaryButton } from "../components/Atomic/Buttons";
-import { DoubleFrame, SkeletonDoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
+import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
+import { Skeleton } from "./Skeleton";
+import toast from "react-hot-toast";
 
 export default function AccountPage() {
   return (
@@ -26,7 +29,7 @@ const PROFILE_STYLES = {
 };
 
 function AccountContent() {
-  const { user, loading, updateUserProfile, unlinkSpotify, loginSpotify } = useAuth();
+  const { user, loading, updateUserProfile, deleteAccount, loginSpotify } = useAuth();
   const [username, setUsername] = useState("");
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
@@ -34,14 +37,32 @@ function AccountContent() {
   useEffect(() => {if (user?.user_name) setUsername(user.user_name)}, [user]);
 
   const handleSave = async (e: React.FormEvent) => {
-    if (updating) return;
     e.preventDefault();
+    if (updating) return;
+
     setUpdating(true);
+    setMessage({ type: "", text: "" });
+
     try {
       await updateUserProfile(username);
-      setMessage({ type: "success", text: "Profil mis à jour partout !" });
-    } catch (err) {setMessage({ type: "error", text: "Erreur lors de la sauvegarde" })}
-    finally {setUpdating(false)}
+      setMessage({ 
+        type: "success", 
+        text: "Profil mis à jour avec succès !" 
+      });
+    } catch (err: any) {
+      if (err.status === 422) setMessage({type: "error",text: "Votre pseudonyme doit faire au moins 3 caractères"});
+      else setMessage({type: "error",text: err.message});
+    } finally {setUpdating(false)}
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmation = prompt("Pour confirmer la suppression de votre compte et de toutes vos statistiques, tapez 'SUPPRIMER' ci-dessous :");
+    
+    if (confirmation === "SUPPRIMER") {
+      try {
+        await deleteAccount();
+      } catch (err) {toast.error("Erreur lors de la suppression.")}
+    }
   };
 
   if (!user || loading) return <Skeleton/>;
@@ -123,9 +144,9 @@ function AccountContent() {
 
           {user.has_spotify ? (
             <div className="space-y-4">
-              <TertiaryButton onClick={unlinkSpotify}
-                additional="text3 w-full hover:text-rouge hover:bg-rouge/10 hover:border-rouge/20 py-3 text-[10px] font-bold uppercase tracking-widest"
-              >Délier mon compte Spotify</TertiaryButton>
+              <p className="text3 w-full py-3 text-[11px] font-bold uppercase tracking-widest">
+                {user.spotify_email}
+              </p>
             </div>
           ) : (
             <PrimaryButton onClick={loginSpotify} additional="w-full py-4 sm:rounded-2xl">
@@ -137,6 +158,20 @@ function AccountContent() {
         <p className={`text3 text-[10px] text-center mt-8 leading-relaxed font-hias uppercase tracking-tighter`}>
           La liaison Spotify permet à MyStats de récupérer vos écoutes.
         </p>
+        {/* Zone de danger : Suppression du compte */}
+        <div className="mt-12 pt-8 border-t border-white/5 flex flex-col items-center">
+          <button onClick={handleDeleteAccount}
+            className="group flex flex-col items-center gap-3 transition-all duration-300 hover:opacity-80"
+          >
+            <div className="px-6 py-3 rounded-full border border-rouge/20 bg-rouge/5 text-rouge text-[11px] font-bold uppercase tracking-widest group-hover:bg-rouge group-hover:text-white transition-all">
+              Supprimer mon compte MyStats
+            </div>
+          </button>
+          
+          <p className="text3 text-[10px] text-center mt-8 leading-relaxed font-hias uppercase tracking-tighter">
+            Cette action est irréversible. Toutes vos statistiques et données de profil seront définitivement effacées.
+          </p>
+        </div>
       </>,
   }
 
@@ -147,28 +182,6 @@ function AccountContent() {
       contents={[left_col.content,right_col.content]}
     />
   );
-}
-
-function Skeleton() {
-  const contents = [
-    <div className="space-y-6">
-      {[1,2].map(i => (
-        <div key={i} className="space-y-1">
-          <div className={`h-12 w-full animate-pulse bg-white/5 rounded-2xl`}/>
-        </div>
-      ))}
-      <div className="h-14 w-full bg-white/10 rounded-2xl animate-pulse mt-4"/>
-    </div>,
-    <>
-      <div className="h-48 w-full bg-white/5 rounded-[30px] border border-white/5 animate-pulse"/>
-      {/* Note en bas */}
-      <div className="mt-8 space-y-2">
-        <div className="h-2 w-full bg-white/5 rounded animate-pulse"/>
-        <div className="h-2 w-2/3 mx-auto bg-white/5 rounded animate-pulse"/>
-      </div>
-    </>
-  ]
-  return <SkeletonDoubleFrame contents={contents}/>;
 }
 
 // --- ICONES ---

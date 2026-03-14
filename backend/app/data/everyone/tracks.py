@@ -1,15 +1,26 @@
 from .utils.metadata import get_date_metadata
 from app.database import get_session
 from app.models import TrackHistory, Track, Artist, Album
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends
 from sqlalchemy import Date, Float, cast, func, select, text
 from sqlmodel import Session
+from app.response_message import TrackStatsResponse, TrackMetadataResponse, DetailMessage
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
-@router.get('')
-async def get_user_musics(
+@router.get(
+    "",
+    summary="Récupérer les statistiques des musiques",
+    response_model=List[TrackStatsResponse],
+    responses={
+        200: {"description": "Liste des morceaux avec statistiques d'écoute et scores calculés"},
+        400: {"model": DetailMessage, "description": "Erreur dans les paramètres de filtrage"}
+    }
+)
+@cache(expire=300)
+async def get_all_musics(
     *,
     db: Session = Depends(get_session),
     offset: int = 0,
@@ -30,6 +41,17 @@ async def get_user_musics(
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
+    """
+    Analyse détaillée des habitudes d'écoute par morceau individuel.
+
+    **Indicateurs clés :**
+    - **Engagement** : Calculé en comparant le temps d'écoute total à la durée théorique de la piste (`ms_played` / `duration_ms`).
+    - **Rating Musique** : Algorithme spécifique qui combine l'engagement et le volume d'écoute brut, normalisé pour les morceaux individuels.
+
+    **Filtrage technique :**
+    - Utilise des **JOINS** triples (Track -> Album -> Artist -> History) pour permettre un filtrage croisé (ex: toutes les musiques de tel artiste dans tel album).
+    - Les agrégations SQL sont effectuées avant le calcul du rating final en Python.
+    """
     play_count = func.count(TrackHistory.id).label("play_count")
     total_minutes = (cast(func.sum(TrackHistory.ms_played), Float) / 60000).label("total_minutes")
     sum_played = func.sum(TrackHistory.ms_played)
@@ -92,8 +114,31 @@ async def get_user_musics(
         all_musics.sort(key=lambda x: x["title" if sort == "name" else sort], reverse=(direction == "desc"))
     return all_musics[offset : offset + limit]
 
-@router.get("/metadata")
+@router.get(
+    "/metadata",
+    summary="Récupérer les bornes maximales des musiques",
+    response_model=TrackMetadataResponse,
+    responses={
+        200: {
+            "description": "Retourne les records (streams, temps, rating) pour configurer les filtres de morceaux.",
+            "model": TrackMetadataResponse
+        }
+    }
+)
+@cache(expire=300)
 async def get_musics_metadata(db: Session = Depends(get_session)):
+    """
+    Analyse l'historique d'écoute pour extraire les valeurs plafonds de chaque morceau.
+    
+    **Calculs réalisés :**
+    - Identifie le morceau le plus écouté en volume (**max_streams**).
+    - Calcule le temps total en minutes passé sur ce morceau spécifique (**max_minutes**).
+    - Applique la formule de **Rating Musique** sur ce record pour définir le plafond du score.
+    - Récupère la plage de dates globale de l'historique utilisateur.
+
+    **Utilité technique :**
+    Contrairement aux artistes ou albums, les morceaux individuels ont des ratios d'engagement très différents (souvent plus élevés car plus courts). Cette route garantit que les sliders du Frontend ne sont pas limités par une échelle arbitraire.
+    """
     # 1. On récupère les stats de la track la plus écoutée pour calculer le rating max théorique
     # On ajoute la durée de la track (Track.duration_ms) pour l'engagement
     stats = db.exec(

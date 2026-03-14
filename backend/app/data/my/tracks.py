@@ -1,14 +1,23 @@
 from .utils.metadata import get_date_metadata
 from app.database import get_session
 from app.models import TrackHistory, User, Track, Artist, Album
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Cookie, Depends, HTTPException
 from sqlalchemy import Date, Float, Numeric, cast, func, select, text
 from sqlmodel import Session
+from app.response_message import TrackStatsResponse, TrackMetadataResponse
 
 router = APIRouter()
 
-@router.get('')
+@router.get(
+    "",
+    summary="Statistiques des morceaux (Calcul SQL)",
+    response_model=List[TrackStatsResponse],
+    responses={
+        200: {"description": "Liste paginée des musiques avec agrégats de lecture."},
+        401: {"description": "Utilisateur non authentifié."}
+    }
+)
 async def get_user_musics(
     *,
     session_id: Optional[str] = Cookie(None),
@@ -31,6 +40,16 @@ async def get_user_musics(
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
+    """
+    Récupère l'historique détaillé par morceau avec calculs de performance SQL.
+
+    **Indicateurs calculés en base de données :**
+    - **Engagement** : Calculé par le ratio `ms_played / duration_ms`. Permet de voir si le morceau est écouté en entier ou zappé.
+    - **Rating Musique** : Score pondéré par l'engagement et le volume. La division par `20.0 * play_count` dans la formule SQL favorise les morceaux écoutés de manière qualitative (engagement haut) plutôt que quantitative.
+    - **Tri Stable** : Utilise une hiérarchie de colonnes (ex: rating -> engagement -> spotify_id) pour éviter les sauts de lignes lors de la pagination.
+
+    **Optimisation :** Le filtrage `HAVING` s'exécute après le `GROUP BY`, ce qui permet de filtrer sur des valeurs calculées (comme `total_minutes`) sans surcharger la mémoire du serveur Python.
+    """
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     user_result = db.exec(select(User).where(User.session_id == session_id)).first()
     if not user_result: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
@@ -123,8 +142,26 @@ async def get_user_musics(
 
     return all_tracks
 
-@router.get('/metadata')
+@router.get(
+    '/metadata',
+    summary="Métadonnées personnalisées des morceaux",
+    response_model=TrackMetadataResponse,
+    responses={
+        200: {"description": "Retourne les records (max) pour calibrer les filtres de recherche."},
+        401: {"description": "Utilisateur non authentifié ou session invalide."}
+    }
+)
 async def get_user_tracks_metadata(*, session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)):
+    """
+    Analyse l'historique complet pour extraire les valeurs limites des morceaux de l'utilisateur.
+
+    **Fonctionnement technique :**
+    1. **Sous-requête SQL** : Regroupe les écoutes par `spotify_id` pour calculer le volume, le temps et le rating propre à chaque piste.
+    2. **Agrégation des Maxima** : Extrait les valeurs les plus hautes parmi tous les morceaux (utilisé pour les sliders du Frontend).
+    3. **Bornes Temporelles** : Utilise des `scalar_subquery` pour récupérer la date la plus ancienne et la plus récente sans alourdir le groupement principal.
+
+    **Note sur le Rating :** Une marge de **+0.05** est ajoutée au `max_rating` pour garantir que l'élément le mieux noté reste sélectionnable dans les interfaces de filtrage.
+    """
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     current_user_id = db.exec(select(User.id).where(User.session_id == session_id)).scalar()
     if current_user_id is None: raise HTTPException(status_code=401, detail="Utilisateur introuvable")

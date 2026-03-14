@@ -5,11 +5,15 @@ import { useAuth } from "@/app/hooks/useAuth";
 import { useProfile } from "@/app/hooks/useProfile";
 import { BarChart3 } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "@/app/components/Atomic/Buttons";
+import { ErrorState } from "@/app/components/Atomic/Error/Error";
 import { UserProfile } from "@/app/data/DataInfos";
 import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 import toast from "react-hot-toast";
 import { GENERAL_STYLES } from "@/app/styles/general";
 import { FRONT_ROUTES } from "@/app/constants/routes";
+import { ApiError } from "../../services/api";
+import { ProfileSkeleton } from "./Skeleton";
+import { HorizontalTopSection, StatCard } from "./components";
 
 const PROFILE_STYLES = {
   MAIN_WRAPPER: "min-h-screen pb-20 bg-bg1",
@@ -46,11 +50,12 @@ export default function ProfilePage({ id }: { id: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const { getProfile } = useProfile();
   const { user: currentUser } = useAuth();
 
   const isOwner = useMemo(() => {
-  if (!currentUser || !id) return false;
+    if (!currentUser || !id) return false;
     const profileIdOrSlug = id.toString().toLowerCase();
     const currentUserId = currentUser.id?.toString().toLowerCase();
     const currentUserSlug = currentUser.slug?.toLowerCase();
@@ -59,9 +64,14 @@ export default function ProfilePage({ id }: { id: string }) {
 
   useEffect(() => {
     if (!id || id === 'undefined') return;
-    setLoading(true);
+    
     const loadData = async () => {
-      try {setProfile(await getProfile(id))}
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getProfile(id);
+        setProfile(data);
+      } catch (err: any) {setError(err instanceof ApiError ? err : new ApiError(err.status,"Erreur inconnue"))}
       finally {setLoading(false)}
     };
     loadData();
@@ -69,33 +79,18 @@ export default function ProfilePage({ id }: { id: string }) {
 
   const totalDays = profile ? Math.floor(profile.total_minutes / 1440) : 0;
 
-  const handleShare = () => {
-    const currentUrl = window.location.href;
-    navigator.clipboard.writeText(currentUrl)
-      .then(() => {
-        toast.success("Lien copié !", {
-          style: {
-            borderRadius: '15px',
-            background: '#1A1A1A',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)'
-          },
-          iconTheme: {
-            primary: '#1DD05D',
-            secondary: '#fff',
-          },
-        });
-      })
-      .catch((err) => {
-        console.error("Erreur lors de la copie :", err);
-        toast.error("Impossible de copier le lien");
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Lien copié !", {
+        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
+    } catch (err) {toast.error("Impossible de copier le lien")}
   };
 
-  if (!profile)
-    if (loading) return <ProfileSkeleton/>;
-    else return <h1>Profil introuvable</h1>;
-
+  if (error instanceof ApiError && error.status === 404) return <ErrorState title="Profil introuvable" status={error.status}/>;
+  if (loading || !profile) return <ProfileSkeleton/>;
   return (
     <div className={PROFILE_STYLES.MAIN_WRAPPER}>
       {/* --- BANNIÈRE --- */}
@@ -152,11 +147,11 @@ export default function ProfilePage({ id }: { id: string }) {
         )}
 
         {/* SECTIONS TOP 50 HORIZONTALES */}
-        {profile.perms.favorites && (
+        {(profile.perms.favorites && profile.top_50_tracks.length > 0) && (
           <div className="mt-8 space-y-20">
-            <HorizontalTopSection title="50 meilleurs tracks" items={profile.top_50_tracks} count={20}/>
-            <HorizontalTopSection title="50 meilleurs albums" items={profile.top_50_albums} count={20}/>
-            <HorizontalTopSection title="50 meilleurs artistes" items={profile.top_50_artists} count={20}/>
+            <HorizontalTopSection title="50 meilleurs tracks" items={profile.top_50_tracks}/>
+            <HorizontalTopSection title="50 meilleurs albums" items={profile.top_50_albums}/>
+            <HorizontalTopSection title="50 meilleurs artistes" items={profile.top_50_artists}/>
           </div>
         )}
         
@@ -166,18 +161,24 @@ export default function ProfilePage({ id }: { id: string }) {
           <div className={PROFILE_STYLES.RECENT_CONTAINER}>
             <h2 className={PROFILE_STYLES.SECTION_TITLE}>Écoutes récentes</h2>
             <div className="space-y-2">
-              {profile.recent_tracks.map((track) => (
-                <div key={track.id} className={PROFILE_STYLES.TRACK_ITEM}>
-                  <img src={track.image_url} className={PROFILE_STYLES.TRACK_IMG} alt={track.title} />
-                  <div className="flex-1">
-                    <p className={PROFILE_STYLES.TRACK_NAME}>{track.title}</p>
-                    <p className={PROFILE_STYLES.TRACK_ARTIST}>{track.artist}</p>
-                  </div>
-                  <div className={PROFILE_STYLES.TRACK_DATE}>
-                    {new Date(track.played_at).toLocaleDateString()}
-                  </div>
+              {profile.top_50_tracks.length === 0 ? (
+                <div className={PROFILE_STYLES.TRACK_ITEM}>
+                  <p className={PROFILE_STYLES.TRACK_NAME}>Aucune écoute</p>
                 </div>
-              ))}
+              ) : (
+                profile.recent_tracks.map((track) => (
+                  <div key={track.id} className={PROFILE_STYLES.TRACK_ITEM}>
+                    <img src={track.image_url} className={PROFILE_STYLES.TRACK_IMG} alt={track.title} />
+                    <div className="flex-1">
+                      <p className={PROFILE_STYLES.TRACK_NAME}>{track.title}</p>
+                      <p className={PROFILE_STYLES.TRACK_ARTIST}>{track.artist}</p>
+                    </div>
+                    <div className={PROFILE_STYLES.TRACK_DATE}>
+                      {new Date(track.played_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -188,158 +189,5 @@ export default function ProfilePage({ id }: { id: string }) {
 
 /* --- SOUS-COMPOSANTS --- */
 
-function HorizontalTopSection({ title, items, count }: { title: string, items: any[], count: number }) {
-  return (
-    <section className="flex flex-col gap-4 my-12">
-      {/* Header de la section */}
-      <div className="flex justify-between items-end px-2">
-        <h2 className="text1 text-xl font-bold tracking-tight">{title}</h2>
-        <span className="text-sm text-vert font-semibold cursor-pointer hover:underline opacity-80">
-          Voir plus
-        </span>
-      </div>
-
-      {/* Conteneur de scroll horizontal */}
-      <div className="flex overflow-x-auto gap-4 pb-6 snap-x no-scrollbar">
-        {items.map((item, index) => (
-          <div 
-            key={index} 
-            className="flex-shrink-0 w-[100px] md:w-[120px] snap-start group cursor-pointer"
-          >
-            {/* Image avec Overlay de Rank */}
-            <div className="relative aspect-square mb-3 overflow-hidden rounded-xl shadow-lg border border-white/5">
-              <img 
-                src={item.image_url}
-                className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110`} 
-                alt={item.name} 
-              />
-              {/* Badge de classement */}
-              <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                <span className="text-[10px] font-mono font-bold text-white">#{index + 1}</span>
-              </div>
-              {/* Overlay Play au hover */}
-              {/* <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                 <div className="w-12 h-12 bg-vert rounded-full flex items-center justify-center shadow-xl translate-y-4 group-hover:translate-y-0 transition-transform">
-                    <span className="text-bg1 ml-1">▶</span>
-                 </div>
-              </div> */}
-            </div>
-
-            {/* Légendes */}
-            <div className="space-y-1">
-              <p className="text1 font-bold truncate group-hover:text-vert transition-colors">{item.name}</p>
-              <p className="text3 text-xs truncate opacity-60 font-medium">{item.sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function StatCard({ title, value, sub, color }: { 
-  title: string, 
-  value: React.ReactNode,
-  sub: string, 
-  color: string 
-}) {
-  return (
-    <div className="flex flex-col justify-between bg-bg2/40 backdrop-blur-md border border-white/5 p-5 rounded-3xl hover:border-white/10 transition-all group relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 blur-3xl -mr-12 -mt-12 group-hover:bg-vert/5 transition-colors" />
-      <p className={`text3 text-[10px] uppercase tracking-[0.2em] mb-2 relative z-10`}>{title}</p>
-      <h3 className={`text-3xl font-bold mb-1 relative z-10 ${color}`}>{value}</h3>
-      <p className={`text3 text-[11px] italic relative z-10`}>{sub}</p>
-    </div>
-  );
-}
-
 const EditIcon = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
 const ShareIcon = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-
-const SkeletonPulse = ({ className }: { className: string }) => (
-  <div className={`animate-pulse bg-white/5 rounded-lg ${className}`} />
-);
-
-export function ProfileSkeleton() {
-  return (
-    <div className={PROFILE_STYLES.MAIN_WRAPPER}>
-      {/* --- BANNIÈRE SKELETON --- */}
-      <div className={PROFILE_STYLES.BANNER_WRAPPER}>
-        <div className="w-full h-full bg-white/5 animate-pulse" />
-        <div className={PROFILE_STYLES.GRADIENT_OVERLAY} />
-      </div>
-
-      <div className={PROFILE_STYLES.CONTAINER}>
-        {/* HEADER PROFIL SKELETON */}
-        <div className="flex flex-col md:flex-row items-center md:items-end gap-6 mb-12 relative -mt-16 md:-mt-20">
-          {/* Avatar circle */}
-          <div className="w-32 h-32 md:w-40 md:h-40 rounded-4xl border-4 border-bg1 bg-white/10 animate-pulse shadow-2xl" />
-          
-          <div className="flex-1 flex flex-col items-center md:items-start gap-3">
-             <SkeletonPulse className="h-10 w-48 md:w-64" />
-             <div className="flex gap-2">
-                <SkeletonPulse className="h-10 w-32 rounded-full" />
-                <SkeletonPulse className="h-10 w-10 rounded-full" />
-             </div>
-          </div>
-        </div>
-
-        {/* BIO SKELETON */}
-        <div className="mb-12 px-6 space-y-3">
-          <SkeletonPulse className="h-4 w-full opacity-60" />
-          <SkeletonPulse className="h-4 w-[90%] opacity-40" />
-          <SkeletonPulse className="h-4 w-[40%] opacity-20" />
-        </div>
-
-        {/* STATS GRID SKELETON */}
-        <div className={PROFILE_STYLES.STATS_GRID}>
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-bg2/40 border border-white/5 p-5 rounded-3xl h-32 flex flex-col justify-between">
-               <SkeletonPulse className="h-3 w-20" />
-               <SkeletonPulse className="h-8 w-32" />
-               <SkeletonPulse className="h-3 w-24" />
-            </div>
-          ))}
-        </div>
-
-        {/* SECTIONS TOP 50 SKELETON */}
-        <div className="mt-8 space-y-20">
-          {[1, 2].map((section) => (
-            <div key={section} className="flex flex-col gap-6">
-              <div className="flex justify-between items-end px-2">
-                <SkeletonPulse className="h-6 w-40" />
-                <SkeletonPulse className="h-4 w-16" />
-              </div>
-              <div className="flex gap-4 overflow-hidden">
-                {[1, 2, 3, 4, 5, 6].map((item) => (
-                  <div key={item} className="flex-shrink-0 w-[100px] md:w-[120px]">
-                    <SkeletonPulse className="aspect-square w-full rounded-xl mb-3" />
-                    <SkeletonPulse className="h-4 w-full mb-2" />
-                    <SkeletonPulse className="h-3 w-2/3 opacity-50" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ÉCOUTES RÉCENTES SKELETON */}
-        <div className={PROFILE_STYLES.RECENT_CONTAINER + " mt-20"}>
-          <SkeletonPulse className="h-6 w-48 mb-6" />
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-4 p-2">
-                <SkeletonPulse className="h-12 w-12 rounded-md" />
-                <div className="flex-1 space-y-2">
-                  <SkeletonPulse className="h-4 w-1/3" />
-                  <SkeletonPulse className="h-3 w-1/4 opacity-50" />
-                </div>
-                <SkeletonPulse className="h-3 w-16" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

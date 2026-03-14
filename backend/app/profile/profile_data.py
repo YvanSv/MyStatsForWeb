@@ -1,9 +1,9 @@
 from typing import Optional
-
 from fastapi import APIRouter, Cookie, HTTPException, Depends
 from sqlmodel import Session, select, func, desc
 from app.database import get_session
 from app.models import User, TrackHistory, Track, Artist, Album
+from app.response_message import UserProfileResponse
 
 def get_optional_user(session_id: Optional[str], db: Session):
     if not session_id:
@@ -12,8 +12,31 @@ def get_optional_user(session_id: Optional[str], db: Session):
 
 router = APIRouter()
 
-@router.get("/{slug}")
+@router.get(
+    "/{slug}",
+    summary="Récupérer le profil public d'un utilisateur",
+    response_model=UserProfileResponse,
+    responses={
+        200: {"description": "Profil récupéré avec succès (données filtrées par permissions)."},
+        403: {"description": "Profil privé ou accès refusé."},
+        404: {"description": "L'utilisateur n'existe pas."}
+    }
+)
 def get_user_profile(slug: str, session: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
+    """
+    Génère une page de profil complète incluant l'identité et les habitudes d'écoute.
+
+    **Logique d'accès (Privacy first) :**
+    - **Identification** : Le système détermine si le visiteur est le propriétaire du profil.
+    - **Permissions granulaires** : Chaque section (Stats, Favoris, Historique) n'est calculée et affichée que si :
+        1. L'utilisateur a activé la permission dans ses réglages.
+        2. OU le visiteur est le propriétaire.
+    
+    **Calculs SQL à la volée :**
+    - **Top 50** : Agrégation par morceaux, artistes et albums basée sur le `play_count`.
+    - **Heure de pointe** : Extraction de l'heure (`func.extract`) la plus fréquente dans l'historique.
+    - **Fallback visuel** : Utilisation de DiceBear (avatars) et Unsplash (bannières) si l'utilisateur n'a pas personnalisé son profil.
+    """
     if slug.isdigit():
         # On cherche d'abord par ID, si rien on cherche par slug (au cas où l'ID 123 n'existe pas mais le slug "123" oui)
         target_user = session.get(User, int(slug))
