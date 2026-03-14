@@ -15,9 +15,19 @@ const jost = Jost({
   variable: "--font-jost",
 });
 
-export const metadata: Metadata = {
-  title: "MyStats for Web",
-  description: "Visualisez vos stats Spotify",
+export const metadata = {
+  title: "MyStats",
+  description: "Découvrez vos statistiques Spotify !",
+  openGraph: {
+    title: "MyStats",
+    description: "Découvrez vos statistiques Spotify !",
+    url: "https://mystatsfy.vercel.app/",
+    siteName: "MyStats",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

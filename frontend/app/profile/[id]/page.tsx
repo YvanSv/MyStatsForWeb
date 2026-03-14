@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useProfile } from "@/app/hooks/useProfile";
 import { GENERAL_STYLES } from "@/app/styles/general";
-import { FRONT_ROUTES } from "@/app/constants/routes";
+import { API_ENDPOINTS, FRONT_ROUTES } from "@/app/constants/routes";
 import { BarChart3 } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "@/app/components/Atomic/Buttons";
 import { UserProfile } from "@/app/data/DataInfos";
@@ -42,6 +42,60 @@ const PROFILE_STYLES = {
   TRACK_ARTIST: `text3 text-sm`,
   TRACK_DATE: `text3 text-xs font-mono`
 };
+
+import { Metadata } from 'next';
+
+// On définit les types pour les paramètres de l'URL
+type Props = {
+  params: { id: string }
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const id = params.id;
+
+  // On récupère les données du profil (depuis ton API FastAPI)
+  // Note : Il est préférable d'avoir un endpoint public "getProfile"
+  const response = await fetch(`${API_ENDPOINTS.PROFILE_DATA}/${id}`, {
+    next: { revalidate: 3600 } // Cache d'une heure pour les robots
+  });
+  
+  const profile = await response.json();
+
+  if (!profile) return { title: "Profil introuvable - MyStatsFy" };
+
+  const title = `Profil de ${profile.display_name} | MyStatsFy`;
+  const description = profile.bio || `Découvrez les statistiques Spotify de ${profile.display_name}.`;
+  
+  // On utilise la bannière si elle existe, sinon l'avatar
+  const imageUrl = profile.banner_url || profile.avatar_url;
+
+  return {
+    title: title,
+    description: description,
+    themeColor: '#1DD05D',
+    openGraph: {
+      title: title,
+      description: description,
+      url: `https://mystatsfy.vercel.app/profile/${id}`,
+      siteName: 'MyStats',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: `Bannière de ${profile.display_name}`,
+        },
+      ],
+      type: 'profile',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: title,
+      description: description,
+      images: [imageUrl],
+    },
+  };
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -274,7 +328,7 @@ export function ProfileSkeleton() {
         {/* HEADER PROFIL SKELETON */}
         <div className="flex flex-col md:flex-row items-center md:items-end gap-6 mb-12 relative -mt-16 md:-mt-20">
           {/* Avatar circle */}
-          <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-bg1 bg-white/10 animate-pulse shadow-2xl" />
+          <div className="w-32 h-32 md:w-40 md:h-40 rounded-4xl border-4 border-bg1 bg-white/10 animate-pulse shadow-2xl" />
           
           <div className="flex-1 flex flex-col items-center md:items-start gap-3">
              <SkeletonPulse className="h-10 w-48 md:w-64" />
