@@ -60,7 +60,7 @@ def spotify_login(response: Response):
         value=state,
         httponly=True,
         max_age=600, 
-        samesite="lax",
+        samesite="none",
         secure=IS_PRODUCTION
     )
 
