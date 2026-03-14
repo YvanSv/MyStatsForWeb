@@ -3,16 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
-import { GENERAL_STYLES } from "@/app/styles/general";
 import { PrimaryButton } from "@/app/components/Atomic/Buttons";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useProfile } from "@/app/hooks/useProfile";
-import { API_ENDPOINTS } from "@/app/constants/routes";
 import toast from "react-hot-toast";
 
 export default function EditProfilePage() {
   return (
-    <ProtectedRoute skeleton={<EditProfileSkeleton/>}>
+    <ProtectedRoute skeleton={<ProfileEditSkeleton/>}>
       <EditProfileContent/>
     </ProtectedRoute>
   );
@@ -134,7 +132,7 @@ function EditProfileContent() {
     });
   };
 
-  if (loading) return <EditProfileSkeleton />;
+  if (loading) return <ProfileEditSkeleton />;
 
   return (
     <main className={PROFILE_EDIT_STYLES.MAIN}>
@@ -248,70 +246,73 @@ function OptionToggle({title,description,active,onChange,disabled}:any) {
   );
 }
 
-const SKELETON_STYLES = {
-  // Base Pulse
-  PULSE: "animate-pulse bg-white/5",
-  
-  // Custom Shapes
-  BANNER: "h-[250px] w-full bg-bg2",
-  AVATAR: "w-40 h-40 rounded-[35px] border-4 border-bg1 bg-white/10",
-  TEXT_LG: "h-8 w-48 rounded-lg mb-2",
-  TEXT_SM: "h-4 w-64 rounded-lg",
-  CARD: "bg-bg2/30 border border-white/5 rounded-[40px] p-8 mt-12",
-  LABEL: "h-3 w-24 rounded bg-white/10 mb-3 ml-1",
-  INPUT: "h-12 w-full rounded-2xl bg-white/5 border border-white/10",
-  TEXTAREA: "h-32 w-full rounded-2xl bg-white/5 border border-white/10",
-  BUTTON: "h-12 w-40 rounded-2xl bg-white/10"
-};
+const SkeletonPulse = ({ className }: { className: string }) => (
+  <div className={`animate-pulse bg-white/5 rounded-lg ${className}`} />
+);
 
-function EditProfileSkeleton() {
+export function ProfileEditSkeleton() {
   return (
-    <div className={PROFILE_EDIT_STYLES.MAIN}>
-      {/* --- BANNER SKELETON --- */}
-      <div className={`${SKELETON_STYLES.BANNER} ${SKELETON_STYLES.PULSE}`} />
+    <main className={PROFILE_EDIT_STYLES.MAIN}>
+      {/* --- SKELETON BANNIÈRE --- */}
+      <div className={PROFILE_EDIT_STYLES.BANNER_WRAPPER}>
+        <div className={`w-full h-full bg-white/5 animate-pulse`} />
+        <div className={PROFILE_EDIT_STYLES.BANNER_GRADIENT} />
+      </div>
 
       <div className={PROFILE_EDIT_STYLES.CONTAINER}>
-        {/* --- HEADER SKELETON --- */}
+        {/* --- SKELETON HEADER --- */}
         <div className={PROFILE_EDIT_STYLES.HEADER_FLEX}>
-          <div className={`${SKELETON_STYLES.AVATAR} ${SKELETON_STYLES.PULSE}`} />
+          <div className={PROFILE_EDIT_STYLES.AVATAR_WRAPPER}>
+            <div className="w-full h-full rounded-4xl bg-white/10 animate-pulse" />
+          </div>
           
           <div className={PROFILE_EDIT_STYLES.TEXT_GROUP}>
-            <div className={`${SKELETON_STYLES.TEXT_LG} ${SKELETON_STYLES.PULSE}`} />
-            <div className={`${SKELETON_STYLES.TEXT_SM} ${SKELETON_STYLES.PULSE}`} />
+            <SkeletonPulse className="h-8 w-48 mb-2" />
+            <SkeletonPulse className="h-4 w-64" />
           </div>
         </div>
 
-        {/* --- FORM CARD SKELETON --- */}
-        <div className={SKELETON_STYLES.CARD}>
-          {/* Field: Name */}
+        {/* --- SKELETON FORMULAIRE --- */}
+        <div className={PROFILE_EDIT_STYLES.FORM_CARD}>
+          {/* Nom d'affichage */}
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
-            <div className={`${SKELETON_STYLES.LABEL} ${SKELETON_STYLES.PULSE}`} />
-            <div className={`${SKELETON_STYLES.INPUT} ${SKELETON_STYLES.PULSE}`} />
+            <SkeletonPulse className="h-4 w-24 mb-3" />
+            <SkeletonPulse className="h-12 w-full" />
           </div>
 
-          {/* Field: Bio */}
+          {/* Bio */}
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
-            <div className={`${SKELETON_STYLES.LABEL} ${SKELETON_STYLES.PULSE}`} />
-            <div className={`${SKELETON_STYLES.TEXTAREA} ${SKELETON_STYLES.PULSE}`} />
-          </div>
-
-          {/* Privacy Toggle Skeleton */}
-          <div className={PROFILE_EDIT_STYLES.TOGGLE_CARD(false)}>
-            <div className="space-y-2">
-              <div className={`${SKELETON_STYLES.LABEL} w-20 ${SKELETON_STYLES.PULSE}`} />
-              <div className={`${SKELETON_STYLES.TEXT_SM} w-40 ${SKELETON_STYLES.PULSE}`} />
+            <div className="flex justify-between mb-3">
+              <SkeletonPulse className="h-4 w-20" />
+              <SkeletonPulse className="h-3 w-12" />
             </div>
-            <div className="w-12 h-6 rounded-full bg-white/10 animate-pulse" />
+            <SkeletonPulse className="h-32 w-full" />
           </div>
 
-          {/* Footer Actions Skeleton */}
+          {/* Permissions */}
+          <div className="flex flex-col justify-center mt-4">
+            <SkeletonPulse className="h-4 w-32 mb-4" />
+            <div className="flex flex-col gap-8 p-4 border border-white/5 bg-white/5 rounded-2xl w-full">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <div className="flex flex-col gap-2">
+                    <SkeletonPulse className="h-4 w-32" />
+                    <SkeletonPulse className="h-3 w-64" />
+                  </div>
+                  <SkeletonPulse className="h-6 w-12 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer Actions */}
           <div className={PROFILE_EDIT_STYLES.FOOTER}>
-            <div className="h-4 w-20 rounded bg-white/5 animate-pulse" />
-            <div className={`${SKELETON_STYLES.BUTTON} ${SKELETON_STYLES.PULSE}`} />
+            <SkeletonPulse className="h-10 w-24" />
+            <SkeletonPulse className="h-10 w-48" />
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
