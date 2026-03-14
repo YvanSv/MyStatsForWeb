@@ -116,8 +116,8 @@ function EditProfileContent() {
     const payload = {
       display_name: formData.display_name,
       bio: formData.bio,
-      avatar_url: formData.avatar,
-      banner_url: formData.banner,
+      avatar_url: formData.avatar_url,
+      banner_url: formData.banner_url,
       slug: finalSlug,
       perms: formData.perms
     };
