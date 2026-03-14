@@ -16,11 +16,11 @@ const jost = Jost({
 });
 
 export const metadata = {
-  title: "MyStats",
-  description: "Découvrez vos statistiques Spotify !",
+  title: "MyStats - Votre musique, décryptée.",
+  description: "Découvrez vos statistiques Spotify ! Venez analyser vos habitudes d'écoute.",
   openGraph: {
-    title: "MyStats",
-    description: "Découvrez vos statistiques Spotify !",
+    title: "MyStats - Votre musique, décryptée.",
+    description: "Découvrez vos statistiques Spotify ! Venez analyser vos habitudes d'écoute.",
     url: "https://mystatsfy.vercel.app/",
     siteName: "MyStats",
     type: "website",
