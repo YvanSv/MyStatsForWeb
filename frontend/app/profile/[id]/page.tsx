@@ -10,6 +10,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = params.id;
+  if (!id || id === 'undefined') return { title: "Profil - MyStats" };
 
   // On récupère les données du profil (depuis ton API FastAPI)
   // Note : Il est préférable d'avoir un endpoint public "getProfile"
@@ -55,6 +56,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ServerProfilePage({ params }: Props) {
-  return (<ProfilePage id={params.id}/>);
+export default async function ServerProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  return <ProfilePage id={(await params).id}/>;
 }

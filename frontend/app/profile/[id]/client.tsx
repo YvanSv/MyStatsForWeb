@@ -51,20 +51,18 @@ export default function ProfilePage({ id }: { id: string }) {
 
   const isOwner = useMemo(() => {
     if (!currentUser || !id) return false;
-    const profileId = Array.isArray(id) ? id[0] : id;
-    return currentUser.id?.toString() === profileId;
+    return currentUser.id?.toString() === id;
   }, [currentUser, id]);
 
   useEffect(() => {
+    if (!id || id === 'undefined') return;
     setLoading(true);
     const loadData = async () => {
-      const profileId = Array.isArray(id) ? id[0] : id;
-      if (!profileId) return;
-      try {setProfile(await getProfile(profileId))}
+      try {setProfile(await getProfile(id))}
       finally {setLoading(false)}
     };
     loadData();
-  }, []);
+  }, [id]);
 
   const totalDays = profile ? Math.floor(profile.total_minutes / 1440) : 0;
 
