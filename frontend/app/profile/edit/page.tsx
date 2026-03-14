@@ -67,8 +67,8 @@ function EditProfileContent() {
   const { getEditableProfile, patchProfile } = useProfile();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    display_name: "...",
-    bio: "...",
+    display_name: "",
+    bio: "",
     slug: "",
     avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
     banner_url: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
@@ -118,7 +118,7 @@ function EditProfileContent() {
       bio: formData.bio,
       avatar_url: formData.avatar_url,
       banner_url: formData.banner_url,
-      slug: finalSlug,
+      slug: finalSlug === "" ? null : finalSlug,
       perms: formData.perms
     };
     await patchProfile('' + user.id, payload);
@@ -245,7 +245,7 @@ function EditProfileContent() {
               <label className={PROFILE_EDIT_STYLES.LABEL}>Description</label>
               <p className={`block text-xs mb-2 ml-1
                 ${(formData.bio || "").length > 400 ? (formData.bio.length > 450 ? (formData.bio.length === 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
-              >{formData.bio.length}/500</p>
+              >{(formData.bio?.length || 0)}/500</p>
             </div>
             <textarea rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
               value={formData.bio} placeholder="Dites-en un peu plus sur vos goûts musicaux..."
@@ -258,7 +258,7 @@ function EditProfileContent() {
               <label className={PROFILE_EDIT_STYLES.LABEL}>URL personnalisée</label>
               <p className={`block text-xs mb-2 ml-1
                 ${(formData.slug || "").length > 20 ? (formData.slug.length > 25 ? (formData.slug.length === 30 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
-              >{formData.slug.length}/30</p>
+              >{(formData.slug?.length || 0)}/30</p>
             </div>
             <div className="relative flex items-center">
               {/* Préfixe de l'URL */}
