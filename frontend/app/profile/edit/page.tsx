@@ -244,7 +244,7 @@ function EditProfileContent() {
             <div className="flex justify-between">
               <label className={PROFILE_EDIT_STYLES.LABEL}>Description</label>
               <p className={`block text-xs mb-2 ml-1
-                ${formData.bio.length > 400 ? (formData.bio.length > 450 ? (formData.bio.length === 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+                ${(formData.bio || "").length > 400 ? (formData.bio.length > 450 ? (formData.bio.length === 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{formData.bio.length}/500</p>
             </div>
             <textarea rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
@@ -257,7 +257,7 @@ function EditProfileContent() {
             <div className="flex justify-between">
               <label className={PROFILE_EDIT_STYLES.LABEL}>URL personnalisée</label>
               <p className={`block text-xs mb-2 ml-1
-                ${formData.slug.length > 20 ? (formData.slug.length > 25 ? (formData.slug.length === 30 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+                ${(formData.slug || "").length > 20 ? (formData.slug.length > 25 ? (formData.slug.length === 30 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{formData.slug.length}/30</p>
             </div>
             <div className="relative flex items-center">
