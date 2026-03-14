@@ -61,6 +61,7 @@ function EditProfileContent() {
   const router = useRouter();
   const { user } = useAuth();
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const { getEditableProfile, patchProfile } = useProfile();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -150,6 +151,23 @@ function EditProfileContent() {
     }
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Vérification de la taille (ex: 2MB max)
+      if (file.size > 2 * 1024 * 1024) {
+        alert("L'image est trop lourde (max 2MB)");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, avatar_url: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (loading) return <ProfileEditSkeleton />;
 
   return (
@@ -176,8 +194,15 @@ function EditProfileContent() {
         {/* --- ÉDITION AVATAR --- */}
         <div className={PROFILE_EDIT_STYLES.HEADER_FLEX}>
           <div className={PROFILE_EDIT_STYLES.AVATAR_WRAPPER}>
-            <img src={formData.avatar_url} className={PROFILE_EDIT_STYLES.AVATAR_IMG} alt="Avatar Preview" />
-            <div className={PROFILE_EDIT_STYLES.OVERLAY_ICON}>
+            <input 
+              type="file" 
+              ref={avatarInputRef}
+              onChange={handleAvatarChange}
+              accept="image/*"
+              className="hidden" 
+            />
+            <img src={formData.avatar_url} className={PROFILE_EDIT_STYLES.AVATAR_IMG} alt="Avatar Preview"/>
+            <div className={PROFILE_EDIT_STYLES.OVERLAY_ICON} onClick={() => avatarInputRef.current?.click()} style={{ cursor: 'pointer' }}>
               <CameraIcon size={32} />
             </div>
           </div>
