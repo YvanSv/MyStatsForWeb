@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
   ALL_ALBUMS_METADATA:`${API_BASE_URL}/data/all/albums/metadata`,
   SPOTIFY_STATUS:`${API_BASE_URL}/spotify/status`,
   PROFILE_DATA: `${API_BASE_URL}/profile`,
+  SIMPLE_PROFILE_DATA: `${API_BASE_URL}/profile/simple`,
   EDITABLE_PROFILE_DATA: `${API_BASE_URL}/edit-profile`,
   DASHBOARD_DATA: `${API_BASE_URL}/profile/dashboard`,
 };

@@ -8,28 +8,34 @@ type Props = {
   params: { id: string }
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const id = params.id;
-  if (!id || id === 'undefined') return { title: "Profil - MyStats" };
+export async function generateViewport({ params }: Props) {
+  return {
+    themeColor: '#1DD05D',
+  };
+}
 
-  const response = await fetch(`${API_ENDPOINTS.PROFILE_DATA}/${id}`, {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const id = (await params).id;
+  if (!id || id === undefined) return { title: "Profil - MyStats" };
+
+  const response = await fetch(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/${id}`, {
     next: { revalidate: 3600 } // Cache d'une heure pour les robots
   });
   
   const profile = await response.json();
+  console.log("DEBUG PROFILE DATA:", profile);
 
-  if (!profile) return { title: "Profil introuvable - MyStatsFy" };
+  if (!profile || !profile.display_name) return { title: "Profil introuvable - MyStats" };
 
-  const title = `Profil de ${profile.display_name} | MyStatsFy`;
+  const title = `Profil de ${profile.display_name} | MyStats`;
   const description = profile.bio || `Découvrez les statistiques Spotify de ${profile.display_name}.`;
   
   // On utilise la bannière si elle existe, sinon l'avatar
-  const imageUrl = profile.banner_url || profile.avatar_url;
+  const imageUrl = profile.banner || profile.avatar;
 
   return {
     title: title,
     description: description,
-    themeColor: '#1DD05D',
     openGraph: {
       title: title,
       description: description,

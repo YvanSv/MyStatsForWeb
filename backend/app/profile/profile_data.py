@@ -1,9 +1,10 @@
 from typing import Optional
 from fastapi import APIRouter, Cookie, HTTPException, Depends
-from sqlmodel import Session, select, func, desc
+from sqlmodel import Session, select, func, desc, text
 from app.database import get_session
 from app.models import User, TrackHistory, Track, Artist, Album
-from app.response_message import UserProfileResponse
+from app.response_message import UserProfileResponse, BaseUserProfile
+from sqlalchemy.orm import joinedload
 
 def get_optional_user(session_id: Optional[str], db: Session):
     if not session_id:
@@ -37,13 +38,9 @@ def get_user_profile(slug: str, session: Session = Depends(get_session), session
     - **Heure de pointe** : Extraction de l'heure (`func.extract`) la plus fréquente dans l'historique.
     - **Fallback visuel** : Utilisation de DiceBear (avatars) et Unsplash (bannières) si l'utilisateur n'a pas personnalisé son profil.
     """
-    if slug.isdigit():
-        # On cherche d'abord par ID, si rien on cherche par slug (au cas où l'ID 123 n'existe pas mais le slug "123" oui)
-        target_user = session.get(User, int(slug))
-        if not target_user: target_user = session.exec(select(User).where(User.slug == slug)).first()
+    if slug.isdigit(): target_user = session.get(User, int(slug))
     else: target_user = session.exec(select(User).where(User.slug == slug)).first()
     if not target_user: raise HTTPException(status_code=404, detail="Profil introuvable")
-    user_id = target_user.id
 
     # Identifier qui regarde (le visiteur)
     visitor = get_optional_user(session_id, session)
@@ -51,65 +48,16 @@ def get_user_profile(slug: str, session: Session = Depends(get_session), session
     # On bloque si le profil est privé ET que ce n'est pas le proprio
     if not target_user.perms.get("profile", True) and not is_owner: raise HTTPException(status_code=403, detail="Profil privé")
 
-    # --- 0. INITIALISATION (Pour éviter les crashs si perms=False) ---
-    total_minutes, total_streams, peak_hour = 0, 0, "N/A"
-    top_tracks, top_artists, top_albums, recent_tracks = [], [], [], []
+    # --- INITIALISATION ---
+    top_tracks, top_artists, top_albums = [], [], []
+    total_minutes,total_streams = 0,0
 
-    # --- 1. STATS GLOBALES (Minutes & Streams) ---
-    if target_user.perms.get("stats", True) or is_owner:
-        stats = session.exec(
-            select(
-                func.sum(TrackHistory.ms_played).label("total_ms"),
-                func.count(TrackHistory.id).label("total_streams")
-            ).where(TrackHistory.user_id == user_id)
-        ).first()
-        
-        total_minutes = int((stats.total_ms or 0) / 60000)
-        total_streams = stats.total_streams or 0
-
-        # --- HEURE DE POINTE (Peak Hour) ---
-        peak_hour_query = (
-            select(func.extract('hour', TrackHistory.played_at).label("hour"))
-            .where(TrackHistory.user_id == user_id)
-            .group_by("hour")
-            .order_by(desc(func.count(TrackHistory.id)))
-            .limit(1)
-        )
-        peak_hour_res = session.exec(peak_hour_query).first()
-        peak_hour = f"{int(peak_hour_res)}h" if peak_hour_res is not None else "N/A"
-
-    # --- 3. TOP 50 TRACKS ---
+    # --- TOP 50 TRACKS ---
     if target_user.perms.get("favorites", True) or is_owner:
-        top_tracks_raw = session.exec(
-            select(Track, Artist, Album, func.count(TrackHistory.id).label("play_count"))
-            .join(Track, TrackHistory.spotify_id == Track.spotify_id)
-            .join(Artist, Track.artist_id == Artist.spotify_id)
-            .join(Album, Track.album_id == Album.spotify_id)
-            .where(TrackHistory.user_id == user_id)
-            .group_by(Track.spotify_id, Artist.spotify_id, Album.spotify_id)
-            .order_by(desc("play_count"))
-            .limit(50)
-        ).all()
+        top_tracks_raw = get_top_entities(session, Track, TrackHistory.spotify_id,target_user.id,50)
+        top_tracks = [{"name": t.title,"image_url": alb.image_url,"sub": art.name,"count": count} for t, count, art, alb  in top_tracks_raw]
 
-        top_tracks = [{
-            "name": t.title,
-            "image_url": alb.image_url,
-            "sub": art.name,
-            "count": count
-        } for t, art, alb, count in top_tracks_raw]
-
-        # --- 4. TOP 50 ARTISTS ---
-        top_artists_raw = session.exec(
-            select(Artist, func.count(TrackHistory.id).label("play_count"))
-            .select_from(TrackHistory)
-            .join(Track, TrackHistory.spotify_id == Track.spotify_id)
-            .join(Artist, Track.artist_id == Artist.spotify_id)
-            .where(TrackHistory.user_id == user_id)
-            .group_by(Artist.spotify_id)
-            .order_by(desc("play_count"))
-            .limit(50)
-        ).all()
-
+        top_artists_raw = get_top_entities(session, Artist, TrackHistory.artist_id,target_user.id,50)
         top_artists = [{
             "name": art.name,
             "image_url": art.image_url or f"https://api.dicebear.com/7.x/initials/svg?seed={art.name}",
@@ -117,57 +65,139 @@ def get_user_profile(slug: str, session: Session = Depends(get_session), session
             "count": count
         } for art, count in top_artists_raw]
 
-        # --- 5. TOP 50 ALBUMS ---
-        top_albums_raw = session.exec(
-            select(Album, Artist, func.count(TrackHistory.id).label("play_count"))
-            .select_from(TrackHistory)
-            .join(Track, TrackHistory.spotify_id == Track.spotify_id)
-            .join(Album, Track.album_id == Album.spotify_id)
-            .join(Artist, Album.artist_id == Artist.spotify_id)
-            .where(TrackHistory.user_id == user_id)
-            .group_by(Album.spotify_id, Artist.spotify_id)
-            .order_by(desc("play_count"))
-            .limit(50)
-        ).all()
+        top_albums_raw = get_top_entities(session, Album, TrackHistory.album_id,target_user.id,50)
+        top_albums = [{"name": alb.name,"image_url": alb.image_url,"sub": art.name,"count": count} for alb, count, art in top_albums_raw]
 
-        top_albums = [{
-            "name": alb.name,
-            "image_url": alb.image_url,
-            "sub": art.name,
-            "count": count
-        } for alb, art, count in top_albums_raw]
-
-    # --- 6. 50 DERNIÈRES ÉCOUTES ---
-    if target_user.perms.get("history", True) or is_owner:
-        recent_history = session.exec(
-            select(TrackHistory, Track, Artist, Album)
-            .join(Track, TrackHistory.spotify_id == Track.spotify_id)
-            .join(Artist, Track.artist_id == Artist.spotify_id)
-            .join(Album, Track.album_id == Album.spotify_id)
-            .where(TrackHistory.user_id == user_id)
-            .order_by(desc(TrackHistory.played_at))
-            .limit(50)
-        ).all()
-
-        recent_tracks = [{
-            "id": h.id,
-            "title": t.title,
-            "artist": art.name,
-            "image_url": alb.image_url,
-            "played_at": h.played_at
-        } for h, t, art, alb in recent_history]
+    # --- STATS GLOBALES (Minutes & Streams) ---
+    if target_user.perms.get("stats", True) or is_owner:
+        stats = get_stats(target_user.id,session)
+        total_minutes = stats.get("min", 0)
+        total_streams = stats.get("str", 0)
 
     return {
         "display_name": target_user.display_name,
-        "avatar": target_user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={target_user.display_name}",
+        "avatar": target_user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={target_user.id}",
         "bio": target_user.bio or "Aucune biographie.",
         "banner": target_user.banner_url or "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
         "total_minutes": total_minutes,
         "total_streams": total_streams,
-        "peak_hour": peak_hour,
+        # --- HEURE DE POINTE (Peak Hour) ---
+        "peak_hour": get_peak_hour(target_user.id,session) if target_user.perms.get("stats", True) or is_owner else "N/A",
         "top_50_tracks": top_tracks,
         "top_50_artists": top_artists,
         "top_50_albums": top_albums,
-        "recent_tracks": recent_tracks,
+        # --- 50 DERNIÈRES ÉCOUTES ---
+        "recent_tracks": get_historique(target_user,50,session) if target_user.perms.get("history", True) or is_owner else [],
         "perms": target_user.perms
     }
+
+@router.get(
+    "/simple/{slug}",
+    summary="Récupérer des données simplifiées du profil",
+    response_model=BaseUserProfile,
+    responses={
+        200: {"description": "Profil récupéré avec succès (données filtrées par permissions)."},
+        403: {"description": "Profil privé ou accès refusé."},
+        404: {"description": "L'utilisateur n'existe pas."}
+    }
+)
+def get_user_simple_profile(slug: str, session: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
+    """
+    Génère des données simplifiées du profil pour les afficher rapidement sur les metadatas.
+
+    **Logique d'accès (Privacy first) :**
+    - **Identification** : Le système détermine si le visiteur est le propriétaire du profil.
+    - **Permissions granulaires** : Chaque section (Stats, Favoris, Historique) n'est calculée et affichée que si :
+        1. L'utilisateur a activé la permission dans ses réglages.
+        2. OU le visiteur est le propriétaire.
+    
+    **Calculs SQL à la volée :**
+    - **Fallback visuel** : Utilisation de DiceBear (avatars) et Unsplash (bannières) si l'utilisateur n'a pas personnalisé son profil.
+    """
+    if slug.isdigit(): target_user = session.get(User, int(slug))
+    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
+    if not target_user: raise HTTPException(status_code=404, detail="Profil introuvable")
+
+    # Identifier qui regarde (le visiteur)
+    visitor = get_optional_user(session_id, session)
+    is_owner = visitor is not None and visitor.id == target_user.id
+    # On bloque si le profil est privé ET que ce n'est pas le proprio
+    if not target_user.perms.get("profile", True) and not is_owner: raise HTTPException(status_code=403, detail="Profil privé")
+
+    return {
+        "display_name": target_user.display_name,
+        "avatar": target_user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={target_user.id}",
+        "bio": target_user.bio or "Aucune biographie.",
+        "banner": target_user.banner_url or "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+        "perms": target_user.perms
+    }
+
+def get_historique(target_user: User, limit: int,session: Session):
+    recent_history = session.exec(
+        select(TrackHistory)
+        .where(TrackHistory.user_id == target_user.id)
+        .options(
+            joinedload(TrackHistory.track),
+            joinedload(TrackHistory.track).joinedload(Track.artist),
+            joinedload(TrackHistory.track).joinedload(Track.album)
+        )
+        .order_by(desc(TrackHistory.played_at))
+        .limit(limit)
+    ).all()
+    return [{
+        "id": h.id,
+        "title": h.track.title if h.track else "Inconnu",
+        "album": h.track.album.name if h.track and h.track.album else "Inconnu",
+        "artist": h.track.artist.name if h.track and h.track.artist else "Inconnu",
+        "image_url": h.track.album.image_url if h.track and h.track.album else None,
+        "played_at": h.played_at
+    } for h in recent_history]
+
+def get_stats(user_id: int, session: Session):
+    stats = session.exec(
+        select(
+            func.coalesce(func.sum(TrackHistory.ms_played), 0).label("total_ms"),
+            func.count(TrackHistory.id).label("total_streams")
+        ).where(TrackHistory.user_id == user_id)
+    ).first()
+    return {
+        "min":int((stats.total_ms) // 60000),
+        "str":stats.total_streams
+    }
+
+def get_peak_hour(user_id: int, session: Session):
+    hour_expr = func.extract('hour', TrackHistory.played_at)
+    peak_hour_res = session.exec(
+        select(
+            hour_expr.label("hour"),
+            func.count(TrackHistory.id).label("count")
+        )
+        .where(TrackHistory.user_id == user_id)
+        .group_by(hour_expr)
+        .order_by(desc(text("count")))
+        .limit(1)
+    ).first()
+    return f"{int(peak_hour_res[0])}h" if peak_hour_res is not None else "N/A"
+
+def get_top_entities(session, model, history_id_col, user_id, limit=50):
+    """
+    Fonction générique pour récupérer les Tops (Tracks, Artists ou Albums).
+    """
+    group_cols = [model.spotify_id]
+    statement = (
+        select(model, func.count(TrackHistory.id).label("play_count"))
+        .join(model, history_id_col == model.spotify_id)
+        .where(TrackHistory.user_id == user_id)
+    )
+    # Pour une Track, on veut l'Artiste et l'Album (pour le nom et l'image)
+    if model == Track:
+        statement = statement.join(Artist, model.artist_id == Artist.spotify_id).add_columns(Artist)
+        statement = statement.join(Album, model.album_id == Album.spotify_id).add_columns(Album)
+        group_cols.extend([Artist.spotify_id, Album.spotify_id])
+    # Pour un Album, on veut juste l'Artiste (pour le nom de l'auteur)
+    elif model == Album:
+        statement = statement.join(Artist, model.artist_id == Artist.spotify_id).add_columns(Artist)
+        group_cols.extend([Artist.spotify_id])
+    
+    statement = statement.group_by(*group_cols).order_by(desc("play_count")).limit(limit)
+    return session.exec(statement).all()
