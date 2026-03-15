@@ -115,6 +115,7 @@ async def upload_spotify_json(
     if to_add_tracks:
         db.add_all(to_add_tracks.values())
         db.flush()
+    nb_calcul = 0
     if to_add_history:
         history_data = [{
             "user_id": h.user_id,

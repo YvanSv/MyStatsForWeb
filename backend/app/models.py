@@ -80,7 +80,6 @@ class TrackHistory(SQLModel, table=True):
     
     user_id: int = Field(foreign_key="user.id", ondelete="CASCADE")
     spotify_id: str = Field(foreign_key="track.spotify_id")
-    
     artist_id: Optional[str] = Field(default=None, foreign_key="artist.spotify_id", index=True)
     album_id: Optional[str] = Field(default=None, foreign_key="album.spotify_id", index=True)
     

@@ -2,7 +2,7 @@ import asyncio
 import random
 from typing import List
 import spotipy
-from sqlalchemy import or_, update
+from sqlalchemy import func, or_, text, update
 from sqlmodel import Session, select
 from app.database import get_session
 from app.spotify.utils.spotify_api import get_spotify_client
@@ -143,46 +143,23 @@ class SpotifyWorker:
         if artist and sp_artist.get('images'):
             artist.image_url = sp_artist['images'][0]['url']
             db.add(artist)
-    
-    async def repair_track_history_links(self, session: Session):
+
+    async def repair_track_history_links(self,db):
         """
-        Parcourt l'historique et remplit artist_id et album_id en se basant sur les informations de la table Track.
+        Déclenche la réparation ultra-rapide côté base de données.
+        Remplit artist_id et album_id en se basant sur les informations de la table Track.
         """
-        print("🛠️ Début de la réparation...")
-        while self.repair_history:
-            # On cherche les tracks qui ont des IDs manquants
-            statement = (
-                select(TrackHistory)
+        print("⚡ Lancement de la réparation SQL interne...")
+        try:
+            while db.exec(
+                select(func.count(TrackHistory.id).label("nb_to_repair"))
                 .where(or_(TrackHistory.artist_id == None, TrackHistory.album_id == None))
-                .limit(500)
-            )
-            history_to_fix = session.exec(statement).all()
-            
-            if not history_to_fix:
-                self.repair_history = False
-                print("✅ Réparation terminée")
-                return
-
-            # On récupère la table de correspondance Track pour éviter de re-requêter 100x
-            # On ne prend que les tracks présents dans notre liste à fixer
-            track_ids = {h.spotify_id for h in history_to_fix}
-            tracks_ref = session.exec(select(Track).where(Track.spotify_id.in_(track_ids))).all()
-            
-            # Création d'un dictionnaire de mapping pour la performance {spotify_id: Track}
-            track_map = {t.spotify_id: t for t in tracks_ref}
-
-            # Mise à jour des objets
-            updated_count = 0
-            for history in history_to_fix:
-                track = track_map.get(history.spotify_id)
-                if track:
-                    history.artist_id = track.artist_id
-                    history.album_id = track.album_id
-                    session.add(history)
-                    updated_count += 1
-
-            session.commit()
-            print(f"🔄 Lot réparé : {updated_count} lignes.")
-            await asyncio.sleep(0.3)
+            ).all()[0] > 0:
+                db.exec(text("SELECT repair_track_history();"))
+                db.commit()
+                await asyncio.sleep(0.3)
+            print(f"✅ Réparation SQL terminée.")
+        except Exception as e:
+            print(f"❌ Erreur lors de la réparation SQL : {e}")
 
 spotify_worker = SpotifyWorker()
