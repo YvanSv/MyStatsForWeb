@@ -120,6 +120,7 @@ class UserProfileResponse(BaseUserProfile):
     top_50_albums: List[ProfileItem]
     recent_tracks: List[RecentTrack]
 
+
 class UserUpdateResponse(BaseResponse):
     message: str = "Profil mis à jour avec succès"
     user: UserSettingsResponse

@@ -2,10 +2,11 @@ import asyncio
 import random
 from typing import List
 import spotipy
+from sqlalchemy import or_, update
 from sqlmodel import Session, select
 from app.database import get_session
 from app.spotify.utils.spotify_api import get_spotify_client
-from app.models import Track,Artist,Album
+from app.models import Track,Artist,Album, TrackHistory
 from .spotify_status import spotify_status
 
 class SpotifyWorker:
@@ -16,6 +17,7 @@ class SpotifyWorker:
         if cls._instance is None:
             cls._instance = super(SpotifyWorker, cls).__new__(cls)
             cls._instance.is_running = False
+            cls._instance.repair_history = False
         return cls._instance
 
     async def add_tracks(self, track_ids: List[str]):
@@ -30,6 +32,10 @@ class SpotifyWorker:
         else:
             # Cas rare : la boucle ne tourne pas encore
             asyncio.run(self._queue.put(("artist", artist_id)))
+
+    async def should_repair_history(self):
+        self.repair_history = True
+        if not self.is_running: asyncio.create_task(self._process_queue())
 
     async def _process_queue(self):
         self.is_running = True
@@ -81,8 +87,10 @@ class SpotifyWorker:
             except Exception as e: print(f"❌ Erreur Worker inattendue: {e}")
             finally:
                 for _ in range(len(tracks_batch)+len(artists_batch)): self._queue.task_done()
-        
-        self.is_running = False
+
+        if self.repair_history:
+            with next(get_session()) as db: await self.repair_track_history_links(db)
+        self.repair_history = False
 
     def _update_track_metadata(self, db: Session, t: dict):
         """
@@ -135,5 +143,46 @@ class SpotifyWorker:
         if artist and sp_artist.get('images'):
             artist.image_url = sp_artist['images'][0]['url']
             db.add(artist)
+    
+    async def repair_track_history_links(self, session: Session):
+        """
+        Parcourt l'historique et remplit artist_id et album_id en se basant sur les informations de la table Track.
+        """
+        print("🛠️ Début de la réparation...")
+        while self.repair_history:
+            # On cherche les tracks qui ont des IDs manquants
+            statement = (
+                select(TrackHistory)
+                .where(or_(TrackHistory.artist_id == None, TrackHistory.album_id == None))
+                .limit(500)
+            )
+            history_to_fix = session.exec(statement).all()
+            
+            if not history_to_fix:
+                self.repair_history = False
+                print("✅ Réparation terminée")
+                return
+
+            # On récupère la table de correspondance Track pour éviter de re-requêter 100x
+            # On ne prend que les tracks présents dans notre liste à fixer
+            track_ids = {h.spotify_id for h in history_to_fix}
+            tracks_ref = session.exec(select(Track).where(Track.spotify_id.in_(track_ids))).all()
+            
+            # Création d'un dictionnaire de mapping pour la performance {spotify_id: Track}
+            track_map = {t.spotify_id: t for t in tracks_ref}
+
+            # Mise à jour des objets
+            updated_count = 0
+            for history in history_to_fix:
+                track = track_map.get(history.spotify_id)
+                if track:
+                    history.artist_id = track.artist_id
+                    history.album_id = track.album_id
+                    session.add(history)
+                    updated_count += 1
+
+            session.commit()
+            print(f"🔄 Lot réparé : {updated_count} lignes.")
+            await asyncio.sleep(0.3)
 
 spotify_worker = SpotifyWorker()

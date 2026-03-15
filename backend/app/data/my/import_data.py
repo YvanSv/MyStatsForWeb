@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import hashlib
@@ -84,6 +85,7 @@ async def upload_spotify_json(
     existing_tracks = {sid for sid in db.exec(select(Track.spotify_id)).all()}
     to_add_tracks = {}
     to_add_history = []
+    nb_calcul = 0
 
     for entry in valid_entries:
         sid = entry["spotify_track_uri"].split(":")[-1]
@@ -104,6 +106,11 @@ async def upload_spotify_json(
             ms_played=entry.get("ms_played") or 0
         ))
 
+        nb_calcul += 1
+        if nb_calcul % 2000 == 0:
+            print(f"{nb_calcul} écoutes traitées, pause de 0.1sec")
+            await asyncio.sleep(0.1)
+
     # 4. COMMIT IMMEDIAT
     if to_add_tracks:
         db.add_all(to_add_tracks.values())
@@ -121,6 +128,7 @@ async def upload_spotify_json(
     # 5. APPEL AU WORKER (Asynchrone)
     # On envoie la liste des IDs qui ont besoin d'être enrichis
     await spotify_worker.add_tracks(list(new_track_ids_for_worker))
+    await spotify_worker.should_repair_history()
     return {
         "status": "success", 
         "added": len(to_add_history), 

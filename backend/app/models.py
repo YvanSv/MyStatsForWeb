@@ -49,6 +49,7 @@ class Artist(SQLModel, table=True):
     
     albums: List["Album"] = Relationship(back_populates="artist")
     tracks: List["Track"] = Relationship(back_populates="artist")
+    history: List["TrackHistory"] = Relationship(back_populates="artist")
 
 class Album(SQLModel, table=True):
     spotify_id: str = Field(primary_key=True)
@@ -58,6 +59,7 @@ class Album(SQLModel, table=True):
     artist_id: str = Field(foreign_key="artist.spotify_id")
     artist: Artist = Relationship(back_populates="albums")
     tracks: List["Track"] = Relationship(back_populates="album")
+    history: List["TrackHistory"] = Relationship(back_populates="album")
 
 class Track(SQLModel, table=True):
     spotify_id: str = Field(primary_key=True)
@@ -79,5 +81,10 @@ class TrackHistory(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", ondelete="CASCADE")
     spotify_id: str = Field(foreign_key="track.spotify_id")
     
+    artist_id: Optional[str] = Field(default=None, foreign_key="artist.spotify_id", index=True)
+    album_id: Optional[str] = Field(default=None, foreign_key="album.spotify_id", index=True)
+    
     user: User = Relationship(back_populates="history")
     track: Track = Relationship(back_populates="history")
+    album: Optional["Album"] = Relationship(back_populates="history")
+    artist: Optional["Artist"] = Relationship(back_populates="history")
