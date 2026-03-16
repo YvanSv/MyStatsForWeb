@@ -2,8 +2,8 @@
 import { useEffect } from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { FRONT_ROUTES } from "@/app/constants/routes";
+import { ProfileSkeleton } from "./[id]/Skeleton";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -11,13 +11,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!loading)
-      if (isLoggedIn && user?.id) router.push(`${FRONT_ROUTES.PROFILE}/${user.slug === "" ? user.id : user.slug}`);
+      if (isLoggedIn && user?.id) router.push(`${FRONT_ROUTES.PROFILE}/${!user.slug || user.slug === "" ? user.id : user.slug}`);
       else router.push('/auth');
   }, [isLoggedIn, user, router, loading]);
 
-  return (
-    <div className="mt-[20%] w-full flex items-center justify-center">
-      <LoadingSpinner/>
-    </div>
-  );
+  return <ProfileSkeleton/>;
 }

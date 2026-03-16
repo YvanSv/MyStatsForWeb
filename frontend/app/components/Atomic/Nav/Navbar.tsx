@@ -15,7 +15,7 @@ export function HeaderLogo({onClick}:any) {
 }
 
 export function NavButton({children,onClick}:any) {
-  const agencement = 'w-fit h-fit';
+  const agencement = 'w-fit h-fit flex items-center gap-2';
   const forme = '';
   const couleur = 'text1 hover:text-vert';
   const transformation = 'cursor-pointer transition-all duration-300 active:scale-95 ease-out';

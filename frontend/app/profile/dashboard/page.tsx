@@ -11,7 +11,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!loading)
-      if (isLoggedIn && user?.id) router.push(`${FRONT_ROUTES.DASHBOARD}/${user.id}`);
+      if (isLoggedIn && user?.id) router.push(`${FRONT_ROUTES.DASHBOARD}/${!user.slug || user.slug === "" ? user.id : user.slug}`);
       else router.push('/auth');
   }, [isLoggedIn, user, router, loading]);
 
