@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query
 import sqlalchemy
 from sqlmodel import Session, col, select, func, desc
@@ -41,22 +41,20 @@ def get_dashboard_data(
     if slug.isdigit(): target_user = session.get(User, int(slug))
     else: target_user = session.exec(select(User).where(User.slug == slug)).first()
     if not target_user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-    user_id = target_user.id
     # Identifier le visiteur via le cookie
     visitor = None
     if session_id: visitor = session.exec(select(User).where(User.session_id == session_id)).first()
     is_owner = visitor is not None and visitor.id == target_user.id
     # Vérification de la permission Dashboard
-    if not is_owner and not target_user.perms.get("dashboard", True):
-        raise HTTPException(status_code=403, detail="Ce dashboard est privé")
+    if not is_owner and not target_user.perms.get("dashboard", True): raise HTTPException(status_code=403, detail="Ce dashboard est privé")
 
-    # 1. Filtres communs
-    filters = [TrackHistory.user_id == user_id]
+    # 0. Filtres communs
+    filters = [TrackHistory.user_id == target_user.id]
     if start_date: filters.append(TrackHistory.played_at >= start_date)
     if end_date: filters.append(TrackHistory.played_at <= end_date)
 
-    # 2. Stats Globales
-    stats_stmt = (
+    # 1. Stats Globales
+    res = session.exec(
         select(
             func.coalesce(func.sum(TrackHistory.ms_played), 0).label("total_ms"),
             func.count(TrackHistory.id).label("total_streams"),
@@ -69,316 +67,197 @@ def get_dashboard_data(
         .join(Track, Track.spotify_id == TrackHistory.spotify_id)
         .where(*filters)
         .where(Track.duration_ms > 0)
-    )
-    res = session.exec(stats_stmt).first()
+    ).first()
 
-    # 3. Graphique Horloge (Timezone +1h)
-    clock_res = session.exec(
+    # --- 1. Requête unique pour tous les graphiques temporels ---
+    # On récupère la donnée brute par JOUR et par HEURE
+    raw_time_data = session.exec(
         select(
+            func.date(TrackHistory.played_at).label("date"),
             func.extract('hour', TrackHistory.played_at + func.cast('1 hours', sqlalchemy.Interval)).label("hour"),
             func.sum(TrackHistory.ms_played).label("ms"),
             func.count(TrackHistory.id).label("streams")
         )
-        .where(*filters).group_by("hour")
+        .where(*filters)
+        .group_by("date", "hour")
+        .order_by("date")
     ).all()
 
-    clock_data = [{"hour": f"{h}h", "value": 0, "streams": 0} for h in range(24)]
-    peak_h_val, max_ms_h = None, 0
-    for r in clock_res:
-        h_int = int(r.hour)
-        clock_data[h_int]["value"] = round(r.ms / 60000)
-        clock_data[h_int]["streams"] = r.streams
-        if r.ms > max_ms_h:
-            max_ms_h, peak_h_val = r.ms, h_int
-
-    # 4. Graphique Hebdo (Day of Week)
-    day_res = session.exec(
-        select(
-            func.extract('dow', TrackHistory.played_at).label("day"), 
-            func.sum(TrackHistory.ms_played).label("ms"),
-            func.count(TrackHistory.id).label("streams")
-        )
-        .where(*filters).group_by("day")
-    ).all()
-
+    # --- 2. Agrégation Python (Zéro appel DB supplémentaire) ---
+    clock_data = [{"hour": f"{i}h", "value": 0, "streams": 0} for i in range(24)]
+    weekly_data = [{"day": d, "value": 0, "streams": 0} for d in ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]]
+    monthly_data = {i: {"value": 0, "streams": 0} for i in range(1, 13)}
     days_names = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
-    weekly_data = [{"day": d[:3], "value": 0, "streams": 0} for d in days_names]
-    peak_d_idx, max_ms_d = None, 0
-    for r in day_res:
-        d_idx = int(r.day)
-        weekly_data[d_idx]["value"] = round(r.ms / 60000)
-        weekly_data[d_idx]["streams"] = r.streams
-        if r.ms > max_ms_d:
-            max_ms_d, peak_d_idx = r.ms, d_idx
-
-    # 5. Graphique Mensuel
-    month_res = session.exec(
-        select(
-            func.extract('month', TrackHistory.played_at).label("month"), 
-            func.sum(TrackHistory.ms_played).label("ms"),
-            func.count(TrackHistory.id).label("streams")
-        )
-        .where(*filters).group_by("month")
-    ).all()
-
     months_names = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-    months_acro = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Jui", "Aoû", "Sep", "Oct", "Nov", "Déc"]
-    monthly_data = [{"month": m, "value": 0, "streams": 0} for m in months_acro]
-    peak_month_value = -1
-    peak_month_name = "--"
+    cumulative_data = []
 
-    for r in month_res:
-        month_idx = int(r.month) - 1
-        val_min = round(r.ms / 60000)
-        monthly_data[month_idx]["value"] = val_min
-        monthly_data[month_idx]["streams"] = r.streams
-        if val_min > peak_month_value:
-            peak_month_value = val_min
-            peak_month_name = months_names[month_idx]
+    running_ms, running_streams = 0, 0
+    current_day_data = {}
+    annual_dict = {}
 
+    for r in raw_time_data:
+        ms, streams = r.ms, r.streams
+        h_int = int(r.hour)
+        d_idx = (int(r.date.strftime("%w")) + 6) % 7
+        m_idx = r.date.month
+        
+        # Clock
+        clock_data[h_int]["value"] += round(ms / 60000)
+        clock_data[h_int]["streams"] += streams
+        
+        # Weekly
+        weekly_data[d_idx]["value"] += round(ms / 60000)
+        weekly_data[d_idx]["streams"] += streams
+        
+        # Monthly
+        monthly_data[m_idx]["value"] += round(ms / 60000)
+        monthly_data[m_idx]["streams"] += streams
+        
+        # Cumulative (on groupe par date car raw_time_data a plusieurs entrées par jour via l'heure)
+        day_str = r.date.isoformat()
+        if day_str not in current_day_data:
+            current_day_data[day_str] = {"ms": 0, "streams": 0, "obj": r.date}
+        current_day_data[day_str]["ms"] += ms
+        current_day_data[day_str]["streams"] += streams
 
-    annual_res = session.exec(
-        select(
-            func.extract('year', TrackHistory.played_at).label("year"), 
-            func.sum(TrackHistory.ms_played).label("ms"),
-            func.count(TrackHistory.id).label("streams")
-        )
-        .where(*filters).group_by("year").order_by("year")
-    ).all()
+        year = r.date.year
+        if year not in annual_dict:
+            annual_dict[year] = {"year": str(year), "value": 0, "streams": 0}
+        annual_dict[year]["value"] += round(r.ms / 60000)
+        annual_dict[year]["streams"] += r.streams
 
-    years_present = sorted([int(r.year) for r in annual_res])
+    years_present = sorted(annual_dict.keys())
     annual_data = []
+
     if years_present:
         for y in range(min(years_present), max(years_present) + 1):
-            annual_data.append({"year": str(y), "value": 0, "streams": 0})
-    start_year = min(years_present) if years_present else 0
-    for r in annual_res:
-        annual_data[int(r.year) - start_year]["value"] = round(r.ms / 60000)
-        annual_data[int(r.year) - start_year]["streams"] = r.streams
+            if y in annual_dict:
+                annual_data.append(annual_dict[y])
+            else:
+                # Année vide pour la continuité du graphique
+                annual_data.append({"year": str(y), "value": 0, "streams": 0})
 
-    # --- NOUVEAU : 6. Graphique Cumulé (AreaChart) ---
-    daily_res = session.exec(
-        select(
-            func.date(TrackHistory.played_at).label("day"),
-            func.sum(TrackHistory.ms_played).label("ms"),
-            func.count(TrackHistory.id).label("streams")
-        )
-        .where(*filters)
-        .group_by("day")
-        .order_by("day")
-    ).all()
-
-    cumulative_data = []
-    running_ms = 0
-    running_streams = 0
-    for r in daily_res:
-        running_ms += r.ms
-        running_streams += r.streams
+    # Finalisation du cumulé
+    for d_str in sorted(current_day_data.keys()):
+        d = current_day_data[d_str]
+        running_ms += d["ms"]
+        running_streams += d["streams"]
         cumulative_data.append({
-            "full_date": r.day.isoformat(),
-            "display_date": r.day.strftime("%d/%m/%y"), 
+            "full_date": d_str,
+            "display_date": d["obj"].strftime("%d/%m/%y"),
             "minutes": round(running_ms / 60000, 1),
             "streams": running_streams
         })
     
-
-    def get_discovery_evolution(id_column):
-        # Sous-requête : Trouve la date de 1ère écoute pour chaque ID unique
-        first_appearances = (
-            select(
-                id_column.label("item_id"),
-                func.min(TrackHistory.played_at).label("first_seen")
-            )
-            .where(TrackHistory.user_id == user_id)
-            .where(*filters)
-            .group_by(id_column)
-            .subquery()
-        )
-
-        # Requête principale : Compte combien d'items ont leur "first_seen" chaque jour
-        return session.exec(
-            select(
-                func.date(first_appearances.c.first_seen).label("day"),
-                func.count(first_appearances.c.item_id).label("count")
-            )
-            .group_by("day")
-            .order_by("day")
-        ).all()
-
-    # On utilise les colonnes de TrackHistory ou des jointures si nécessaire
-    # Pour les tracks, c'est direct via spotify_id
-    daily_tracks = get_discovery_evolution(TrackHistory.spotify_id)
-
-    # Pour les albums/artistes, on doit joindre Track pour accéder à album_id/artist_id
-    def get_complex_discovery(join_col):
-        first_appearances = (
-            select(
-                join_col.label("item_id"),
-                func.min(TrackHistory.played_at).label("first_seen")
-            )
-            .join(Track, Track.spotify_id == TrackHistory.spotify_id)
-            .where(TrackHistory.user_id == user_id)
-            .where(*filters)
-            .group_by(join_col)
-            .subquery()
-        )
-        return session.exec(
-            select(
-                func.date(first_appearances.c.first_seen).label("day"),
-                func.count(first_appearances.c.item_id).label("count")
-            )
-            .group_by("day")
-            .order_by("day")
-        ).all()
-
-    daily_albums = get_complex_discovery(Track.album_id)
-    daily_artists = get_complex_discovery(Track.artist_id)
-
-    # Fusionner les dates pour avoir un seul tableau de graphe
-    entity_evolution = {}
-
-    def process_evolution(data, key):
-        current_total = 0
-        for r in data:
-            current_total += r.count
-            d_str = r.day.isoformat()
-            if d_str not in entity_evolution:
-                entity_evolution[d_str] = {"date": d_str, "tracks": 0, "albums": 0, "artists": 0}
-            entity_evolution[d_str][key] = current_total
-
-    process_evolution(daily_tracks, "tracks")
-    process_evolution(daily_albums, "albums")
-    process_evolution(daily_artists, "artists")
-
-    # Trier et remplir les "trous" (garder la dernière valeur connue si pas d'ajout un jour J)
-    evolution_sorted = sorted(entity_evolution.values(), key=lambda x: x["date"])
+    peak_h_val = max(range(24), key=lambda h: clock_data[h]["value"]) if any(h["value"] > 0 for h in clock_data) else None
+    peak_d_idx = max(range(7), key=lambda d: weekly_data[d]["value"]) if any(d["value"] > 0 for d in weekly_data) else None
+    peak_m_idx = max(monthly_data.keys(), key=lambda m: monthly_data[m]["value"]) if any(m["value"] > 0 for m in monthly_data.values()) else None
+    peak_m_name = months_names[peak_m_idx - 1] if peak_m_idx is not None else "--"
     
-    # Remplissage intelligent (forward fill)
+    # --- 3. Factorisation des Découvertes (Discovery) ---
+    def get_discovery(id_col, join_track=False):
+        stmt = select(id_col.label("id"), func.min(TrackHistory.played_at).label("fs"))
+        if join_track:
+            stmt = stmt.join(Track, Track.spotify_id == TrackHistory.spotify_id)
+        
+        subq = stmt.where(TrackHistory.user_id == target_user.id, *filters).group_by(id_col).subquery()
+        
+        return session.exec(
+            select(func.date(subq.c.fs).label("d"), func.count(subq.c.id).label("c"))
+            .group_by("d").order_by("d")
+        ).all()
+
+    daily_tracks = get_discovery(TrackHistory.spotify_id)
+    daily_albums = get_discovery(Track.album_id, join_track=True)
+    daily_artists = get_discovery(Track.artist_id, join_track=True)
+
+    all_dates = sorted(list(set(
+        [r.d for r in daily_tracks] + 
+        [r.d for r in daily_albums] + 
+        [r.d for r in daily_artists]
+    )))
+
+    entity_evolution = {d.isoformat(): {"date": d.isoformat(), "tracks": 0, "albums": 0, "artists": 0} for d in all_dates}
+    for r in daily_tracks: entity_evolution[r.d.isoformat()]["tracks"] = r.c
+    for r in daily_albums: entity_evolution[r.d.isoformat()]["albums"] = r.c
+    for r in daily_artists: entity_evolution[r.d.isoformat()]["artists"] = r.c
+
+    evolution_sorted = []
     last_t, last_al, last_ar = 0, 0, 0
-    for entry in evolution_sorted:
-        if entry["tracks"] == 0: entry["tracks"] = last_t
-        else: last_t = entry["tracks"]
+
+    for d_str in sorted(entity_evolution.keys()):
+        entry = entity_evolution[d_str]
         
-        if entry["albums"] == 0: entry["albums"] = last_al
-        else: last_al = entry["albums"]
+        # On ajoute la valeur du jour au cumul précédent
+        last_t += entry["tracks"]
+        last_al += entry["albums"]
+        last_ar += entry["artists"]
         
-        if entry["artists"] == 0: entry["artists"] = last_ar
-        else: last_ar = entry["artists"]
-
-    # 7. Formatage final
-    effective_days = res.days_count or 1
-    total_min = res.total_ms // 60000
-
-    ############################################
-    # Top Track
-    top_track_stmt = (
-        select(
-            Track.title,
-            Artist.name.label("artist_name"),
-            Album.name.label("album_name"),
-            Album.image_url,
-            func.sum(TrackHistory.ms_played).label("total_ms"),
-        )
-        .select_from(TrackHistory)
-        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
-        .join(Album, Track.album_id == Album.spotify_id)
-        .join(Artist, Album.artist_id == Artist.spotify_id)
-        .where(*filters)
-        .group_by(Track.spotify_id, Artist.name, Album.name, Album.image_url)
-        .order_by(desc("total_ms"))
-        .limit(1)
-    )
-    top_track_count_stmt = (
-        select(
-            Track.title,
-            Artist.name.label("artist_name"),
-            Album.name.label("album_name"),
-            Album.image_url,
-            func.count(TrackHistory.id).label("total_streams"),
-        )
-        .select_from(TrackHistory)
-        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
-        .join(Album, Track.album_id == Album.spotify_id)
-        .join(Artist, Album.artist_id == Artist.spotify_id)
-        .where(*filters)
-        .group_by(Track.spotify_id, Artist.name, Album.name, Album.image_url)
-        .order_by(desc("total_streams"))
-        .limit(1)
-    )
-
-    t_res = session.exec(top_track_stmt).first()
-    count_res = session.exec(top_track_count_stmt).first()
-    def format_track(res):
-        if not res: return None
-        return {
-            "name": res.title,
-            "artist": res.artist_name,
-            "album": res.album_name,
-            "image": res.image_url
-        }
-
-    # Top Album
-    top_album_ms_stmt = (
-        select(Artist.name.label("artist_name"), Album.name.label("album_name"), Album.image_url, func.sum(TrackHistory.ms_played).label("total_ms"))
-        .select_from(TrackHistory).join(Track).join(Album).join(Artist).where(*filters)
-        .group_by(Album.spotify_id, Artist.name, Album.name, Album.image_url).order_by(desc("total_ms")).limit(1)
-    )
-    # Top Album par Streams (Count)
-    top_album_count_stmt = (
-        select(Artist.name.label("artist_name"), Album.name.label("album_name"), Album.image_url, func.count(TrackHistory.id).label("total_count"))
-        .select_from(TrackHistory).join(Track).join(Album).join(Artist).where(*filters)
-        .group_by(Album.spotify_id, Artist.name, Album.name, Album.image_url).order_by(desc("total_count")).limit(1)
-    )
-
-    # Top Artist
-    top_artist_ms_stmt = (
-        select(Artist.name.label("artist_name"), Artist.image_url, func.sum(TrackHistory.ms_played).label("total_ms"))
-        .select_from(TrackHistory).join(Track).join(Album).join(Artist).where(*filters)
-        .group_by(Artist.spotify_id, Artist.name, Artist.image_url).order_by(desc("total_ms")).limit(1)
-    )
-    # Top Artiste par Streams (Count)
-    top_artist_count_stmt = (
-        select(Artist.name.label("artist_name"), Artist.image_url, func.count(TrackHistory.id).label("total_count"))
-        .select_from(TrackHistory).join(Track).join(Album).join(Artist).where(*filters)
-        .group_by(Artist.spotify_id, Artist.name, Artist.image_url).order_by(desc("total_count")).limit(1)
-    )
-
-    alb_ms_res = session.exec(top_album_ms_stmt).first()
-    alb_ct_res = session.exec(top_album_count_stmt).first()
-    art_ms_res = session.exec(top_artist_ms_stmt).first()
-    art_ct_res = session.exec(top_artist_count_stmt).first()
-
-    def format_item(res, is_artist=False):
-        if not res: return None
-        return {
-            "name": res.artist_name if is_artist else res.album_name,
-            "artist": res.artist_name if not is_artist else None,
-            "image": res.image_url
-        }
+        evolution_sorted.append({
+            "date": d_str,
+            "tracks": last_t,
+            "albums": last_al,
+            "artists": last_ar
+        })
 
     return {
-        "totalTime": total_min,
+        "totalTime": (res.total_ms // 60000),
         "totalStreams": res.total_streams,
         "uniqueTracks": res.unique_tracks,
         "uniqueAlbums": res.unique_albums,
         "uniqueArtists": res.unique_artists,
         "peakHour": f"{peak_h_val}h" if peak_h_val is not None else "--h",
         "peakDay": days_names[peak_d_idx] if peak_d_idx is not None else "--",
-        "peakMonth": peak_month_name,
-        "avgTimePerDay": total_min // effective_days,
-        "avgStreamsPerDay": round(res.total_streams / effective_days, 1),
+        "peakMonth": peak_m_name,
+        "avgTimePerDay": (res.total_ms // 60000) // (res.days_count or 1),
+        "avgStreamsPerDay": round(res.total_streams / (res.days_count or 1), 1),
         "ratio": min(round(res.completion or 0, 1), 100.0),
         "clockData": clock_data,
         "weeklyData": weekly_data,
-        "monthlyData": monthly_data,
+        "monthlyData": list(monthly_data.values()),
         "annualData": annual_data,
         "cumulativeData": cumulative_data,
-        "topTrack": [format_track(t_res),format_track(count_res)],
-        "topAlbum": [format_item(alb_ms_res),format_item(alb_ct_res)],
-        "topArtist": [format_item(art_ms_res,True),format_item(art_ct_res,True)],
+        "topTrack": get_top_item(session,filters,'track'),
+        "topAlbum": get_top_item(session,filters,'album'),
+        "topArtist": get_top_item(session,filters,'artist'),
         "entityEvolution": evolution_sorted,
-        "streamsEvolution": get_streams_evolution(user_id,start_date,end_date,session)
+        "streamsEvolution": get_streams_evolution(target_user.id,start_date,end_date,session)
     }
+
+def get_top_item(session, filters, target: Literal['track', 'album', 'artist']):
+    def get_top_stat(target: Literal['track', 'album', 'artist'], metric: Literal['ms', 'count']):
+        agg_col = func.sum(TrackHistory.ms_played) if metric == 'ms' else func.count(TrackHistory.id)
+        label = "total_ms" if metric == 'ms' else "total_count"
+        group_id = {'track': TrackHistory.spotify_id, 'album': TrackHistory.album_id, 'artist': TrackHistory.artist_id}[target]
+
+        subq = (
+            select(group_id.label("sid"), agg_col.label(label))
+            .where(*filters).group_by(group_id)
+            .order_by(desc(label)).limit(1).subquery()
+        )
+
+        if target == 'track':
+            columns = [Track.title, Artist.name.label("artist_name"), Album.name.label("album_name"), Album.image_url]
+            joins = lambda s: s.join(Track, Track.spotify_id == subq.c.sid).join(Album, Track.album_id == Album.spotify_id).join(Artist, Album.artist_id == Artist.spotify_id)
+        elif target == 'album':
+            columns = [Album.name.label("album_name"), Artist.name.label("artist_name"), Album.image_url]
+            joins = lambda s: s.join(Album, Album.spotify_id == subq.c.sid).join(Artist, Album.artist_id == Artist.spotify_id)
+        else: # artist
+            columns = [Artist.name.label("artist_name"), Artist.image_url]
+            joins = lambda s: s.join(Artist, Artist.spotify_id == subq.c.sid)
+
+        return session.exec(joins(select(*columns, getattr(subq.c, label)))).first()
+
+    def format_item(res, type_item: Literal['track', 'album', 'artist']):
+        if not res: return None
+        return {
+            "name": res.title if type_item == 'track' else (res.album_name if type_item == 'album' else res.artist_name),
+            "artist": res.artist_name if type_item != 'artist' else None,
+            "album": res.album_name if type_item == 'track' else None,
+            "image": res.image_url
+        }
+    
+    return [format_item(get_top_stat(target, 'ms'),target),format_item(get_top_stat(target, 'count'),target)]
 
 def get_streams_evolution(
     user_id: int,

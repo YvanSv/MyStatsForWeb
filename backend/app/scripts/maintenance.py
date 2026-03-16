@@ -50,7 +50,7 @@ def catch_up_maintenance():
                     for sp_art in sp_artists:
                         if sp_art and sp_art.get('images'):
                             img_url = sp_art['images'][0]['url']
-                            db.execute(
+                            db.exec(
                                 update(Artist)
                                 .where(Artist.spotify_id == sp_art['id'])
                                 .values(image_url=img_url)

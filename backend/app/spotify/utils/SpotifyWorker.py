@@ -96,7 +96,7 @@ class SpotifyWorker:
         """
         Prend un objet track de l'API Spotify et met à jour/crée les entrées correspondantes dans la DB.
         """
-        # 1. Extraire les IDs Spotify
+        # Extraire les IDs Spotify
         sp_track_id = t['id']
         sp_artist_id = t['artists'][0]['id']
         sp_artist_name = t['artists'][0]['name']
@@ -105,7 +105,7 @@ class SpotifyWorker:
         sp_album_img = t['album']['images'][0]['url'] if t['album']['images'] else None
         duration_ms = t['duration_ms']
 
-        # 2. Gérer l'Artiste
+        # Gérer l'Artiste
         artist = db.exec(select(Artist).where(Artist.spotify_id == sp_artist_id)).first()
         # L'artiste n'existe pas encore, on le crée et on le met dans la file d'attente à enrichir
         if not artist:
@@ -114,7 +114,7 @@ class SpotifyWorker:
             db.flush()
             self.add_artist(sp_artist_id)
 
-        # 3. Gérer l'Album
+        # Gérer l'Album
         album = db.exec(select(Album).where(Album.spotify_id == sp_album_id)).first()
         if not album:
             album = Album(
@@ -126,7 +126,7 @@ class SpotifyWorker:
             db.add(album)
             db.flush()
 
-        # 4. Mettre à jour la Track existante
+        # Mettre à jour la Track existante
         track = db.exec(select(Track).where(Track.spotify_id == sp_track_id)).first()
         if track:
             track.artist_id = sp_artist_id
