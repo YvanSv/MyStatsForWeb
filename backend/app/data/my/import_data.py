@@ -1,15 +1,15 @@
-import asyncio
 import datetime
 import json
 import hashlib
-from typing import List, Optional
-from fastapi import APIRouter, Cookie, Depends, HTTPException, UploadFile, File
+from typing import List
+from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy import insert
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import User, Track, TrackHistory
+from app.models import Track, TrackHistory
 from app.spotify.utils.SpotifyWorker import spotify_worker
 from app.response_message import UploadSuccessResponse
+from app.auth.utils.auth_utils import get_current_user_id
 
 router = APIRouter()
 
@@ -18,20 +18,8 @@ def stable_hash(text: str) -> str:
     normalized = text.strip().lower()
     return f"gen_{hashlib.md5(normalized.encode()).hexdigest()[:16]}"
 
-@router.post(
-    "",
-    summary="Importer l'historique JSON de Spotify",
-    response_model=UploadSuccessResponse,
-    responses={
-        200: {"model": UploadSuccessResponse, "description": "Importation réussie, traitement asynchrone lancé."},
-        401: {"description": "Utilisateur non connecté (cookie session_id manquant)."},
-    }
-)
-async def upload_spotify_json(
-    files: List[UploadFile] = File(...),
-    session_id: Optional[str] = Cookie(None),
-    db: Session = Depends(get_session)
-):
+@router.post("", response_model=UploadSuccessResponse)
+async def upload_spotify_json(files: List[UploadFile] = File(...),user_id: int = Depends(get_current_user_id),db: Session = Depends(get_session)):
     """
     Traite et importe les fichiers d'historique d'écoute Spotify.
 
@@ -43,95 +31,69 @@ async def upload_spotify_json(
 
     **Note :** Cette route peut prendre du temps selon la taille des fichiers. Le traitement des images se fait en arrière-plan pour ne pas bloquer l'utilisateur.
     """
-    # Authentification de l'utilisateur
-    user = db.exec(select(User).where(User.session_id == session_id)).first()
-    if not user: raise HTTPException(status_code=401, detail="Non connecté")
-
-    valid_entries = []
-    new_track_ids_for_worker = set()
-    # Charger l'historique existant immédiatement
-    all_history = set(
-        db.exec(
-            select(TrackHistory.played_at, TrackHistory.spotify_id)
-            .where(TrackHistory.user_id == user.id)
-        ).all()
+    # 1. Chargement de l'historique existant (Set de tuples pour recherche O(1))
+    existing_history = set(
+        db.exec(select(TrackHistory.played_at, TrackHistory.spotify_id).where(TrackHistory.user_id == user_id)).all()
     )
+    existing_tracks = set(db.exec(select(Track.spotify_id)).all())
 
-    print(f"👂 {len(all_history)} écoutes dans l'historique")
+    tracks_to_insert = {}
+    history_mappings = []
+    new_track_ids = set()
 
-    # 2. PRE-SCAN & FILTRAGE IMMEDIAT
+    # 2. Traitement des fichiers
     for file in files:
-        content = await file.read()
-        try: data = json.loads(content)
+        try: raw_data = json.loads(await file.read())
         except: continue
-        for entry in data:
+
+        for entry in raw_data:
             uri = entry.get("spotify_track_uri")
-            played_at = entry.get("ts")
-            ms_played = entry.get("ms_played") or 0
-            if uri and ":" in uri and played_at:
-                sid = uri.split(":")[-1]
-                # On filtre : si c'est déjà en base, on ignore complètement l'entrée
-                # On ignore aussi les écoutes trop courtes (moins de 3s)
-                try: dt_obj = datetime.datetime.fromisoformat(played_at.replace("Z", "+00:00")).replace(tzinfo=None)
-                except ValueError: continue
-                if (dt_obj, sid) in all_history or ms_played < 3000: continue
-                valid_entries.append(entry)
+            ts = entry.get("ts")
+            ms = entry.get("ms_played", 0)
+            if not uri or not ts or ms < 3000: continue
+            sid = uri.split(":")[-1]
+            
+            # Conversion date rapide (ISO format est standard, replace('Z') suffit souvent)
+            try: dt_obj = datetime.datetime.fromisoformat(ts.replace("Z", "+00:00")).replace(tzinfo=None)
+            except: continue
 
-    print(f"🆕 {len(valid_entries)} nouvelles écoutes à ajouter.")
-    if not valid_entries: return {"status": "success", "message": "Aucune nouvelle écoute à ajouter."}
+            # Dédoublonnage
+            if (dt_obj, sid) in existing_history: continue
 
-    # 3. CACHE DB (Pour éviter les doublons lors de l'insertion)
-    # On charge ce qu'on a déjà pour ne pas réinsérer
-    existing_tracks = {sid for sid in db.exec(select(Track.spotify_id)).all()}
-    to_add_tracks = {}
-    to_add_history = []
-    nb_calcul = 0
+            # Préparation de la Track si inconnue
+            if sid not in existing_tracks and sid not in tracks_to_insert:
+                tracks_to_insert[sid] = {
+                    "spotify_id": sid,
+                    "title": entry.get("master_metadata_track_name") or "Chargement..."
+                }
+                new_track_ids.add(sid)
 
-    for entry in valid_entries:
-        sid = entry["spotify_track_uri"].split(":")[-1]
+            # Préparation de l'historique
+            history_mappings.append({
+                "user_id": user_id,
+                "spotify_id": sid,
+                "played_at": dt_obj,
+                "ms_played": ms
+            })
 
-        # Si la track n'existe pas du tout, on la crée avec le strict minimum
-        # Le worker viendra remplir album_id, artist_id et duration plus tard
-        if sid not in existing_tracks and sid not in to_add_tracks:
-            to_add_tracks[sid] = Track(
-                spotify_id=sid,
-                title=entry.get("master_metadata_track_name") or "Chargement..."
-            )
-            new_track_ids_for_worker.add(sid)
+    if not history_mappings: return {"status": "success", "message": "Rien à ajouter."}
 
-        to_add_history.append(TrackHistory(
-            user_id=user.id,
-            spotify_id=sid,
-            played_at=entry.get("ts"),
-            ms_played=entry.get("ms_played") or 0
-        ))
-
-        nb_calcul += 1
-        if nb_calcul % 2000 == 0:
-            print(f"{nb_calcul} écoutes traitées, pause de 0.1sec")
-            await asyncio.sleep(0.1)
-
-    # 4. COMMIT IMMEDIAT
-    if to_add_tracks:
-        db.add_all(to_add_tracks.values())
-        db.flush()
-    nb_calcul = 0
-    if to_add_history:
-        history_data = [{
-            "user_id": h.user_id,
-            "spotify_id": h.spotify_id,
-            "played_at": h.played_at,
-            "ms_played": h.ms_played
-        } for h in to_add_history]
-        db.exec(insert(TrackHistory).values(history_data))
+    # Insertion des nouvelles pistes d'abord (pour respecter les clés étrangères)
+    if tracks_to_insert: db.execute(insert(Track), list(tracks_to_insert.values()))
+    
+    # Insertion de l'historique par paquets (batchs) de 5000 pour la stabilité
+    if history_mappings:
+        for i in range(0, len(history_mappings), 5000):
+            db.execute(insert(TrackHistory), history_mappings[i:i+5000])
+    
     db.commit()
 
-    # 5. APPEL AU WORKER (Asynchrone)
-    # On envoie la liste des IDs qui ont besoin d'être enrichis
-    await spotify_worker.add_tracks(list(new_track_ids_for_worker))
+    if new_track_ids:
+        await spotify_worker.add_tracks(list(new_track_ids))
     await spotify_worker.should_repair_history()
+
     return {
         "status": "success", 
-        "added": len(to_add_history), 
-        "info": "Vos écoutes ont été ajoutées. Les images et détails arrivent en arrière-plan."
+        "added": len(history_mappings), 
+        "info": f"{len(history_mappings)} écoutes ajoutées."
     }
