@@ -1,5 +1,17 @@
+from typing import Optional
 import uuid
 import bcrypt
+from fastapi import Cookie, Depends, HTTPException
+from sqlalchemy import select
+from sqlmodel import Session
+from app.models import User
+from app.database import get_session
+
+async def get_current_user_id(session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)) -> int:
+    if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
+    user_id = db.exec(select(User.id).where(User.session_id == session_id)).scalar()
+    if user_id is None: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    return int(user_id)
 
 def create_uuid_session():
     return str(uuid.uuid4())
