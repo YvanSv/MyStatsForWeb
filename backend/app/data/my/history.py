@@ -2,11 +2,11 @@ from app.database import get_session
 from app.auth.spotify_auth import get_valid_access_token
 from app.models import TrackHistory, User, Track, Artist, Album
 from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, Cookie, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 import httpx
 from sqlalchemy import desc, select
 from sqlmodel import Session
+from app.auth.utils.auth_utils import get_current_user_id
 
 router = APIRouter()
 
@@ -14,16 +14,10 @@ router = APIRouter()
 async def get_history(
     offset: int = 0, 
     limit: int = 50, 
-    session_id: Optional[str] = Cookie(None), 
+    user_id: int = Depends(get_current_user_id), 
     db: Session = Depends(get_session)
 ): 
-    # 1. Authentification
-    if not session_id:
-        raise HTTPException(status_code=401, detail="Non connecté")
-
-    user = db.exec(select(User).where(User.session_id == session_id)).scalar()
-    if not user: 
-        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    user = db.exec(select(User).where(User.id == user_id)).scalar()
 
     # 2. Synchronisation Spotify
     if offset == 0:
