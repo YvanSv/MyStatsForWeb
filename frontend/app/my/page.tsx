@@ -31,7 +31,7 @@ export default function MyPage() {
   ];
 
   return (
-    <main className="flex flex-1 w-full overflow-hidden">
+    <main className="flex flex-col md:flex-row flex-1 w-full overflow-hidden">
       {categories.map((cat) => (
         <div
           key={cat.id}

@@ -22,7 +22,7 @@ export const HEADER_STYLES = {
   
   MOBILE_OVERLAY: `absolute top-full left-0 w-full bg-bg1 backdrop-blur-xl border-b border-white/10 lg:hidden animate-in slide-in-from-top-2`,
   MOBILE_NAV: `flex flex-col p-4 space-y-1 text-center`,
-  MOBILE_ITEM: `text-[16px] py-4 ${BASE_UI.rounded.item} hover:bg-white/5 transition-colors font-medium`
+  MOBILE_ITEM: `flex gap-4 justify-center text-[16px] py-4 hover:bg-white/5 transition-colors font-medium text-white font-semibold`
 };
 
 export default function Header() {
@@ -199,7 +199,7 @@ export default function Header() {
           <nav className={HEADER_STYLES.MOBILE_NAV}>
             {navigation_menu.map(item => 
               <button key={item.id} className={HEADER_STYLES.MOBILE_ITEM} onClick={() => navigate(item.path)}>
-                {item.id}
+                {item.icon} {item.id}
               </button>
             )}
           </nav>
