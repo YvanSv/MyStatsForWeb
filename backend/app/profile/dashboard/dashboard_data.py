@@ -86,7 +86,7 @@ def get_dashboard_data(
     # --- 2. Agrégation Python (Zéro appel DB supplémentaire) ---
     clock_data = [{"hour": f"{i}h", "value": 0, "streams": 0} for i in range(24)]
     weekly_data = [{"day": d, "value": 0, "streams": 0} for d in ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]]
-    monthly_data = {i: {"value": 0, "streams": 0} for i in range(1, 13)}
+    monthly_data = [{"month": m, "value": 0, "streams": 0} for m in ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"]]
     days_names = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
     months_names = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     cumulative_data = []
@@ -151,7 +151,7 @@ def get_dashboard_data(
     
     peak_h_val = max(range(24), key=lambda h: clock_data[h]["value"]) if any(h["value"] > 0 for h in clock_data) else None
     peak_d_idx = max(range(7), key=lambda d: weekly_data[d]["value"]) if any(d["value"] > 0 for d in weekly_data) else None
-    peak_m_idx = max(monthly_data.keys(), key=lambda m: monthly_data[m]["value"]) if any(m["value"] > 0 for m in monthly_data.values()) else None
+    peak_m_idx = max(range(12), key=lambda m: monthly_data[m]["value"]) if any(m["value"] > 0 for m in monthly_data) else None
     peak_m_name = months_names[peak_m_idx - 1] if peak_m_idx is not None else "--"
     
     # --- 3. Factorisation des Découvertes (Discovery) ---
@@ -214,7 +214,7 @@ def get_dashboard_data(
         "ratio": min(round(res.completion or 0, 1), 100.0),
         "clockData": clock_data,
         "weeklyData": weekly_data,
-        "monthlyData": list(monthly_data.values()),
+        "monthlyData": monthly_data,
         "annualData": annual_data,
         "cumulativeData": cumulative_data,
         "topTrack": get_top_item(session,filters,'track'),
