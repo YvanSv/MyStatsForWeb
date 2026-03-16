@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { ApiError } from "../services/api";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton, TertiaryButton } from "../components/Atomic/Buttons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { Skeleton } from "./Skeleton";
 import toast from "react-hot-toast";
+import { useApiMyDatas } from "../hooks/useApiMyDatas";
 
 export default function AccountPage() {
   return (
@@ -30,6 +30,7 @@ const PROFILE_STYLES = {
 
 function AccountContent() {
   const { user, loading, updateUserProfile, deleteAccount, loginSpotify } = useAuth();
+  const { clearAccount } = useApiMyDatas();
   const [username, setUsername] = useState("");
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
@@ -59,8 +60,18 @@ function AccountContent() {
     const confirmation = prompt("Pour confirmer la suppression de votre compte et de toutes vos statistiques, tapez 'SUPPRIMER' ci-dessous :");
     
     if (confirmation === "SUPPRIMER") {
+      try {await deleteAccount()}
+      catch (err) {toast.error("Erreur lors de la suppression.")}
+    }
+  };
+
+  const handleClearAccount = async () => {
+    const confirmation = prompt("Pour confirmer le nettoyage de vos données et de toutes vos statistiques, tapez 'CONFIRMER' ci-dessous :");
+    
+    if (confirmation === "CONFIRMER") {
       try {
-        await deleteAccount();
+        await clearAccount();
+        toast.success("Vos données ont été supprimées avec succès.");
       } catch (err) {toast.error("Erreur lors de la suppression.")}
     }
   };
@@ -160,6 +171,14 @@ function AccountContent() {
         </p>
         {/* Zone de danger : Suppression du compte */}
         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col items-center">
+          <button onClick={handleClearAccount}
+            className="group flex flex-col items-center gap-3 transition-all duration-300 hover:opacity-80 pb-8"
+          >
+            <div className="px-6 py-3 rounded-full border border-rouge/20 bg-rouge/5 text-rouge text-[11px] font-bold uppercase tracking-widest group-hover:bg-rouge group-hover:text-white transition-all">
+              Nettoyer mes données
+            </div>
+          </button>
+
           <button onClick={handleDeleteAccount}
             className="group flex flex-col items-center gap-3 transition-all duration-300 hover:opacity-80"
           >
@@ -168,8 +187,8 @@ function AccountContent() {
             </div>
           </button>
           
-          <p className="text3 text-[10px] text-center mt-8 leading-relaxed font-hias uppercase tracking-tighter">
-            Cette action est irréversible. Toutes vos statistiques et données de profil seront définitivement effacées.
+          <p className="text3 text-[10px] text-center mt-8 leading-relaxed font-hias uppercase">
+            Ces actions sont irréversibles. Toutes vos statistiques et données de profil seront définitivement effacées.
           </p>
         </div>
       </>,

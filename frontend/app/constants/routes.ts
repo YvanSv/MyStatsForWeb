@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   ME: `${API_BASE_URL}/auth/me`,
   EDIT_INFOS: `${API_BASE_URL}/auth/update`,
   DELETE_ACCOUNT: `${API_BASE_URL}/auth/delete`,
+  CLEAR_ACCOUNT: `${API_BASE_URL}/data/my/clear`,
   SPOTIFY_LOGIN: `${API_BASE_URL}/auth/spotify-login`,
   // UNLINK_SPOTIFY: `${API_BASE_URL}/auth/unlink-spotify`,
   HOME_DATA: `${API_BASE_URL}/data/overview`,

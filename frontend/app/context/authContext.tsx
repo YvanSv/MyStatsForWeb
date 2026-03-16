@@ -27,6 +27,7 @@ interface AuthContextType {
   updateUserProfile: (newUsername: string) => Promise<void>;
   loginSpotify: () => void;
   deleteAccount: () => Promise<void>;
+  clearAccount: () => Promise<void>;
   isLoggedIn: boolean;
 }
 
@@ -118,6 +119,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const clearAccount = async () => {
+    try {
+      await request(API_ENDPOINTS.CLEAR_ACCOUNT, {method: 'DELETE'});
+      await refreshUser();
+    }
+    catch (err: any) {
+      console.error("Erreur nettoyage compte:", err);
+      throw err;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user,
@@ -129,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateUserProfile,
       loginSpotify,
       deleteAccount,
+      clearAccount,
       isLoggedIn: !!user
     }}>
       {children}
