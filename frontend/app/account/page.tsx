@@ -29,8 +29,7 @@ const PROFILE_STYLES = {
 };
 
 function AccountContent() {
-  const { user, loading, updateUserProfile, deleteAccount, loginSpotify } = useAuth();
-  const { clearAccount } = useApiMyDatas();
+  const { user, loading, updateUserProfile, deleteAccount, clearAccount, loginSpotify } = useAuth();
   const [username, setUsername] = useState("");
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
