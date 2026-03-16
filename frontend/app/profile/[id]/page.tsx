@@ -23,10 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
   
   const profile = await response.json();
-  console.log("DEBUG PROFILE DATA:", profile);
-
   if (!profile || !profile.display_name) return { title: "Profil introuvable - MyStats" };
-
   const title = `Profil de ${profile.display_name} | MyStats`;
   const description = profile.bio || `Découvrez les statistiques Spotify de ${profile.display_name}.`;
   

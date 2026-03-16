@@ -48,6 +48,7 @@ router = APIRouter()
         200: {"description": "Profil mis à jour avec succès."},
         400: {"description": "Slug déjà utilisé ou données invalides."},
         401: {"description": "Non connecté."},
+        402: {"description": "Nom d'affichage trop long."},
         403: {"description": "Action non autorisée sur ce profil."},
         404: {"description": "Profil introuvable."}
     }
@@ -72,6 +73,8 @@ def update_user_profile(
     if "slug" in update_data and update_data["slug"] != db_user.slug:
         is_taken = session.exec(select(User.id).where(User.slug == update_data["slug"])).first()
         if is_taken: raise HTTPException(status_code=400, detail="Cet url personnalisé est déjà pris.")
+    if "display_name" in update_data and len(update_data["display_name"]) > 20:
+        raise HTTPException(status_code=402, detail="Nom d'affichage trop long.")
 
     for key, value in update_data.items():
         if key == "perms" and isinstance(value, dict):

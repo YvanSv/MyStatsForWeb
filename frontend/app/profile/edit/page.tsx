@@ -66,12 +66,17 @@ function EditProfileContent() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { getEditableProfile, patchProfile } = useProfile();
   const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState({
+    errorName: "",
+    errorBio: "",
+    errorSlug: ""
+  });
   const [formData, setFormData] = useState({
     display_name: "",
     bio: "",
     slug: "",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-    banner_url: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+    avatar_url: "",
+    banner_url: "",
     perms: {
       profile: true,
       stats: true,
@@ -112,7 +117,8 @@ function EditProfileContent() {
 
   const handleSave = async () => {
     if (!user || !user.id) return;
-    const finalSlug = formData.slug.trim();
+    if (errors.errorBio !== "" || errors.errorName !== "" || errors.errorSlug !== "") return;
+    const finalSlug = formData.slug && formData.slug.trim();
     const payload = {
       display_name: formData.display_name,
       bio: formData.bio,
@@ -130,7 +136,7 @@ function EditProfileContent() {
         iconTheme: {primary: '#1DD05D',secondary: '#fff'}
       });
       await refreshUser();
-      router.push(`/profile/${finalSlug === ""  ? user.id : finalSlug}`);
+      router.push(`/profile/${finalSlug === "" || !finalSlug  ? user.id : finalSlug}`);
     } catch (err: any) {
       if (err.status === 422) return;// setMessage({type: "error",text: "Votre pseudonyme doit faire au moins 3 caractères"});
       else return; // setMessage({type: "error",text: err.message});
@@ -228,27 +234,43 @@ function EditProfileContent() {
         {/* --- FORMULAIRE --- */}
         <div className={PROFILE_EDIT_STYLES.FORM_CARD}>
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
-            <label className={PROFILE_EDIT_STYLES.LABEL}>Nom d'affichage</label>
+            <div className="flex justify-between">
+              <label className={PROFILE_EDIT_STYLES.LABEL}>Nom d'affichage</label>
+              <p className={`block text-xs mb-2 ml-1
+                ${(formData.display_name || "").length < 3 ? 'text-rouge' : (formData.display_name || "").length > 14 ? (formData.display_name.length > 17 ? (formData.display_name.length >= 20 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{(formData.display_name?.length || 0)}/20</p>
+            </div>
             <input 
               type="text" 
               className={PROFILE_EDIT_STYLES.INPUT}
               value={formData.display_name}
-              onChange={(e) => setFormData({...formData, display_name: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length < 3) setErrors({...errors, errorName: "Le nom d'affichage doit faire au moins 3 caractères."});
+                else if (e.target.value.length > 20) setErrors({...errors, errorName: "Le nom d'affichage doit faire maximum 20 caractères."});
+                else setErrors({...errors, errorName: ""});
+                setFormData({...formData, display_name: e.target.value})
+              }}
               placeholder="Votre nom..."
             />
+            {errors.errorName && (<label className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorName}</label>)}
           </div>
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
             <div className="flex justify-between">
               <label className={PROFILE_EDIT_STYLES.LABEL}>Description</label>
               <p className={`block text-xs mb-2 ml-1
-                ${(formData.bio || "").length > 400 ? (formData.bio.length > 450 ? (formData.bio.length === 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+                ${(formData.bio || "").length > 400 ? (formData.bio.length > 450 ? (formData.bio.length >= 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.bio?.length || 0)}/500</p>
             </div>
             <textarea rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
               value={formData.bio} placeholder="Dites-en un peu plus sur vos goûts musicaux..."
-              onChange={(e) => e.target.value.length <= 500 && setFormData({...formData, bio: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length > 500) setErrors({...errors,errorBio: "La bio doit faire 500 caracètres maximum."});
+                else setErrors({...errors, errorName: ""});
+                setFormData({...formData, bio: e.target.value})
+              }}
             />
+            {errors.errorBio && (<label className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorBio}</label>)}
           </div>
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
@@ -280,6 +302,7 @@ function EditProfileContent() {
             <p className="text-[10px] text-white/40 mt-2 ml-1">
               Utilisez uniquement des lettres, des chiffres et des tirets.
             </p>
+            {errors.errorSlug && (<label>{errors.errorSlug}</label>)}
           </div>
 
           {/* --- RÉGLAGES PRIVAUTÉ --- */}
@@ -309,7 +332,7 @@ function EditProfileContent() {
             <button onClick={() => router.back()} className={PROFILE_EDIT_STYLES.BTN_CANCEL}>
               Annuler
             </button>
-            <PrimaryButton onClick={handleSave} additional="px-6 py-2.5">
+            <PrimaryButton onClick={handleSave} additional="px-6 py-2.5" disabled={errors.errorBio !== "" || errors.errorName !== "" || errors.errorSlug !== ""}>
               Enregistrer les modifications
             </PrimaryButton>
           </div>

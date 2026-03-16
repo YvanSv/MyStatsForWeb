@@ -71,6 +71,7 @@ export default function ProfilePage({ id }: { id: string }) {
       try {
         const data = await getProfile(id);
         setProfile(data);
+        console.log(profile?.avatar);
       } catch (err: any) {setError(err instanceof ApiError ? err : new ApiError(err.status,"Erreur inconnue"))}
       finally {setLoading(false)}
     };

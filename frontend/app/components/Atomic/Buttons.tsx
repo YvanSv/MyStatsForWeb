@@ -13,8 +13,8 @@ const transformation_base = 'transition-all duration-300 ease-out active:scale-9
 export function PrimaryButton({children,additional,onClick,disabled,type}:Props) {
   const agencement = agencement_base;
   const forme = forme_base;
-  const couleur = 'bg-vert hover:bg-vert/90 text4 hover:shadow-[0_0_30px_rgba(30,215,96,0.3)] font-semibold';
-  const transformation = transformation_base;
+  const couleur = disabled ? 'bg-vert/30 text4 font-semibold' : 'bg-vert hover:bg-vert/90 text4 hover:shadow-[0_0_30px_rgba(30,215,96,0.3)] font-semibold';
+  const transformation = disabled ? 'cursor-disabled' : transformation_base;
 
   return (
     <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick} disabled={disabled} type={type}>
