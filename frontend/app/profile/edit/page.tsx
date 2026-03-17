@@ -131,10 +131,8 @@ function EditProfileContent() {
     try {
       await patchProfile('' + user.id, payload);
       toast.success("Profil modifié !", {
-        style: {borderRadius: '15px',background: '#1A1A1A',
-          color: '#fff',border: '1px solid rgba(255,255,255,0.1)'
-        },
-        iconTheme: {primary: '#1DD05D',secondary: '#fff'}
+        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
       await refreshUser();
       router.push(`/profile/${finalSlug === "" || !finalSlug  ? user.id : finalSlug}`);
@@ -187,9 +185,7 @@ function EditProfileContent() {
     }
   };
 
-  if (loading) return <ProfileEditSkeleton />;
-
-  console.log(formData.avatar_url)
+  if (loading) return <ProfileEditSkeleton/>;
 
   return (
     <main className={PROFILE_EDIT_STYLES.MAIN}>

@@ -92,9 +92,6 @@ export default function ProfilePage({ id }: { id: string }) {
 
   if (error instanceof ApiError && error.status === 404) return <ErrorState title="Profil introuvable" status={error.status}/>;
   if (loading || !profile) return <ProfileSkeleton/>;
-
-  console.log(profile.avatar)
-
   return (
     <div className={PROFILE_STYLES.MAIN_WRAPPER}>
       {/* --- BANNIÈRE --- */}

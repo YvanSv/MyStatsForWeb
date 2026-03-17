@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Jost } from "next/font/google";
 import "./globals.css";
 import { ViewModeProvider } from "./context/viewModeContext";

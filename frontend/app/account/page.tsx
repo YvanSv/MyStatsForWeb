@@ -6,7 +6,6 @@ import { PrimaryButton, TertiaryButton } from "../components/Atomic/Buttons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { Skeleton } from "./Skeleton";
 import toast from "react-hot-toast";
-import { useApiMyDatas } from "../hooks/useApiMyDatas";
 
 export default function AccountPage() {
   return (
@@ -70,7 +69,10 @@ function AccountContent() {
     if (confirmation === "CONFIRMER") {
       try {
         await clearAccount();
-        toast.success("Vos données ont été supprimées avec succès.");
+        toast.success("Vos données ont été supprimées avec succès.", {
+          style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+          iconTheme: { primary: '#1DD05D', secondary: '#fff' },
+        });
       } catch (err) {toast.error("Erreur lors de la suppression.")}
     }
   };

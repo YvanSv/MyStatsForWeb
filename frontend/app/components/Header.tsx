@@ -10,7 +10,16 @@ import { BadgeQuestionMark, ChartBar, Disc, Medal, Mic2, Music2, User } from "lu
 import { PrimaryButton, TertiaryButton } from "./Atomic/Buttons";
 import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Atomic/Nav/Navbar";
 
-export const HEADER_STYLES = {
+// --- ICONS (SVG) ---
+const Grid3x3Icon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="9.5" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="9.5" rx="1" /><rect width="5" height="5" x="9.5" y="9.5" rx="1" /><rect width="5" height="5" x="16" y="9.5" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><rect width="5" height="5" x="9.5" y="16" rx="1" /><rect width="5" height="5" x="16" y="16" rx="1" /></svg>
+const GridIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>;
+const ListIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>;
+const LogoutIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
+const UploadIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+const EyeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+const ChevronDown = ({ size = 16, className = "" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>
+
+const HEADER_STYLES = {
   CONTAINER: `flex justify-between items-center sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-0.5 px-4 md:px-6 border-b border-white/10`,
   
   NAV_PC: 'hidden lg:flex justify-between h-fit text-[24px] font-semibold gap-12 2xl:gap-24 3xl:gap-32',  
@@ -25,6 +34,34 @@ export const HEADER_STYLES = {
   MOBILE_ITEM: `flex gap-4 justify-center text-[16px] py-4 hover:bg-white/5 transition-colors font-medium text-white font-semibold`
 };
 
+const navigation_menu = [
+  {id: 'Rankings', path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal/>},
+  {id: 'Dashboard', path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar size={24}/>},
+  {id: 'Mon compte', path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={24}/>},
+  {id: 'Aide', path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark/>},
+] as const;
+const sous_menu_ranking = [
+  {id: 'Tracks', path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18}/>},
+  {id: 'Albums', path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18}/>},
+  {id: 'Artists', path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18}/>},
+]
+const sous_menu_compte = [
+  {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <EyeIcon/>},
+  {id: 'Import de data', path: `${FRONT_ROUTES.IMPORT}`, icon: <UploadIcon/>},
+  {id: 'Mon compte', path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={18}/>},
+]
+const views = [
+  { id: 'grid_sm', icon: <Grid3x3Icon/>, hideMobile: true },
+  { id: 'grid', icon: <GridIcon/>, hideMobile: false },
+  { id: 'list', icon: <ListIcon/>, hideMobile: false },
+] as const;
+const dropdown_menu = [
+  { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}` },
+  { id: 'Mon dashboard', icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}`},
+  { id: 'Import de data', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
+  { id: 'Mon compte', icon: <User size={18}/>, path: FRONT_ROUTES.ACCOUNT },
+] as const;
+
 export default function Header() {
   const router = useRouter();
   // --- ÉTATS STATIQUES ---
@@ -38,33 +75,6 @@ export default function Header() {
   // --- MENUS DEROULANTS ---
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const navigation_menu = [
-    {id: 'Rankings', path: `${isLoggedIn ? FRONT_ROUTES.MY_RANKINGS:FRONT_ROUTES.ALL_RANKINGS}`, icon: <Medal/>},
-    {id: 'Dashboard', path: `${FRONT_ROUTES.DASHBOARD}/${user?.id}`, icon: <ChartBar size={24}/>},
-    {id: 'Mon compte', path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={24}/>},
-    {id: 'Aide', path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark/>},
-  ] as const;
-  const sous_menu_ranking = [
-    {id: 'Tracks', path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18}/>},
-    {id: 'Albums', path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18}/>},
-    {id: 'Artists', path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18}/>},
-  ]
-  const sous_menu_compte = [
-    {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <EyeIcon/>},
-    {id: 'Import de data', path: `${FRONT_ROUTES.IMPORT}`, icon: <UploadIcon/>},
-    {id: 'Mon compte', path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={18}/>},
-  ]
-  const views = [
-    { id: 'grid_sm', icon: <Grid3x3Icon/>, hideMobile: true },
-    { id: 'grid', icon: <GridIcon/>, hideMobile: false },
-    { id: 'list', icon: <ListIcon/>, hideMobile: false },
-  ] as const;
-  const dropdown_menu = [
-    { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}/${user?.slug || user?.id}` },
-    { id: 'Mon dashboard', icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}/${user?.slug || user?.id}`},
-    { id: 'Import de data', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
-    { id: 'Mon compte', icon: <User size={18}/>, path: FRONT_ROUTES.ACCOUNT },
-  ] as const;
   const activeView = views.find(v => v.id === viewMode) || views[1];
 
   useEffect(() => {
@@ -208,12 +218,3 @@ export default function Header() {
     </header>
   );
 }
-
-// --- ICONS (SVG) ---
-const Grid3x3Icon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="9.5" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="9.5" rx="1" /><rect width="5" height="5" x="9.5" y="9.5" rx="1" /><rect width="5" height="5" x="16" y="9.5" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><rect width="5" height="5" x="9.5" y="16" rx="1" /><rect width="5" height="5" x="16" y="16" rx="1" /></svg>
-const GridIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>;
-const ListIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>;
-const LogoutIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
-const UploadIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-const EyeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
-const ChevronDown = ({ size = 16, className = "" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>

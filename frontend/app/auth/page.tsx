@@ -90,7 +90,10 @@ function AuthContent() {
     setLoading(true);
     try {
       await register(regData.username, regData.email, regData.password);
-      toast.success("Bienvenue !");
+      toast.success("Bienvenue !", {
+        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        iconTheme: { primary: '#1DD05D', secondary: '#fff' },
+      });
     } catch (err: any) {
       if (err.status === 422) setRegisterMessage({type: "error",text: "Le mot de passe doit faire au moins 8 caractères."});
       else if (err.status === 400) setRegisterMessage({type: "error",text: err.message});

@@ -2,8 +2,10 @@
 import { useRouter } from 'next/navigation';
 import { Music2, Disc, Mic2 } from 'lucide-react';
 import { FRONT_ROUTES } from '../constants/routes';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
+import MyContentSkeleton from './Skeleton';
 
-export default function MyPage() {
+function MyContent() {
   const router = useRouter();
 
   const categories = [
@@ -67,5 +69,13 @@ export default function MyPage() {
         </div>
       ))}
     </main>
+  );
+}
+
+export default function MyPage() {
+  return (
+    <ProtectedRoute skeleton={<MyContentSkeleton/>}>
+      <MyContent/>
+    </ProtectedRoute>
   );
 }
