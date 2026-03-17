@@ -1,3 +1,5 @@
+import { Clock, Play } from "lucide-react";
+
 interface MetricSwitchProps {
   value: 'streams' | 'minutes';
   onChange: (newValue: 'streams' | 'minutes') => void;
@@ -12,14 +14,14 @@ export const MetricSwitch = ({ value, onChange }: MetricSwitchProps) => {
           value === 'minutes' ? 'bg-vert text-black shadow-lg shadow-vert/20' 
             : 'text-gray-400 hover:text-white'
         }`}
-      >Minutes</button>
+      ><Clock size={16}/></button>
       <button
         onClick={() => onChange('streams')}
         className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
           value === 'streams' ? 'bg-vert text-black shadow-lg shadow-vert/20' 
             : 'text-gray-400 hover:text-white'
         }`}
-      >Streams</button>
+      ><Play size={16}/></button>
     </div>
   );
 };
