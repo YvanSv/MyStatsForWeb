@@ -116,7 +116,7 @@ export default function DashboardPage() {
     let hasOverflow = true;
     let passes = 0;
 
-    // 2. On boucle tant qu'il y a du surplus (max 2 tours de cadran / 48 itérations)
+    // On boucle tant qu'il y a du surplus (max 2 tours de cadran / 48 itérations)
     // On utilise 48 car l'overflow de 23h retombe sur 0h, etc.
     while (hasOverflow && passes < 2) {
       hasOverflow = false;
@@ -131,7 +131,8 @@ export default function DashboardPage() {
           data[nextHour].value += overflow;
           
           hasOverflow = true;
-        }
+        // Si on a un fait un tour de cadran et qu'on a plus d'overflow c'est qu'on a fini
+        } else if (passes > 0) break;
       }
       passes++;
     }
