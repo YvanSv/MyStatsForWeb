@@ -1,4 +1,4 @@
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarAngleAxis, PolarGrid, Radar } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarAngleAxis, PolarGrid, Radar, PolarRadiusAxis } from 'recharts';
 import { LineChart, Line, Legend } from 'recharts';
 
 const CustomBar = (props: any) => {
@@ -71,12 +71,14 @@ const formatTicks = (hour: string) => {
   return keys.includes(hour) ? hour : "";
 };
 
-export function ClockChart({ data, metric = 'streams' }: { data: any[], metric: 'streams' | 'minutes' }) {
+export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: any[], metric: 'streams' | 'minutes', daysCount: number}) {
+  const maxRange = metric === 'minutes' && daysCount !== 0 ? 60 * daysCount : undefined;
   return (
     <GraphContainer height={250} title="Activité horaire">
       <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data} startAngle={90} endAngle={-270}>
         <PolarGrid stroke="#374151" />
         <PolarAngleAxis dataKey="hour" tickFormatter={formatTicks} tick={{ fill: '#9CA3AF', fontSize: 10 }}/>
+        <PolarRadiusAxis domain={[0, maxRange || 'auto']} tick={false} axisLine={false}/>
         <Tooltip content={<ChartToolTip/>} cursor={{ stroke: '#c084fc', strokeWidth: 1 }}/>
         <Radar name={metric === 'streams' ? 'Streams' : 'Minutes'} dataKey={metric === 'streams' ? 'streams' : 'value'} stroke="#c084fc"
           fill="#5e4d6c" fillOpacity={0.5} animationDuration={1000}

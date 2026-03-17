@@ -1,3 +1,9 @@
+export interface HourlyData {
+  hour: string;
+  value: number;
+  streams: number;
+}
+
 export interface DashboardStats {
   totalTime: number;
   avgTimePerDay: number;

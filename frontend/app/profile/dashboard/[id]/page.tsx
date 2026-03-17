@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { Timer, Music2, Mic2, Calendar, Disc, Play, Clock, Zap, CalendarIcon, Percent, CalendarDays } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useProfile } from "@/app/hooks/useProfile";
 import {WeeklyChart, MonthlyChart, ClockChart, CumulativeChart, EvolutionChart, AnnualChart, EvolutionStreamsChart} from "@/app/components/dashboard/Charts";
 import { MetricSwitch } from "./MetricSwitch";
@@ -10,7 +10,7 @@ import CompactStatCard from "./CompactStatCard";
 import AccordionItem from "./AccordionItem";
 import IntervalsSelector from "./IntervalSelector";
 import TopMediaCard from "./TopMediaCard";
-import { DashboardStats, formatToInputDate, getDateRange, getRangeLabel, INITIAL_STATS } from "./utils";
+import { DashboardStats, formatToInputDate, getDateRange, getRangeLabel, HourlyData, INITIAL_STATS } from "./utils";
 import { UserProfile } from "@/app/data/DataInfos";
 import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 import { SecondaryButton } from "@/app/components/Atomic/Buttons";
@@ -110,6 +110,41 @@ export default function DashboardPage() {
   }, [id, range, offset]);
 
   if (error && error.status === 404 && !profile) return <ErrorState title="Dashboard introuvable" status={error.status}/>;
+
+  const smoothHourlyData = (rawData: HourlyData[]): HourlyData[] => {
+    let data = rawData.map(h => ({ ...h }));
+    let hasOverflow = true;
+    let passes = 0;
+
+    // 2. On boucle tant qu'il y a du surplus (max 2 tours de cadran / 48 itérations)
+    // On utilise 48 car l'overflow de 23h retombe sur 0h, etc.
+    while (hasOverflow && passes < 2) {
+      hasOverflow = false;
+      
+      for (let i = 0; i < 24; i++) {
+        if (data[i].value > 60) {
+          let overflow = data[i].value - 60;
+          data[i].value = 60; // On plafonne l'heure actuelle
+          
+          // On calcule l'index de l'heure suivante (avec modulo pour le cycle 23h -> 0h)
+          let nextHour = (i + 1) % 24;
+          data[nextHour].value += overflow;
+          
+          hasOverflow = true;
+        }
+      }
+      passes++;
+    }
+
+    return data;
+  };
+
+  const processedData = useMemo(() => {
+    if (range === "today") return smoothHourlyData(extendedStats.clockData);
+    return extendedStats.clockData;
+  }, [extendedStats.clockData, range]);
+
+  console.log(extendedStats.clockData)
 
   return (
     <main className={STYLES.main}>
@@ -240,7 +275,7 @@ export default function DashboardPage() {
               }
             </div>
             <div className={STYLES.grid.habits(range)}>
-              <ClockChart data={extendedStats.clockData} metric={metric}/>
+              <ClockChart data={processedData} metric={metric} daysCount={range==="today" ? 1 : 0}/>
               {range !== "today" && <WeeklyChart data={extendedStats.weeklyData} metric={metric}/>}
               {["6m", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
                 <MonthlyChart data={extendedStats.monthlyData} metric={metric}/>
