@@ -96,12 +96,9 @@ export function ImportContent() {
         };
 
         ws.onmessage = (event) => {
-          console.log(event.data);
-          const data = JSON.parse(event.data);
-          setProgress(data.percentage);
-          if (data.percentage === 100) ws.close();
+          setProgress(JSON.parse(event.data).percentage);
+          if (progress === 100) ws.close();
         };
-
         ws.onerror = () => reject(new Error("Erreur de connexion au suivi de progression."));
       });
     };
