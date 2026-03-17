@@ -1,5 +1,4 @@
 ### TO DO LIST :
-- gérer les erreurs lors de la déconnexion
 - **page /about**
 - embellir l'accueil
 - **trouver un moyen de se rendre sur les pages /all/ quand on est connecté**
@@ -9,7 +8,10 @@
 - **trouver un moyen de limiter un utilisateur déconnecté**
 - roles ?
 - **page /help /faq ...**
-- optimisation appel SQL (calcul rating) sur les routes data/all/ et data/my/
+- confirmation email lors de la création du compte
+- modification email du compte
+- modification mot de passe
+- optimisation appel SQL (calcul rating) sur les routes data/all/
 - page de détail d'une donnée quand on clique dessus
 - Provider Apple Music
 - Data reader Apple Music

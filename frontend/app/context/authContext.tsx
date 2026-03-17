@@ -24,7 +24,7 @@ interface AuthContextType {
   register: (username: string, email: string, password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (newUsername: string) => Promise<void>;
+  updateUserProfile: (data: {}) => Promise<void>;
   loginSpotify: () => void;
   deleteAccount: () => Promise<void>;
   clearAccount: () => Promise<void>;
@@ -43,8 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await request(API_ENDPOINTS.ME);
-      setUser(data);
+      setUser(await request(API_ENDPOINTS.ME));
     } catch (err) {setUser(null)}
     finally {setLoading(false)}
   }, [request]);
@@ -81,13 +80,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     finally {setUser(null); router.push('/');}
   };
 
-  const updateUserProfile = async (newUsername: string) => {
+  const updateUserProfile = async (data: {}) => {
     try {
       await request(API_ENDPOINTS.EDIT_INFOS, {
         method: 'PATCH',
-        body: JSON.stringify({ username: newUsername })
+        body: JSON.stringify(data)
       });
-      setUser(prev => prev ? { ...prev, user_name: newUsername } : null);
       await refreshUser(); 
     } catch (err) {throw err}
   };

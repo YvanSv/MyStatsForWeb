@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from dotenv import load_dotenv
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi import APIRouter, Body, Cookie, Depends, HTTPException, Response
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlmodel import Session, select
@@ -25,12 +25,27 @@ class RegisterSchema(BaseModel):
     password: str = Field(..., min_length=8)
 
 class UpdateProfileSchema(BaseModel):
-    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    username: str | None = None
+    password: str | None = None
+    email: str | None = None
+
     @field_validator('username')
-    def username_not_empty(cls, v):
-        if v is not None and not v.strip():
-            raise ValueError('Le nom d\'utilisateur ne peut pas être vide')
-        return v.strip() if v else v
+    @classmethod
+    def validate_username(cls, v):
+        if v is not None:
+            v = v.strip()
+            if not (3 <= len(v) <= 20):
+                raise ValueError("Le nom d'utilisateur doit faire entre 3 et 20 caractères")
+        return v
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v):
+        if v is not None:
+            v = v.strip()
+            if not (8 <= len(v) <= 128):
+                raise ValueError("Le mot de passe doit faire entre 8 et 128 caractères")
+        return v
 
 @router.post("/login", response_model=LoginSuccessResponse)
 async def login_email(data: LoginSchema, response: Response, session: Session = Depends(get_session)):
@@ -157,6 +172,7 @@ async def get_me(response: Response, session_id: Optional[str] = Cookie(None), d
         user_name=user.display_name,
         has_spotify=user.spotify_id is not None,
         is_logged_in=True,
+        email=user.email,
         spotify_email=user.spotify_email
     )
 
@@ -166,7 +182,7 @@ async def get_me(response: Response, session_id: Optional[str] = Cookie(None), d
     response_model=UpdateSuccessResponse
 )
 async def update_account(
-    data: UpdateProfileSchema, 
+    payload: UpdateProfileSchema = Body(...), 
     session_id: Optional[str] = Cookie(None), 
     session: Session = Depends(get_session)
 ):
@@ -177,7 +193,9 @@ async def update_account(
     if not session_id: raise HTTPException(status_code=401, detail="Non authentifié")
     user = session.exec(select(User).where(User.session_id == session_id)).first()
     if not user: raise HTTPException(status_code=401, detail="Session invalide ou expirée")
-    if data.username: user.display_name = data.username
+    if payload.username: user.display_name = payload.username
+    if payload.password: user.password_hash = get_password_hash(payload.password)
+    if payload.email: user.email = payload.email
 
     try:
         session.add(user)
@@ -185,10 +203,12 @@ async def update_account(
         return UpdateSuccessResponse(
             status="success",
             message="Profil mis à jour",
-            user_name=user.display_name
+            user_name=user.display_name,
+            email=user.email
         )
-    except Exception:
+    except Exception as e:
         session.rollback()
+        print(f"Erreur update: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la mise à jour du compte")
     
 @router.delete(

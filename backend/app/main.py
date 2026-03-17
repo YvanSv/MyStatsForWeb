@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from app.database import create_db_and_tables
@@ -20,6 +22,14 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="MyStats Spotify API",lifespan=lifespan)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"Erreur de validation : {exc.errors()}") # <--- CECI VA TE DIRE LE CHAMP COUPABLE
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
 
 app.add_middleware(
     CORSMiddleware,

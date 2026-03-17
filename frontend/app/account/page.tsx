@@ -6,6 +6,8 @@ import { PrimaryButton, TertiaryButton } from "../components/Atomic/Buttons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { Skeleton } from "./Skeleton";
 import toast from "react-hot-toast";
+import { log } from "console";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AccountPage() {
   return (
@@ -30,27 +32,43 @@ const PROFILE_STYLES = {
 function AccountContent() {
   const { user, loading, updateUserProfile, deleteAccount, clearAccount, loginSpotify } = useAuth();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+  const [errors, setErrors] = useState({
+    errorName: '',
+    errorEmail: '',
+    errorPw: '',
+    errorConfirmPw: '',
+  });
 
-  useEffect(() => {if (user?.user_name) setUsername(user.user_name)}, [user]);
+  useEffect(() => {
+    if (user?.user_name) setUsername(user.user_name);
+    if (user?.email) setEmail(user.email);
+  }, [user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (updating) return;
+    if (errors.errorPw !== "" || errors.errorName !== "" || errors.errorConfirmPw !== "") return;
 
     setUpdating(true);
-    setMessage({ type: "", text: "" });
 
     try {
-      await updateUserProfile(username);
-      toast.success("Profil mis à jour avec succès !", {
+      const updateData: any = {};
+      if (username !== user?.user_name) updateData.username = username;
+      if (email !== user?.email) updateData.email = email;
+      if (password) updateData.password = password;
+      await updateUserProfile(updateData);
+      toast.success("Compte mis à jour avec succès !", {
         style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
     } catch (err: any) {
-      if (err.status === 422) setMessage({type: "error",text: "Votre pseudonyme doit faire au moins 3 caractères"});
-      else setMessage({type: "error",text: err.message});
+      setErrors({...errors, errorEmail: err.message});
     } finally {setUpdating(false)}
   };
 
@@ -89,41 +107,104 @@ function AccountContent() {
     subtitle: 'Gérez vos informations.',
     content:
       <>
-        {/* ZONE DE MESSAGE (Feedback API) */}
-        {message.text !== "" &&
-          <div className={PROFILE_STYLES.MESSAGE_CONTAINER}>
-            {message.text && (
-              <div className={`
-                ${message.type === "success" ? PROFILE_STYLES.BADGE_SUCCESS : PROFILE_STYLES.BADGE_ERROR}
-                ${PROFILE_STYLES.BADGE_ANIM}
-              `}>
-                {message.type === "success" ? <CheckIcon/> : <CrossIcon/>}
-                <span className="ml-1">{message.text}</span>
-              </div>
-            )}
-          </div>
-        }
-
         <div className="space-y-6">
           {/* Champ Nom */}
           <div className="space-y-1">
-            <label className={PROFILE_STYLES.INPUT_LABEL}>Nom d'affichage</label>
+            <div className="flex justify-between">
+              <label className={PROFILE_STYLES.INPUT_LABEL}>Nom d'affichage</label>
+              <p className={`${PROFILE_STYLES.INPUT_LABEL}
+                ${(username || "").length < 3 ? 'text-rouge' : (username || "").length > 14 ? (username.length > 17 ? (username.length >= 20 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{(username?.length || 0)}/20</p>
+            </div>
             <input className={PROFILE_STYLES.INPUT_FIELD} value={username ?? ""} 
-              onChange={(e) => setUsername(e.target.value)} type="text" 
+              onChange={(e) => {
+                if (e.target.value.length < 3) setErrors({...errors, errorName: "Le nom d'affichage doit faire au moins 3 caractères."});
+                else if (e.target.value.length > 20) setErrors({...errors, errorName: "Le nom d'affichage doit faire maximum 20 caractères."});
+                else setErrors({...errors, errorName: ""});
+                setUsername(e.target.value)
+              }}
+              type="text"
               placeholder="Ton pseudo..."
             />
+            {errors.errorName && (<label className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] pt-2`}>{errors.errorName}</label>)}
           </div>
 
           {/* Champ Email */}
           <div className="space-y-1">
-            <label className={PROFILE_STYLES.INPUT_LABEL}>Email (non modifiable)</label>
-            <input value={user?.email ?? ""} disabled
-              className={`${PROFILE_STYLES.INPUT_FIELD} opacity-50 cursor-not-allowed`}/>
+            <label className={PROFILE_STYLES.INPUT_LABEL}>Email</label>
+            <input value={email} className={`${PROFILE_STYLES.INPUT_FIELD}`}
+              onChange={e => setEmail(e.target.value)}
+            />
+          </div>
+
+          <hr className="border-white/5 my-4" />
+
+          {/* Champ Mot de Passe */}
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <label className={PROFILE_STYLES.INPUT_LABEL}>Nouveau mot de passe (optionnel)</label>
+              <p className={`${PROFILE_STYLES.INPUT_LABEL}
+                ${(password || "").length < 8 ? 'text-rouge' : (password || "").length > 100 ? (password.length > 114 ? (password.length >= 128 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{(password?.length || 0)}/128</p>
+            </div>
+            
+            <div className="relative">
+              <input className={`${PROFILE_STYLES.INPUT_FIELD} pr-10`} value={password} type={showPassword ? "text" : "password"}
+                onChange={(e) => {
+                  let errorPw = "", errorConfirmPw = "";
+                  const val = e.target.value;
+                  if (val !== "" && val.length < 8) errorPw = "Le mot de passe doit faire au moins 8 caractères.";
+                  else if (val.length > 128) errorPw = "Le mot de passe doit faire maximum 128 caractères.";
+                  if (val !== confirmPassword) errorConfirmPw = "Les mots de passe ne correspondent pas.";
+                  setErrors(prev => ({...prev, errorPw, errorConfirmPw}));
+                  setPassword(val);
+                }}
+                placeholder="Laisser vide pour ne pas changer..."
+              />
+              
+              {/* Bouton Toggle Eye */}
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
+              >{showPassword ? (<EyeOff size={16}/>) : (<Eye size={16}/>)}</button>
+            </div>
+
+            {errors.errorPw && (
+              <label className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] pt-2`}>
+                {errors.errorPw}
+              </label>
+            )}
+          </div>
+
+          {/* Champ Confirmation */}
+          <div className="space-y-1">
+            <label className={PROFILE_STYLES.INPUT_LABEL}>Confirmer le nouveau mot de passe</label>
+            <div className="relative">
+              <input value={confirmPassword} placeholder="Confirme ton mot de passe..." type={showConfirmPassword ? "text" : "password"}
+                className={`${PROFILE_STYLES.INPUT_FIELD} pr-10 ${password && confirmPassword && password !== confirmPassword ? 'border-red-500/50' : ''}`}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val !== password) setErrors(prev => ({...prev, errorConfirmPw: "Les mots de passe ne correspondent pas."}));
+                  else setErrors(prev => ({...prev, errorConfirmPw: ""}));
+                  setConfirmPassword(val);
+                }}
+              />
+              
+              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors focus:outline-none"
+              >{showConfirmPassword ? (<EyeOff size={16}/>) : (<Eye size={16}/>)}</button>
+            </div>
+
+            {errors.errorConfirmPw && (
+              <label className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] pt-2 animate-pulse`}>
+                {errors.errorConfirmPw}
+              </label>
+            )}
           </div>
 
           {/* Bouton Enregistrer avec état de chargement */}
-          <button onClick={handleSave} disabled={updating || !username || username === user?.user_name}
-            className={`${PROFILE_STYLES.BTN_SAVE} disabled:opacity-50 transition-all ${updating || !username || username === user?.user_name ? 'cursor-not-allowed active:scale-100' : 'cursor-pointer'}`}
+          <button onClick={handleSave}
+            disabled={updating || !username || errors.errorName !== "" || errors.errorPw !== "" || errors.errorConfirmPw !== ""}
+            className={`${PROFILE_STYLES.BTN_SAVE} disabled:opacity-50 transition-all ${updating || !username || errors.errorName !== "" || errors.errorPw !== "" || errors.errorConfirmPw !== "" ? 'cursor-not-allowed active:scale-100' : 'cursor-pointer'}`}
           >
             {updating ? (
               <span className="flex items-center justify-center gap-2">

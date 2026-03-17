@@ -41,6 +41,7 @@ class UserMeResponse(BaseModel):
     id: int
     slug: Optional[str]
     user_name: str
+    email: Optional[str]
     has_spotify: bool
     is_logged_in: bool
     spotify_email: Optional[str] = None
@@ -48,6 +49,7 @@ class UserMeResponse(BaseModel):
 class UpdateSuccessResponse(MessageResponse):
     message: str = "Profil mis à jour"
     user_name: str
+    email: str
 
 class UnlinkSuccessResponse(MessageResponse):
     message: str = "Spotify délié"
