@@ -231,12 +231,12 @@ export default function DashboardPage() {
           >
             <div className={STYLES.grid.habits(range)}>
               <CompactStatCard label="Heure de pointe" icon={<Clock className="text-purple-400" size={32}/>}
-                value={loading ? "..." : extendedStats.peakHour} />
+                value={loading ? "..." : metric === "minutes" ? extendedStats.peakHour[0] : extendedStats.peakHour[1]} />
               {range !== "today" && <CompactStatCard label="Jour favori" icon={<CalendarIcon className="text-purple-400" size={32}/>}
-                value={loading ? "..." : extendedStats.peakDay} />}
+                value={loading ? "..." : metric === "minutes" ? extendedStats.peakDay[0] : extendedStats.peakDay[1]} />}
               {["6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
                 <CompactStatCard label="Mois musical" icon={<CalendarDays className="text-purple-400" size={32}/>}
-                  value={loading ? "..." : extendedStats.peakMonth} />
+                  value={loading ? "..." : metric === "minutes" ? extendedStats.peakMonth[0] : extendedStats.peakMonth[1]} />
               }
             </div>
             <div className={STYLES.grid.habits(range)}>

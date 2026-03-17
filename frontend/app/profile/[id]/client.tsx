@@ -164,25 +164,27 @@ export default function ProfilePage({ id }: { id: string }) {
         {profile.perms.history && (
           <div className={PROFILE_STYLES.RECENT_CONTAINER}>
             <h2 className={PROFILE_STYLES.SECTION_TITLE}>Écoutes récentes</h2>
-            <div className="space-y-2">
-              {profile.top_50_tracks.length === 0 ? (
-                <div className={PROFILE_STYLES.TRACK_ITEM}>
-                  <p className={PROFILE_STYLES.TRACK_NAME}>Aucune écoute</p>
-                </div>
-              ) : (
-                profile.recent_tracks.map((track) => (
-                  <div key={track.id} className={PROFILE_STYLES.TRACK_ITEM}>
-                    <img src={track.image_url} className={PROFILE_STYLES.TRACK_IMG} alt={track.title} />
-                    <div className="flex-1">
-                      <p className={PROFILE_STYLES.TRACK_NAME}>{track.title}</p>
-                      <p className={PROFILE_STYLES.TRACK_ARTIST}>{track.artist}</p>
-                    </div>
-                    <div className={PROFILE_STYLES.TRACK_DATE}>
-                      {new Date(track.played_at).toLocaleDateString()}
-                    </div>
+            <div className="md:max-h-[500px] md:overflow-y-auto md:pr-2 md:custom-scrollbar">
+              <div className="space-y-2">
+                {profile.top_50_tracks.length === 0 ? (
+                  <div className={PROFILE_STYLES.TRACK_ITEM}>
+                    <p className={PROFILE_STYLES.TRACK_NAME}>Aucune écoute</p>
                   </div>
-                ))
-              )}
+                ) : (
+                  profile.recent_tracks.map((track) => (
+                    <div key={track.id} className={PROFILE_STYLES.TRACK_ITEM}>
+                      <img src={track.image_url} className={PROFILE_STYLES.TRACK_IMG} alt={track.title} />
+                      <div className="flex-1">
+                        <p className={PROFILE_STYLES.TRACK_NAME}>{track.title}</p>
+                        <p className={PROFILE_STYLES.TRACK_ARTIST}>{track.artist}</p>
+                      </div>
+                      <div className={PROFILE_STYLES.TRACK_DATE}>
+                        {new Date(track.played_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}

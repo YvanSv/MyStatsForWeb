@@ -3,9 +3,9 @@ export interface DashboardStats {
   avgTimePerDay: number;
   totalStreams: number;
   avgStreamsPerDay: number;
-  peakHour: string;
-  peakDay: string;
-  peakMonth: string;
+  peakHour: any[];
+  peakDay: any[];
+  peakMonth: any[];
   ratio: string;
   clockData: any[];
   weeklyData: any[];
@@ -30,9 +30,9 @@ export const INITIAL_STATS = {
   uniqueTracks: 0,
   uniqueAlbums: 0,
   uniqueArtists: 0,
-  peakHour: "--:--",
-  peakDay: "--",
-  peakMonth: "--",
+  peakHour: [],
+  peakDay: [],
+  peakMonth: [],
   ratio: "0%",
   clockData: [],
   weeklyData: [],

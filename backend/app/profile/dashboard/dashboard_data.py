@@ -87,7 +87,7 @@ def get_dashboard_data(
     clock_data = [{"hour": f"{i}h", "value": 0, "streams": 0} for i in range(24)]
     weekly_data = [{"day": d, "value": 0, "streams": 0} for d in ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]]
     monthly_data = [{"month": m, "value": 0, "streams": 0} for m in ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"]]
-    days_names = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
+    days_names = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
     months_names = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     cumulative_data = []
 
@@ -99,7 +99,7 @@ def get_dashboard_data(
         ms, streams = r.ms, r.streams
         h_int = int(r.hour)
         d_idx = (int(r.date.strftime("%w")) + 6) % 7
-        m_idx = r.date.month
+        m_idx = r.date.month - 1
         
         # Clock
         clock_data[h_int]["value"] += round(ms / 60000)
@@ -149,10 +149,12 @@ def get_dashboard_data(
             "streams": running_streams
         })
     
-    peak_h_val = max(range(24), key=lambda h: clock_data[h]["value"]) if any(h["value"] > 0 for h in clock_data) else None
-    peak_d_idx = max(range(7), key=lambda d: weekly_data[d]["value"]) if any(d["value"] > 0 for d in weekly_data) else None
-    peak_m_idx = max(range(12), key=lambda m: monthly_data[m]["value"]) if any(m["value"] > 0 for m in monthly_data) else None
-    peak_m_name = months_names[peak_m_idx - 1] if peak_m_idx is not None else "--"
+    peak_h_min_val = max(range(24), key=lambda h: clock_data[h]["value"]) if any(h["value"] > 0 for h in clock_data) else None
+    peak_h_str_val = max(range(24), key=lambda h: clock_data[h]["streams"]) if any(h["streams"] > 0 for h in clock_data) else None
+    peak_d_min_idx = max(range(7), key=lambda d: weekly_data[d]["value"]) if any(d["value"] > 0 for d in weekly_data) else None
+    peak_d_str_idx = max(range(7), key=lambda d: weekly_data[d]["streams"]) if any(d["streams"] > 0 for d in weekly_data) else None
+    peak_m_min_idx = max(range(12), key=lambda m: monthly_data[m]["value"]) if any(m["value"] > 0 for m in monthly_data) else None
+    peak_m_str_idx = max(range(12), key=lambda m: monthly_data[m]["streams"]) if any(m["streams"] > 0 for m in monthly_data) else None
     
     # --- 3. Factorisation des Découvertes (Discovery) ---
     def get_discovery(id_col, join_track=False):
@@ -206,9 +208,9 @@ def get_dashboard_data(
         "uniqueTracks": res.unique_tracks,
         "uniqueAlbums": res.unique_albums,
         "uniqueArtists": res.unique_artists,
-        "peakHour": f"{peak_h_val}h" if peak_h_val is not None else "--h",
-        "peakDay": days_names[peak_d_idx] if peak_d_idx is not None else "--",
-        "peakMonth": peak_m_name,
+        "peakHour": [f"{peak_h_min_val}h",f"{peak_h_str_val}h"] if peak_h_min_val is not None and peak_h_str_val is not None else "--h",
+        "peakDay": [days_names[peak_d_min_idx],days_names[peak_d_str_idx]] if peak_d_min_idx is not None and peak_d_str_idx is not None else "--",
+        "peakMonth": [months_names[peak_m_min_idx],months_names[peak_m_str_idx]] if peak_m_min_idx is not None and peak_m_str_idx is not None else "--",
         "avgTimePerDay": (res.total_ms // 60000) // (res.days_count or 1),
         "avgStreamsPerDay": round(res.total_streams / (res.days_count or 1), 1),
         "ratio": min(round(res.completion or 0, 1), 100.0),
