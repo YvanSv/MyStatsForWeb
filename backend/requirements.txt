@@ -10,3 +10,4 @@ bcrypt
 email-validator>=2.0.0
 fastapi-cache2
 ujson
+uvicorn[standard]==0.41.0

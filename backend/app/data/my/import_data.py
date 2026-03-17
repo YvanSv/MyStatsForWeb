@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import hashlib
@@ -10,6 +11,7 @@ from app.models import Track, TrackHistory
 from app.spotify.utils.SpotifyWorker import spotify_worker
 from app.response_message import UploadSuccessResponse
 from app.auth.utils.auth_utils import get_current_user_id
+from app.utils.progress_manager import set_progress
 
 router = APIRouter()
 
@@ -31,17 +33,22 @@ async def upload_spotify_json(files: List[UploadFile] = File(...),user_id: int =
 
     **Note :** Cette route peut prendre du temps selon la taille des fichiers. Le traitement des images se fait en arrière-plan pour ne pas bloquer l'utilisateur.
     """
+    set_progress(user_id, 0)
+    await asyncio.sleep(0.1)
     # 1. Chargement de l'historique existant (Set de tuples pour recherche O(1))
     existing_history = set(
         db.exec(select(TrackHistory.played_at, TrackHistory.spotify_id).where(TrackHistory.user_id == user_id)).all()
     )
     existing_tracks = set(db.exec(select(Track.spotify_id)).all())
+    set_progress(user_id, 5)
+    await asyncio.sleep(0.2)
 
     tracks_to_insert = {}
     history_mappings = []
     new_track_ids = set()
 
     # 2. Traitement des fichiers
+    progress = 5
     for file in files:
         try: raw_data = json.loads(await file.read())
         except: continue
@@ -75,23 +82,36 @@ async def upload_spotify_json(files: List[UploadFile] = File(...),user_id: int =
                 "played_at": dt_obj,
                 "ms_played": ms
             })
+        progress += 30 // len(files)
+        set_progress(user_id, progress)
+        await asyncio.sleep(0.3)
 
-    if not history_mappings: return {"status": "success", "message": "Rien à ajouter."}
+    if not history_mappings:
+        set_progress(user_id, 100)
+        await asyncio.sleep(0.3)
+        return {"status": "success", "message": "Rien à ajouter."}
 
+    set_progress(user_id, 35)
+    await asyncio.sleep(0.3)
     # Insertion des nouvelles pistes d'abord (pour respecter les clés étrangères)
     if tracks_to_insert: db.execute(insert(Track), list(tracks_to_insert.values()))
+    set_progress(user_id, 55)
+    await asyncio.sleep(0.3)
     
     # Insertion de l'historique par paquets (batchs) de 5000 pour la stabilité
     if history_mappings:
         for i in range(0, len(history_mappings), 5000):
             db.execute(insert(TrackHistory), history_mappings[i:i+5000])
+    set_progress(user_id, 75)
+    await asyncio.sleep(0.3)
     
     db.commit()
 
-    if new_track_ids:
-        await spotify_worker.add_tracks(list(new_track_ids))
+    if new_track_ids: await spotify_worker.add_tracks(list(new_track_ids))
     await spotify_worker.should_repair_history()
 
+    set_progress(user_id, 100)
+    await asyncio.sleep(0.3)
     return {
         "status": "success", 
         "added": len(history_mappings), 

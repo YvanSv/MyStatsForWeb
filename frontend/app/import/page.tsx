@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BASE_UI } from "../styles/general";
 import { useApiSpotifyData } from "../hooks/useApiSpotifyData";
 import { ApiError } from "../services/api";
@@ -7,6 +7,9 @@ import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { SkeletonImport } from "./Skeleton";
+import toast from "react-hot-toast";
+import { useAuth } from "../hooks/useAuth";
+import { API_ENDPOINTS } from "../constants/routes";
 
 export default function ImportPage() {
   return (
@@ -35,8 +38,8 @@ const IMPORT_STYLES = {
   ALERT_BASE: "border text-[10px] p-4 ${BASE_UI.rounded.input} font-bold uppercase tracking-widest",
   get ALERT_ERROR() { return `${this.ALERT_BASE} bg-rouge/10 border-rouge/20 text-rouge animate-shake` },
   get ALERT_SUCCESS() { return `${this.ALERT_BASE} bg-vert/10 border-vert/20 text2` },
-  PROGRESS_CONTAINER: "w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4",
-  PROGRESS_BAR: "w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4",
+  PROGRESS_CONTAINER: "flex items-center text-[10px] text-white mb-4 gap-2",
+  PROGRESS_BAR: "w-full bg-white/5 h-1 rounded-full overflow-hidden",
   PROGRESS_FILL: "bg-vert h-full animate-progress-fast",
 
   // Bouton
@@ -55,9 +58,11 @@ const IMPORT_STYLES = {
 };
 
 export function ImportContent() {
+  const { user } = useAuth();
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [progress, setProgress] = useState(0);
   const { uploadSpotifyJson, loading } = useApiSpotifyData();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,20 +84,35 @@ export function ImportContent() {
     e.preventDefault();
     if (files.length === 0) return setError("Veuillez sélectionner au moins un fichier.");
     setError("");
+    setSuccess("");
+    setProgress(0);
+
+    const ws = new WebSocket(`${API_ENDPOINTS.WEBSOCKET_PROGRESS}/${user?.id}`);
+    const startUpload = () => {
+      return new Promise((resolve, reject) => {
+        ws.onopen = async () => {
+          try {resolve(await uploadSpotifyJson(files))}
+          catch (err) {reject(err)}
+        };
+
+        ws.onmessage = (event) => {
+          console.log(event.data);
+          const data = JSON.parse(event.data);
+          setProgress(data.percentage);
+          if (data.percentage === 100) ws.close();
+        };
+
+        ws.onerror = () => reject(new Error("Erreur de connexion au suivi de progression."));
+      });
+    };
 
     try {
-      // On passe les fichiers. Note: uploadSpotifyJson doit gérer le FormData en interne
-      const res = await uploadSpotifyJson(files);
-
-      // Gestion des différents formats de réponse possibles
-      const count = res.added ?? res.count ?? 0;
-      const msg = res.message || `${count} écoutes importées avec succès !`;
-
-      setSuccess(msg);
+      const res: any = await startUpload();
+      setSuccess(res.message || `${res.added ?? res.count ?? 0} écoutes importées !`);
       setFiles([]);
     } catch (err: any) {
-      // Ici err.message contient le message propre extrait par ta classe ApiError
       setError(err instanceof ApiError ? err.message : "Erreur lors de l'importation.");
+      ws.close();
     }
   };
 
@@ -125,7 +145,10 @@ export function ImportContent() {
       
       {loading && (
         <div className={IMPORT_STYLES.PROGRESS_CONTAINER}>
-          <div className={IMPORT_STYLES.PROGRESS_BAR} style={{ width: '60%' }} />
+          {progress}%
+          <div className={IMPORT_STYLES.PROGRESS_BAR}>
+            <div className={IMPORT_STYLES.PROGRESS_FILL} style={{ width: `${progress}%`, transition: 'width 0.3s ease-out' }} />
+          </div>
         </div>
       )}
 

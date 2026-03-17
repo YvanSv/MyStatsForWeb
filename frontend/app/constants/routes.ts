@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   SIMPLE_PROFILE_DATA: `${API_BASE_URL}/profile/simple`,
   EDITABLE_PROFILE_DATA: `${API_BASE_URL}/edit-profile`,
   DASHBOARD_DATA: `${API_BASE_URL}/profile/dashboard`,
+  WEBSOCKET_PROGRESS: `${API_BASE_URL}/ws/progress`,
 };
 
 export const FRONT_ROUTES = {
