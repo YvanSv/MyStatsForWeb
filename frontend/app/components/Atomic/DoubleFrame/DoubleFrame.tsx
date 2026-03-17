@@ -1,5 +1,5 @@
 const STYLE = {
-  WRAPPER: "min-h-[85vh] flex items-center justify-center px-4 py-12 md:py-20",
+  WRAPPER: "min-h-[85vh] flex items-center justify-center px-4 py-8 md:py-12",
   CARD: "w-full max-w-6xl bg-bg2/40 backdrop-blur-2xl border border-white/5 rounded-[40px] shadow-2xl overflow-hidden",
   CONTAINER_FLEX: "flex flex-col lg:flex-row",
   COL_LEFT: "flex-1 p-8 md:p-12 lg:p-16",
