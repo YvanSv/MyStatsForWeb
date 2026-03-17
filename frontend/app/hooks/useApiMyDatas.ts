@@ -51,11 +51,14 @@ export const useApiMyDatas = () => {
   const getArtistsMetadata = useCallback(() => request(API_ENDPOINTS.ARTISTS_METADATA), [request]);
   const getAlbumsMetadata = useCallback(() => request(API_ENDPOINTS.ALBUMS_METADATA), [request]);
 
+  const refreshUserData = useCallback(() => request(API_ENDPOINTS.REFRESH_USER_DATA), [request]);
+  const getTodayStats = useCallback(() => request(API_ENDPOINTS.TODAY_STATS), [request]);
+
   return useMemo(() => ({
     loading, uploadJson, getHistory, getTracks, getArtists, getAlbums,
-    getTracksMetadata, getArtistsMetadata, getAlbumsMetadata
+    getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   }), [
     loading, uploadJson, getHistory, getTracks, getArtists, getAlbums,
-    getTracksMetadata, getArtistsMetadata, getAlbumsMetadata
+    getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   ]);
 };

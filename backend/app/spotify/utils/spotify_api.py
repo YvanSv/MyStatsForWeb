@@ -14,3 +14,9 @@ def get_spotify_client():
         client_secret=SPOTIPY_CLIENT_SECRET
     )
     return spotipy.Spotify(auth_manager=auth_manager)
+
+def get_spotify_users_client(access_token):
+    """
+    Initialise et retourne un client Spotify (mode Client-to-Server)
+    """
+    return spotipy.Spotify(auth=access_token)

@@ -33,6 +33,7 @@ class User(SQLModel, table=True):
     refresh_token: Optional[str] = Field(default=None)
     access_token: Optional[str] = Field(default=None)
     expires_at: Optional[datetime] = Field(default=None)
+    last_spotify_sync: Optional[str] = Field(default=None)
 
     history: List["TrackHistory"] = Relationship(
         back_populates="user", 

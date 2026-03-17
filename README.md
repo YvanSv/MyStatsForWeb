@@ -1,5 +1,6 @@
 ### TO DO LIST :
 - **page /about**
+- réparer la responsive dashboard
 - embellir l'accueil
 - **trouver un moyen de se rendre sur les pages /all/ quand on est connecté**
 - afficher des badges de filtres
@@ -8,10 +9,9 @@
 - **trouver un moyen de limiter un utilisateur déconnecté**
 - roles ?
 - **page /help /faq ...**
-- confirmation email lors de la création du compte
-- modification email du compte
-- modification mot de passe
+- confirmation email lors de la création du compte / modification
 - optimisation appel SQL (calcul rating) sur les routes data/all/
 - page de détail d'une donnée quand on clique dessus
+- tests
 - Provider Apple Music
 - Data reader Apple Music

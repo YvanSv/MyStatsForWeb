@@ -3,16 +3,24 @@ import { useEffect, useState } from "react";
 import { BASE_UI } from "./styles/general";
 import { useApiAllDatas } from "./hooks/useApiAllDatas";
 import { PrimaryButton, SecondaryButton } from "./components/Atomic/Buttons";
+import { useAuth } from "./hooks/useAuth";
+import { useApiMyDatas } from "./hooks/useApiMyDatas";
+
+const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
+const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
+const INITIALS_STATS = {
+  users: 0,
+  streams: 0,
+  tracks: 0,
+  albums: 0,
+  artists: 0
+};
 
 export default function HomePage() {
-  const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
-  const [stats, setStats] = useState({
-    users: 0,
-    streams: 0,
-    tracks: 0,
-    albums: 0,
-    artists: 0
-  });
+  const { user } = useAuth();
+  const { refreshUserData, getTodayStats } = useApiMyDatas();
+  const [userStats, setUserStats] = useState({nb_streams: 0, nb_minutes: 0});
+  const [stats, setStats] = useState(INITIALS_STATS);
   const [loading, setLoading] = useState(true);
   const { getHomeData } = useApiAllDatas();
 
@@ -22,10 +30,30 @@ export default function HomePage() {
     loadData();
   }, [getHomeData]);
 
-  const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
+  useEffect(() => {
+    if (!user?.is_logged_in) return;
+    setLoading(true);
+
+    const loadData = async () => {
+      try {
+        // await refreshUserData();
+        setUserStats(await getTodayStats());
+      } catch(e) {
+        console.log(e);
+      } finally {setLoading(false)}
+    }
+    loadData();
+  }, [user]);
 
   return (
     <main className={ACCUEIL_STYLES.MAIN}>
+      {user?.is_logged_in && (
+        <section className={ACCUEIL_STYLES.HERO_SECTION}>
+          <p className={ACCUEIL_STYLES.HERO_P}>Vous, aujourd'hui, c'est :</p>
+          <p>{userStats.nb_streams} streams</p>
+          <p>{userStats.nb_minutes} minutes</p>
+        </section>
+      )}
       <section className={ACCUEIL_STYLES.HERO_SECTION}>
         {/* TEXTES DU HERO */}
         <h1 className={ACCUEIL_STYLES.HERO_H1}>

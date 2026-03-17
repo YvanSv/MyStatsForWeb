@@ -119,7 +119,7 @@ export default function DashboardPage() {
           <AvatarContainer url={profile?.avatar} username={profile?.display_name} title={
             <header>
               <h1 className={STYLES.nav.title}>Analyse Détaillée</h1>
-              <p className={STYLES.nav.sub}>Plongée profonde dans les habitudes d'écoute.</p>
+              <p className={`${STYLES.nav.sub} truncate`}>Plongée profonde dans les habitudes d'écoute.</p>
             </header>
           }/>
 
