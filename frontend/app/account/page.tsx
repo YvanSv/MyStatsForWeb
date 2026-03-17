@@ -44,9 +44,9 @@ function AccountContent() {
 
     try {
       await updateUserProfile(username);
-      setMessage({ 
-        type: "success", 
-        text: "Profil mis à jour avec succès !" 
+      toast.success("Profil mis à jour avec succès !", {
+        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
     } catch (err: any) {
       if (err.status === 422) setMessage({type: "error",text: "Votre pseudonyme doit faire au moins 3 caractères"});
@@ -58,8 +58,13 @@ function AccountContent() {
     const confirmation = prompt("Pour confirmer la suppression de votre compte et de toutes vos statistiques, tapez 'SUPPRIMER' ci-dessous :");
     
     if (confirmation === "SUPPRIMER") {
-      try {await deleteAccount()}
-      catch (err) {toast.error("Erreur lors de la suppression.")}
+      try {
+        await deleteAccount();
+        toast.success("Votre compte a été supprimé avec succès.", {
+          style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+          iconTheme: { primary: '#1DD05D', secondary: '#fff' },
+        });
+      } catch (err) {toast.error("Erreur lors de la suppression.")}
     }
   };
 

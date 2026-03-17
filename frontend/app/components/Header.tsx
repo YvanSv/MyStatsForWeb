@@ -6,7 +6,7 @@ import { useViewMode } from "../context/viewModeContext";
 import { FRONT_ROUTES } from "../constants/routes";
 import { BASE_UI } from "../styles/general";
 import { useAuth } from "../hooks/useAuth";
-import { BadgeQuestionMark, ChartBar, Disc, Medal, Mic2, Music2, User } from "lucide-react";
+import { BadgeQuestionMark, ChartBar, Disc, Eye, Medal, Mic2, Music2, User } from "lucide-react";
 import { PrimaryButton, TertiaryButton } from "./Atomic/Buttons";
 import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Atomic/Nav/Navbar";
 
@@ -37,7 +37,7 @@ const HEADER_STYLES = {
 const navigation_menu = [
   {id: 'Rankings', path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal/>},
   {id: 'Dashboard', path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar size={24}/>},
-  {id: 'Mon compte', path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={24}/>},
+  {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye/>},
   {id: 'Aide', path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark/>},
 ] as const;
 const sous_menu_ranking = [
@@ -119,7 +119,7 @@ export default function Header() {
             );
           }
 
-          if (item.id === "Mon compte") {
+          if (item.id === "Profil public") {
             return (
               <div key={item.id} className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
                 <NavButton key={item.id} onClick={() => navigate(item.path)}>
@@ -170,7 +170,7 @@ export default function Header() {
         {/* Profil Section */}
         {isLoggedIn ? (
           <div className={HEADER_STYLES.RIGHT_WRAPPER}>
-            <TertiaryButton onClick={() => setMenuOpen(!menuOpen)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 md:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
+            <TertiaryButton onClick={() => navigate(FRONT_ROUTES.ACCOUNT)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 md:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
               <div className={HEADER_STYLES.USER_AVATAR}>{userName.charAt(0).toUpperCase()}</div>
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
             </TertiaryButton>
