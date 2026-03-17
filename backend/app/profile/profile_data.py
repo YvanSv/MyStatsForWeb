@@ -78,7 +78,7 @@ def get_user_profile(slug: str, session: Session = Depends(get_session), session
         "display_name": target_user.display_name,
         "avatar": target_user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={target_user.id}",
         "bio": target_user.bio or "Aucune biographie.",
-        "banner": target_user.banner_url or "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+        "banner": target_user.banner_url or "/banner_template.jpg",
         "total_minutes": total_minutes,
         "total_streams": total_streams,
         # --- HEURE DE POINTE (Peak Hour) ---

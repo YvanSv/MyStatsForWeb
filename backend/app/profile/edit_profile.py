@@ -115,5 +115,4 @@ def get_user_settings(
     **Champs sensibles :**
     Cette route expose l'objet `perms`, qui contient les réglages de confidentialité (ex: `dashboard: private/public`) que seul l'utilisateur doit pouvoir consulter et modifier.
     """
-    db_user = verify_owner(slug, session_id, session)
-    return db_user
+    return verify_owner(slug, session_id, session)

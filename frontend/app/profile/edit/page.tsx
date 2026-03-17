@@ -7,6 +7,7 @@ import { PrimaryButton } from "@/app/components/Atomic/Buttons";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useProfile } from "@/app/hooks/useProfile";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 export default function EditProfilePage() {
   return (
@@ -96,8 +97,8 @@ function EditProfileContent() {
         setFormData({
           display_name: data.display_name || "",
           bio: data.bio || "",
-          avatar_url: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.display_name}`,
-          banner_url: data.banner_url || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+          avatar_url: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+          banner_url: data.banner_url || "/banner_template.jpg",
           slug: data.slug,
           perms: data.perms || {
             profile: true,
@@ -123,7 +124,7 @@ function EditProfileContent() {
       display_name: formData.display_name,
       bio: formData.bio,
       avatar_url: formData.avatar_url,
-      banner_url: formData.banner_url,
+      banner_url: formData.banner_url === "/template_banner.jpg" ? null : formData.banner_url,
       slug: finalSlug === "" ? null : finalSlug,
       perms: formData.perms
     };
@@ -188,6 +189,8 @@ function EditProfileContent() {
 
   if (loading) return <ProfileEditSkeleton />;
 
+  console.log(formData.avatar_url)
+
   return (
     <main className={PROFILE_EDIT_STYLES.MAIN}>
       {/* --- ÉDITION BANNIÈRE --- */}
@@ -199,7 +202,10 @@ function EditProfileContent() {
           accept="image/*"
           className="hidden" 
         />
-        <img src={formData.banner_url} className={PROFILE_EDIT_STYLES.BANNER_IMG} alt="Banner Preview" />
+        {formData.banner_url === "/banner_template.jpg"
+          ? <Image src="/banner_template_1100x390.jpg" alt="Banner" className={PROFILE_EDIT_STYLES.BANNER_IMG} width={1100} height={390}/>
+          : <img src={formData.banner_url} className={PROFILE_EDIT_STYLES.BANNER_IMG} alt="Banner"/>
+        }
         <div className={PROFILE_EDIT_STYLES.BANNER_OVERLAY} onClick={() => bannerInputRef.current?.click()} style={{ cursor: 'pointer' }}>
           <div className={PROFILE_EDIT_STYLES.BANNER_BADGE}>
             <CameraIcon size={18} /> Changer la bannière

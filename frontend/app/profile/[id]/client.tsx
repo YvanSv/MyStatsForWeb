@@ -14,6 +14,7 @@ import { FRONT_ROUTES } from "@/app/constants/routes";
 import { ApiError } from "../../services/api";
 import { ProfileSkeleton } from "./Skeleton";
 import { HorizontalTopSection, StatCard } from "./components";
+import Image from 'next/image';
 
 const PROFILE_STYLES = {
   MAIN_WRAPPER: "min-h-screen pb-20 bg-bg1",
@@ -71,7 +72,6 @@ export default function ProfilePage({ id }: { id: string }) {
       try {
         const data = await getProfile(id);
         setProfile(data);
-        console.log(profile?.avatar);
       } catch (err: any) {setError(err instanceof ApiError ? err : new ApiError(err.status,"Erreur inconnue"))}
       finally {setLoading(false)}
     };
@@ -92,12 +92,18 @@ export default function ProfilePage({ id }: { id: string }) {
 
   if (error instanceof ApiError && error.status === 404) return <ErrorState title="Profil introuvable" status={error.status}/>;
   if (loading || !profile) return <ProfileSkeleton/>;
+
+  console.log(profile.avatar)
+
   return (
     <div className={PROFILE_STYLES.MAIN_WRAPPER}>
       {/* --- BANNIÈRE --- */}
       <div className={PROFILE_STYLES.BANNER_WRAPPER}>
-        <img src={profile.banner} className={PROFILE_STYLES.BANNER_IMG} alt="Banner" />
-        <div className={PROFILE_STYLES.GRADIENT_OVERLAY} />
+        {profile.banner === "/banner_template.jpg"
+          ? <Image src="/banner_template_1100x390.jpg" alt="Banner" className={PROFILE_STYLES.BANNER_IMG} width={1100} height={390}/>
+          : <img src={profile.banner} className={PROFILE_STYLES.BANNER_IMG} alt="Banner"/>
+        }
+        <div className={PROFILE_STYLES.GRADIENT_OVERLAY}/>
       </div>
 
       <div className={PROFILE_STYLES.CONTAINER}>
