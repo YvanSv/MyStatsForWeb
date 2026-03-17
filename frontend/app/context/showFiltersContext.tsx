@@ -11,12 +11,10 @@ const ShowFiltersContext = createContext<ShowFiltersContextType | undefined>(und
 
 export function ShowFiltersProvider({ children }: { children: React.ReactNode }) {
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('globalShowFilters');
     if (saved !== null) { setShowFilters(JSON.parse(saved)); }
-    setIsInitialized(true);
   }, []);
 
   const toggleShowFilters = () => {
