@@ -173,7 +173,8 @@ async def get_me(response: Response, session_id: Optional[str] = Cookie(None), d
         has_spotify=user.spotify_id is not None,
         is_logged_in=True,
         email=user.email,
-        spotify_email=user.spotify_email
+        spotify_email=user.spotify_email,
+        avatar=user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={user.id}"
     )
 
 @router.patch(

@@ -15,6 +15,7 @@ interface AuthResponse {
   is_logged_in: boolean;
   email: string;
   spotify_email: string;
+  avatar: string;
 }
 
 interface AuthContextType {
@@ -105,7 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await request(API_ENDPOINTS.DELETE_ACCOUNT, {method: 'DELETE'});
       setUser(null);
       router.push('/');
-      toast.success("Votre compte a été supprimé avec succès.");
     } catch (err: any) {
       // Si l'erreur est une 401, le compte est probablement déjà supprimé ou la session expirée
       if (err.status === 401) {

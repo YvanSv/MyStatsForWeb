@@ -214,13 +214,7 @@ function EditProfileContent() {
         {/* --- ÉDITION AVATAR --- */}
         <div className={PROFILE_EDIT_STYLES.HEADER_FLEX}>
           <div className={PROFILE_EDIT_STYLES.AVATAR_WRAPPER}>
-            <input 
-              type="file" 
-              ref={avatarInputRef}
-              onChange={handleAvatarChange}
-              accept="image/*"
-              className="hidden" 
-            />
+            <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden"/>
             <img src={formData.avatar_url} className={PROFILE_EDIT_STYLES.AVATAR_IMG} alt="Avatar Preview"/>
             <div className={PROFILE_EDIT_STYLES.OVERLAY_ICON} onClick={() => avatarInputRef.current?.click()} style={{ cursor: 'pointer' }}>
               <CameraIcon size={32} />

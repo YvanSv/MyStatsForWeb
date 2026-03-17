@@ -69,7 +69,6 @@ export default function Header() {
   const userName = user?.user_name || "Username";
   // --- ÉTATS UI ---
   const { viewMode, toggleViewMode } = useViewMode();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   // --- MENUS DEROULANTS ---
@@ -79,8 +78,6 @@ export default function Header() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node))
-        setMenuOpen(false);
       if (containerRef.current && !containerRef.current.contains(event.target as Node))
         setIsViewMenuOpen(false);
     };
@@ -90,10 +87,11 @@ export default function Header() {
 
   const navigate = (path: string) => {
     router.push(path);
-    setMenuOpen(false);
     setIsMobileNavOpen(false);
     setIsViewMenuOpen(false);
   };
+
+  console.log(user?.avatar)
 
   return (
     <header className={HEADER_STYLES.CONTAINER}>
@@ -171,7 +169,7 @@ export default function Header() {
         {isLoggedIn ? (
           <div className={HEADER_STYLES.RIGHT_WRAPPER}>
             <TertiaryButton onClick={() => navigate(FRONT_ROUTES.ACCOUNT)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 md:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
-              <div className={HEADER_STYLES.USER_AVATAR}>{userName.charAt(0).toUpperCase()}</div>
+              <img src={user?.avatar} className={HEADER_STYLES.USER_AVATAR} alt="Avatar Preview"/>
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
             </TertiaryButton>
 

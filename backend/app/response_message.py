@@ -45,6 +45,7 @@ class UserMeResponse(BaseModel):
     has_spotify: bool
     is_logged_in: bool
     spotify_email: Optional[str] = None
+    avatar : str
 
 class UpdateSuccessResponse(MessageResponse):
     message: str = "Profil mis à jour"
