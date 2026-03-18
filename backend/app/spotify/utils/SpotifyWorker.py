@@ -9,6 +9,7 @@ from app.spotify.utils.spotify_api import get_spotify_client, get_spotify_users_
 from app.models import Track,Artist,Album, TrackHistory, User
 from .spotify_status import spotify_status
 from .spotify_token import get_valid_access_token
+from .api_call import run_spotify_task
 import datetime
 
 
@@ -27,6 +28,10 @@ class SpotifyWorker:
         for tid in track_ids: await self._queue.put(("track",tid))
         if not self.is_running: asyncio.create_task(self._process_queue())
 
+    async def add_artists(self, artists_ids: List[str]):
+        for aid in artists_ids: await self._queue.put(("artist",aid))
+        if not self.is_running: asyncio.create_task(self._process_queue())
+
     def add_artist(self, artist_id: str):
         loop = asyncio.get_event_loop()
         if loop.is_running():
@@ -40,65 +45,57 @@ class SpotifyWorker:
         self.repair_history = True
         if not self.is_running: asyncio.create_task(self._process_queue())
 
-    async def get_history_for(self, user_id: int):
-        await self._queue.put(("user_history",user_id))
-        if not self.is_running: asyncio.create_task(self._process_queue())
-
     async def _process_queue(self):
         self.is_running = True
         sp = get_spotify_client()
         
-        while not self._queue.empty():
-            status = spotify_status.get_status()
-            # Si on est blacklist à l'heure actuelle
-            if status["is_rate_limited"]:
-                await asyncio.sleep(status["retry_after_seconds"] + 1)
-                continue
+        with next(get_session()) as db:
+            while not self._queue.empty():
+                status = spotify_status.get_status()
+                # Si on est blacklist à l'heure actuelle
+                if status["is_rate_limited"]:
+                    await asyncio.sleep(status["retry_after_seconds"] + 1)
+                    continue
 
-            tracks_batch = []
-            artists_batch = []
-            try:
-                with next(get_session()) as db:
+                tracks_batch = []
+                artists_batch = []
+                try:
                     # On récupère jusqu'à 50 éléments, peu importe leur type
                     while len(tracks_batch) < 50 and len(artists_batch) < 50 and not self._queue.empty():
                         item_type, item_id = await self._queue.get()
                         if item_type == "track": tracks_batch.append(item_id)
                         elif item_type == "artist": artists_batch.append(item_id)
-                        elif item_type == "user_history": await self.refresh_history(item_id,db)
 
                     # --- TRAITEMENT DES TRACKS ---
                     if tracks_batch:
-                        results = sp.tracks(tracks_batch)['tracks']
+                        results = run_spotify_task(sp.tracks,tracks_batch)['tracks']
                         for t in results:
                             if t: self._update_track_metadata(db, t)
-                        await asyncio.sleep(random.uniform(1.5,3.0))
                     # --- TRAITEMENT DES ARTISTES ---
                     if artists_batch:
-                        results = sp.artists(artists_batch)['artists']
+                        results = run_spotify_task(sp.artists,artists_batch)['artists']
                         for a in results:
                             if a: self._update_artist_metadata(db, a)
-                        await asyncio.sleep(random.uniform(1.5,3.0))
                     db.commit()
-            except spotipy.exceptions.SpotifyException as e:
-                if e.http_status == 429:
-                    # 1. On récupère le temps d'attente suggéré par Spotify
-                    seconds = int(e.headers.get("Retry-After", 60))
-                    print(f"⚠️ Rate Limit atteint. Pause de {seconds}s")
-                    # 2. On met à jour le singleton d'état
-                    spotify_status.set_rate_limited(seconds)
-                    # 3. On remet les IDs dans la file pour ne pas les perdre
-                    for tid in tracks_batch: await self._queue.put(("track",tid))
-                    for aid in artists_batch: await self._queue.put(("artist",aid))
-                    # 4. On attend réellement avant de continuer la boucle
-                    await asyncio.sleep(seconds)
-                else: print(f"❌ Erreur API Spotify: {e}")
-            except Exception as e: print(f"❌ Erreur Worker inattendue: {e}")
-            finally:
-                for _ in range(len(tracks_batch)+len(artists_batch)): self._queue.task_done()
+                except spotipy.exceptions.SpotifyException as e:
+                    if e.http_status == 429:
+                        # 1. On récupère le temps d'attente suggéré par Spotify
+                        seconds = int(e.headers.get("Retry-After", 60))
+                        print(f"⚠️ Rate Limit atteint. Pause de {seconds}s")
+                        # 2. On met à jour le singleton d'état
+                        spotify_status.set_rate_limited(seconds)
+                        # 3. On remet les IDs dans la file pour ne pas les perdre
+                        for tid in tracks_batch: await self._queue.put(("track",tid))
+                        for aid in artists_batch: await self._queue.put(("artist",aid))
+                        # 4. On attend réellement avant de continuer la boucle
+                        await asyncio.sleep(seconds)
+                    else: print(f"❌ Erreur API Spotify: {e}")
+                except Exception as e: print(f"❌ Erreur Worker inattendue: {e}")
+                finally:
+                    for _ in range(len(tracks_batch)+len(artists_batch)): self._queue.task_done()
 
-        if self.repair_history:
-            with next(get_session()) as db: await self.repair_track_history_links(db)
-        self.repair_history = False
+            if self.repair_history: await self.repair_track_history_links(db)
+            self.repair_history = False
 
     def _update_track_metadata(self, db: Session, t: dict):
         """
@@ -169,121 +166,5 @@ class SpotifyWorker:
             print(f"✅ Réparation SQL terminée.")
         except Exception as e:
             print(f"❌ Erreur lors de la réparation SQL : {e}")
-
-    async def refresh_history(self, user_id: int, session: Session, before: str = None,
-                              cache_history=None, cache_tracks=None, cache_albums=None, cache_artists=None):
-        """
-        Récupère l'historique Spotify et remonte dans le temps jusqu'à trouver une écoute déjà enregistrée.
-        """
-        user = session.get(User,user_id)
-        data = get_spotify_users_client(await get_valid_access_token(user,session)).current_user_recently_played(50,user.last_spotify_sync if before is None else None,before)
-        items = data['items']
-        await asyncio.sleep(random.uniform(1.5,3))
-        if not items: return True
-
-        # CHARGEMENT DU CACHE (Une seule fois au premier appel)
-        if cache_history is None:
-            cache_history = set(session.exec(select(TrackHistory.played_at, TrackHistory.spotify_id).where(TrackHistory.user_id == user_id)).all())
-            cache_tracks = set(session.exec(select(Track.spotify_id)).all())
-            cache_albums = set(session.exec(select(Album.spotify_id)).all())
-            cache_artists = set(session.exec(select(Artist.spotify_id)).all())
-        new_entries, new_tracks, new_albums, new_artists = [], [], [], []
-        new_artists_ids = set()
-        all_known = True # Flag pour savoir si on a tout trouvé dans cette page
-
-        for item in items:
-            track = item['track']
-
-            # --- INFOS ARTISTE ---
-            primary_artist = track["artists"][0]
-            artist_name = primary_artist["name"]
-            artist_sid = primary_artist["id"]
-
-            # --- INFOS ALBUM ---
-            album = track["album"]
-            album_name = album["name"]
-            album_sid = album["id"]
-            images = album["images"]
-            album_image_url = images[0]["url"] if images else None
-
-            # --- INFOS TRACK ---
-            sid = track["id"]
-            name = track["name"]
-            duration_ms = track['duration_ms']
-
-            # --- INFOS ÉCOUTE ---
-            played_at = item['played_at']
-
-            if not sid or not played_at: continue
-            try: dt_obj = datetime.datetime.fromisoformat(played_at.replace("Z", "+00:00")).replace(tzinfo=None)
-            except: continue
-
-            # Vérifier si cette écoute existe déjà en base
-            if (dt_obj, sid) in cache_history: continue
-
-            all_known = False
-
-            if artist_sid not in cache_artists and artist_sid not in new_artists:
-                new_artists.append(Artist(
-                    spotify_id=artist_sid,
-                    name=artist_name
-                ))
-                new_artists_ids.add(artist_sid)
-            
-            if album_sid not in cache_albums and album_sid not in new_albums:
-                new_albums.append(Album(
-                    spotify_id=album_sid,
-                    name=album_name,
-                    image_url=album_image_url,
-                    artist_id=artist_sid
-                ))
-            
-            if sid not in cache_tracks and sid not in new_tracks:
-                new_tracks.append(Track(
-                    spotify_id=sid,
-                    title=name,
-                    artist_id=artist_sid,
-                    album_id=album_sid,
-                    duration_ms=duration_ms
-                ))
-
-            
-            new_entries.append(TrackHistory(
-                user_id=user.id,
-                played_at=played_at,
-                ms_played=0,
-                spotify_id=sid,
-                artist_id=artist_sid,
-                album_id=album_sid
-            ))
-
-        # Sauvegarder les nouveaux morceaux de cette page
-        if new_entries:
-            for artist in new_artists: session.add(artist)
-            for album in new_albums: session.add(album)
-            for track in new_tracks: session.add(track)
-            for entry in new_entries: session.add(entry)
-            session.commit()
-            print(f"Ajout de {len(new_entries)} nouvelles écoutes pour {user.display_name}")
-        
-        if new_artists_ids:
-            for aid in list(new_artists_ids): await self._queue.put(("artist",aid))
-        
-
-        # 4. Logique de récursion / Continuité
-        # Si on a trouvé au moins un morceau qu'on ne connaissait pas dans les 50,
-        # ou si on n'a pas trouvé la "50ème" (all_known est resté False pour certains),
-        # on doit vérifier la page précédente.
-        cursors = data["cursors"]
-        if cursors and cursors["after"]:
-            user.last_spotify_sync = cursors["after"]
-            before_next = cursors["before"]
-            session.add(user)
-            session.commit()
-            return await self.refresh_history(
-                user_id, session, before=before_next,
-                cache_history=cache_history, cache_tracks=cache_tracks, 
-                cache_albums=cache_albums, cache_artists=cache_artists
-            )
 
 spotify_worker = SpotifyWorker()
