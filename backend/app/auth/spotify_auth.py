@@ -65,6 +65,8 @@ def spotify_login(response: Response):
     # Liste des scopes pour accéder aux données de l'utilisateur
     scopes = [
         "user-read-recently-played",
+        "user-read-currently-playing",
+        "user-read-playback-state",
         "user-top-read",
         "user-read-private",
         "user-read-email"

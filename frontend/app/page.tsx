@@ -5,6 +5,9 @@ import { useApiAllDatas } from "./hooks/useApiAllDatas";
 import { PrimaryButton, SecondaryButton } from "./components/Atomic/Buttons";
 import { useAuth } from "./hooks/useAuth";
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
+import { Play } from "lucide-react";
+import SpotifyLiveCard from "./components/small_elements/SpotifyLiveCard";
+import { SpotifyListeningData } from "./components/small_elements/SpotifyLiveCard";
 
 const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
 const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
@@ -18,8 +21,10 @@ const INITIALS_STATS = {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const { refreshUserData, getTodayStats } = useApiMyDatas();
-  const [userStats, setUserStats] = useState({nb_streams: 0, nb_minutes: 0});
+  const { refreshUserData, getTodayStats, getCurrentlyPlaying } = useApiMyDatas();
+  const [userStats, setUserStats] = useState({nb_streams: '...', nb_minutes: "..."});
+  const [listening, setListening] = useState({is_listening: false, data: {} as SpotifyListeningData});
+  const [localProgress, setLocalProgress] = useState(0);
   const [stats, setStats] = useState(INITIALS_STATS);
   const [loading, setLoading] = useState(true);
   const { getHomeData } = useApiAllDatas();
@@ -38,20 +43,94 @@ export default function HomePage() {
       try {
         await refreshUserData();
         setUserStats(await getTodayStats());
-      } catch(e) {
-        console.log(e);
-      } finally {setLoading(false)}
+        setListening(await getCurrentlyPlaying());
+      } catch(e) {} finally {setLoading(false)}
     }
     loadData();
   }, [user]);
 
+  useEffect(() => {
+    const fetchStatus = async () => {
+      const res = await getCurrentlyPlaying();
+      if (res) {
+        setListening(res);
+        if (res.data) setLocalProgress(res.data.progress_ms);
+      }
+    };
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 10000); 
+    return () => clearInterval(interval);
+  }, [getCurrentlyPlaying]);
+
+  useEffect(() => {
+    if (!listening.is_listening || !listening.data) return;
+
+    const timer = setInterval(() => {
+      setLocalProgress((prev) => {
+        const next = prev + 1000;
+        
+        // Si on arrive au bout du morceau, on déclenche un refresh immédiat
+        if (next >= (listening.data?.duration_ms || 0)) {
+          getCurrentlyPlaying().then(res => {
+            setListening(res);
+            if (res.data) setLocalProgress(res.data.progress_ms);
+          });
+          return prev; // On bloque en attendant l'API
+        }
+        return next;
+      });
+    }, 1000);return () => clearInterval(timer);
+  }, [listening.is_listening, listening.data?.duration_ms]);
+
   return (
     <main className={ACCUEIL_STYLES.MAIN}>
       {user?.is_logged_in && (
-        <section className={ACCUEIL_STYLES.HERO_SECTION}>
-          <p className={ACCUEIL_STYLES.HERO_P}>Vous, aujourd'hui, c'est :</p>
-          <p>{userStats.nb_streams} streams</p>
-          <p>{userStats.nb_minutes} minutes</p>
+        <section className="pt-12 flex justify-center gap-48 px-24">
+          {listening.is_listening && (
+            <section>
+              <p className={ACCUEIL_STYLES.TECH_H2}>Vous écoutez</p>
+              <SpotifyLiveCard isListening={listening.is_listening} data={listening.data} currentProgress={localProgress}/>
+            </section>
+          )}
+          <section className=" animate-in fade-in slide-in-from-top-4 duration-1000 max-w-xl">
+            <p className={ACCUEIL_STYLES.TECH_H2}>Votre activité du jour</p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {/* Carte Streams */}
+              <div className="relative group overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-6 transition-all hover:bg-white/10 hover:border-purple-500/50">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-purple-500/20 text-purple-400">
+                    <Play/>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-black text-white leading-none">
+                      {userStats.nb_streams.toLocaleString()}
+                    </p>
+                    <p className="text-gray-400 text-sm font-medium mt-1 uppercase tracking-tight">Streams</p>
+                  </div>
+                </div>
+                {/* Effet de brillance en arrière-plan */}
+                <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-500/10 blur-3xl rounded-full group-hover:bg-purple-500/20 transition-colors"></div>
+              </div>
+
+              {/* Carte Minutes */}
+              <div className="relative group overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-6 transition-all hover:bg-white/10 hover:border-blue-500/50">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-blue-500/20 text-blue-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-black text-white leading-none">
+                      {userStats.nb_minutes.toLocaleString()}
+                    </p>
+                    <p className="text-gray-400 text-sm font-medium mt-1 uppercase tracking-tight">Minutes</p>
+                  </div>
+                </div>
+                <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/10 blur-3xl rounded-full group-hover:bg-blue-500/20 transition-colors"></div>
+              </div>
+            </div>
+          </section>
         </section>
       )}
       <section className={ACCUEIL_STYLES.HERO_SECTION}>

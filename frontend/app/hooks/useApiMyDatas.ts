@@ -53,12 +53,13 @@ export const useApiMyDatas = () => {
 
   const refreshUserData = useCallback(() => request(API_ENDPOINTS.REFRESH_USER_DATA), [request]);
   const getTodayStats = useCallback(() => request(API_ENDPOINTS.TODAY_STATS), [request]);
+  const getCurrentlyPlaying = useCallback(() => request(API_ENDPOINTS.CURRENTLY_PLAYING), [request]);
 
   return useMemo(() => ({
-    loading, uploadJson, getHistory, getTracks, getArtists, getAlbums,
+    loading, uploadJson, getHistory, getTracks, getArtists, getAlbums, getCurrentlyPlaying,
     getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   }), [
-    loading, uploadJson, getHistory, getTracks, getArtists, getAlbums,
+    loading, uploadJson, getHistory, getTracks, getArtists, getAlbums, getCurrentlyPlaying,
     getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   ]);
 };

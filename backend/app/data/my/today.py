@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.get('', response_model=TodayStatsResponse)
 async def get_today(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-    user = db.exec(select(User).where(User.id == user_id)).first()
+    user = db.get(User,user_id)
     if not user: raise HTTPException(status_code=401, detail="Session invalide")
     today = date.today()
     results = db.exec(
