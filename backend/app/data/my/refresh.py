@@ -24,7 +24,7 @@ async def refresh(user_id: int = Depends(get_current_user_id), db: Session = Dep
         )
 
     await refresh_history(user.id,db)
-    return {"status": "success", "message": "Synchronisation lancée en arrière-plan."}
+    return {"status": "success", "message": "Synchronisation terminée."}
 
 
 
@@ -42,12 +42,12 @@ async def refresh_history(user_id: int, session: Session, before: str = None, ca
     # CHARGEMENT DU CACHE (Une seule fois au premier appel)
     if cache_history is None:
         cache_history = set(session.exec(select(TrackHistory.played_at, TrackHistory.spotify_id).where(TrackHistory.user_id == user_id)).all())
-        cache_tracks = set(session.exec(select(Track.spotify_id)).all())
-        cache_albums = set(session.exec(select(Album.spotify_id)).all())
-        cache_artists = set(session.exec(select(Artist.spotify_id)).all())
+        cache_tracks = set(session.exec(select(Track.spotify_id)).scalars().all())
+        cache_albums = set(session.exec(select(Album.spotify_id)).scalars().all())
+        cache_artists = set(session.exec(select(Artist.spotify_id)).scalars().all())
+    
     new_entries, new_tracks, new_albums, new_artists = [], [], [], []
-    new_artists_ids = set()
-    all_known = True # Flag pour savoir si on a tout trouvé dans cette page
+    new_artists_ids, new_albums_ids, new_tracks_ids = set(), set(), set()
 
     for item in items:
         track = item['track']
@@ -79,24 +79,23 @@ async def refresh_history(user_id: int, session: Session, before: str = None, ca
         # Vérifier si cette écoute existe déjà en base
         if (dt_obj, sid) in cache_history: continue
 
-        all_known = False
-
-        if artist_sid not in cache_artists and artist_sid not in new_artists:
+        if artist_sid not in cache_artists and artist_sid not in new_artists_ids:
             new_artists.append(Artist(
                 spotify_id=artist_sid,
                 name=artist_name
             ))
             new_artists_ids.add(artist_sid)
         
-        if album_sid not in cache_albums and album_sid not in new_albums:
+        if album_sid not in cache_albums and album_sid not in new_albums_ids:
             new_albums.append(Album(
                 spotify_id=album_sid,
                 name=album_name,
                 image_url=album_image_url,
                 artist_id=artist_sid
             ))
+            new_albums_ids.add(album_sid)
         
-        if sid not in cache_tracks and sid not in new_tracks:
+        if sid not in cache_tracks and sid not in new_tracks_ids:
             new_tracks.append(Track(
                 spotify_id=sid,
                 title=name,
@@ -104,8 +103,8 @@ async def refresh_history(user_id: int, session: Session, before: str = None, ca
                 album_id=album_sid,
                 duration_ms=duration_ms
             ))
+            new_tracks_ids.add(sid)
 
-        
         new_entries.append(TrackHistory(
             user_id=user.id,
             played_at=played_at,

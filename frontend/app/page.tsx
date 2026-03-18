@@ -36,7 +36,7 @@ export default function HomePage() {
 
     const loadData = async () => {
       try {
-        // await refreshUserData();
+        await refreshUserData();
         setUserStats(await getTodayStats());
       } catch(e) {
         console.log(e);
