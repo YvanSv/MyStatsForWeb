@@ -9,6 +9,8 @@ import { useAuth } from "../hooks/useAuth";
 import { BadgeQuestionMark, ChartBar, Disc, Eye, Medal, Mic2, Music2, User } from "lucide-react";
 import { PrimaryButton, TertiaryButton } from "./Atomic/Buttons";
 import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Atomic/Nav/Navbar";
+import { useSpotify } from "../context/currentlyPlayingContext";
+import SpotifyLiveCard from "./small_elements/SpotifyLiveCard";
 
 // --- ICONS (SVG) ---
 const Grid3x3Icon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="9.5" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="9.5" rx="1" /><rect width="5" height="5" x="9.5" y="9.5" rx="1" /><rect width="5" height="5" x="16" y="9.5" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><rect width="5" height="5" x="9.5" y="16" rx="1" /><rect width="5" height="5" x="16" y="16" rx="1" /></svg>
@@ -67,13 +69,13 @@ export default function Header() {
   // --- ÉTATS STATIQUES ---
   const { isLoggedIn, user, logout } = useAuth();
   const userName = user?.user_name || "Username";
+  const { listening, localProgress } = useSpotify();
   // --- ÉTATS UI ---
   const { viewMode, toggleViewMode } = useViewMode();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   // --- MENUS DEROULANTS ---
   const containerRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const activeView = views.find(v => v.id === viewMode) || views[1];
 
   useEffect(() => {
@@ -143,6 +145,23 @@ export default function Header() {
 
       {/* DROITE : Toggles + Profil + Burger */}
       <div className={HEADER_STYLES.RIGHT_SECTION}>
+        {isLoggedIn && listening.data !== null && (
+          <div className={`${HEADER_STYLES.RIGHT_WRAPPER} pt-2`}>
+            <TertiaryButton>
+              <div className="relative flex-shrink-0">
+                <img src={listening.data?.cover_url} className="w-10 h-10 rounded-xl"/>
+                <div className={`shadow-lg object-cover absolute -top-1.5 -left-1.5 bg-green-500 text-[8px] px-1 font-black py-0.5 rounded-full text-black uppercase tracking-tighter shadow-xl`}>
+                  Live
+                </div>
+              </div>
+            </TertiaryButton>
+
+            <div className="transition-all rounded-2xl shadow-2xl opacity-0 duration-200 absolute top-full left-1/2 -translate-x-1/2 z-50 overflow-hidden whitespace-nowrap invisible group-hover:opacity-100 group-hover:visible bg-bg1">
+              <SpotifyLiveCard isListening={listening.is_listening} data={listening.data} currentProgress={localProgress} size='xs'/>
+            </div>
+          </div>
+        )}
+
         {/* View Mode Selector */}
         <div className={HEADER_STYLES.RIGHT_WRAPPER}>
           <TertiaryButton onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}

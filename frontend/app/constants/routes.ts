@@ -35,7 +35,11 @@ export const API_ENDPOINTS = {
   WEBSOCKET_PROGRESS: `${API_BASE_URL}/ws/progress`,
   REFRESH_USER_DATA: `${API_BASE_URL}/data/my/refresh`,
   TODAY_STATS: `${API_BASE_URL}/data/my/today`,
-  CURRENTLY_PLAYING: `${API_BASE_URL}/data/my/currently-playing`
+  CURRENTLY_PLAYING: `${API_BASE_URL}/data/my/currently-playing`,
+  PAUSE: `${API_BASE_URL}/data/my/currently-playing/pause`,
+  RESUME: `${API_BASE_URL}/data/my/currently-playing/resume`,
+  NEXT: `${API_BASE_URL}/data/my/currently-playing/next`,
+  PREVIOUS: `${API_BASE_URL}/data/my/currently-playing/previous`,
 };
 
 export const FRONT_ROUTES = {

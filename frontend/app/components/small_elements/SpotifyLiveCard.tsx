@@ -1,76 +1,121 @@
-export interface SpotifyListeningData {
-    title: string;
-    progress_ms: number;
-    duration_ms: number;
-    album_name: string;
-    artist_name: string;
-    cover_url: string;
-}
+import { SpotifyListeningData, useSpotify } from "@/app/context/currentlyPlayingContext";
+// import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 
-export default function SpotifyLiveCard({isListening,data,currentProgress}:{isListening:boolean,data:SpotifyListeningData,currentProgress: number}) {
+const configOptions = {
+  xs: {
+    container: "p-3 rounded-2xl",
+    image: "w-12 h-12 rounded-lg",
+    title: "text-sm",
+    artist: "text-[11px]",
+    gap: "gap-3",
+    gap_controls: "gap-2",
+    hideExtra: true,
+    showProgress: true,
+    minWidth: "min-w-[200px]"
+  },
+  md: {
+    container: "p-5 rounded-3xl",
+    image: "w-20 h-20 rounded-xl",
+    title: "text-lg",
+    artist: "text-sm",
+    gap: "gap-5",
+    gap_controls: "gap-3",
+    hideExtra: false,
+    showProgress: true,
+    minWidth: "min-w-[350px]"
+  },
+  lg: {
+    container: "p-8 rounded-[40px]",
+    image: "w-32 h-32 rounded-2xl",
+    title: "text-2xl",
+    artist: "text-base",
+    gap: "gap-8",
+    gap_controls: "gap-4",
+    hideExtra: false,
+    showProgress: true,
+    minWidth: "min-w-[450px]"
+  }
+};
+
+export default function SpotifyLiveCard({
+  isListening,
+  data,
+  currentProgress,
+  size = 'md'
+}: {
+  isListening: boolean,
+  data: SpotifyListeningData | null,
+  currentProgress: number,
+  size: 'xs' | 'md' | 'lg'
+}) {
+  // const { pause, resume, next, previous } = useSpotify();
   const progress = data ? (currentProgress / data.duration_ms) * 100 : 0;
+  const config = configOptions[size];
 
-  if (!isListening || !data) {
+  if (!data) {
     return (
-      <div className="rounded-3xl bg-white/5 border border-white/10 p-6 flex items-center justify-center min-h-[120px] backdrop-blur-md">
-        <p className="text-gray-500 italic text-sm tracking-wide">
-          Aucune musique en cours sur Spotify
-        </p>
+      <div className={`${config.container} bg-white/5 border border-white/10 flex items-center justify-center min-h-[80px] backdrop-blur-md`}>
+        <p className="text-gray-500 italic text-xs tracking-wide">Silence radio sur Spotify</p>
       </div>
     );
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-black/40 border border-white/10 p-5 backdrop-blur-xl shadow-2xl transition-all duration-500 hover:border-green-500/30">
+    <div className={`relative overflow-hidden ${config.container} bg-black/40 border border-white/10 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-green-500/30 ${config.minWidth}`}>
       
-      {/* Background Glow (Lueur dynamique basée sur l'album) */}
-      <div className="absolute -right-10 -top-10 w-40 h-40 bg-green-500/10 blur-[80px] rounded-full"></div>
+      {/* Background Glow dynamique */}
+      <div className={`absolute -right-10 -top-10 ${size === 'lg' ? 'w-64 h-64' : 'w-40 h-40'} bg-green-500/10 blur-[80px] rounded-full`}></div>
 
-      <div className="relative flex items-center gap-5">
+      <div className={`relative flex items-center ${config.gap}`}>
         
-        {/* Pochette d'album avec effet de rotation si lecture */}
-        <div className="relative flex-shrink-0">
+        {/* Pochette d'album */}
           <img 
             src={data.cover_url} 
             alt={data.album_name}
-            className={`w-20 h-20 rounded-xl shadow-lg object-cover ${isListening ? 'animate-pulse' : ''}`}
+            className={`${config.image} shadow-lg object-cover$`}
           />
-          {/* Badge Live */}
-          <div className="absolute -top-2 -left-2 bg-green-500 text-[10px] font-black px-2 py-0.5 rounded-full text-black uppercase tracking-tighter">
-            Live
-          </div>
-        </div>
 
         {/* Infos Titre / Artiste */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-white font-bold text-lg truncate leading-tight mb-1">
+          <h3 className={`text-white font-bold truncate leading-tight ${config.title}`}>
             {data.title}
           </h3>
-          <p className="text-gray-400 text-sm truncate">
-            {data.artist_name} • <span className="text-gray-500 italic">{data.album_name}</span>
-          </p>
-          
-          {/* Barre de progression */}
-          <div className="mt-4">
-            <div className="flex justify-between text-[10px] text-gray-500 mb-1 font-mono">
-              <span>{formatMs(currentProgress)}</span>
-              <span>{formatMs(data.duration_ms)}</span>
-            </div>
-            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-green-500 rounded-full transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(34,197,94,0.5)]"
-                style={{ width: `${progress}%` }}
-              ></div>
+          <div className="relative flex-shrink-0">
+            <p className={`text-gray-400 truncate mt-0.5 ${config.artist}`}>
+              {data.artist_name} 
+              {!config.hideExtra && <span className="text-gray-500 italic font-light"> • {data.album_name}</span>}
+            </p>
+            {/* Animation Equalizer */}
+            <div className={`shadow-lg object-cover absolute top-0 right-0 flex gap-1 items-end ${size === 'lg' ? 'h-8 mb-16' : 'h-4 mb-12'}`}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="w-1 bg-green-500 rounded-full animate-bounce" 
+                  style={{ animationDuration: `${0.5 + i/5}s`, height: `${30 + (i*20)}%` }}></div>
+              ))}
             </div>
           </div>
-        </div>
-
-        {/* Animation Equalizer (en haut à droite) */}
-        <div className="flex gap-1 items-end h-4 mb-12">
-            {[1, 2, 3].map((i) => (
-                <div key={i} className={`w-1 bg-green-500 rounded-full animate-bounce`} 
-                     style={{ animationDuration: `${0.5 + i/5}s`, height: `${30 + (i*20)}%` }}></div>
-            ))}
+          
+          {/* Barre de progression */}
+          {config.showProgress && (
+            <div className={`${size === 'xs' ? 'mt-2' : 'mt-4'}`}>
+              <div className="flex justify-between text-[10px] text-gray-500 mb-1 font-mono opacity-80">
+                <span>{formatMs(currentProgress)}</span>
+                {/*<div className={`flex ${config.gap_controls}`}>
+                  <span className="transition-colors duration-150 hover:text-white" onClick={previous}><SkipBack size={16}/></span>
+                  <span className="transition-colors duration-150 hover:text-white" onClick={isListening ? pause : resume}>
+                    {isListening ? <Pause size={16}/> : <Play size={16}/>}
+                  </span>
+                  <span className="transition-colors duration-150 hover:text-white" onClick={next}><SkipForward size={16}/></span>
+                </div>*/}
+                <span>{formatMs(data.duration_ms)}</span>
+              </div>
+              <div className={`${size === 'xs' ? 'h-1' : 'h-1.5'} w-full bg-white/10 rounded-full overflow-hidden`}>
+                <div 
+                  className="h-full bg-green-500 rounded-full transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,10 +1,8 @@
 "use client";
-
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useApi } from '@/app/hooks/useApi';
 import { API_ENDPOINTS } from '@/app/constants/routes';
 import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
 
 // Structure exacte de ce que renvoie /me
 interface AuthResponse {
