@@ -91,8 +91,6 @@ export default function Header() {
     setIsViewMenuOpen(false);
   };
 
-  console.log(user?.avatar)
-
   return (
     <header className={HEADER_STYLES.CONTAINER}>
       <HeaderLogo onClick={() => navigate("/")}/>
