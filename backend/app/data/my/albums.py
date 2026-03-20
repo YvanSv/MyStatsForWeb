@@ -45,9 +45,13 @@ async def get_user_albums(
     raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
     raw_dur = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)
     cnt = func.count(TrackHistory.id)
-    
-    f_album = ((raw_ms/raw_dur) * (raw_ms/60000.0) / (7.0 * func.nullif(cnt, 0)) + ((raw_ms/raw_dur) * (raw_ms/60000.0) / 3200.0)) * 1.75 * (raw_ms/raw_dur)
 
+    m = raw_ms / 60000.0
+    e = raw_ms / raw_dur
+    
+    # f_album = (e * m / (7.0 * func.nullif(cnt, 0)) + (e * m / 3200.0)) * 1.75 * e
+    f_album = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e / 3.75
+    
     # 2. Clauses WHERE spécifiques
     search_filters = []
     if artist: search_filters.append(Artist.name.ilike(f"%{artist}%"))

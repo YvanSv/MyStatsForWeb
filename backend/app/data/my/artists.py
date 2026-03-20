@@ -25,9 +25,9 @@ async def get_artists(
     minutes_min: Optional[float] = None,
     minutes_max: Optional[float] = None,
     rating_min: Optional[float] = None,
-    rating_max: Optional[float] = None,
+    rating_max: Optional[float] = 100,
     engagement_min: Optional[float] = None,
-    engagement_max: Optional[float] = None,
+    engagement_max: Optional[float] = 100,
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
@@ -54,10 +54,11 @@ async def get_artists(
     e = raw_ms / raw_dur
     
     # Formule logarithmique : on utilise func.log() et func.greatest() pour éviter log(0)
-    f_artist = (
-        ((e / (7.0 * func.nullif(cnt, 0))) + (func.log(func.greatest(m, 0.001)) / 25.0)) 
-        * 4.0 + (cnt * e / 10000.0)
-    )
+    f_artist = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e / 3.75
+    # f_artist = (
+    #     ((e / (7.0 * func.nullif(cnt, 0))) + (func.log(func.greatest(m, 0.001)) / 25.0)) 
+    #     * 4.0 + (cnt * e / 10000.0)
+    # )
 
     # 2. Clauses WHERE (Filtre sur le nom de l'artiste et les dates)
     search_filters = []

@@ -26,13 +26,9 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
   const currentSort = useMemo(() => {
     const params = Object.fromEntries(searchParams.entries());
     
-    // Fonctions utilitaires pour ne pas envoyer "0" par erreur au premier chargement
-    const getSafeMax = (paramValue: string | undefined, metadataValue: number) => {
-      if (paramValue) return paramValue;
-      // Si pas de param dans l'URL et metadata à 0, on renvoie null ou une valeur infinie
-      // pour que le backend ignore le filtre
-      return metadataValue > 0 ? String(metadataValue) : undefined;
-    };
+    // Si le paramètre n'est pas dans l'URL, on renvoie undefined
+    // Le backend ignorera alors le filtre et prendra tout.
+    const getParamOrUndefined = (val: string | undefined) => val || undefined;
 
     return {
       sort: params.sort || "play_count",
@@ -40,14 +36,20 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
       track: params.track || "",
       artist: params.artist || "",
       album: params.album || "",
+      
+      // MIN : On peut garder "0" par défaut
       streams_min: params.streams_min || "0",
-      streams_max: getSafeMax(params.streams_max, metadata.max_streams),
       minutes_min: params.minutes_min || "0",
-      minutes_max: getSafeMax(params.minutes_max, metadata.max_minutes),
       engagement_min: params.engagement_min || "0",
-      engagement_max: params.engagement_max || "100",
       rating_min: params.rating_min || "0",
-      rating_max: getSafeMax(params.rating_max, metadata.max_rating),
+
+      // MAX : TRÈS IMPORTANT - On n'envoie QUE si l'utilisateur a filtré
+      // Ne plus utiliser metadata.max_... ici pour le fetch !
+      streams_max: getParamOrUndefined(params.streams_max),
+      minutes_max: getParamOrUndefined(params.minutes_max),
+      engagement_max: getParamOrUndefined(params.engagement_max),
+      rating_max: getParamOrUndefined(params.rating_max),
+
       date_min: cleanDate(params.date_min, metadata.date_min),
       date_max: cleanDate(params.date_max, metadata.date_max),
     };

@@ -1,3 +1,5 @@
+import math
+
 from app.database import get_session
 from app.models import TrackHistory, Track, Artist, Album
 from typing import Optional, List
@@ -33,7 +35,8 @@ async def get_user_musics(
     m = raw_ms / 60000.0
     e = raw_ms / raw_dur
     
-    f_track = ((e * m / (20.0 * func.nullif(cnt, 0)) + (m / 40.0)) / 8.0)
+    # f_track = ((e * m / (20.0 * func.nullif(cnt, 0)) + (m / 40.0)) / 8.0)
+    f_track = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e / 3.1
 
     # 2. Clauses WHERE spécifiques (recherche textuelle et dates)
     search_filters = []
