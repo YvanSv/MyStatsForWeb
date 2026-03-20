@@ -120,8 +120,8 @@ export function ImportContent() {
     content:
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="relative group">
-        <input type="file" multiple accept=".json" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
-        <div className={IMPORT_STYLES.DROPZONE(files.length > 0)}>
+        <input type="file" multiple accept=".json" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
+        <div className={`${IMPORT_STYLES.DROPZONE(files.length > 0)} text3`}>
           <FileIcon size={40}/>
           <p className={`text3 text-xs text-center`}>
             {files.length > 0 ? `${files.length} fichier(s) sélectionné(s)` : "Déposez vos fichiers .json ici"}
