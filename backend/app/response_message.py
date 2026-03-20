@@ -114,6 +114,18 @@ class UserSettingsResponse(BaseModel):
     banner_url: Optional[str]
     perms: Dict[str, bool]
 
+class SpotifyTopItem(BaseModel):
+    name: str
+    img_url: Optional[str]
+    rating: int
+    isTrack: bool
+    artist_name: Optional[str] = None
+    album_name: Optional[str] = None
+
+class UserProfileTopsResponse(BaseModel):
+    top_track: Optional[SpotifyTopItem] = None
+    top_artist: Optional[SpotifyTopItem] = None
+
 class UserProfileResponse(BaseUserProfile):
     total_minutes: int
     total_streams: int

@@ -14,6 +14,15 @@ export interface DataInfo {
   type: 'track' | 'album' | 'artist';
 }
 
+export interface TopStatCardProps {
+  name: string;
+  img_url: string;
+  rating: number;
+  isTrack: boolean;
+  artist_name: string;
+  album_name: string;
+}
+
 export interface UserProfile {
   display_name: string;
   avatar: string;
@@ -34,6 +43,11 @@ export interface UserProfile {
     history: boolean,
     dashboard: boolean
   };
+}
+
+export interface UserProfileTops {
+  top_track: TopStatCardProps;
+  top_artist: TopStatCardProps;
 }
 
 export interface EditableProfile {

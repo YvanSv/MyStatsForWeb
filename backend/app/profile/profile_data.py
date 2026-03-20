@@ -1,10 +1,14 @@
+import asyncio
 from typing import Optional
 from fastapi import APIRouter, Cookie, HTTPException, Depends
 from sqlmodel import Session, select, func, desc, text
+from sqlalchemy.orm import joinedload
 from app.database import get_session
 from app.models import User, TrackHistory, Track, Artist, Album
-from app.response_message import UserProfileResponse, BaseUserProfile
-from sqlalchemy.orm import joinedload
+from app.response_message import UserProfileResponse, BaseUserProfile, UserProfileTopsResponse
+from app.spotify.utils.api_call import run_spotify_task
+from app.spotify.utils.spotify_api import get_spotify_users_client
+from app.spotify.utils.spotify_token import get_valid_access_token
 
 def get_optional_user(session_id: Optional[str], db: Session):
     if not session_id:
@@ -23,7 +27,7 @@ router = APIRouter()
         404: {"description": "L'utilisateur n'existe pas."}
     }
 )
-def get_user_profile(slug: str, session: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
+async def get_user_profile(slug: str, session: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
     """
     Génère une page de profil complète incluant l'identité et les habitudes d'écoute.
 
@@ -51,6 +55,7 @@ def get_user_profile(slug: str, session: Session = Depends(get_session), session
     # --- INITIALISATION ---
     top_tracks, top_artists, top_albums = [], [], []
     total_minutes,total_streams = 0,0
+    top_track,top_artist = None,None
 
     # --- TOP 50 TRACKS ---
     if target_user.perms.get("favorites", True) or is_owner:
@@ -88,7 +93,7 @@ def get_user_profile(slug: str, session: Session = Depends(get_session), session
         "top_50_albums": top_albums,
         # --- 50 DERNIÈRES ÉCOUTES ---
         "recent_tracks": get_historique(target_user,50,session) if target_user.perms.get("history", True) or is_owner else [],
-        "perms": target_user.perms
+        "perms": target_user.perms,
     }
 
 @router.get(
@@ -201,3 +206,54 @@ def get_top_entities(session, model, history_id_col, user_id, limit=50):
     
     statement = statement.group_by(*group_cols).order_by(desc("play_count")).limit(limit)
     return session.exec(statement).all()
+
+@router.get(
+    "/tops/{slug}",
+    summary="Récupérer les tops track et artist d'un profil public d'un utilisateur",
+    response_model=UserProfileTopsResponse,
+    responses={
+        200: {"description": "Tops récupérés avec succès"},
+        403: {"description": "Profil privé ou accès refusé."},
+        404: {"description": "L'utilisateur n'existe pas."}
+    }
+)
+async def get_top_track_and_artist(slug: str, session: Session = Depends(get_session), session_id: Optional[str] = Cookie(None)):
+    """
+    Fonction générique pour récupérer les Tops (Track, Artist) via l'API Spotify.
+    """
+    if slug.isdigit(): target_user = session.get(User, int(slug))
+    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
+    if not target_user: raise HTTPException(status_code=404, detail="Profil introuvable")
+
+    # Identifier qui regarde (le visiteur)
+    visitor = get_optional_user(session_id, session)
+    is_owner = visitor is not None and visitor.id == target_user.id
+    # On bloque si le profil est privé ET que ce n'est pas le proprio
+    if not target_user.perms.get("profile", True) and not is_owner: raise HTTPException(status_code=403, detail="Profil privé")
+    
+    sp = get_spotify_users_client(await get_valid_access_token(target_user,session))
+    top_tr_task = run_spotify_task(sp.current_user_top_tracks, limit=1, time_range="long_term")
+    top_ar_task = run_spotify_task(sp.current_user_top_artists, limit=1, time_range="long_term")
+    top_tr, top_ar = await asyncio.gather(top_tr_task, top_ar_task)
+    track = top_tr["items"][0] if top_tr.get("items") else None
+    artist = top_ar["items"][0] if top_ar.get("items") else None
+
+    res = {"top_track": None,"top_artist": None}
+
+    if track:
+        res["top_track"] = {
+            "name": track["name"],
+            "img_url": track["album"]["images"][0]["url"] if track["album"]["images"] else None,
+            "rating": track.get("popularity", 0),
+            "isTrack": True,
+            "artist_name": track["artists"][0]["name"],
+            "album_name": track["album"]["name"]
+        }
+    if artist:
+        res["top_artist"] = {
+            "name": artist["name"],
+            "img_url": artist["images"][0]["url"] if artist["images"] else None,
+            "rating": artist.get("popularity", 0),
+            "isTrack": False
+        }
+    return res

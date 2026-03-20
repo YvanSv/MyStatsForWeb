@@ -12,6 +12,12 @@ export const useProfile = () => {
     finally {setLoading(false)}
   }, []);
 
+  const getTopDataProfile = useCallback(async (id: string) => {
+    setLoading(true);
+    try {return await apiRequest(`${API_ENDPOINTS.PROFILE_DATA_TOPS}/${id}`)}
+    finally {setLoading(false)}
+  }, []);
+
   const getEditableProfile = useCallback(async (id: string) => {
     setLoading(true);
     try {return await apiRequest(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${id}`)}
@@ -41,5 +47,5 @@ export const useProfile = () => {
     }
   }, []);
 
-  return { getProfile, getEditableProfile, patchProfile, getDashboard, loading };
+  return { getProfile, getTopDataProfile, getEditableProfile, patchProfile, getDashboard, loading };
 };

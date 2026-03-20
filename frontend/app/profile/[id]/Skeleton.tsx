@@ -50,7 +50,7 @@ export function ProfileSkeleton() {
 
         {/* STATS GRID SKELETON */}
         <div className={PROFILE_STYLES.STATS_GRID}>
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="bg-bg2/40 border border-white/5 p-5 rounded-3xl h-32 flex flex-col justify-between">
                <SkeletonPulse className="h-3 w-20" />
                <SkeletonPulse className="h-8 w-32" />

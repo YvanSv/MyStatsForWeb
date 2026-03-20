@@ -6,14 +6,14 @@ import { useProfile } from "@/app/hooks/useProfile";
 import { BarChart3 } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "@/app/components/Atomic/Buttons";
 import { ErrorState } from "@/app/components/Atomic/Error/Error";
-import { UserProfile } from "@/app/data/DataInfos";
+import { UserProfile, UserProfileTops } from "@/app/data/DataInfos";
 import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 import toast from "react-hot-toast";
 import { GENERAL_STYLES } from "@/app/styles/general";
 import { FRONT_ROUTES } from "@/app/constants/routes";
 import { ApiError } from "../../services/api";
 import { ProfileSkeleton } from "./Skeleton";
-import { HorizontalTopSection, StatCard } from "./components";
+import { HorizontalTopSection, StatCard, TopStatCard } from "./components";
 import Image from 'next/image';
 
 const PROFILE_STYLES = {
@@ -51,8 +51,9 @@ export default function ProfilePage({ id }: { id: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [topData, setTopData] = useState<UserProfileTops | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
-  const { getProfile } = useProfile();
+  const { getProfile, getTopDataProfile } = useProfile();
   const { user: currentUser } = useAuth();
 
   const isOwner = useMemo(() => {
@@ -70,11 +71,18 @@ export default function ProfilePage({ id }: { id: string }) {
       setLoading(true);
       setError(null);
       try {
-        const data = await getProfile(id);
-        setProfile(data);
-      } catch (err: any) {setError(err instanceof ApiError ? err : new ApiError(err.status,"Erreur inconnue"))}
+        setProfile(await getProfile(id));
+        loadTops(id);
+      }
+      catch (err: any) {setError(err instanceof ApiError ? err : new ApiError(err.status,"Erreur inconnue"))}
       finally {setLoading(false)}
     };
+
+    const loadTops = async (profileId: string) => {
+      try {setTopData(await getTopDataProfile(profileId))}
+      catch (err) {console.error("Erreur lors du chargement des tops", err)}
+    };
+
     loadData();
   }, [id]);
 
@@ -138,6 +146,8 @@ export default function ProfilePage({ id }: { id: string }) {
             />
             <StatCard title="Nombre de streams" value={profile.total_streams.toLocaleString()} sub="Total cumulé" color="text-blue-400"/>
             <StatCard title="Heure de pointe" value={profile.peak_hour} sub="Le petit moment de plaisir" color="text-purple-400"/>
+            <TopStatCard color="text-orange-400" item={topData && topData.top_track}/>
+            <TopStatCard color="text-yellow-400" item={topData && topData.top_artist}/>
           </div>
         )}
 

@@ -69,11 +69,11 @@ export default function SpotifyLiveCard({
       <div className={`relative flex items-center ${config.gap}`}>
         
         {/* Pochette d'album */}
-          <img 
-            src={data.cover_url} 
-            alt={data.album_name}
-            className={`${config.image} shadow-lg object-cover$`}
-          />
+        <img 
+          src={data.cover_url} 
+          alt={data.album_name}
+          className={`${config.image} shadow-lg object-cover$`}
+        />
 
         {/* Infos Titre / Artiste */}
         <div className="flex-1 min-w-0">

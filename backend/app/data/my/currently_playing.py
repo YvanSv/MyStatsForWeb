@@ -57,3 +57,27 @@ async def get_today(user_id: int = Depends(get_current_user_id), db: Session = D
             cover_url=cover_url
         )
     )
+
+@router.put("/pause")
+async def pause_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+    user = db.get(User, user_id)
+    sp = get_spotify_users_client(await get_valid_access_token(user, db))
+    return await run_spotify_task(sp.pause_playback)
+
+@router.put("/resume")
+async def resume_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+    user = db.get(User, user_id)
+    sp = get_spotify_users_client(await get_valid_access_token(user, db))
+    return await run_spotify_task(sp.start_playback)
+
+@router.post("/next")
+async def next_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+    user = db.get(User, user_id)
+    sp = get_spotify_users_client(await get_valid_access_token(user, db))
+    return await run_spotify_task(sp.next_track)
+
+@router.post("/previous")
+async def previous_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+    user = db.get(User, user_id)
+    sp = get_spotify_users_client(await get_valid_access_token(user, db))
+    return await run_spotify_task(sp.previous_track)
