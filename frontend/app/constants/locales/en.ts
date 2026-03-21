@@ -150,5 +150,23 @@ export const en = {
     about: "About",
     rights: "All rights reserved",
     tagline: "Designed for Music Lovers",
+  },
+  sidebarFilters: {
+    apply: "Apply filters",
+    loading: "Loading...",
+    title: "Filters",
+    reset: "Reset",
+    searchGroup: "Search",
+    placeholderTrack: "Track title...",
+    placeholderAlbum: "Album...",
+    placeholderArtist: "Artist...",
+    statsGroup: "Statistics",
+    statStreams: "Streams",
+    statMinutes: "Minutes",
+    statEngagement: "Engagement",
+    statRating: "Rating",
+    periodGroup: "Period",
+    dateFrom: "From",
+    dateTo: "To",
   }
 }

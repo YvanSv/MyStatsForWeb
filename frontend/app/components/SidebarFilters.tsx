@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PrimaryButton } from "./Atomic/Buttons";
+import { useLanguage } from "../context/languageContext";
 
 const SIDEBAR_STYLES = {
   // Wrappers
@@ -42,7 +43,20 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
+  const dict = t.sidebarFilters;
   const [localFilters, setLocalFilters] = useState<Record<string, string>>({});
+
+  // Fonction utilitaire pour traduire les labels des stats
+  const getStatLabel = (stat: string) => {
+    switch (stat) {
+      case 'streams': return dict.statStreams;
+      case 'minutes': return dict.statMinutes;
+      case 'engagement': return dict.statEngagement;
+      case 'rating': return dict.statRating;
+      default: return stat;
+    }
+  };
 
   useEffect(() => {
     const currentParams: Record<string, string> = {};
@@ -81,37 +95,35 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
         <div className={SIDEBAR_STYLES.STICKY_CARD}>
           <div className="pb-4 mb-2 border-b border-white/5">
             <PrimaryButton disabled={loading} onClick={applyFilters} additional="md:text-base disabled:opacity-50 w-full py-3">
-              {loading ? 'Chargement...' : "Appliquer les filtres"}
+              {loading ? dict.loading : dict.apply}
             </PrimaryButton>
           </div>
 
           <div className="flex items-center justify-between mb-6">
-            <h2 className={`${SIDEBAR_STYLES.TITLE} font-semibold`}>Filtres</h2>
-            <button onClick={resetFilters} className={SIDEBAR_STYLES.RESET_BTN}>
-              Réinitialiser
-            </button>
+            <h2 className={`${SIDEBAR_STYLES.TITLE} font-semibold`}>{dict.title}</h2>
+            <button onClick={resetFilters} className={SIDEBAR_STYLES.RESET_BTN}>{dict.reset}</button>
           </div>
 
           {config.search && (
-            <FilterGroup title="Recherche">
+            <FilterGroup title={dict.searchGroup}>
               <div className="space-y-3">
                 {config.search["track"] &&
                   <SearchInput 
-                    placeholder="Titre..." 
+                    placeholder={dict.placeholderTrack}
                     value={localFilters["track"] || ""} 
                     onChange={(v: string) => handleLocalChange("track", v)} 
                   />
                 }
                 {config.search["album"] &&
                   <SearchInput 
-                    placeholder="Album..." 
+                    placeholder={dict.placeholderAlbum}
                     value={localFilters["album"] || ""} 
                     onChange={(v: string) => handleLocalChange("album", v)} 
                   />
                 }
                 {config.search["artist"] &&
                   <SearchInput 
-                    placeholder="Artiste..." 
+                    placeholder={dict.placeholderArtist}
                     value={localFilters["artist"] || ""} 
                     onChange={(v: string) => handleLocalChange("artist", v)} 
                   />
@@ -120,12 +132,12 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
             </FilterGroup>
           )}
 
-          <FilterGroup title="Statistiques">
+          <FilterGroup title={dict.statsGroup}>
             <div className="space-y-6 pt-2">
               {['streams', 'minutes', 'engagement', 'rating'].map((stat) => (
                  config.stats[stat] && (
                    <RangeFilter key={stat} param={stat} onChange={handleLocalChange}
-                    label={stat === 'play_count' ? 'Écoutes' : stat.charAt(0).toUpperCase() + stat.slice(1)}
+                    label={getStatLabel(stat)}
                     unit={stat === 'engagement' ? "%" : ""}
                     min={config.stats[stat].min}
                     max={config.stats[stat].max}
@@ -137,24 +149,18 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
             </div>
           </FilterGroup>
 
-          <FilterGroup title="Période">
+          <FilterGroup title={dict.periodGroup}>
             <div className="pt-2">
               <div className={SIDEBAR_STYLES.DATE_GRID}>
                 <div className="flex flex-col space-y-1">
-                  <span className={SIDEBAR_STYLES.DATE_LABEL}>De</span>
-                  <input 
-                    type="date" 
-                    className={SIDEBAR_STYLES.DATE_INPUT}
-                    value={localFilters.date_min || ""}
+                  <span className={SIDEBAR_STYLES.DATE_LABEL}>{dict.dateFrom}</span>
+                  <input type="date" className={SIDEBAR_STYLES.DATE_INPUT} value={localFilters.date_min || ""}
                     onChange={(e) => handleLocalChange("date_min", e.target.value)}
                   />
                 </div>
                 <div className="flex flex-col space-y-1">
-                  <span className={SIDEBAR_STYLES.DATE_LABEL}>À</span>
-                  <input 
-                    type="date" 
-                    className={SIDEBAR_STYLES.DATE_INPUT}
-                    value={localFilters.date_max || ""}
+                  <span className={SIDEBAR_STYLES.DATE_LABEL}>{dict.dateTo}</span>
+                  <input type="date" className={SIDEBAR_STYLES.DATE_INPUT} value={localFilters.date_max || ""}
                     onChange={(e) => handleLocalChange("date_max", e.target.value)}
                   />
                 </div>
