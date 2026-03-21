@@ -23,47 +23,19 @@ const EyeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none
 const ChevronDown = ({ size = 16, className = "" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>
 
 const HEADER_STYLES = {
-  CONTAINER: `flex justify-between items-center sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-0.5 px-4 md:px-6 border-b border-white/10`,
+  CONTAINER: `flex justify-between items-center sticky top-0 z-50 bg-bg1/60 backdrop-blur-xl py-0.5 px-4 lg:px-6 border-b border-white/10`,
   
-  NAV_PC: 'hidden lg:flex justify-between h-fit text-[24px] font-semibold gap-12 2xl:gap-24 3xl:gap-32',  
+  NAV_PC: 'hidden md:flex justify-between h-fit font-semibold gap-6 lg:gap-10 2xl:gap-24 3xl:gap-32',  
   NAV_ITEM_WRAPPER: "relative group flex",
 
-  RIGHT_SECTION: `flex justify-end items-center gap-2 md:gap-4`,
+  RIGHT_SECTION: `flex justify-end items-center gap-2 lg:gap-4`,
   USER_AVATAR: `text2 ${BASE_UI.common.flexCenter} text-[13px] font-bold w-6 h-6 ${BASE_UI.rounded.badge} bg-vert/20`,
   RIGHT_WRAPPER: "relative group",
   
-  MOBILE_OVERLAY: `absolute top-full left-0 w-full bg-bg1 backdrop-blur-xl border-b border-white/10 lg:hidden animate-in slide-in-from-top-2`,
+  MOBILE_OVERLAY: `absolute top-full left-0 w-full bg-bg1 backdrop-blur-xl border-b border-white/10 md:hidden animate-in slide-in-from-top-2`,
   MOBILE_NAV: `flex flex-col p-4 space-y-1 text-center`,
   MOBILE_ITEM: `flex gap-4 justify-center text-[16px] py-4 hover:bg-white/5 transition-colors font-medium text-white font-semibold`
 };
-
-// const navigation_menu = [
-//   {id: 'Rankings', path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal/>},
-//   {id: 'Dashboard', path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar size={24}/>},
-//   {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye/>},
-//   {id: 'Aide', path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark/>},
-// ] as const;
-// const sous_menu_ranking = [
-//   {id: 'Tracks', path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18}/>},
-//   {id: 'Albums', path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18}/>},
-//   {id: 'Artists', path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18}/>},
-// ]
-// const sous_menu_compte = [
-//   {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <EyeIcon/>},
-//   {id: 'Import de data', path: `${FRONT_ROUTES.IMPORT}`, icon: <UploadIcon/>},
-//   {id: 'Mon compte', path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={18}/>},
-// ]
-// const views = [
-//   { id: 'grid_sm', icon: <Grid3x3Icon/>, hideMobile: true },
-//   { id: 'grid', icon: <GridIcon/>, hideMobile: false },
-//   { id: 'list', icon: <ListIcon/>, hideMobile: false },
-// ] as const;
-// const dropdown_menu = [
-//   { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}` },
-//   { id: 'Mon dashboard', icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}`},
-//   { id: 'Import de data', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
-//   { id: 'Mon compte', icon: <User size={18}/>, path: FRONT_ROUTES.ACCOUNT },
-// ] as const;
 
 export default function Header() {
   const router = useRouter();
@@ -81,10 +53,10 @@ export default function Header() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const navigation_menu = [
-    { id: 'Rankings', label: dict.rankings, path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal /> },
-    { id: 'Dashboard', label: dict.dashboard, path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar size={24} /> },
-    { id: 'Profil public', label: dict.publicProfile, path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye /> },
-    { id: 'Aide', label: dict.help, path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark /> },
+    { id: 'Rankings', label: dict.rankings, path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal className="w-4 h-4 lg:w-6 lg:h-6"/> },
+    { id: 'Dashboard', label: dict.dashboard, path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar className="w-4 h-4 lg:w-6 lg:h-6"/> },
+    { id: 'Profil public', label: dict.publicProfile, path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye className="w-4 h-4 lg:w-6 lg:h-6"/> },
+    { id: 'Aide', label: dict.help, path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark className="w-4 h-4 lg:w-6 lg:h-6"/> },
   ];
 
   const sous_menu_ranking = [
@@ -187,7 +159,7 @@ export default function Header() {
         {/* View Mode Selector */}
         <div className={HEADER_STYLES.RIGHT_WRAPPER}>
           <TertiaryButton onClick={() => setIsViewMenuOpen(!isViewMenuOpen)}
-            additional="text2 flex flex-col items-center p-1 md:p-2 justify-center"
+            additional="text2 flex flex-col items-center p-1 lg:p-2 justify-center"
           >
             <div className="flex items-center justify-center">{activeView.icon}</div>
             <ChevronDown size={14} className={`opacity-50 transition-transform ${isViewMenuOpen ? 'rotate-180' : ''}`} />
@@ -207,7 +179,7 @@ export default function Header() {
         {/* Profil Section */}
         {isLoggedIn ? (
           <div className={HEADER_STYLES.RIGHT_WRAPPER}>
-            <TertiaryButton onClick={() => navigate(FRONT_ROUTES.ACCOUNT)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 md:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
+            <TertiaryButton onClick={() => navigate(FRONT_ROUTES.ACCOUNT)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 lg:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
               <img src={user?.avatar} className={HEADER_STYLES.USER_AVATAR} alt="Avatar Preview"/>
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
             </TertiaryButton>
@@ -231,7 +203,7 @@ export default function Header() {
         )}
 
         {/* BURGER BUTTON MOBILE */}
-        <button className="lg:hidden p-1" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
+        <button className="md:hidden p-1" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
           <div className="space-y-1.5">
             <div className={`w-6 h-0.5 bg-white transition-all ${isMobileNavOpen ? 'rotate-45 translate-y-2' : ''}`} />
             <div className={`w-6 h-0.5 bg-white ${isMobileNavOpen ? 'opacity-0' : ''}`} />

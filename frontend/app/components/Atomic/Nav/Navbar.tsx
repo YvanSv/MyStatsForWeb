@@ -2,21 +2,21 @@ import Image from "next/image";
 
 export function HeaderLogo({onClick}:any) {
   const agencement = 'flex items-center w-fit';
-  const forme = 'md:gap-3';
-  const couleur = 'text1 text-[28px] md:text-[40px] tracking-tighter font-semibold';
+  const forme = 'gap-2 lg:gap-3';
+  const couleur = 'text1 text-[28px] md:text-[32px] lg:text-[40px] tracking-tighter font-semibold';
   const transformation = 'cursor-pointer transition-all duration-300 hover:text-vert hover:scale-105';
 
   return (
     <div className={`${agencement} ${couleur} ${transformation} ${forme}`} onClick={onClick}>
-      <Image src="/logo.png" alt="Logo" width={60} height={60} priority className="w-8 md:w-13 h-auto" />
+      <Image src="/logo.png" alt="Logo" width={60} height={60} priority className="w-8 md:w-11 lg:w-13 h-auto" />
       MyStats
     </div>
   );
 }
 
 export function NavButton({children,onClick}:any) {
-  const agencement = 'w-fit h-fit flex items-center gap-2';
-  const forme = '';
+  const agencement = 'w-fit h-fit flex items-center gap-1 lg:gap-2';
+  const forme = 'text-md xl:text-2xl';
   const couleur = 'text1 hover:text-vert';
   const transformation = 'cursor-pointer transition-all duration-300 active:scale-95 ease-out';
 
