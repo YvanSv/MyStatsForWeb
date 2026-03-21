@@ -9,6 +9,7 @@ import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { SkeletonImport } from "./Skeleton";
 import { useAuth } from "../context/authContext";
 import { API_ENDPOINTS } from "../constants/routes";
+import { useLanguage } from "../context/languageContext";
 
 export default function ImportPage() {
   return (
@@ -49,7 +50,6 @@ const IMPORT_STYLES = {
   STEP_NUMBER: `text1 flex-shrink-0 w-6 h-6 ${BASE_UI.rounded.badge} bg-white/5 border border-white/10 ${BASE_UI.common.flexCenter} text-[10px] font-bold`,
   STEP_TEXT: `text1 text-sm leading-relaxed`,
   EXTERNAL_LINK: `text2 hover:underline break-all font-mono text-[12px] mt-2 block`,
-  CODE_TAG: `text2 bg-vert/5 px-1 rounded mx-1`,
   
   // Note technique
   TECH_NOTE: `text3 mt-8 p-6 bg-white/[0.03] border border-white/5 ${BASE_UI.rounded.medium} italic text-[11px] space-y-3`,
@@ -58,6 +58,8 @@ const IMPORT_STYLES = {
 
 export function ImportContent() {
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const dict = t.importData;
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -67,10 +69,8 @@ export function ImportContent() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
-      
-      // OPTIONNEL : Validation locale du type de fichier
       const invalidFiles = selectedFiles.filter(f => !f.name.endsWith('.json'));
-      if (invalidFiles.length > 0) return setError("Seuls les fichiers .json sont acceptés.");
+      if (invalidFiles.length > 0) return setError(dict.errorJsonOnly);
 
       setFiles(selectedFiles);
       setError("");
@@ -81,7 +81,7 @@ export function ImportContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (files.length === 0) return setError("Veuillez sélectionner au moins un fichier.");
+    if (files.length === 0) return setError(dict.errorNoFile);
     setError("");
     setSuccess("");
     setProgress(0);
@@ -98,24 +98,24 @@ export function ImportContent() {
           setProgress(JSON.parse(event.data).percentage);
           if (progress === 100) ws.close();
         };
-        ws.onerror = () => reject(new Error("Erreur de connexion au suivi de progression."));
+        ws.onerror = () => reject(new Error(dict.errorWs));
       });
     };
 
     try {
       const res: any = await startUpload();
-      setSuccess(res.message || `${res.added ?? res.count ?? 0} écoutes importées !`);
+      setSuccess(res.message || dict.successImport(res.added ?? res.count ?? 0));
       setFiles([]);
     } catch (err: any) {
-      setError(err instanceof ApiError ? err.message : "Erreur lors de l'importation.");
+      setError(err instanceof ApiError ? err.message : dict.errorGeneric);
       ws.close();
     }
   };
 
   const left_col = {
     icon: <div className={IMPORT_STYLES.ICON_BOX_VERT}><UploadIcon size={32}/></div>,
-    title: 'Importer vos données',
-    subtitle: 'Glissez vos fichiers JSON Spotify pour synchroniser votre historique d\'écoute.',
+    title: dict.title,
+    subtitle: dict.subtitle,
     content:
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="relative group">
@@ -123,7 +123,7 @@ export function ImportContent() {
         <div className={`${IMPORT_STYLES.DROPZONE(files.length > 0)} text3`}>
           <FileIcon size={40}/>
           <p className={`text3 text-xs text-center`}>
-            {files.length > 0 ? `${files.length} fichier(s) sélectionné(s)` : "Déposez vos fichiers .json ici"}
+            {files.length > 0 ? dict.dropzoneActive(files.length) : dict.dropzoneIdle}
           </p>
         </div>
       </div>
@@ -150,30 +150,27 @@ export function ImportContent() {
 
       {(loading || files.length === 0) ? (
         <button type="submit" disabled={true} className="text3 w-full py-4 rounded-full font-bold bg-white/5 border border-white/5 cursor-not-allowed">
-          {loading ? "Importation en cours..." : "Lancer l'importation"}
+          {loading ? dict.loadingBtn : dict.submitBtn}
         </button>
       ) : (
         <PrimaryButton type="submit" additional="w-full py-4">
-          Lancer l'importation
+          {dict.submitBtn}
         </PrimaryButton>
       )}
-
-      <p className={IMPORT_STYLES.FOOTER_TEXT}>
-        Seuls les fichiers <span className="text2">Streaming_History_Audio_X.json</span> sont supportés
-      </p>
+      <p className={IMPORT_STYLES.FOOTER_TEXT}>{dict.footerHint}</p>
     </form>
   }
 
   const right_col = {
     icon: <div className={IMPORT_STYLES.ICON_BOX_BLUE}><QuestionIcon size={32} /></div>,
-    title: 'Aide',
-    subtitle: 'Comment obtenir mes données ?',
+    title: dict.helpTitle,
+    subtitle: dict.helpSubtitle,
     content:
       <div className="space-y-6">
         <div className={IMPORT_STYLES.GUIDE_STEP_WRAPPER}>
           <span className={IMPORT_STYLES.STEP_NUMBER}>1</span>
           <div className={IMPORT_STYLES.STEP_TEXT}>
-            Accédez à votre compte Spotify sur le web pour demander vos données personnelles.
+            {dict.step1}
             <a href="https://www.spotify.com/account/privacy/" target="_blank" className={IMPORT_STYLES.EXTERNAL_LINK}>
               https://www.spotify.com/account/privacy/
             </a>
@@ -183,27 +180,27 @@ export function ImportContent() {
         <div className={IMPORT_STYLES.GUIDE_STEP_WRAPPER}>
           <span className={IMPORT_STYLES.STEP_NUMBER}>2</span>
           <p className={IMPORT_STYLES.STEP_TEXT}>
-            Sélectionnez <code className={IMPORT_STYLES.CODE_TAG}>Historique de streaming étendu</code> en bas de la page.
+            {dict.step2}
           </p>
         </div>
 
         <div className={IMPORT_STYLES.GUIDE_STEP_WRAPPER}>
           <span className={IMPORT_STYLES.STEP_NUMBER}>3</span>
-          <p className={IMPORT_STYLES.STEP_TEXT}>Une fois l'archive reçue (sous quelques jours), extrayez le dossier ZIP.</p>
+          <p className={IMPORT_STYLES.STEP_TEXT}>{dict.step3}</p>
         </div>
 
         <div className={IMPORT_STYLES.GUIDE_STEP_WRAPPER}>
           <span className={IMPORT_STYLES.STEP_NUMBER}>4</span>
           <p className={IMPORT_STYLES.STEP_TEXT}>
-            Importez ici tous les fichiers commençant par <code className={IMPORT_STYLES.CODE_TAG}>Streaming_History_Audio</code>.
+            {dict.step4}
           </p>
         </div>
 
         <div className={IMPORT_STYLES.TECH_NOTE}>
-          <span className={IMPORT_STYLES.TECH_NOTE_TITLE}>Processus d'import :</span>
-          <p>1. Les écoutes sont injectées presque instantanément dans la base de données de MyStats.</p>
-          <p>2. Un enrichissement automatique récupère les images et durées (env. 2 min / fichier).</p>
-          <p className={`pt-2 text2`}>Vous pouvez quitter cette page une fois l'import lancé.</p>
+          <span className={IMPORT_STYLES.TECH_NOTE_TITLE}>{dict.noteTitle}</span>
+          <p>{dict.note1}</p>
+          <p>{dict.note2}</p>
+          <p className={`pt-2 text2`}>{dict.note3}</p>
         </div>
       </div>
   }
