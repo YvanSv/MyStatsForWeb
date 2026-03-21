@@ -11,6 +11,7 @@ import { PrimaryButton, TertiaryButton } from "./Atomic/Buttons";
 import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Atomic/Nav/Navbar";
 import { useSpotify } from "../context/currentlyPlayingContext";
 import SpotifyLiveCard from "./small_elements/SpotifyLiveCard";
+import { useLanguage } from "../context/languageContext";
 
 // --- ICONS (SVG) ---
 const Grid3x3Icon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="9.5" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="9.5" rx="1" /><rect width="5" height="5" x="9.5" y="9.5" rx="1" /><rect width="5" height="5" x="16" y="9.5" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><rect width="5" height="5" x="9.5" y="16" rx="1" /><rect width="5" height="5" x="16" y="16" rx="1" /></svg>
@@ -36,38 +37,40 @@ const HEADER_STYLES = {
   MOBILE_ITEM: `flex gap-4 justify-center text-[16px] py-4 hover:bg-white/5 transition-colors font-medium text-white font-semibold`
 };
 
-const navigation_menu = [
-  {id: 'Rankings', path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal/>},
-  {id: 'Dashboard', path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar size={24}/>},
-  {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye/>},
-  {id: 'Aide', path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark/>},
-] as const;
-const sous_menu_ranking = [
-  {id: 'Tracks', path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18}/>},
-  {id: 'Albums', path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18}/>},
-  {id: 'Artists', path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18}/>},
-]
-const sous_menu_compte = [
-  {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <EyeIcon/>},
-  {id: 'Import de data', path: `${FRONT_ROUTES.IMPORT}`, icon: <UploadIcon/>},
-  {id: 'Mon compte', path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={18}/>},
-]
-const views = [
-  { id: 'grid_sm', icon: <Grid3x3Icon/>, hideMobile: true },
-  { id: 'grid', icon: <GridIcon/>, hideMobile: false },
-  { id: 'list', icon: <ListIcon/>, hideMobile: false },
-] as const;
-const dropdown_menu = [
-  { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}` },
-  { id: 'Mon dashboard', icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}`},
-  { id: 'Import de data', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
-  { id: 'Mon compte', icon: <User size={18}/>, path: FRONT_ROUTES.ACCOUNT },
-] as const;
+// const navigation_menu = [
+//   {id: 'Rankings', path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal/>},
+//   {id: 'Dashboard', path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar size={24}/>},
+//   {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye/>},
+//   {id: 'Aide', path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark/>},
+// ] as const;
+// const sous_menu_ranking = [
+//   {id: 'Tracks', path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18}/>},
+//   {id: 'Albums', path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18}/>},
+//   {id: 'Artists', path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18}/>},
+// ]
+// const sous_menu_compte = [
+//   {id: 'Profil public', path: `${FRONT_ROUTES.PROFILE}`, icon: <EyeIcon/>},
+//   {id: 'Import de data', path: `${FRONT_ROUTES.IMPORT}`, icon: <UploadIcon/>},
+//   {id: 'Mon compte', path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={18}/>},
+// ]
+// const views = [
+//   { id: 'grid_sm', icon: <Grid3x3Icon/>, hideMobile: true },
+//   { id: 'grid', icon: <GridIcon/>, hideMobile: false },
+//   { id: 'list', icon: <ListIcon/>, hideMobile: false },
+// ] as const;
+// const dropdown_menu = [
+//   { id: 'Profil public', icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}` },
+//   { id: 'Mon dashboard', icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}`},
+//   { id: 'Import de data', icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
+//   { id: 'Mon compte', icon: <User size={18}/>, path: FRONT_ROUTES.ACCOUNT },
+// ] as const;
 
 export default function Header() {
   const router = useRouter();
   // --- ÉTATS STATIQUES ---
   const { isLoggedIn, user, logout } = useAuth();
+  const { t } = useLanguage();
+  const dict = t.header;
   const userName = user?.user_name || "Username";
   const { listening, localProgress } = useSpotify();
   // --- ÉTATS UI ---
@@ -76,6 +79,39 @@ export default function Header() {
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   // --- MENUS DEROULANTS ---
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const navigation_menu = [
+    { id: 'Rankings', label: dict.rankings, path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal /> },
+    { id: 'Dashboard', label: dict.dashboard, path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar size={24} /> },
+    { id: 'Profil public', label: dict.publicProfile, path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye /> },
+    { id: 'Aide', label: dict.help, path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark /> },
+  ];
+
+  const sous_menu_ranking = [
+    { id: 'Tracks', label: dict.tracks, path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18} /> },
+    { id: 'Albums', label: dict.albums, path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18} /> },
+    { id: 'Artists', label: dict.artists, path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18} /> },
+  ];
+
+  const sous_menu_compte = [
+    { id: 'Profil public', label: dict.publicProfile, path: `${FRONT_ROUTES.PROFILE}`, icon: <EyeIcon /> },
+    { id: 'Import de données', label: dict.import, path: `${FRONT_ROUTES.IMPORT}`, icon: <UploadIcon /> },
+    { id: 'Mon compte', label: dict.myAccount, path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={18} /> },
+  ];
+
+  const dropdown_menu = [
+    { id: 'Profil public', label: dict.publicProfile, icon: <EyeIcon />, path: `${FRONT_ROUTES.PROFILE}` },
+    { id: 'Mon dashboard', label: dict.dashboard, icon: <ChartBar size={18} />, path: `${FRONT_ROUTES.DASHBOARD}` },
+    { id: 'Import de données', label: dict.import, icon: <UploadIcon />, path: FRONT_ROUTES.IMPORT },
+    { id: 'Mon compte', label: dict.myAccount, icon: <User size={18} />, path: FRONT_ROUTES.ACCOUNT },
+  ];
+
+  const views = [
+    { id: 'grid_sm', label: dict.viewGridSm, icon: <Grid3x3Icon />, hideMobile: true },
+    { id: 'grid', label: dict.viewGrid, icon: <GridIcon />, hideMobile: false },
+    { id: 'list', label: dict.viewList, icon: <ListIcon />, hideMobile: false },
+  ] as const;
+
   const activeView = views.find(v => v.id === viewMode) || views[1];
 
   useEffect(() => {
@@ -99,35 +135,21 @@ export default function Header() {
       {/* Navigation PC */}
       <nav className={HEADER_STYLES.NAV_PC}>
         {navigation_menu.map((item) => {
-          if (item.id === "Rankings") {
+          const isRankings = item.id === "Rankings";
+          const isProfile = item.id === "Profil public";
+
+          if (isRankings || isProfile) {
+            const subMenu = isRankings ? sous_menu_ranking : sous_menu_compte;
             return (
               <div key={item.id} className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
-                <NavButton key={item.id} onClick={() => navigate(item.path)}>
-                  {item.icon} {item.id}
+                <NavButton onClick={() => navigate(item.path)}>
+                  {item.icon} {item.label}
                 </NavButton>
 
                 <PopoverMenu>
-                  {sous_menu_ranking.map(v => (
+                  {subMenu.map(v => (
                     <MenuButton key={v.id} onClick={() => navigate(v.path)} additional="text3">
-                      {v.icon} {v.id}
-                    </MenuButton>
-                  ))}
-                </PopoverMenu>
-              </div>
-            );
-          }
-
-          if (item.id === "Profil public") {
-            return (
-              <div key={item.id} className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
-                <NavButton key={item.id} onClick={() => navigate(item.path)}>
-                  {item.icon} {item.id}
-                </NavButton>
-
-                <PopoverMenu>
-                  {sous_menu_compte.map(v => (
-                    <MenuButton key={v.id} onClick={() => navigate(v.path)} additional="text3">
-                      {v.icon} {v.id}
+                      {v.icon} {v.label}
                     </MenuButton>
                   ))}
                 </PopoverMenu>
@@ -137,7 +159,7 @@ export default function Header() {
 
           return (
             <NavButton key={item.id} onClick={() => navigate(item.path)}>
-              {item.icon} {item.id}
+              {item.icon} {item.label}
             </NavButton>
           );
         })}
@@ -151,7 +173,7 @@ export default function Header() {
               <div className="relative flex-shrink-0">
                 <img src={listening.data?.cover_url} className="w-10 h-10 rounded-xl"/>
                 <div className={`shadow-lg object-cover absolute -top-1.5 -left-1.5 bg-green-500 text-[8px] px-1 font-black py-0.5 rounded-full text-black uppercase tracking-tighter shadow-xl`}>
-                  Live
+                  {dict.live}
                 </div>
               </div>
             </TertiaryButton>
@@ -194,17 +216,17 @@ export default function Header() {
               {dropdown_menu.map(v => (
                 <MenuButton key={v.id} onClick={() => navigate(v.path)}
                   additional={`transition-all duration-300 ease-out text1`}
-                >{v.icon}{v.id}</MenuButton>
+                >{v.icon}{v.label}</MenuButton>
               ))}
               <div className="h-[1px] bg-white/5 mx-2"/>
               <MenuButtonDanger onClick={() => logout()}
                 additional={`transition-all duration-300 ease-out`}
-              ><LogoutIcon/>Déconnexion</MenuButtonDanger>
+              ><LogoutIcon/> {dict.logout}</MenuButtonDanger>
             </PopoverMenu>
           </div>
         ) : (
           <PrimaryButton onClick={() => navigate(FRONT_ROUTES.AUTH)} additional="text-[13px] font-bold px-5 py-2">
-            Se connecter
+            {dict.login}
           </PrimaryButton>
         )}
 
@@ -224,7 +246,7 @@ export default function Header() {
           <nav className={HEADER_STYLES.MOBILE_NAV}>
             {navigation_menu.map(item => 
               <button key={item.id} className={HEADER_STYLES.MOBILE_ITEM} onClick={() => navigate(item.path)}>
-                {item.icon} {item.id}
+                {item.icon} {item.label}
               </button>
             )}
           </nav>

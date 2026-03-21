@@ -127,5 +127,22 @@ export const en = {
     descHistory: "Allow others to see your history",
     toggleDash: "Public dashboard",
     descDash: "Allow others to access your dashboard",
+  },
+  header: {
+    rankings: "Rankings",
+    dashboard: "Dashboard",
+    publicProfile: "Public profile",
+    help: "Help",
+    tracks: "Tracks",
+    albums: "Albums",
+    artists: "Artists",
+    import: "Data import",
+    myAccount: "My account",
+    logout: "Logout",
+    login: "Login",
+    live: "Live",
+    viewGridSm: "Small grid",
+    viewGrid: "Grid",
+    viewList: "List",
   }
 }
