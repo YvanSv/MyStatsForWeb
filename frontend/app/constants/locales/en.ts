@@ -144,5 +144,11 @@ export const en = {
     viewGridSm: "Small grid",
     viewGrid: "Grid",
     viewList: "List",
+  },
+  footer: {
+    dashboard: "My dashboard",
+    about: "About",
+    rights: "All rights reserved",
+    tagline: "Designed for Music Lovers",
   }
 }

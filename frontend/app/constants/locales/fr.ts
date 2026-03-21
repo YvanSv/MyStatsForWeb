@@ -145,4 +145,10 @@ export const fr = {
     viewGrid: "Grille",
     viewList: "Liste",
   },
+  footer: {
+    dashboard: "Mon dashboard",
+    about: "À propos",
+    rights: "Tous droits réservés",
+    tagline: "Conçu pour les passionnés de musique",
+  },
 }
