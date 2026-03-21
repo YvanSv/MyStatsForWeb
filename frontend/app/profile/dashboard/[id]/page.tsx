@@ -16,6 +16,7 @@ import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 import { SecondaryButton } from "@/app/components/Atomic/Buttons";
 import { ErrorState } from "@/app/components/Atomic/Error/Error";
 import { ApiError } from "@/app/services/api";
+import { useLanguage } from "@/app/context/languageContext";
 
 const STYLES = {
   main: "min-h-screen bg-bg1 text-white",
@@ -52,6 +53,8 @@ export const FILTER_BAR_STYLES = {
 
 export default function DashboardPage() {
   const { id } = useParams();
+  const { t } = useLanguage();
+  const dict = t.dashboard;
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -64,7 +67,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<ApiError | null>(null);
   const { getDashboard, getProfile } = useProfile();
 
-  const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
+  const formatter = new Intl.NumberFormat(t.common.locale, { maximumFractionDigits: 0 });
 
   const decreaseInterval = () => setOffset(prev => prev - 1);
   const increaseInterval = () => setOffset(prev => prev + 1);
@@ -109,7 +112,7 @@ export default function DashboardPage() {
     fetchStats();
   }, [id, range, offset]);
 
-  if (error && error.status === 404 && !profile) return <ErrorState title="Dashboard introuvable" status={error.status}/>;
+  if (error && error.status === 404 && !profile) return <ErrorState title={dict.notFound} status={error.status}/>;
 
   const smoothHourlyData = (rawData: HourlyData[]): HourlyData[] => {
     let data = rawData.map(h => ({ ...h }));
@@ -145,8 +148,6 @@ export default function DashboardPage() {
     return extendedStats.clockData;
   }, [extendedStats.clockData, range]);
 
-  console.log(extendedStats.clockData)
-
   return (
     <main className={STYLES.main}>
       <div className={STYLES.container}>
@@ -154,8 +155,8 @@ export default function DashboardPage() {
         <div className={"flex flex-row justify-between items-end mb-3"}>
           <AvatarContainer url={profile?.avatar} username={profile?.display_name} title={
             <header>
-              <h1 className={STYLES.nav.title}>Analyse Détaillée</h1>
-              <p className={`${STYLES.nav.sub} truncate`}>Plongée profonde dans les habitudes d'écoute.</p>
+              <h1 className={STYLES.nav.title}>{dict.title}</h1>
+              <p className={`${STYLES.nav.sub} truncate`}>{dict.subtitle}</p>
             </header>
           }/>
 
@@ -168,7 +169,6 @@ export default function DashboardPage() {
             <div className={FILTER_BAR_STYLES.DATE_GROUP}>
               <Calendar size={14} className="text-vert flex-shrink-0" />
               
-              {/* On enveloppe les deux états dans un conteneur qui stabilise la hauteur */}
               <div className="flex items-center justify-center h-8 min-w-[210px]"> 
                 {getRangeLabel(range, offset) ? (
                   <span className="text-sm font-medium text-white text-center leading-none">
@@ -208,16 +208,16 @@ export default function DashboardPage() {
         {/* --- CONTENU --- */}
         <div className={STYLES.grid.container}>
           {/* SECTION 1 : ACTIVITÉ */}
-          <AccordionItem id="activite" title="Activité"
+          <AccordionItem id="activite" title={dict.tabActivity}
             isOpen={activeTab === "activite"} onClick={() => setActiveTab("activite")}
             icon={<Timer className="text-vert" />}
           >
             <div className={STYLES.grid.stats}>
-              <CompactStatCard label="Temps d'écoute" icon={<Timer size={32} className="text-vert"/>}
-                value={loading ? "..." : `${formatter.format(extendedStats.totalTime)} min`} />
-              <CompactStatCard label="Streams" icon={<Play size={32} className="text-vert"/>}
+              <CompactStatCard label={dict.statTime} icon={<Timer size={32} className="text-vert"/>}
+                value={loading ? "..." : `${formatter.format(extendedStats.totalTime)} ${dict.unitMin}`} />
+              <CompactStatCard label={dict.statStreams} icon={<Play size={32} className="text-vert"/>}
                 value={loading ? "..." : formatter.format(extendedStats.totalStreams)} />
-              <CompactStatCard label="Engagement" icon={<Percent size={32} className="text-vert"/>}
+              <CompactStatCard label={dict.statEngagement} icon={<Percent size={32} className="text-vert"/>}
                 value={loading ? "..." : extendedStats.ratio} />
             </div>
             {range !== "today" && (
@@ -229,7 +229,7 @@ export default function DashboardPage() {
           </AccordionItem>
 
           {/* SECTION 2 : BIBLIOTHÈQUE */}
-          <AccordionItem id="diversite" title="Bibliothèque"
+          <AccordionItem id="diversite" title={dict.tabLibrary}
             isOpen={activeTab === "diversite"} onClick={() => setActiveTab("diversite")}
             icon={<Disc className="text-blue-400" />} switchOption={
               <div className="flex w-full justify-end mb-1">
@@ -237,27 +237,26 @@ export default function DashboardPage() {
               </div>
             }
           >
-            
             <div className={STYLES.grid.stats}>
-              <CompactStatCard label="Musiques" icon={<Music2 size={32} className="text-blue-400"/>}
+              <CompactStatCard label={dict.statTracks} icon={<Music2 size={32} className="text-blue-400"/>}
                 value={loading ? "..." : formatter.format(extendedStats.uniqueTracks)} />
-              <CompactStatCard label="Albums" icon={<Disc size={32} className="text-blue-400"/>}
+              <CompactStatCard label={dict.statAlbums} icon={<Disc size={32} className="text-blue-400"/>}
                 value={loading ? "..." : formatter.format(extendedStats.uniqueAlbums)} />
-              <CompactStatCard label="Artistes" icon={<Mic2 size={32} className="text-blue-400"/>}
+              <CompactStatCard label={dict.statArtists} icon={<Mic2 size={32} className="text-blue-400"/>}
                 value={loading ? "..." : formatter.format(extendedStats.uniqueArtists)} />
             </div>
 
             <div className={STYLES.grid.stats}>
-              <TopMediaCard type="track" label="Top Titre" item={extendedStats.topTrack} loading={loading} metric={metric}/>
-              <TopMediaCard type="album" label="Top Album" item={extendedStats.topAlbum} loading={loading} metric={metric}/>
-              <TopMediaCard type="artist" label="Top Artiste" item={extendedStats.topArtist} loading={loading} metric={metric}/>
+              <TopMediaCard type="track" label={dict.topTrack} item={extendedStats.topTrack} loading={loading} metric={metric}/>
+              <TopMediaCard type="album" label={dict.topAlbum} item={extendedStats.topAlbum} loading={loading} metric={metric}/>
+              <TopMediaCard type="artist" label={dict.topArtist} item={extendedStats.topArtist} loading={loading} metric={metric}/>
             </div>
 
             {range !== "today" && <EvolutionChart data={extendedStats.entityEvolution} loading={false}/>}
           </AccordionItem>
 
           {/* SECTION 3 : HABITUDES */}
-          <AccordionItem id="habitudes" title="Habitudes"
+          <AccordionItem id="habitudes" title={dict.tabHabits}
             isOpen={activeTab === "habitudes"} onClick={() => setActiveTab("habitudes")}
             icon={<Zap className="text-purple-400" />} switchOption={
               <div className="flex w-full justify-end mb-1">
@@ -266,15 +265,16 @@ export default function DashboardPage() {
             }
           >
             <div className={STYLES.grid.habits(range)}>
-              <CompactStatCard label="Heure de pointe" icon={<Clock className="text-purple-400" size={32}/>}
+              <CompactStatCard label={dict.statPeakHour} icon={<Clock className="text-purple-400" size={32}/>}
                 value={loading ? "..." : metric === "minutes" ? extendedStats.peakHour[0] : extendedStats.peakHour[1]} />
-              {range !== "today" && <CompactStatCard label="Jour favori" icon={<CalendarIcon className="text-purple-400" size={32}/>}
+              {range !== "today" && <CompactStatCard label={dict.statPeakDay} icon={<CalendarIcon className="text-purple-400" size={32}/>}
                 value={loading ? "..." : metric === "minutes" ? extendedStats.peakDay[0] : extendedStats.peakDay[1]} />}
               {["6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
-                <CompactStatCard label="Mois musical" icon={<CalendarDays className="text-purple-400" size={32}/>}
+                <CompactStatCard label={dict.statPeakMonth} icon={<CalendarDays className="text-purple-400" size={32}/>}
                   value={loading ? "..." : metric === "minutes" ? extendedStats.peakMonth[0] : extendedStats.peakMonth[1]} />
               }
             </div>
+            {/* Les graphiques internes (ClockChart, WeeklyChart, etc.) ont déjà été traduits dans l'étape précédente */}
             <div className={STYLES.grid.habits(range)}>
               <ClockChart data={processedData} metric={metric} daysCount={range==="today" ? 1 : 0}/>
               {range !== "today" && <WeeklyChart data={extendedStats.weeklyData} metric={metric}/>}

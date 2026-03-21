@@ -1,3 +1,4 @@
+import { useLanguage } from "@/app/context/languageContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { Infinity } from "lucide-react";
 import { useState } from "react";
@@ -22,16 +23,18 @@ const COMPONENT_STYLES = {
 
 export default function IntervalsSelector({ range, onIntervalChange }: {range:string, onIntervalChange:(interval:string)=>void}) {
   const [isOpen, setIsOpen] = useState(true);
+  const { t } = useLanguage();
+  const dict = t.dashboard;
 
   const topRow = [
-    { id: 'today', label: '24h', span: true },
-    { id: 'week', label: '7j', span: true },
-    { id: 'month', label: "Mois", span: false },
-    { id: 'season', label: "Saison", span: true },
-    { id: '6m', label: "6m", span: true },
-    { id: 'year', label: "Année", span: true },
-    { id: 'lifetime', label: <Infinity/>, span: true },
-    { id: '1m', label: "30j", span: false },
+    { id: 'today', label: dict.today, span: true },
+    { id: 'week', label: dict.week, span: true },
+    { id: 'month', label: dict.month, span: false },
+    { id: 'season', label: dict.season, span: true },
+    { id: '6m', label: dict.sixMonths, span: true },
+    { id: 'year', label: dict.year, span: true },
+    { id: 'lifetime', label: <Infinity size={16}/>, span: true },
+    { id: '1m', label: dict.lastMonth, span: false },
   ];
 
   return (
@@ -39,7 +42,7 @@ export default function IntervalsSelector({ range, onIntervalChange }: {range:st
       {/* BOUTON BASCULE */}
       <button onClick={() => setIsOpen(!isOpen)}
         className={`${COMPONENT_STYLES.selector.btn(false, true)} z-10`}
-      >{isOpen ? '>' : '< Filtres'}</button>
+      >{isOpen ? '>' : `< ${dict.filtersBtn}`}</button>
 
       {/* CONTENU ANIMÉ */}
       <AnimatePresence>

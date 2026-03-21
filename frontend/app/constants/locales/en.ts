@@ -264,5 +264,39 @@ export const en = {
     noHistory: "No recent history",
     unitMin: "min",
     unitDays: (count: number) => `${count} d`,
+  },
+  dashboard: {
+    filtersBtn: "Filters",
+    today: "24h",
+    week: "7d",
+    month: "Month",
+    lastMonth: "30d",
+    season: "Season",
+    sixMonths: "6m",
+    year: "Year",
+    title: "Deep Analysis",
+    subtitle: "A deep dive into listening habits.",
+    notFound: "Dashboard not found",
+    loading: "Loading...",
+    // Sections
+    tabActivity: "Activity",
+    tabLibrary: "Library",
+    tabHabits: "Habits",
+    // Labels Stats
+    statTime: "Listening time",
+    statStreams: "Streams",
+    statEngagement: "Engagement",
+    statTracks: "Tracks",
+    statAlbums: "Albums",
+    statArtists: "Artists",
+    statPeakHour: "Peak hour",
+    statPeakDay: "Favorite day",
+    statPeakMonth: "Musical month",
+    // Top Media Labels
+    topTrack: "Top Track",
+    topAlbum: "Top Album",
+    topArtist: "Top Artist",
+    none: "None",
+    unitMin: "min"
   }
 }

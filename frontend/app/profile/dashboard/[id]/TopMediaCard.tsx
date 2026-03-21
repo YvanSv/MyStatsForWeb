@@ -1,4 +1,5 @@
 import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
+import { useLanguage } from "@/app/context/languageContext";
 
 const TOP_ITEMS_STYLES = {
   CARD: "group relative flex items-center gap-4 p-4 bg-white/[0.03] border border-white/5 rounded-2xl hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300",
@@ -14,6 +15,7 @@ const TOP_ITEMS_STYLES = {
 export default function TopMediaCard({label,item,loading,type,metric}:
   {label:string,item:any,loading:boolean,type:'track'|'album'|'artist',metric:string})
 {
+  const { t } = useLanguage();
   return (
     <div className={TOP_ITEMS_STYLES.CARD}>
       <div className={TOP_ITEMS_STYLES.IMAGE_WRAPPER}>
@@ -28,7 +30,7 @@ export default function TopMediaCard({label,item,loading,type,metric}:
       <div className={TOP_ITEMS_STYLES.CONTENT}>
         <span className={TOP_ITEMS_STYLES.LABEL}>{label}</span>
         <div className="flex flex-col min-w-0">
-          <h4 className={TOP_ITEMS_STYLES.TITLE}>{loading ? "..." : (metric === 'minutes' ? item?.[0]?.name : item?.[1]?.name || "Aucun")}</h4>
+          <h4 className={TOP_ITEMS_STYLES.TITLE}>{loading ? "..." : (metric === 'minutes' ? item?.[0]?.name : item?.[1]?.name || t.dashboard.none)}</h4>
           <p className={TOP_ITEMS_STYLES.SUBTITLE}>
             {loading ? "..." : metric === 'minutes' ? item?.[0]?.artist : item?.[1]?.artist}
             {!loading && type === 'track' && (metric === 'minutes' ? (
