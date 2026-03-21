@@ -8,6 +8,7 @@ import { PrimaryButton } from "../components/Atomic/Buttons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { SkeletonAuth } from "./Skeleton";
 import toast from "react-hot-toast";
+import { useLanguage } from "../context/languageContext";
 
 export default function AuthPage() {
   return (
@@ -33,6 +34,8 @@ function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, register, loginSpotify } = useAuth();
+  const { t } = useLanguage();
+  const dict = t.auth;
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [regData, setRegData] = useState({ username: "", email: "", password: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
@@ -43,15 +46,15 @@ function AuthContent() {
     const error = searchParams.get("error");
     if (error) {
       const errorMap: Record<string, string> = {
-        "spotify_cancelled": "Connexion Spotify annulée.",
-        "spotify_token_error": "Impossible de récupérer l'accès Spotify.",
-        "spotify_profile_error": "Échec de la récupération du profil Spotify.",
-        "missing_code": "Paramètres d'authentification manquants."
+        "spotify_cancelled": dict.spotifyError1,
+        "spotify_token_error": dict.spotifyError2,
+        "spotify_profile_error": dict.spotifyError3,
+        "missing_code": dict.spotifyError4
       };
       
       setLoginMessage({ 
         type: "error", 
-        text: errorMap[error] || `Erreur Spotify : ${error}` 
+        text: errorMap[error] || `${dict.spotifyErrorTemplate} : ${error}` 
       });
 
       // Nettoie l'URL sans recharger la page
@@ -73,11 +76,9 @@ function AuthContent() {
       // Utilise le message extrait par ApiError (ex: "Email ou mot de passe incorrect")
       setLoginMessage({ 
         type: "error", 
-        text: err.message || "Une erreur est survenue lors de la connexion." 
+        text: err.message || dict.errorOccured 
       });
-    } finally {
-      setLoading(false);
-    }
+    } finally {setLoading(false)}
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -85,36 +86,36 @@ function AuthContent() {
     setRegisterMessage({ type: "", text: "" });
 
     if (regData.password !== regData.confirmPassword)
-      return setRegisterMessage({ type: "error", text: "Les mots de passe ne correspondent pas." });
+      return setRegisterMessage({ type: "error", text: dict.errorPw3 });
 
     setLoading(true);
     try {
       await register(regData.username, regData.email, regData.password);
-      toast.success("Bienvenue !", {
+      toast.success(dict.welcome, {
         style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
     } catch (err: any) {
-      if (err.status === 422) setRegisterMessage({type: "error",text: "Le mot de passe doit faire au moins 8 caractères."});
+      if (err.status === 422) setRegisterMessage({type: "error",text: dict.errorPw1});
       else if (err.status === 400) setRegisterMessage({type: "error",text: err.message});
-      else setRegisterMessage({type: "error",text: "Une erreur est survenue. Impossible de créer le compte."});
+      else setRegisterMessage({type: "error",text: dict.errorPw2});
     } finally {setLoading(false)}
   };
 
   const left_col = {
-    title: 'Connexion',
-    subtitle: 'Bon retour sur MyStats.',
+    title: dict.connecttitle,
+    subtitle: dict.comeback,
     content:
       <>
         <PrimaryButton onClick={loginSpotify} additional="sm:text-base w-full gap-3 mb-8 py-4">
-          <SpotifyIcon/>Continuer avec Spotify
+          <SpotifyIcon/> {dict.connectwithspotify}
         </PrimaryButton>
         
         <div className={AUTH_STYLES.SEPARATOR_CONTAINER}>
           <div className={AUTH_STYLES.SEPARATOR_LINE}>
             <div className="w-full border-t border-white/5"></div>
           </div>
-          <span className={AUTH_STYLES.SEPARATOR_TEXT}>Ou</span>
+          <span className={AUTH_STYLES.SEPARATOR_TEXT}>{dict.ou}</span>
         </div>
 
         <form className="space-y-4" onSubmit={handleLoginSubmit}>
@@ -122,35 +123,27 @@ function AuthContent() {
             <div className={AUTH_STYLES.ERROR_BOX}>{loginMessage.text}</div>
           )}
           <div className="space-y-1">
-            <label className={AUTH_STYLES.INPUT_LABEL}>Email</label>
-            <input 
-              className={AUTH_STYLES.INPUT_FIELD}
-              value={loginData.email} 
+            <label className={AUTH_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
+            <input className={AUTH_STYLES.INPUT_FIELD}
+              value={loginData.email} placeholder={dict.templateemail} type="email"
               onChange={(e) => setLoginData({...loginData, email: e.target.value})} 
-              placeholder="votre@email.com" 
-              type="email"
             />
           </div>
           <div className="space-y-1">
-            <label className={AUTH_STYLES.INPUT_LABEL}>Mot de passe</label>
-            <input 
-              type="password" 
-              value={loginData.password} 
+            <label className={AUTH_STYLES.INPUT_LABEL}>{dict.pw}</label>
+            <input type="password" value={loginData.password} placeholder="••••••••"
               onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-              className={AUTH_STYLES.INPUT_FIELD} 
-              placeholder="••••••••"
+              className={AUTH_STYLES.INPUT_FIELD}
             />
           </div>
-          <button disabled={loading} className={AUTH_STYLES.PRIMARY_BUTTON}>
-            {loading ? "Connexion..." : "Se connecter"}
-          </button>
+          <button disabled={loading} className={AUTH_STYLES.PRIMARY_BUTTON}>{loading ? dict.connecting : dict.connect}</button>
         </form>
       </>,
   }
 
   const right_col = {
-    title: 'S\'inscrire',
-    subtitle: 'Nouveau ici ? Bienvenue.',
+    title: dict.righttitle,
+    subtitle: dict.rightsubtitle,
     content:
       <>
         <form className="space-y-4" onSubmit={handleRegisterSubmit}>
@@ -160,57 +153,38 @@ function AuthContent() {
             </div>
           )}
           <div className="space-y-1">
-            <label className={AUTH_STYLES.INPUT_LABEL}>Nom d'utilisateur</label>
-            <input 
-              type="text" 
-              value={regData.username} 
+            <label className={AUTH_STYLES.INPUT_LABEL}>{dict.username}</label>
+            <input type="text" value={regData.username} placeholder="MusicFan_01"
               onChange={(e) => setRegData({...regData, username: e.target.value})}
-              className={AUTH_STYLES.INPUT_FIELD} 
-              placeholder="MusicFan_01"
+              className={AUTH_STYLES.INPUT_FIELD}
             />
           </div>
           <div className="space-y-1">
-            <label className={AUTH_STYLES.INPUT_LABEL}>Email</label>
-            <input 
-              type="email" 
-              value={regData.email} 
+            <label className={AUTH_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
+            <input type="email" value={regData.email} placeholder={dict.templateemail}
               onChange={(e) => setRegData({...regData, email: e.target.value})}
-              className={AUTH_STYLES.INPUT_FIELD} 
-              placeholder="votre@email.com"
+              className={AUTH_STYLES.INPUT_FIELD}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className={AUTH_STYLES.INPUT_LABEL}>Mot de passe</label>
-              <input 
-                type="password" 
-                value={regData.password} 
+              <label className={AUTH_STYLES.INPUT_LABEL}>{dict.pw}</label>
+              <input type="password" value={regData.password} placeholder="••••"
                 onChange={(e) => setRegData({...regData, password: e.target.value})}
                 className={AUTH_STYLES.INPUT_FIELD} 
-                placeholder="••••"
               />
             </div>
             <div className="space-y-1">
-              <label className={AUTH_STYLES.INPUT_LABEL}>Confirmation</label>
-              <input 
-                type="password" 
-                value={regData.confirmPassword} 
+              <label className={AUTH_STYLES.INPUT_LABEL}>{dict.confirm}</label>
+              <input type="password" value={regData.confirmPassword} placeholder="••••"
                 onChange={(e) => setRegData({...regData, confirmPassword: e.target.value})}
-                className={AUTH_STYLES.INPUT_FIELD} 
-                placeholder="••••"
+                className={AUTH_STYLES.INPUT_FIELD}
               />
             </div>
           </div>
 
-          <div className="pt-4">
-            <PrimaryButton disabled={loading} additional="py-4 w-full sm:text-base">
-              {loading ? "Création..." : "Créer mon compte"}
-            </PrimaryButton>
-          </div>
-          
-          <p className={AUTH_STYLES.FOOTER_TEXT}>
-            En créant un compte, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
-          </p>
+          <PrimaryButton disabled={loading} additional="mt-4 py-4 w-full sm:text-base">{loading ? dict.creating : dict.create}</PrimaryButton>
+          <p className={AUTH_STYLES.FOOTER_TEXT}>{dict.littleNote}</p>
         </form>
       </>,
   }

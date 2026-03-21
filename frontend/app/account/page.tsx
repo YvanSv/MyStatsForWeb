@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
-import { PrimaryButton, TertiaryButton } from "../components/Atomic/Buttons";
+import { PrimaryButton } from "../components/Atomic/Buttons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { Skeleton } from "./Skeleton";
 import toast from "react-hot-toast";
-import { log } from "console";
 import { Eye, EyeOff } from "lucide-react";
+import { useLanguage } from "../context/languageContext";
 
 export default function AccountPage() {
   return (
@@ -31,6 +31,8 @@ const PROFILE_STYLES = {
 
 function AccountContent() {
   const { user, loading, updateUserProfile, deleteAccount, clearAccount, loginSpotify } = useAuth();
+  const { t } = useLanguage();
+  const dict = t.account;
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,7 +65,7 @@ function AccountContent() {
       if (email !== user?.email) updateData.email = email;
       if (password) updateData.password = password;
       await updateUserProfile(updateData);
-      toast.success("Compte mis à jour avec succès !", {
+      toast.success(dict.successToast, {
         style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
@@ -73,68 +75,66 @@ function AccountContent() {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmation = prompt("Pour confirmer la suppression de votre compte et de toutes vos statistiques, tapez 'SUPPRIMER' ci-dessous :");
+    const confirmation = prompt(dict.confirmDelete);
     
-    if (confirmation === "SUPPRIMER") {
+    if (confirmation === dict.deleteValidation) {
       try {
         await deleteAccount();
-        toast.success("Votre compte a été supprimé avec succès.", {
+        toast.success(dict.successDeleteToast, {
           style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
           iconTheme: { primary: '#1DD05D', secondary: '#fff' },
         });
-      } catch (err) {toast.error("Erreur lors de la suppression.")}
+      } catch (err) {toast.error(dict.errorDeleteMessage)}
     }
   };
 
   const handleClearAccount = async () => {
-    const confirmation = prompt("Pour confirmer le nettoyage de vos données et de toutes vos statistiques, tapez 'CONFIRMER' ci-dessous :");
+    const confirmation = prompt(dict.confirmClear);
     
-    if (confirmation === "CONFIRMER") {
+    if (confirmation === dict.clearValidation) {
       try {
         await clearAccount();
-        toast.success("Vos données ont été supprimées avec succès.", {
+        toast.success(dict.successToastClear, {
           style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
           iconTheme: { primary: '#1DD05D', secondary: '#fff' },
         });
-      } catch (err) {toast.error("Erreur lors de la suppression.")}
+      } catch (err) {toast.error(dict.errorDeleteMessage)}
     }
   };
 
   if (!user || loading) return <Skeleton/>;
 
   const left_col = {
-    title: 'Profil',
-    subtitle: 'Gérez vos informations.',
+    title: dict.lefttitle,
+    subtitle: dict.leftsubtitle,
     content:
       <>
         <div className="space-y-6">
           {/* Champ Nom */}
           <div className="space-y-1">
             <div className="flex justify-between">
-              <label className={PROFILE_STYLES.INPUT_LABEL}>Nom d'affichage</label>
+              <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.titleDisplayname}</label>
               <p className={`${PROFILE_STYLES.INPUT_LABEL}
                 ${(username || "").length < 3 ? 'text-rouge' : (username || "").length > 14 ? (username.length > 17 ? (username.length >= 20 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(username?.length || 0)}/20</p>
             </div>
             <input className={PROFILE_STYLES.INPUT_FIELD} value={username ?? ""} 
               onChange={(e) => {
-                if (e.target.value.length < 3) setErrors({...errors, errorName: "Le nom d'affichage doit faire au moins 3 caractères."});
-                else if (e.target.value.length > 20) setErrors({...errors, errorName: "Le nom d'affichage doit faire maximum 20 caractères."});
+                if (e.target.value.length < 3) setErrors({...errors, errorName: dict.errorName1});
+                else if (e.target.value.length > 20) setErrors({...errors, errorName: dict.errorName2});
                 else setErrors({...errors, errorName: ""});
                 setUsername(e.target.value)
               }}
               type="text"
-              placeholder="Ton pseudo..."
+              placeholder={dict.placeholderName}
             />
             {errors.errorName && (<label className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] pt-2`}>{errors.errorName}</label>)}
           </div>
 
           {/* Champ Email */}
           <div className="space-y-1">
-            <label className={PROFILE_STYLES.INPUT_LABEL}>Email</label>
-            <input value={email} className={`${PROFILE_STYLES.INPUT_FIELD}`}
-              onChange={e => setEmail(e.target.value)}
-            />
+            <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
+            <input value={email} className={`${PROFILE_STYLES.INPUT_FIELD}`} onChange={e => setEmail(e.target.value)}/>
           </div>
 
           <hr className="border-white/5 my-4" />
@@ -142,7 +142,7 @@ function AccountContent() {
           {/* Champ Mot de Passe */}
           <div className="space-y-1">
             <div className="flex justify-between">
-              <label className={PROFILE_STYLES.INPUT_LABEL}>Nouveau mot de passe (optionnel)</label>
+              <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.passwordtitle}</label>
               <p className={`${PROFILE_STYLES.INPUT_LABEL}
                 ${(password || "").length < 8 ? 'text-rouge' : (password || "").length > 100 ? (password.length > 114 ? (password.length >= 128 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(password?.length || 0)}/128</p>
@@ -153,13 +153,13 @@ function AccountContent() {
                 onChange={(e) => {
                   let errorPw = "", errorConfirmPw = "";
                   const val = e.target.value;
-                  if (val !== "" && val.length < 8) errorPw = "Le mot de passe doit faire au moins 8 caractères.";
-                  else if (val.length > 128) errorPw = "Le mot de passe doit faire maximum 128 caractères.";
-                  if (val !== confirmPassword) errorConfirmPw = "Les mots de passe ne correspondent pas.";
+                  if (val !== "" && val.length < 8) errorPw = dict.errorPw1;
+                  else if (val.length > 128) errorPw = dict.errorPw2;
+                  if (val !== confirmPassword) errorConfirmPw = dict.errorPw3;
                   setErrors(prev => ({...prev, errorPw, errorConfirmPw}));
                   setPassword(val);
                 }}
-                placeholder="Laisser vide pour ne pas changer..."
+                placeholder={dict.placeholderPw}
               />
               
               {/* Bouton Toggle Eye */}
@@ -177,13 +177,13 @@ function AccountContent() {
 
           {/* Champ Confirmation */}
           <div className="space-y-1">
-            <label className={PROFILE_STYLES.INPUT_LABEL}>Confirmer le nouveau mot de passe</label>
+            <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.confirmpwtitle}</label>
             <div className="relative">
-              <input value={confirmPassword} placeholder="Confirme ton mot de passe..." type={showConfirmPassword ? "text" : "password"}
+              <input value={confirmPassword} placeholder={dict.placeholderpwc} type={showConfirmPassword ? "text" : "password"}
                 className={`${PROFILE_STYLES.INPUT_FIELD} pr-10 ${password && confirmPassword && password !== confirmPassword ? 'border-red-500/50' : ''}`}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val !== password) setErrors(prev => ({...prev, errorConfirmPw: "Les mots de passe ne correspondent pas."}));
+                  if (val !== password) setErrors(prev => ({...prev, errorConfirmPw: dict.errorPw3}));
                   else setErrors(prev => ({...prev, errorConfirmPw: ""}));
                   setConfirmPassword(val);
                 }}
@@ -202,23 +202,22 @@ function AccountContent() {
           </div>
 
           {/* Bouton Enregistrer avec état de chargement */}
-          <button onClick={handleSave}
-            disabled={updating || !username || errors.errorName !== "" || errors.errorPw !== "" || errors.errorConfirmPw !== ""}
+          <button onClick={handleSave} disabled={updating || !username || errors.errorName !== "" || errors.errorPw !== "" || errors.errorConfirmPw !== ""}
             className={`${PROFILE_STYLES.BTN_SAVE} disabled:opacity-50 transition-all ${updating || !username || errors.errorName !== "" || errors.errorPw !== "" || errors.errorConfirmPw !== "" ? 'cursor-not-allowed active:scale-100' : 'cursor-pointer'}`}
           >
             {updating ? (
               <span className="flex items-center justify-center gap-2">
-                Enregistrement...
+                {dict.saving}
               </span>
-            ) : "Enregistrer les modifications"}
+            ) : dict.save}
           </button>
         </div>
       </>,
   }
 
   const right_col = {
-    title: 'Services',
-    subtitle: 'Liaison de comptes tiers.',
+    title: dict.righttitle,
+    subtitle: dict.rightsubtitle,
     content:
       <>
         <div className={PROFILE_STYLES.SERVICE_CARD(user.has_spotify)}>
@@ -230,11 +229,11 @@ function AccountContent() {
               <h3 className={`text1 font-bold text-lg`}>Spotify</h3>
               {user.has_spotify ?
                 <div className={PROFILE_STYLES.BADGE_SUCCESS}>
-                  <CheckIcon/> Votre compte est synchronisé
+                  <CheckIcon/> {dict.synchronized}
                 </div>
                 :
                 <div className={PROFILE_STYLES.BADGE_ERROR}>
-                  <CrossIcon/> Non synchronisé
+                  <CrossIcon/> {dict.notsynchronized}
                 </div>
               }
             </div>
@@ -248,13 +247,13 @@ function AccountContent() {
             </div>
           ) : (
             <PrimaryButton onClick={loginSpotify} additional="w-full py-4 sm:rounded-2xl">
-              Lier mon compte Spotify
+              {dict.linkSpotify}
             </PrimaryButton>
           )}
         </div>
         {/* Note en bas */}
         <p className={`text3 text-[10px] text-center mt-8 leading-relaxed font-hias uppercase tracking-tighter`}>
-          La liaison Spotify permet à MyStats de récupérer vos écoutes.
+          {dict.littleNote}
         </p>
         {/* Zone de danger : Suppression du compte */}
         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col items-center">
@@ -262,7 +261,7 @@ function AccountContent() {
             className="group flex flex-col items-center gap-3 transition-all duration-300 hover:opacity-80 pb-8"
           >
             <div className="px-6 py-3 rounded-full border border-rouge/20 bg-rouge/5 text-rouge text-[11px] font-bold uppercase tracking-widest group-hover:bg-rouge group-hover:text-white transition-all">
-              Nettoyer mes données
+              {dict.cleardata}
             </div>
           </button>
 
@@ -270,12 +269,12 @@ function AccountContent() {
             className="group flex flex-col items-center gap-3 transition-all duration-300 hover:opacity-80"
           >
             <div className="px-6 py-3 rounded-full border border-rouge/20 bg-rouge/5 text-rouge text-[11px] font-bold uppercase tracking-widest group-hover:bg-rouge group-hover:text-white transition-all">
-              Supprimer mon compte MyStats
+              {dict.deleteaccount}
             </div>
           </button>
           
           <p className="text3 text-[10px] text-center mt-8 leading-relaxed font-hias uppercase">
-            Ces actions sont irréversibles. Toutes vos statistiques et données de profil seront définitivement effacées.
+            {dict.littleNote2}
           </p>
         </div>
       </>,

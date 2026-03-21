@@ -6,8 +6,7 @@ import { PrimaryButton, SecondaryButton } from "./components/Atomic/Buttons";
 import { useAuth } from "./hooks/useAuth";
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
 import { Play } from "lucide-react";
-import SpotifyLiveCard from "./components/small_elements/SpotifyLiveCard";
-import { useSpotify } from "./context/currentlyPlayingContext";
+import { useLanguage } from "./context/languageContext";
 
 const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
 const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
@@ -21,7 +20,7 @@ const INITIALS_STATS = {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const { listening, localProgress } = useSpotify();
+  const { t } = useLanguage();
   const { refreshUserData, getTodayStats } = useApiMyDatas();
   const [userStats, setUserStats] = useState({nb_streams: '...', nb_minutes: "..."});
   const [stats, setStats] = useState(INITIALS_STATS);
@@ -51,9 +50,8 @@ export default function HomePage() {
     <main className={ACCUEIL_STYLES.MAIN}>
       {user?.is_logged_in && (
         <section className="pt-12 flex justify-center gap-48 md:px-24">
-          {/*{listening.is_listening && <section><SpotifyLiveCard isListening={listening.is_listening} data={listening.data} currentProgress={localProgress} size='md'/></section>}*/}
           <section className=" animate-in fade-in slide-in-from-top-4 duration-1000 md:max-w-xl">
-            <p className={ACCUEIL_STYLES.TECH_H2}>Votre activité du jour</p>
+            <p className={ACCUEIL_STYLES.TECH_H2}>{t.home.titre}</p>
             
             <div className="grid grid-cols-2 gap-4">
               {/* Carte Streams */}
@@ -95,19 +93,18 @@ export default function HomePage() {
       <section className={ACCUEIL_STYLES.HERO_SECTION}>
         {/* TEXTES DU HERO */}
         <h1 className={ACCUEIL_STYLES.HERO_H1}>
-          Votre musique,<br/>
-          <span className="text2">décryptée.</span>
+          {t.home.hero1},<br/>
+          <span className="text2">{t.home.hero2}.</span>
         </h1>
         <p className={ACCUEIL_STYLES.HERO_P}>
-          Analysez vos habitudes d'écoute avec une précision chirurgicale. 
-          Découvrez ce qui fait vibrer votre algorithme.
+          {t.home.herop1}<br/>{t.home.herop2}
         </p>
         
         {/* BOUTONS D'ACTION */}
         <div className={ACCUEIL_STYLES.HERO_BUTTON_GROUP}>
-          <PrimaryButton additional="px-10 py-5 text-lg">Analyser mon profil</PrimaryButton>
+          <PrimaryButton additional="px-10 py-5 text-lg">{t.home.btn1}</PrimaryButton>
           <SecondaryButton additional="group px-8 py-5 text-lg">
-            En savoir plus <span className="group-hover:translate-x-1 transition-transform">→</span>
+            {t.home.learnMore} <span className="group-hover:translate-x-1 transition-transform">→</span>
           </SecondaryButton>
         </div>
       </section>
@@ -115,19 +112,19 @@ export default function HomePage() {
       {/* SECTION STATISTIQUES GÉNÉRALES */}
       <section className={ACCUEIL_STYLES.STATS_SECTION}>
         <div className={ACCUEIL_STYLES.STATS_GRID}>
-          <StatCard value={loading ? "..." : formatter.format(stats.streams)} label="Streams analysés"/>
-          <StatCard value={loading ? "..." : formatter.format(stats.users)} label="Utilisateurs"/>
+          <StatCard value={loading ? "..." : formatter.format(stats.streams)} label={t.home.stats1}/>
+          <StatCard value={loading ? "..." : formatter.format(stats.users)} label={t.home.stats2}/>
         </div>
         <div className={ACCUEIL_STYLES.STATS_GRID}>
-          <StatCard value={loading ? "..." : formatter.format(stats.tracks)} label="Musiques"/>
-          <StatCard value={loading ? "..." : formatter.format(stats.albums)} label="Albums"/>
-          <StatCard value={loading ? "..." : formatter.format(stats.artists)} label="Artistes"/>
+          <StatCard value={loading ? "..." : formatter.format(stats.tracks)} label={t.home.stats3}/>
+          <StatCard value={loading ? "..." : formatter.format(stats.albums)} label={t.home.stats4}/>
+          <StatCard value={loading ? "..." : formatter.format(stats.artists)} label={t.home.stats5}/>
         </div>
       </section>
 
       {/* SECTION TECHNIQUE */}
       <section className={ACCUEIL_STYLES.STATS_SECTION}>
-        <h2 className={ACCUEIL_STYLES.TECH_H2}>Le Projet MyStats</h2>
+        <h2 className={ACCUEIL_STYLES.TECH_H2}>{t.home.techtitre}</h2>
         <div className={ACCUEIL_STYLES.TECH_GRID}>
           {TECHNOS.map(tech => (
             <div key={tech} className={ACCUEIL_STYLES.TECH_BADGE}>
