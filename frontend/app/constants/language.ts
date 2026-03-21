@@ -96,6 +96,9 @@ export const languages = {
       retry: "Réessayer",
       backhome: "Retour à l'accueil",
       backpage: "Page précédente"
+    },
+    context: {
+      template: "doit être utilisé dans un"
     }
   },
   en: {
@@ -195,6 +198,9 @@ export const languages = {
       retry: "Try Again",
       backhome: "Back to Home",
       backpage: "Previous Page"
+    },
+    context: {
+      template: "must be used in a",
     }
   }
 }

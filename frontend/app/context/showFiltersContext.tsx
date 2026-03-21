@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useLanguage } from './languageContext';
 
 interface ShowFiltersContextType {
   showFilters: boolean;
@@ -33,7 +34,8 @@ export function ShowFiltersProvider({ children }: { children: React.ReactNode })
 }
 
 export function useShowFilters() {
+  const { t } = useLanguage();
   const context = useContext(ShowFiltersContext);
-  if (!context) throw new Error("useShowFilters doit être utilisé dans un ShowFiltersProvider");
+  if (!context) throw new Error(`useShowFilters ${t.context.template} ShowFiltersProvider`);
   return context;
 }

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useApi } from '../hooks/useApi';
 import { API_ENDPOINTS } from '../constants/routes';
 import toast from 'react-hot-toast';
+import { useLanguage } from './languageContext';
 
 export interface SpotifyListeningData {
     title: string;
@@ -143,7 +144,8 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 };
 
 export const useSpotify = () => {
+  const { t } = useLanguage();
     const context = useContext(SpotifyContext);
-    if (!context) throw new Error("useSpotify must be used within a SpotifyProvider");
+    if (!context) throw new Error(`useSpotify ${t.context.template} SpotifyProvider`);
     return context;
 };

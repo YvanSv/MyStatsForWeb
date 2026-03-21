@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, useCallback, useContext } fr
 import { useApi } from '@/app/hooks/useApi';
 import { API_ENDPOINTS } from '@/app/constants/routes';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from './languageContext';
 
 // Structure exacte de ce que renvoie /me
 interface AuthResponse {
@@ -146,7 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useAuth = () => {
+  const { t } = useLanguage();
   const context = useContext(AuthContext);
-  if (context === undefined) throw new Error('useAuth doit être utilisé à l\'intérieur d\'un AuthProvider');
+  if (context === undefined) throw new Error(`useAuth ${t.context.template} AuthProvider`);
   return context;
 };

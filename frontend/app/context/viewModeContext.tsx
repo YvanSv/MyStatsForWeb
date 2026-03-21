@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useLanguage } from './languageContext';
 
 type ViewMode = 'grid_sm' | 'grid' | 'list';
 
@@ -32,7 +33,8 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useViewMode() {
+  const { t } = useLanguage();
   const context = useContext(ViewModeContext);
-  if (!context) throw new Error("useViewMode doit être utilisé dans un ViewModeProvider");
+  if (!context) throw new Error(`useViewMode ${t.context.template} ViewModeProvider`);
   return context;
 }
