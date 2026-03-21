@@ -4,7 +4,6 @@ import { useApi } from '../hooks/useApi';
 import { API_ENDPOINTS } from '../constants/routes';
 import toast from 'react-hot-toast';
 import { useLanguage } from './languageContext';
-import { useAuth } from './authContext';
 
 export interface SpotifyListeningData {
     title: string;
@@ -29,7 +28,6 @@ interface SpotifyContextType {
 const SpotifyContext = createContext<SpotifyContextType | undefined>(undefined);
 
 export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { user } = useAuth();
     const { request } = useApi();
     const [paused, setPaused] = useState(true);
     const [listening, setListening] = useState<{ is_listening: boolean; data: SpotifyListeningData | null }>({
@@ -37,12 +35,8 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         data: null
     });
     const [localProgress, setLocalProgress] = useState(0);
-    
-    // On utilise une Ref pour éviter les problèmes de closure dans le setInterval
-    const lastSyncRef = useRef<number>(0);
 
     const fetchCurrent = useCallback(async () => {
-        if (!user || !user.is_logged_in) return;
         try {
             const res = await request(API_ENDPOINTS.CURRENTLY_PLAYING);
             // SI ON REÇOIT DE LA DATA (Lecture ou Pause)
@@ -140,9 +134,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             resume,
             next,
             previous
-        }}>
-            {children}
-        </SpotifyContext.Provider>
+        }}>{children}</SpotifyContext.Provider>
     );
 };
 

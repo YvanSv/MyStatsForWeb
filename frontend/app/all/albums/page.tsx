@@ -18,7 +18,6 @@ export function AlbumsPage() {
         hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
         filterConfig={filterConfig}
       />
-    
   );
 }
 

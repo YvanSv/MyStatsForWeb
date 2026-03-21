@@ -5,7 +5,7 @@ import { languages } from '../constants/locales/lang';
 type LanguageType = keyof typeof languages;
 interface LanguageContextType {
   language: LanguageType;
-  t: typeof languages['en'];
+  t: typeof languages['fr'];
   changeLanguage: (newLanguage: LanguageType) => void;
 }
 
