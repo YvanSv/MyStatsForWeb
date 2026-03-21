@@ -194,4 +194,21 @@ export const fr = {
       artist: "artistes"
     }
   },
+  charts: {
+    weekly: "Activité hebdomadaire",
+    monthly: "Activité mensuelle",
+    annual: "Activité annuelle",
+    hourly: "Activité horaire",
+    cumulative: "Évolution cumulée",
+    discoveries: "Évolution de mes découvertes",
+    streamsEvolution: "Évolution du nombre d'écoutes",
+  },
+  common: {
+    locale: "fr-FR",
+    minutes: "minutes",
+    streams: "streams",
+    tracks: "titres",
+    albums: "albums",
+    artists: "artistes",
+  },
 }
