@@ -176,6 +176,8 @@ export const en = {
     locale: "en-US"
   },
   ranking: {
+    allmy: "All my",
+    allthe: 'All the',
     filterBtn: "Filters",
     closeBtn: "Close",
     sortBy: "Sort by",
