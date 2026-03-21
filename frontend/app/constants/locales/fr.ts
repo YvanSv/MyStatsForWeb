@@ -98,5 +98,34 @@ export const fr = {
   },
   context: {
     template: "doit être utilisé dans un"
-  }
+  },
+  profileEdit: {
+    changeBanner: "Changer la bannière",
+    title: "Modifier le profil",
+    subtitle: "Personnalisez votre apparence publique",
+    labelName: "Nom d'affichage",
+    placeholderName: "Votre nom...",
+    labelBio: "Description",
+    placeholderBio: "Dites-en un peu plus sur vos goûts musicaux...",
+    errorBio: "La bio doit faire 500 caracètres maximum.",
+    labelUrl: "URL personnalisée",
+    placeholderUrl: "votre-url",
+    urlHint: "Utilisez uniquement des lettres, des chiffres et des tirets.",
+    labelPrivacy: "Permissions et accès",
+    btnCancel: "Annuler",
+    btnSave: "Enregistrer les modifications",
+    successToast: "Profil modifié !",
+    errorWeight: "L'image est trop lourde (max 2MB)",
+    // Toggles
+    toggleProfile: "Profil public",
+    descProfile: "Autoriser les autres à accéder à votre profil",
+    toggleStats: "Statistiques public",
+    descStats: "Autoriser les autres à voir vos statistiques",
+    toggleFavs: "Favoris public",
+    descFavs: "Autoriser les autres à voir vos 50 favoris (tracks, albums et artistes)",
+    toggleHistory: "Historique public",
+    descHistory: "Autoriser les autres à voir votre historique",
+    toggleDash: "Dashboard public",
+    descDash: "Autoriser les autres à accéder à votre dashboard",
+  },
 }

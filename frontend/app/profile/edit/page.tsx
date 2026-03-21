@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import Image from "next/image";
 import { ProfileEditSkeleton } from "./Skeleton";
 import { OptionToggle } from "./OptionToggle";
+import { useLanguage } from "@/app/context/languageContext";
 
 export default function EditProfilePage() {
   return (
@@ -58,6 +59,9 @@ const RESERVED_SLUGS = ["dashboard", "edit", "settings", "admin", "login", "api"
 function EditProfileContent() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
+  const { t } = useLanguage();
+  const dict = t.profileEdit;
+  const errDict = t.account;
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { getEditableProfile, patchProfile } = useProfile();
@@ -125,7 +129,7 @@ function EditProfileContent() {
     };
     try {
       await patchProfile('' + user.id, payload);
-      toast.success("Profil modifié !", {
+      toast.success(dict.successToast, {
         style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
@@ -151,7 +155,7 @@ function EditProfileContent() {
     if (file) {
       // Vérification de la taille (ex: 2MB max)
       if (file.size > 2 * 1024 * 1024) {
-        alert("L'image est trop lourde (max 2MB)");
+        alert(dict.errorWeight);
         return;
       }
 
@@ -168,7 +172,7 @@ function EditProfileContent() {
     if (file) {
       // Vérification de la taille (ex: 2MB max)
       if (file.size > 2 * 1024 * 1024) {
-        alert("L'image est trop lourde (max 2MB)");
+        alert(dict.errorWeight);
         return;
       }
 
@@ -186,12 +190,8 @@ function EditProfileContent() {
     <main className={PROFILE_EDIT_STYLES.MAIN}>
       {/* --- ÉDITION BANNIÈRE --- */}
       <div className={PROFILE_EDIT_STYLES.BANNER_WRAPPER}>
-        <input 
-          type="file" 
-          ref={bannerInputRef}
-          onChange={handleBannerChange}
-          accept="image/*"
-          className="hidden" 
+        <input type="file" ref={bannerInputRef} accept="image/*"
+          onChange={handleBannerChange} className="hidden"
         />
         {formData.banner_url === "/banner_template.jpg"
           ? <Image src="/banner_template_1100x390.jpg" alt="Banner" className={PROFILE_EDIT_STYLES.BANNER_IMG} width={1100} height={390}/>
@@ -199,7 +199,7 @@ function EditProfileContent() {
         }
         <div className={PROFILE_EDIT_STYLES.BANNER_OVERLAY} onClick={() => bannerInputRef.current?.click()} style={{ cursor: 'pointer' }}>
           <div className={PROFILE_EDIT_STYLES.BANNER_BADGE}>
-            <CameraIcon size={18} /> Changer la bannière
+            <CameraIcon size={18} /> {dict.changeBanner}
           </div>
         </div>
         <div className={PROFILE_EDIT_STYLES.BANNER_GRADIENT} />
@@ -217,8 +217,8 @@ function EditProfileContent() {
           </div>
           
           <div className={PROFILE_EDIT_STYLES.TEXT_GROUP}>
-            <h1 className={PROFILE_EDIT_STYLES.TITLE}>Modifier le profil</h1>
-            <p className={PROFILE_EDIT_STYLES.SUBTITLE}>Personnalisez votre apparence publique</p>
+            <h1 className={PROFILE_EDIT_STYLES.TITLE}>{dict.title}</h1>
+            <p className={PROFILE_EDIT_STYLES.SUBTITLE}>{dict.subtitle}</p>
           </div>
         </div>
 
@@ -226,37 +226,34 @@ function EditProfileContent() {
         <div className={PROFILE_EDIT_STYLES.FORM_CARD}>
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
             <div className="flex justify-between">
-              <label className={PROFILE_EDIT_STYLES.LABEL}>Nom d'affichage</label>
+              <label className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelName}</label>
               <p className={`block text-xs mb-2 ml-1
                 ${(formData.display_name || "").length < 3 ? 'text-rouge' : (formData.display_name || "").length > 14 ? (formData.display_name.length > 17 ? (formData.display_name.length >= 20 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.display_name?.length || 0)}/20</p>
             </div>
-            <input 
-              type="text" 
-              className={PROFILE_EDIT_STYLES.INPUT}
-              value={formData.display_name}
+            <input type="text" className={PROFILE_EDIT_STYLES.INPUT} value={formData.display_name}
               onChange={(e) => {
-                if (e.target.value.length < 3) setErrors({...errors, errorName: "Le nom d'affichage doit faire au moins 3 caractères."});
-                else if (e.target.value.length > 20) setErrors({...errors, errorName: "Le nom d'affichage doit faire maximum 20 caractères."});
+                if (e.target.value.length < 3) setErrors({...errors, errorName: errDict.errorName1});
+                else if (e.target.value.length > 20) setErrors({...errors, errorName: errDict.errorName2});
                 else setErrors({...errors, errorName: ""});
                 setFormData({...formData, display_name: e.target.value})
               }}
-              placeholder="Votre nom..."
+              placeholder={dict.placeholderName}
             />
             {errors.errorName && (<label className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorName}</label>)}
           </div>
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
             <div className="flex justify-between">
-              <label className={PROFILE_EDIT_STYLES.LABEL}>Description</label>
+              <label className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelBio}</label>
               <p className={`block text-xs mb-2 ml-1
                 ${(formData.bio || "").length > 400 ? (formData.bio.length > 450 ? (formData.bio.length >= 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.bio?.length || 0)}/500</p>
             </div>
             <textarea rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
-              value={formData.bio} placeholder="Dites-en un peu plus sur vos goûts musicaux..."
+              value={formData.bio} placeholder={dict.placeholderBio}
               onChange={(e) => {
-                if (e.target.value.length > 500) setErrors({...errors,errorBio: "La bio doit faire 500 caracètres maximum."});
+                if (e.target.value.length > 500) setErrors({...errors,errorBio: dict.errorBio});
                 else setErrors({...errors, errorName: ""});
                 setFormData({...formData, bio: e.target.value})
               }}
@@ -266,7 +263,7 @@ function EditProfileContent() {
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
             <div className="flex justify-between">
-              <label className={PROFILE_EDIT_STYLES.LABEL}>URL personnalisée</label>
+              <label className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelUrl}</label>
               <p className={`block text-xs mb-2 ml-1
                 ${(formData.slug || "").length > 20 ? (formData.slug.length > 25 ? (formData.slug.length === 30 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.slug?.length || 0)}/30</p>
@@ -277,11 +274,8 @@ function EditProfileContent() {
                 mystatsfy.com/profile/
               </span>
               
-              <input 
-                type="text" 
-                className={`${PROFILE_EDIT_STYLES.INPUT} pl-[145px] text-md tracking-wider`} 
-                value={formData.slug || ""}
-                placeholder="votre-url"
+              <input type="text" className={`${PROFILE_EDIT_STYLES.INPUT} pl-[145px] text-md tracking-wider`}
+                value={formData.slug || ""} placeholder={dict.placeholderUrl}
                 onChange={(e) => {
                   let value = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
                   // Nombre pur et Mot réservé et taille <= 30
@@ -290,29 +284,27 @@ function EditProfileContent() {
                 }}
               />
             </div>
-            <p className="text-[10px] text-white/40 mt-2 ml-1">
-              Utilisez uniquement des lettres, des chiffres et des tirets.
-            </p>
+            <p className="text-[10px] text-white/40 mt-2 ml-1">{dict.urlHint}</p>
             {errors.errorSlug && (<label>{errors.errorSlug}</label>)}
           </div>
 
           {/* --- RÉGLAGES PRIVAUTÉ --- */}
           <div className="flex flex-col justify-center mt-8">
-            <p className={PROFILE_EDIT_STYLES.LABEL}>Permissions et accès</p>
+            <p className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelPrivacy}</p>
             <div className="flex flex-col gap-8 p-4 border border-white/5 bg-white/5 rounded-2xl w-full">
-              <OptionToggle title="Profil public" description="Autoriser les autres à accéder à votre profil"
+              <OptionToggle title="Profil public" description={dict.descProfile}
                 active={formData.perms.profile} onChange={(v:boolean) => updatePerm('profile',v)}
               />
-              <OptionToggle title="Statistiques public" description="Autoriser les autres à voir vos statistiques"
+              <OptionToggle title="Statistiques public" description={dict.descStats}
                 active={formData.perms.stats} onChange={(v:boolean) => updatePerm('stats',v)} disabled={!formData.perms.profile}
               />
-              <OptionToggle title="Favoris public" description="Autoriser les autres à voir vos 50 favoris (tracks, albums et artistes)"
+              <OptionToggle title="Favoris public" description={dict.toggleFavs}
                 active={formData.perms.favorites} onChange={(v:boolean) => updatePerm('favorites',v)} disabled={!formData.perms.profile}
               />
-              <OptionToggle title="Historique public" description="Autoriser les autres à voir votre historique"
+              <OptionToggle title="Historique public" description={dict.toggleHistory}
                 active={formData.perms.history} onChange={(v:boolean) => updatePerm('history',v)} disabled={!formData.perms.profile}
               />
-              <OptionToggle title="Dashboard public" description="Autoriser les autres à accéder à votre dashboard"
+              <OptionToggle title="Dashboard public" description={dict.toggleDash}
                 active={formData.perms.dashboard} onChange={(v:boolean) => updatePerm('dashboard',v)} disabled={!formData.perms.profile}
               />
             </div>
@@ -321,10 +313,10 @@ function EditProfileContent() {
           {/* --- ACTIONS --- */}
           <div className={PROFILE_EDIT_STYLES.FOOTER}>
             <button onClick={() => router.back()} className={PROFILE_EDIT_STYLES.BTN_CANCEL}>
-              Annuler
+              {dict.btnCancel}
             </button>
             <PrimaryButton onClick={handleSave} additional="px-6 py-2.5" disabled={errors.errorBio !== "" || errors.errorName !== "" || errors.errorSlug !== ""}>
-              Enregistrer les modifications
+              {dict.btnSave}
             </PrimaryButton>
           </div>
         </div>
