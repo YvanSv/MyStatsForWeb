@@ -169,4 +169,29 @@ export const fr = {
     dateFrom: "De",
     dateTo: "À",
   },
+  smallgridcell: {
+    unknown: "Inconnu",
+    unitStreams: "str",
+    unitMinutes: "min",
+    locale: "fr-FR"
+  },
+  ranking: {
+    filterBtn: "Filtres",
+    closeBtn: "Fermer",
+    sortBy: "Trier par",
+    sortOptions: {
+      name: "Nom",
+      play_count: "Streams",
+      total_minutes: "Temps",
+      engagement: "Engagement",
+      rating: "Rating"
+    },
+    loadMore: "Charger plus",
+    loading: "Chargement...",
+    types: {
+      track: "titres",
+      album: "albums",
+      artist: "artistes"
+    }
+  },
 }

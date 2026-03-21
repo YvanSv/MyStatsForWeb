@@ -168,5 +168,30 @@ export const en = {
     periodGroup: "Period",
     dateFrom: "From",
     dateTo: "To",
+  },
+  smallgridcell: {
+    unknown: "Unknown",
+    unitStreams: "str",
+    unitMinutes: "min",
+    locale: "en-US"
+  },
+  ranking: {
+    filterBtn: "Filters",
+    closeBtn: "Close",
+    sortBy: "Sort by",
+    sortOptions: {
+      name: "Name",
+      play_count: "Streams",
+      total_minutes: "Time",
+      engagement: "Engagement",
+      rating: "Rating"
+    },
+    loadMore: "Load more",
+    loading: "Loading...",
+    types: {
+      track: "tracks",
+      album: "albums",
+      artist: "artists"
+    }
   }
 }

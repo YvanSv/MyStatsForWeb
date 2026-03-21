@@ -1,3 +1,4 @@
+import { useLanguage } from "@/app/context/languageContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import Image from "next/image";
 
@@ -12,7 +13,7 @@ const GRID_CELL_STYLES = {
   WRAPPER: (isArtist: boolean) => `
     group bg-bg2/30 backdrop-blur-md border border-white/5 transition-all 
     hover:border-vert/40 hover:-translate-y-1 flex flex-col h-full relative
-    ${isArtist ? 'rounded-xl md:rounded-3xl p-1.5 md:p-4 bg-bg2/20' : 'rounded-xl md:rounded-3xl p-2 md:p-4'}
+    ${isArtist ? 'rounded-xl md:rounded-3xl p-1.5 md:p-4 bg-bg2/20' : 'rounded-xl md:rounded-3xl p-1.5 md:p-4'}
   `,
 
   // Badge d'index (#1, #2...)
@@ -62,8 +63,10 @@ const GRID_CELL_STYLES = {
 };
 
 export default function GridCell({ element, index, sort }: GridCellProps) {
+  const { t } = useLanguage();
+  const dict = t.smallgridcell;
   const isArtist = element.type === 'artist';
-  const displayName = element.title || element.name || "Inconnu";
+  const displayName = element.title || element.name || dict.unknown;
   const displayImage = element.cover || element.image_url;
 
   const displaySub = () => {
@@ -88,21 +91,16 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
       {/* SECTION IMAGE */}
       <div className={GRID_CELL_STYLES.IMAGE_CONTAINER(isArtist)}>
         {displayImage ? (
-          <Image 
-            src={displayImage} 
-            alt={displayName}
-            fill 
+          <Image src={displayImage} alt={displayName} fill 
             sizes="(max-width: 640px) 33vw, 200px"
             className={GRID_CELL_STYLES.IMAGE_RENDER(isArtist)}
           />
-        ) : (
-          <div className={`text3 w-full h-full flex items-center justify-center`}>?</div>
-        )}
+        ) : <div className={`text3 w-full h-full flex items-center justify-center`}>?</div>}
 
         {/* Badge Rating */}
         <div className={GRID_CELL_STYLES.RATING_BADGE(isArtist)}>
           <span className={GRID_CELL_STYLES.RATING_TEXT(element.rating, sort === "rating")}>
-            {element.rating.toLocaleString('fr-FR')} {isArtist && "★"}
+            {element.rating.toLocaleString(dict.locale)} {isArtist && "★"}
           </span>
         </div>
       </div>
@@ -121,25 +119,25 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
       <div className={GRID_CELL_STYLES.FOOTER_PC}>
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
           <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'play_count')}>
-            {element.play_count.toLocaleString('fr-FR')}
+            {element.play_count.toLocaleString(dict.locale)}
           </span>
-          <span className={GRID_CELL_STYLES.STAT_LABEL}>str</span>
+          <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitStreams}</span>
         </div>
 
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
           {element.total_minutes !== undefined ? (
             <>
               <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'total_minutes')}>
-                {Math.round(element.total_minutes).toLocaleString('fr-FR')}
+                {Math.round(element.total_minutes).toLocaleString(dict.locale)}
               </span>
-              <span className={GRID_CELL_STYLES.STAT_LABEL}>min</span>
+              <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitMinutes}</span>
             </>
           ) : (<span className={`text2 font-bold`}>-</span>)}
         </div>
 
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
           <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'engagement')}>
-            {element.engagement.toLocaleString('fr-FR')}
+            {element.engagement.toLocaleString(dict.locale)}
           </span>
           <span className={GRID_CELL_STYLES.STAT_LABEL}>%</span>
         </div>

@@ -9,6 +9,7 @@ import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
 import { GENERAL_STYLES } from "@/app/styles/general";
 import { PrimaryButton, SecondaryButton } from "../Atomic/Buttons";
+import { useLanguage } from "@/app/context/languageContext";
 
 interface RankingViewProps {
   title: string;
@@ -40,7 +41,7 @@ const RANKING_VIEW_STYLES = {
   PAGE_TITLE: "text-3xl md:text-5xl font-hias tracking-tighter text-left md:text-right",
   
   // Grilles de contenu (ViewModes)
-  LIST_CONTAINER: "space-y-3",
+  LIST_CONTAINER: "space-y-2.5",
   SMALL_GRID_CONTAINER: "grid grid-cols-5 md:grid-cols-7 xl:grid-cols-8 gap-1 md:gap-4",
   GRID_CONTAINER: "grid grid-cols-3 md:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6",
 };
@@ -48,6 +49,9 @@ const RANKING_VIEW_STYLES = {
 export default function RankingView({ title, type, items, sortConfig, onSort, loading, hasMore, loadMore, filterConfig }: RankingViewProps) {
   const { viewMode } = useViewMode();
   const { showFilters, toggleShowFilters } = useShowFilters();
+  const { t } = useLanguage();
+  const dict = t.ranking;
+
   const normalizedItems: DataInfo[] = items.map(item => ({ ...item, type }));
 
   return (
@@ -66,28 +70,28 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
               {/* Bouton Filtres */}
               {!showFilters ? (
                 <SecondaryButton onClick={toggleShowFilters} additional="px-4 py-2 md:px-5 md:py-2.5">
-                  <span className="text-sm md:text-base">⚙️ Filtres</span>
+                  <span className="text-sm md:text-base">⚙️ {dict.filterBtn}</span>
                 </SecondaryButton>
               ) : (
                 <PrimaryButton onClick={toggleShowFilters} additional="border border-vert gap-2 px-4 py-2 md:px-5 md:py-2.5 md:text-base">
-                  <CloseIcon /> Fermer
+                  <CloseIcon /> {dict.closeBtn}
                 </PrimaryButton>
               )}
 
               {/* Sélecteur Tri */}
               <div className={RANKING_VIEW_STYLES.SORT_SELECT_WRAPPER}>
-                <span className={RANKING_VIEW_STYLES.SORT_LABEL}>Trier par</span>
+                <span className={RANKING_VIEW_STYLES.SORT_LABEL}>{dict.sortBy}</span>
                 <div className="relative flex items-center">
                   <select 
                     value={sortConfig.sort}
                     onChange={(e) => onSort(e.target.value)}
                     className={"pl-4 pr-8 py-2 md:py-2.5 rounded-full text-xs md:text-sm outline-none appearance-none cursor-pointer border border-white/10 hover:border-white/20 hover:bg-white/5 font-semibold text1"}
                   >
-                    <option value={type === 'track' ? 'title' : 'name'}>Nom</option>
-                    <option value="play_count">Streams</option>
-                    <option value="total_minutes">Temps</option>
-                    <option value="engagement">Engagement</option>
-                    <option value="rating">Rating</option>
+                    <option value={type === 'track' ? 'title' : 'name'}>{dict.sortOptions.name}</option>
+                    <option value="play_count">{dict.sortOptions.play_count}</option>
+                    <option value="total_minutes">{dict.sortOptions.total_minutes}</option>
+                    <option value="engagement">{dict.sortOptions.engagement}</option>
+                    <option value="rating">{dict.sortOptions.rating}</option>
                   </select>
                   <div className={RANKING_VIEW_STYLES.SORT_ICON_POS}>
                     <ChevronDownIcon />
@@ -105,7 +109,7 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
 
             {/* Titre de la page */}
             <h1 className={RANKING_VIEW_STYLES.PAGE_TITLE}>
-              {title} <span className="text2">{type}s</span>
+              {title} <span className="text2">{dict.types[type]}</span>
             </h1>
           </div>
 
@@ -120,7 +124,6 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
               const itemKey = item.spotify_id || item.id;
               if (viewMode === 'list') return <ListCell key={itemKey} {...commonProps} />;
               if (viewMode === 'grid_sm') return <SmallGridCell key={itemKey} {...commonProps} />;
-              console.log(items);
               return <GridCell key={itemKey} {...commonProps} />;
             })}
           </div>
@@ -129,7 +132,7 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
           {(hasMore && !loading) && (
             <div className="flex justify-center">
               <SecondaryButton onClick={loadMore} additional="px-8 py-4 disabled:opacity-50">
-                {loading ? "Chargement..." : "Charger plus"}
+                {loading ? dict.loading : dict.loadMore}
               </SecondaryButton>
             </div>
           )}

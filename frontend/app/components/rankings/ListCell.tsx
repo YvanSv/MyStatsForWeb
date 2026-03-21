@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { DataInfo } from "@/app/data/DataInfos";
+import { useLanguage } from "@/app/context/languageContext";
 
 interface ListCellProps {
   element: DataInfo;
@@ -10,7 +11,7 @@ interface ListCellProps {
 const LIST_CELL_STYLES = {
   // Conteneur de la ligne
   WRAPPER: `group flex lg:grid lg:grid-cols-[45px_2fr_120px_120px_140px_100px_60px] 
-            items-center gap-3 md:gap-4 bg-bg2/25 backdrop-blur-sm p-2 rounded-2xl 
+            items-center gap-3 md:gap-4 bg-bg2/25 backdrop-blur-sm px-2 py-1.5 rounded-2xl 
             border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1`,
 
   // Index (#1, #2...)
@@ -47,8 +48,10 @@ const LIST_CELL_STYLES = {
 };
 
 export default function ListCell({ element, index, sort }: ListCellProps) {
+  const { t } = useLanguage();
+  const dict = t.smallgridcell;
   const isArtist = element.type === 'artist';
-  const displayName = element.title || element.name || "Inconnu";
+  const displayName = element.title || element.name || dict.unknown;
   const displayImage = element.cover || element.image_url;
 
   const displaySub = () => {
@@ -65,7 +68,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
   };
 
   const renderMobileStat = () => {
-    if (sort === 'rating') return <div className="h-5 md:hidden" />;
+    if (sort === 'rating') return <div className="h-5 md:hidden"/>;
     
     const config = {
       play_count: { val: element.play_count, unit: "STR" },
@@ -91,11 +94,8 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
       {/* Contenu Principal */}
       <div className={LIST_CELL_STYLES.CONTENT_BLOCK}>
         <div className={LIST_CELL_STYLES.IMAGE_CONTAINER(isArtist)}>
-          {displayImage ? (
-            <Image src={displayImage} alt={displayName} fill sizes="56px" className="object-cover" />
-          ) : (
-            <div className={`text3 w-full h-full flex items-center justify-center`}>?</div>
-          )}
+          {displayImage ? <Image src={displayImage} alt={displayName} fill sizes="56px" className="object-cover"/>
+          : <div className={`text3 w-full h-full flex items-center justify-center`}>?</div>}
         </div>
         <div className="min-w-0">
           <h3 className={LIST_CELL_STYLES.TITLE}>{displayName}</h3>
@@ -105,17 +105,17 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
 
       {/* COLONNES DESKTOP */}
       <div className={LIST_CELL_STYLES.COLUMN_DESKTOP(sort === 'play_count')}>
-        {element.play_count.toLocaleString('fr-FR')} <span className="text-[10px]">str</span>
+        {element.play_count.toLocaleString(dict.locale)} <span className="text-[10px]">{dict.unitStreams}</span>
       </div>
 
       <div className={LIST_CELL_STYLES.COLUMN_DESKTOP(sort === 'total_minutes')}>
-        {Math.round(element.total_minutes || 0).toLocaleString('fr-FR')} <span className="text-[10px]">min</span>
+        {Math.round(element.total_minutes || 0).toLocaleString(dict.locale)} <span className="text-[10px]">{dict.unitMinutes}</span>
       </div>
 
       <div className="hidden lg:flex justify-center">
         <div className="flex items-center gap-2">
           <span className={sort === 'engagement' ? `text2 font-bold` : `text3 text-sm`}>
-            {element.engagement.toLocaleString('fr-FR')}%
+            {element.engagement.toLocaleString(dict.locale)}%
           </span>
           <div className={LIST_CELL_STYLES.ENGAGEMENT_BAR_CONTAINER}>
             <div 
@@ -130,7 +130,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
       <div className={LIST_CELL_STYLES.RIGHT_BLOCK}>
         <div className="lg:hidden">{renderMobileStat()}</div>
         <div className={LIST_CELL_STYLES.RATING(element.rating, sort === 'rating')}>
-          {element.rating.toLocaleString('fr-FR')}★
+          {element.rating.toLocaleString(dict.locale)}★
         </div>
       </div>
     </div>
