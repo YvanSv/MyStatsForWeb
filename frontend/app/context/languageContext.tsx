@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { languages } from '../constants/language';
+import { languages } from '../constants/locales/lang';
 
 type LanguageType = keyof typeof languages;
 interface LanguageContextType {
