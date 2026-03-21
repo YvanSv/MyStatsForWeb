@@ -1,12 +1,9 @@
-
 import { API_ENDPOINTS } from "@/app/constants/routes";
 import { Metadata } from 'next';
 import ProfilePage from "./client";
 
 // On définit les types pour les paramètres de l'URL
-type Props = {
-  params: { id: string }
-};
+type Props = {params: { id: string }};
 
 export async function generateViewport({ params }: Props) {
   return {
