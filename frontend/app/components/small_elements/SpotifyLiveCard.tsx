@@ -1,5 +1,5 @@
 import { SpotifyListeningData, useSpotify } from "@/app/context/currentlyPlayingContext";
-// import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import { useLanguage } from "@/app/context/languageContext";
 
 const configOptions = {
   xs: {
@@ -37,25 +37,21 @@ const configOptions = {
   }
 };
 
-export default function SpotifyLiveCard({
-  isListening,
-  data,
-  currentProgress,
-  size = 'md'
-}: {
+export default function SpotifyLiveCard({data,currentProgress,size='md'}:{
   isListening: boolean,
   data: SpotifyListeningData | null,
   currentProgress: number,
   size: 'xs' | 'md' | 'lg'
 }) {
   // const { pause, resume, next, previous } = useSpotify();
+  const { t } = useLanguage();
   const progress = data ? (currentProgress / data.duration_ms) * 100 : 0;
   const config = configOptions[size];
 
   if (!data) {
     return (
       <div className={`${config.container} bg-white/5 border border-white/10 flex items-center justify-center min-h-[80px] backdrop-blur-md`}>
-        <p className="text-gray-500 italic text-xs tracking-wide">Silence radio sur Spotify</p>
+        <p className="text-gray-500 italic text-xs tracking-wide">{t.api.currentListeningOff}</p>
       </div>
     );
   }
@@ -69,11 +65,7 @@ export default function SpotifyLiveCard({
       <div className={`relative flex items-center ${config.gap}`}>
         
         {/* Pochette d'album */}
-        <img 
-          src={data.cover_url} 
-          alt={data.album_name}
-          className={`${config.image} shadow-lg object-cover$`}
-        />
+        <img src={data.cover_url} alt={data.album_name} className={`${config.image} shadow-lg object-cover$`}/>
 
         {/* Infos Titre / Artiste */}
         <div className="flex-1 min-w-0">
@@ -109,10 +101,9 @@ export default function SpotifyLiveCard({
                 <span>{formatMs(data.duration_ms)}</span>
               </div>
               <div className={`${size === 'xs' ? 'h-1' : 'h-1.5'} w-full bg-white/10 rounded-full overflow-hidden`}>
-                <div 
+                <div style={{ width: `${progress}%` }}
                   className="h-full bg-green-500 rounded-full transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(34,197,94,0.5)]"
-                  style={{ width: `${progress}%` }}
-                ></div>
+                />
               </div>
             </div>
           )}

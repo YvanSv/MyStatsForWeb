@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useApi } from "../../hooks/useApi";
+import { useLanguage } from "@/app/context/languageContext";
 
 const BADGE_STYLES = {
   // Conteneur principal
@@ -27,6 +28,8 @@ const BADGE_STYLES = {
 };
 
 export const ApiStatusBadge = () => {
+  const { t } = useLanguage();
+  const dict = t.api;
   const { getSpotifyStatus } = useApi();
   const [status, setStatus] = useState({ is_rate_limited: false, retry_after_seconds: 0 });
 
@@ -34,7 +37,7 @@ export const ApiStatusBadge = () => {
     try {
       const data = await getSpotifyStatus(); 
       setStatus(data);
-    } catch (err) {console.error("Impossible de récupérer le statut API", err)}
+    } catch (err) {console.error(dict.status, err)}
   }, [getSpotifyStatus]);
 
   useEffect(() => {

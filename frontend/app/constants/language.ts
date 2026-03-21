@@ -83,6 +83,8 @@ export const languages = {
       error1: 'Une erreur inattendue est survenue',
       redirect: "Session expirée, redirection...",
       errorConnecting: "Connexion au serveur impossible.",
+      status: "Impossible de récupérer le statut API",
+      currentListeningOff: "Silence radio sur Spotify",
     },
     error: {
       title1: "Accès Privé",
@@ -180,6 +182,8 @@ export const languages = {
       error1: 'An unexpected error has occurred.',
       redirect: "Session expired, redirection...",
       errorConnecting: "Unable to connect to server.",
+      status: "Unable to retrieve API status",
+      currentListeningOff: "Radio silence on Spotify",
     },
     error: {
       title1: "Private Access",
