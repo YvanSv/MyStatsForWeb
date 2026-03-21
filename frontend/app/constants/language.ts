@@ -77,6 +77,23 @@ export const languages = {
       creating: "Création...",
       create: "Créer mon compte",
       littleNote: "En créant un compte, vous acceptez nos conditions d'utilisation et notre politique de confidentialité."
+    },
+    api: {
+      errorTemplate: "Erreur sur",
+      error1: 'Une erreur inattendue est survenue',
+      redirect: "Session expirée, redirection...",
+      errorConnecting: "Connexion au serveur impossible.",
+    },
+    error: {
+      title1: "Accès Privé",
+      message1: "Ce profil est privé. L'utilisateur a choisi de ne pas partager ses statistiques.",
+      title2: "Introuvable",
+      message2: "La ressource ou l'utilisateur que vous cherchez n'existe pas.",
+      titleDefault: "Oups !",
+      messageDefault: "Une erreur inattendue est survenue.",
+      retry: "Réessayer",
+      backhome: "Retour à l'accueil",
+      backpage: "Page précédente"
     }
   },
   en: {
@@ -157,6 +174,23 @@ export const languages = {
       creating: "Creating...",
       create: "Create account",
       littleNote: "By creating an account, you agree to our terms of use and privacy policy."
+    },
+    api: {
+      errorTemplate: "Error on",
+      error1: 'An unexpected error has occurred.',
+      redirect: "Session expired, redirection...",
+      errorConnecting: "Unable to connect to server.",
+    },
+    error: {
+      title1: "Private Access",
+      message1: "This profile is private. The user has chosen not to share their statistics.",
+      title2: "Not Found",
+      message2: "The resource or user you are looking for does not exist.",
+      titleDefault: "Oops!",
+      messageDefault: "An unexpected error occurred.",
+      retry: "Try Again",
+      backhome: "Back to Home",
+      backpage: "Previous Page"
     }
   }
 }

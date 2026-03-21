@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Lock, UserX, Home, RefreshCcw } from 'lucide-react';
 import { PrimaryButton } from '../Buttons';
+import { useLanguage } from '@/app/context/languageContext';
 
 interface ErrorStateProps {
   title?: string;
@@ -12,26 +13,28 @@ interface ErrorStateProps {
 
 export function ErrorState({ title, message, status, onRetry }: ErrorStateProps) {
   const router = useRouter();
+  const { t } = useLanguage();
+  const dict = t.error;
 
   const getErrorConfig = () => {
     switch (status) {
       case 403:
         return {
           icon: <Lock className="text-vert" size={40} />,
-          defaultTitle: "Accès Privé",
-          defaultMessage: "Ce profil est privé. L'utilisateur a choisi de ne pas partager ses statistiques."
+          defaultTitle: dict.title1,
+          defaultMessage: dict.message1
         };
       case 404:
         return {
           icon: <UserX className="text-rouge" size={40} />,
-          defaultTitle: "Introuvable",
-          defaultMessage: "La ressource ou l'utilisateur que vous cherchez n'existe pas."
+          defaultTitle: dict.title2,
+          defaultMessage: dict.message2
         };
       default:
         return {
           icon: <AlertCircle className="text-rouge" size={40} />,
-          defaultTitle: "Oups !",
-          defaultMessage: message || "Une erreur inattendue est survenue."
+          defaultTitle: dict.titleDefault,
+          defaultMessage: message || dict.messageDefault
         };
     }
   };
@@ -56,17 +59,17 @@ export function ErrorState({ title, message, status, onRetry }: ErrorStateProps)
         <div className="flex flex-col gap-3 w-full">
           {onRetry ? (
             <PrimaryButton onClick={onRetry} additional="w-full py-4 gap-2">
-              <RefreshCcw size={18} /> Réessayer
+              <RefreshCcw size={18}/> {dict.retry}
             </PrimaryButton>
           ) : (
             <PrimaryButton onClick={() => router.push('/')} additional="w-full py-4 gap-2">
-              <Home size={18} /> Retour à l'accueil
+              <Home size={18}/> {dict.backhome}
             </PrimaryButton>
           )}
           
           <button onClick={() => router.back()}
             className="text3 text-[10px] uppercase font-bold tracking-widest hover:text-white transition-colors py-2"
-          >Page précédente</button>
+          >{dict.backpage}</button>
         </div>
       </div>
     </div>
