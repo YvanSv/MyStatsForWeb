@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useViewMode } from "../context/viewModeContext";
 import { FRONT_ROUTES } from "../constants/routes";
 import { BASE_UI } from "../styles/general";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../context/authContext";
 import { BadgeQuestionMark, ChartBar, Disc, Eye, Medal, Mic2, Music2, User } from "lucide-react";
 import { PrimaryButton, TertiaryButton } from "./Atomic/Buttons";
 import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Atomic/Nav/Navbar";

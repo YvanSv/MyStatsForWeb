@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BASE_UI } from "../styles/general";
 import { useApiSpotifyData } from "../hooks/useApiSpotifyData";
 import { ApiError } from "../services/api";
@@ -7,8 +7,7 @@ import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { SkeletonImport } from "./Skeleton";
-import toast from "react-hot-toast";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../context/authContext";
 import { API_ENDPOINTS } from "../constants/routes";
 
 export default function ImportPage() {

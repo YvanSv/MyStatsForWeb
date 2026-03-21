@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { useApi } from '@/app/hooks/useApi';
 import { API_ENDPOINTS } from '@/app/constants/routes';
 import { useRouter } from 'next/navigation';
@@ -144,3 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) throw new Error('useAuth doit être utilisé à l\'intérieur d\'un AuthProvider');
+  return context;
+};

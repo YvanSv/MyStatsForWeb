@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/hooks/useAuth";
+import { useAuth } from "@/app/context/authContext";
 
 interface PublicRouteProps {
   children: React.ReactNode;

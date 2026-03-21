@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "@/app/hooks/useAuth";
+import { useAuth } from "@/app/context/authContext";
 import { useProfile } from "@/app/hooks/useProfile";
 import { BarChart3 } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "@/app/components/Atomic/Buttons";

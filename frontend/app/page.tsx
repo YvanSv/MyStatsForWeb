@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { BASE_UI } from "./styles/general";
 import { useApiAllDatas } from "./hooks/useApiAllDatas";
 import { PrimaryButton, SecondaryButton } from "./components/Atomic/Buttons";
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "./context/authContext";
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
 import { Play } from "lucide-react";
 import { useLanguage } from "./context/languageContext";

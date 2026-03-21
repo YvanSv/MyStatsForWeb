@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import { PrimaryButton } from "@/app/components/Atomic/Buttons";
-import { useAuth } from "@/app/hooks/useAuth";
+import { useAuth } from "@/app/context/authContext";
 import { useProfile } from "@/app/hooks/useProfile";
 import toast from "react-hot-toast";
 import Image from "next/image";

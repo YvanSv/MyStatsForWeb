@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../context/authContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FRONT_ROUTES } from "../constants/routes";
 import PublicRoute from "../components/auth/PublicRoute";
