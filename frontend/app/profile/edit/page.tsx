@@ -8,6 +8,8 @@ import { useAuth } from "@/app/context/authContext";
 import { useProfile } from "@/app/hooks/useProfile";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import { ProfileEditSkeleton } from "./Skeleton";
+import { OptionToggle } from "./OptionToggle";
 
 export default function EditProfilePage() {
   return (
@@ -46,13 +48,6 @@ const PROFILE_EDIT_STYLES = {
   INPUT: `text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all`,
   TEXTAREA: `text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-vert/50 transition-all resize-none`,
   
-  // Privacy Toggle
-  TOGGLE_CARD: (disabled:boolean) => `flex items-center justify-between ${disabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`,
-  TOGGLE_LABEL: `text1 text-sm font-medium`,
-  TOGGLE_DESC: `text3 text-xs`,
-  TOGGLE_SWITCH: "w-12 h-6 bg-vert rounded-full relative cursor-pointer",
-  TOGGLE_KNOB: "absolute right-1 top-1 w-4 h-4 bg-white rounded-full",
-
   // Footer Actions
   FOOTER: "flex items-center justify-end gap-4 mt-10",
   BTN_CANCEL: `text3 px-6 py-3 text-gray-400 hover:text-white transition-colors cursor-pointer`
@@ -331,98 +326,6 @@ function EditProfileContent() {
             <PrimaryButton onClick={handleSave} additional="px-6 py-2.5" disabled={errors.errorBio !== "" || errors.errorName !== "" || errors.errorSlug !== ""}>
               Enregistrer les modifications
             </PrimaryButton>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function OptionToggle({title,description,active,onChange,disabled}:any) {
-  return (
-    <div className={PROFILE_EDIT_STYLES.TOGGLE_CARD(disabled)}>
-      <div>
-        <p className={PROFILE_EDIT_STYLES.TOGGLE_LABEL}>{title}</p>
-        <p className={PROFILE_EDIT_STYLES.TOGGLE_DESC}>{description}</p>
-      </div>
-      <div className={`
-        ${PROFILE_EDIT_STYLES.TOGGLE_SWITCH} 
-        transition-colors duration-200
-        ${active ? 'bg-vert' : 'bg-white/10'}
-      `} onClick={() => !disabled && onChange(!active)}>
-        <div className={`
-          ${PROFILE_EDIT_STYLES.TOGGLE_KNOB}
-          transition-transform duration-200 ease-in-out
-          ${active ? 'translate-x-0' : '-translate-x-6'}
-        `}/>
-      </div>
-    </div>
-  );
-}
-
-const SkeletonPulse = ({ className }: { className: string }) => (
-  <div className={`animate-pulse bg-white/5 rounded-lg ${className}`} />
-);
-
-export function ProfileEditSkeleton() {
-  return (
-    <main className={PROFILE_EDIT_STYLES.MAIN}>
-      {/* --- SKELETON BANNIÈRE --- */}
-      <div className={PROFILE_EDIT_STYLES.BANNER_WRAPPER}>
-        <div className={`w-full h-full bg-white/5 animate-pulse`} />
-        <div className={PROFILE_EDIT_STYLES.BANNER_GRADIENT} />
-      </div>
-
-      <div className={PROFILE_EDIT_STYLES.CONTAINER}>
-        {/* --- SKELETON HEADER --- */}
-        <div className={PROFILE_EDIT_STYLES.HEADER_FLEX}>
-          <div className={PROFILE_EDIT_STYLES.AVATAR_WRAPPER}>
-            <div className="w-full h-full rounded-4xl bg-white/10 animate-pulse" />
-          </div>
-          
-          <div className={PROFILE_EDIT_STYLES.TEXT_GROUP}>
-            <SkeletonPulse className="h-8 w-48 mb-2" />
-            <SkeletonPulse className="h-4 w-64" />
-          </div>
-        </div>
-
-        {/* --- SKELETON FORMULAIRE --- */}
-        <div className={PROFILE_EDIT_STYLES.FORM_CARD}>
-          {/* Nom d'affichage */}
-          <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
-            <SkeletonPulse className="h-4 w-24 mb-3" />
-            <SkeletonPulse className="h-12 w-full" />
-          </div>
-
-          {/* Bio */}
-          <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
-            <div className="flex justify-between mb-3">
-              <SkeletonPulse className="h-4 w-20" />
-              <SkeletonPulse className="h-3 w-12" />
-            </div>
-            <SkeletonPulse className="h-32 w-full" />
-          </div>
-
-          {/* Permissions */}
-          <div className="flex flex-col justify-center mt-4">
-            <SkeletonPulse className="h-4 w-32 mb-4" />
-            <div className="flex flex-col gap-8 p-4 border border-white/5 bg-white/5 rounded-2xl w-full">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <div className="flex flex-col gap-2">
-                    <SkeletonPulse className="h-4 w-32" />
-                    <SkeletonPulse className="h-3 w-64" />
-                  </div>
-                  <SkeletonPulse className="h-6 w-12 rounded-full" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Footer Actions */}
-          <div className={PROFILE_EDIT_STYLES.FOOTER}>
-            <SkeletonPulse className="h-10 w-24" />
-            <SkeletonPulse className="h-10 w-48" />
           </div>
         </div>
       </div>
