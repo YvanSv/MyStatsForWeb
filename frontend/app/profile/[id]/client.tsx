@@ -15,6 +15,7 @@ import { ApiError } from "../../services/api";
 import { ProfileSkeleton } from "./Skeleton";
 import { HorizontalTopSection, StatCard, TopStatCard } from "./components";
 import Image from 'next/image';
+import { useLanguage } from "@/app/context/languageContext";
 
 const PROFILE_STYLES = {
   MAIN_WRAPPER: "min-h-screen pb-20 bg-bg1",
@@ -26,10 +27,6 @@ const PROFILE_STYLES = {
 
   // CONTAINER & HEADER
   CONTAINER: "max-w-7xl mx-auto px-6 -mt-24 relative z-10",
-  HEADER_FLEX: "profile-header",
-  INFO_BLOCK: "info-block-profile",
-  NAME: `username-profile`,
-  BADGE: `badge-profile`,
 
   // ACTIONS
   ACTION_GROUP: "flex gap-3 mb-4",
@@ -49,6 +46,8 @@ const PROFILE_STYLES = {
 
 export default function ProfilePage({ id }: { id: string }) {
   const router = useRouter();
+  const { t } = useLanguage();
+  const dict = t.profilePage;
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [topData, setTopData] = useState<UserProfileTops | null>(null);
@@ -74,7 +73,7 @@ export default function ProfilePage({ id }: { id: string }) {
         setProfile(await getProfile(id));
         loadTops(id);
       }
-      catch (err: any) {setError(err instanceof ApiError ? err : new ApiError(err.status,"Erreur inconnue"))}
+      catch (err: any) {setError(err instanceof ApiError ? err : new ApiError(err.status,dict.unknownError))}
       finally {setLoading(false)}
     };
 
@@ -91,14 +90,14 @@ export default function ProfilePage({ id }: { id: string }) {
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      toast.success("Lien copié !", {
+      toast.success(dict.copySuccess, {
         style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
-    } catch (err) {toast.error("Impossible de copier le lien")}
+    } catch (err) {toast.error(dict.copyError)}
   };
 
-  if (error instanceof ApiError && error.status === 404) return <ErrorState title="Profil introuvable" status={error.status}/>;
+  if (error instanceof ApiError && error.status === 404) return <ErrorState title={dict.notFound} status={error.status}/>;
   if (loading || !profile) return <ProfileSkeleton/>;
   return (
     <div className={PROFILE_STYLES.MAIN_WRAPPER}>
@@ -119,11 +118,11 @@ export default function ProfilePage({ id }: { id: string }) {
             {isOwner ? (
               <PrimaryButton onClick={() => router.push(`${FRONT_ROUTES.PROFILE_EDIT}`)} additional="px-8 py-3 gap-2">
                 <EditIcon size={18}/>
-                Modifier le profil
+                {dict.editBtn}
               </PrimaryButton>
             ) : (
               <SecondaryButton additional="py-3 px-8">
-                Suivre l'utilisateur
+                {dict.followBtn}
               </SecondaryButton>
             )}
             <SecondaryButton additional="p-3" onClick={handleShare}>
@@ -141,11 +140,11 @@ export default function ProfilePage({ id }: { id: string }) {
         {/* STATS */}
         {profile.perms.stats && (
           <div className={PROFILE_STYLES.STATS_GRID}>
-            <StatCard title="Temps d'écoute" sub="Total cumulé" color="text2"
-              value={<>{profile.total_minutes.toLocaleString()} <span className="text-sm opacity-50">min</span><p className="text-sm opacity-50">({totalDays} j)</p></>}
+            <StatCard title={dict.statTime} sub={dict.statTimeSub} color="text2"
+              value={<>{profile.total_minutes.toLocaleString(t.common.locale)} <span className="text-sm opacity-50">{dict.unitMin}</span><p className="text-sm opacity-50">({dict.unitDays(totalDays)})</p></>}
             />
-            <StatCard title="Nombre de streams" value={profile.total_streams.toLocaleString()} sub="Total cumulé" color="text-blue-400"/>
-            <StatCard title="Heure de pointe" value={profile.peak_hour} sub="Le petit moment de plaisir" color="text-purple-400"/>
+            <StatCard title={dict.statStreams} value={profile.total_streams.toLocaleString(t.common.locale)} sub={dict.statStreamsSub} color="text-blue-400"/>
+            <StatCard title={dict.statPeak} value={profile.peak_hour} sub={dict.statPeakSub} color="text-purple-400"/>
             <TopStatCard color="text-orange-400" item={topData && topData.top_track}/>
             <TopStatCard color="text-yellow-400" item={topData && topData.top_artist}/>
           </div>
@@ -156,16 +155,16 @@ export default function ProfilePage({ id }: { id: string }) {
             <span
               onClick={() => router.push(`/profile/dashboard/${id}`)}
               className={`text3 ${GENERAL_STYLES.TRANSITION_TEXT_VERT} ${GENERAL_STYLES.TRANSITION_ZOOM} flex gap-2 px-2 text-sm font-medium cursor-pointer`}
-            ><BarChart3 size={18}/> Voir plus de statistiques détaillées</span>
+            ><BarChart3 size={18}/> {dict.detailedStats}</span>
           </div>
         )}
 
         {/* SECTIONS TOP 50 HORIZONTALES */}
         {(profile.perms.favorites && profile.top_50_tracks.length > 0) && (
           <div className="mt-8 space-y-20">
-            <HorizontalTopSection title="50 meilleurs tracks" items={profile.top_50_tracks}/>
-            <HorizontalTopSection title="50 meilleurs albums" items={profile.top_50_albums}/>
-            <HorizontalTopSection title="50 meilleurs artistes" items={profile.top_50_artists}/>
+            <HorizontalTopSection title={dict.topTracks} items={profile.top_50_tracks}/>
+            <HorizontalTopSection title={dict.topAlbums} items={profile.top_50_albums}/>
+            <HorizontalTopSection title={dict.topArtists} items={profile.top_50_artists}/>
           </div>
         )}
         
@@ -173,12 +172,12 @@ export default function ProfilePage({ id }: { id: string }) {
         {/* ÉCOUTES RÉCENTES */}
         {profile.perms.history && (
           <div className={PROFILE_STYLES.RECENT_CONTAINER}>
-            <h2 className={PROFILE_STYLES.SECTION_TITLE}>Écoutes récentes</h2>
+            <h2 className={PROFILE_STYLES.SECTION_TITLE}>{dict.recentHistory}</h2>
             <div className="md:max-h-[500px] md:overflow-y-auto md:pr-2 md:custom-scrollbar">
               <div className="space-y-2">
                 {profile.top_50_tracks.length === 0 ? (
                   <div className={PROFILE_STYLES.TRACK_ITEM}>
-                    <p className={PROFILE_STYLES.TRACK_NAME}>Aucune écoute</p>
+                    <p className={PROFILE_STYLES.TRACK_NAME}>{dict.noHistory}</p>
                   </div>
                 ) : (
                   profile.recent_tracks.map((track) => (
@@ -189,7 +188,7 @@ export default function ProfilePage({ id }: { id: string }) {
                         <p className={PROFILE_STYLES.TRACK_ARTIST}>{track.artist}</p>
                       </div>
                       <div className={PROFILE_STYLES.TRACK_DATE}>
-                        {new Date(track.played_at).toLocaleDateString()}
+                        {new Date(track.played_at).toLocaleDateString(t.common.locale)}
                       </div>
                     </div>
                   ))

@@ -235,4 +235,32 @@ export const en = {
     note2: "2. Automatic enrichment retrieves images and durations (approx. 2 min / file).",
     note3: "You can leave this page once the import has started.",
   },
+  rankingcategories: {
+    tracks: "Tracks",
+    albums: "Albums",
+    artists: "Artists",
+    viewRanking: "View ranking"
+  },
+  profilePage: {
+    notFound: "Profile not found",
+    unknownError: "Unknown error",
+    copySuccess: "Link copied!",
+    copyError: "Unable to copy link",
+    editBtn: "Edit profile",
+    followBtn: "Follow user",
+    statTime: "Listening time",
+    statTimeSub: "Total cumulative",
+    statStreams: "Number of streams",
+    statStreamsSub: "Total cumulative",
+    statPeak: "Peak hour",
+    statPeakSub: "The peak listening time",
+    detailedStats: "View more detailed statistics",
+    topTracks: "Top 50 tracks",
+    topAlbums: "Top 50 albums",
+    topArtists: "Top 50 artists",
+    recentHistory: "Recent history",
+    noHistory: "No recent history",
+    unitMin: "min",
+    unitDays: (count: number) => `${count} d`,
+  }
 }

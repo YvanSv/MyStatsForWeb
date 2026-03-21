@@ -4,28 +4,31 @@ import { Music2, Disc, Mic2 } from 'lucide-react';
 import { FRONT_ROUTES } from '../constants/routes';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import MyContentSkeleton from './Skeleton';
+import { useLanguage } from '../context/languageContext';
 
 function MyContent() {
   const router = useRouter();
+  const { t } = useLanguage();
+  const dict = t.rankingcategories;
 
   const categories = [
     { 
       id: 'tracks', 
-      title: 'Tracks', 
+      title: dict.tracks, 
       icon: <Music2 size={48} className="mb-4 text-vert" />, 
       path: `/tracks`,
       image: 'https://images.pexels.com/photos/3971983/pexels-photo-3971983.jpeg'
     },
     { 
       id: 'albums', 
-      title: 'Albums', 
+      title: dict.albums, 
       icon: <Disc size={48} className="mb-4 text-blue-400" />, 
       path: `/albums`,
       image: 'https://images.pexels.com/photos/5003397/pexels-photo-5003397.jpeg'
     },
     { 
       id: 'artists', 
-      title: 'Artistes', 
+      title: dict.artists, 
       icon: <Mic2 size={48} className="mb-4 text-purple-400" />, 
       path: `/artists`,
       image: 'https://images.pexels.com/photos/5648355/pexels-photo-5648355.jpeg'
@@ -65,7 +68,7 @@ function MyContent() {
           {/* Label discret en bas */}
           <span
             className="absolute bottom-12 text-[10px] uppercase tracking-widest text-bg2 opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-[-10px]"
-          >Voir le classement</span>
+          >{dict.viewRanking}</span>
         </div>
       ))}
     </main>

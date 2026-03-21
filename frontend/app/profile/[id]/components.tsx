@@ -6,9 +6,6 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
       {/* Header de la section */}
       <div className="flex justify-between items-end px-2">
         <h2 className="text1 text-xl font-bold tracking-tight">{title}</h2>
-        <span className="text-sm text-vert font-semibold cursor-pointer hover:underline opacity-80">
-          Voir plus
-        </span>
       </div>
 
       {/* Conteneur de scroll horizontal */}
@@ -29,12 +26,6 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
               <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
                 <span className="text-[10px] font-mono font-bold text-white">#{index + 1}</span>
               </div>
-              {/* Overlay Play au hover */}
-              {/* <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                 <div className="w-12 h-12 bg-vert rounded-full flex items-center justify-center shadow-xl translate-y-4 group-hover:translate-y-0 transition-transform">
-                    <span className="text-bg1 ml-1">▶</span>
-                 </div>
-              </div> */}
             </div>
 
             {/* Légendes */}
