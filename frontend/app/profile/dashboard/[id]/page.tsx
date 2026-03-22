@@ -12,7 +12,7 @@ import IntervalsSelector from "./IntervalSelector";
 import TopMediaCard from "./TopMediaCard";
 import { DashboardStats, formatToInputDate, getDateRange, getRangeLabel, HourlyData, INITIAL_STATS } from "./utils";
 import { UserProfile } from "@/app/data/DataInfos";
-import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
+// import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
 import { SecondaryButton } from "@/app/components/Atomic/Buttons";
 import { ErrorState } from "@/app/components/Atomic/Error/Error";
 import { ApiError } from "@/app/services/api";
@@ -20,29 +20,34 @@ import { useLanguage } from "@/app/context/languageContext";
 import { eachDayOfInterval, format, isAfter, min, parseISO } from 'date-fns';
 
 const STYLES = {
-  main: "min-h-screen bg-bg1 text-white",
-  container: "mx-auto p-8 px-11",
+  main: "min-h-screen text-white",
+  container: "mx-auto p-2 py-6 sm:p-5 lg:p-8",
   
   nav: {
     bar: "flex flex-row gap-12 mb-6 justify-between",
     back: "flex gap-2 text-gray-400 hover:text-white transition-colors group",
-    title: "text-4xl font-bold mb-2",
-    sub: "text-gray-400",
+    title: "text-xl lg:text-4xl font-bold",
+    sub: "text-xs lg:text-md text-gray-400",
   },
   
   grid: {
-    container: "flex flex-col lg:flex-row min-h-[200px] w-full items-stretch rounded-[32px] overflow-hidden border border-white/5",
-    stats: "grid grid-cols-1 md:grid-cols-3 gap-4",
+    container: "flex flex-col lg:flex-row w-full items-stretch rounded-[32px] overflow-hidden border border-white/5 h-[800px]",
+    stats: "grid grid-cols-3 gap-1 lg:gap-4",
+    top_items: "flex flex-col md:grid md:grid-cols-3 gap-2 lg:gap-4",
+    habits_stats: (range: string) => {
+      const isWide = ["6m","year","1y","lifetime"].includes(range);
+      return `gap-3 lg:gap-4 grid ${isWide ? "grid-cols-3" : range === "today" ? "grid-cols-1" : "grid-cols-2"}`;
+    },
     habits: (range: string) => {
       const isWide = ["6m","year","1y","lifetime"].includes(range);
-      return `gap-4 grid grid-cols-1 ${isWide ? "md:grid-cols-3" : range === "today" ? "md:grid-cols-1" : "md:grid-cols-2"}`;
+      return `gap-3 lg:gap-4 grid ${isWide ? "grid-cols-2 lg:grid-cols-3" : range === "today" ? "grid-cols-1" : "grid-cols-2"}`;
     },
   }
 };
 
 export const FILTER_BAR_STYLES = {
   // Conteneur des inputs de date
-  DATE_GROUP: `flex items-center gap-3`,
+  DATE_GROUP: `flex items-center gap-1 lg:gap-3`,
   // Style de l'input date natif
   DATE_INPUT: `bg-transparent text-sm text-white outline-none [color-scheme:dark] appearance-none appearance-none
     [&::-webkit-calendar-picker-indicator]:absolute
@@ -52,6 +57,21 @@ export const FILTER_BAR_STYLES = {
     m-0 p-0 w-[90px]`,
 };
 
+function AvatarContainer({url,username,additional,title}:{url:string|undefined,username?:string,additional?:string,title?:any}) {
+  const isSpecial = username === "Yvantmtc";
+  const styleImg = `w-full h-full rounded-[26px] lg:rounded-[31px] bg-bg2 object-cover ${!isSpecial && 'border-4 border-bg1'}`;
+
+  return (
+    <div className={`flex flex-row lg:items-end gap-4 lg:gap-6 ${additional}`}>
+      <div className={`
+        w-20 h-20 lg:w-40 lg:h-40 rounded-[30px] lg:rounded-[35px] shadow-2xl flex items-center justify-center
+        ${isSpecial && 'p-[4px] bg-gradient-to-tr from-red-500 via-purple-500 to-blue-500 animate-gradient-xy'}
+      `}><img src={url || undefined} className={styleImg} alt="Avatar"/></div>
+      <div className="flex flex-1 flex-col gap-4 lg:gap-6 mb-5">{title}</div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { id } = useParams();
   const { t } = useLanguage();
@@ -59,7 +79,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [range, setRange] = useState('year');
+  const [range, setRange] = useState('lifetime');
   const [offset, setOffset] = useState(0);
   const [extendedStats, setExtendedStats] = useState(INITIAL_STATS as DashboardStats);
   const [activeTab, setActiveTab] = useState<'activite' | 'diversite' | 'habitudes'>("activite");
@@ -228,15 +248,56 @@ export default function DashboardPage() {
     <main className={STYLES.main}>
       <div className={STYLES.container}>
         {/* --- HEADER --- */}
-        <div className={"flex flex-row justify-between items-end mb-3"}>
+        <div className={"flex flex-row justify-between items-end lg:mb-3"}>
           <AvatarContainer url={profile?.avatar} username={profile?.display_name} title={
-            <header>
-              <h1 className={STYLES.nav.title}>{dict.title}</h1>
-              <p className={`${STYLES.nav.sub} truncate`}>{dict.subtitle}</p>
+            <header className="flex flex-col h-full justify-between">
+              <div>
+                <h1 className={STYLES.nav.title}>{dict.title}</h1>
+                <p className={`${STYLES.nav.sub} truncate`}>{dict.subtitle}</p>
+              </div>
+              <div className="lg:hidden flex items-center justify-center gap-1">
+                <SecondaryButton onClick={decreaseInterval} disabled={range === "lifetime"}
+                  additional={`${range !== "lifetime" && 'hover:text-vert'} text-lg px-1 pb-1`}>
+                  −
+                </SecondaryButton>
+                <div className="w-[1px] h-4 bg-white/10"/>
+                <div className={FILTER_BAR_STYLES.DATE_GROUP}>
+                  <Calendar size={14} className="text-vert flex-shrink-0" />
+                  
+                  <div className="flex items-center justify-center h-6 min-w-[150px]"> 
+                    {getRangeLabel(range, offset) ? (
+                      <span className="text-sm font-medium text-white text-center leading-none">
+                        {getRangeLabel(range, offset)}
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="date" 
+                          value={startDate.split('T')[0]} 
+                          className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
+                          onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                        />
+                        <span className="text-gray-600 leading-none">→</span>
+                        <input 
+                          type="date" 
+                          value={endDate.split('T')[0]} 
+                          className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
+                          onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="w-[1px] h-4 bg-white/10"/>
+                <SecondaryButton onClick={increaseInterval} disabled={offset === 0}
+                  additional={`${offset !== 0 && 'hover:text-vert'} text-lg px-1 pb-1`}>
+                  +
+                </SecondaryButton>
+              </div>
             </header>
           }/>
 
-          <div className="flex items-center justify-center gap-4">
+          <div className="hidden lg:flex items-center justify-center gap-4">
             <SecondaryButton onClick={decreaseInterval} disabled={range === "lifetime"}
               additional={`${range !== "lifetime" && 'hover:text-vert'} text-xl px-2.5 pb-1`}>
               −
@@ -289,11 +350,11 @@ export default function DashboardPage() {
             icon={<Timer className="text-vert" />}
           >
             <div className={STYLES.grid.stats}>
-              <CompactStatCard label={dict.statTime} icon={<Timer size={32} className="text-vert"/>}
+              <CompactStatCard label={dict.statTime} icon={<Timer className="text2 w-4 h-4 lg:w-6 lg:h-6"/>}
                 value={loading ? "..." : `${formatter.format(extendedStats.totalTime)} ${dict.unitMin}`} />
-              <CompactStatCard label={dict.statStreams} icon={<Play size={32} className="text-vert"/>}
+              <CompactStatCard label={dict.statStreams} icon={<Play className="text2 w-4 h-4 lg:w-6 lg:h-6"/>}
                 value={loading ? "..." : formatter.format(extendedStats.totalStreams)} />
-              <CompactStatCard label={dict.statEngagement} icon={<Percent size={32} className="text-vert"/>}
+              <CompactStatCard label={dict.statEngagement} icon={<Percent className="text2 w-4 h-4 lg:w-6 lg:h-6"/>}
                 value={loading ? "..." : extendedStats.ratio} />
             </div>
             {range !== "today" && (
@@ -314,15 +375,15 @@ export default function DashboardPage() {
             }
           >
             <div className={STYLES.grid.stats}>
-              <CompactStatCard label={dict.statTracks} icon={<Music2 size={32} className="text-blue-400"/>}
+              <CompactStatCard label={dict.statTracks} icon={<Music2 className="text-blue-400 w-6 h-6"/>}
                 value={loading ? "..." : formatter.format(extendedStats.uniqueTracks)} />
-              <CompactStatCard label={dict.statAlbums} icon={<Disc size={32} className="text-blue-400"/>}
+              <CompactStatCard label={dict.statAlbums} icon={<Disc className="text-blue-400 w-6 h-6"/>}
                 value={loading ? "..." : formatter.format(extendedStats.uniqueAlbums)} />
-              <CompactStatCard label={dict.statArtists} icon={<Mic2 size={32} className="text-blue-400"/>}
+              <CompactStatCard label={dict.statArtists} icon={<Mic2 className="text-blue-400 w-6 h-6"/>}
                 value={loading ? "..." : formatter.format(extendedStats.uniqueArtists)} />
             </div>
 
-            <div className={STYLES.grid.stats}>
+            <div className={STYLES.grid.top_items}>
               <TopMediaCard type="track" label={dict.topTrack} item={extendedStats.topTrack} loading={loading} metric={metric}/>
               <TopMediaCard type="album" label={dict.topAlbum} item={extendedStats.topAlbum} loading={loading} metric={metric}/>
               <TopMediaCard type="artist" label={dict.topArtist} item={extendedStats.topArtist} loading={loading} metric={metric}/>
@@ -340,27 +401,27 @@ export default function DashboardPage() {
               </div>
             }
           >
-            <div className={STYLES.grid.habits(range)}>
-              <CompactStatCard label={dict.statPeakHour} icon={<Clock className="text-purple-400" size={32}/>}
+            <div className={STYLES.grid.habits_stats(range)}>
+              <CompactStatCard label={dict.statPeakHour} icon={<Clock className="text-purple-400 w-4 h-4"/>}
                 value={loading ? "..." : metric === "minutes" ? extendedStats.peakHour[0] : extendedStats.peakHour[1]} />
-              {range !== "today" && <CompactStatCard label={dict.statPeakDay} icon={<CalendarIcon className="text-purple-400" size={32}/>}
+              {range !== "today" && <CompactStatCard label={dict.statPeakDay} icon={<CalendarIcon className="text-purple-400 w-4 h-4"/>}
                 value={loading ? "..." : metric === "minutes" ? extendedStats.peakDay[0] : extendedStats.peakDay[1]} />}
               {["6m", "half", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
-                <CompactStatCard label={dict.statPeakMonth} icon={<CalendarDays className="text-purple-400" size={32}/>}
+                <CompactStatCard label={dict.statPeakMonth} icon={<CalendarDays className="text-purple-400 w-4 h-4"/>}
                   value={loading ? "..." : metric === "minutes" ? extendedStats.peakMonth[0] : extendedStats.peakMonth[1]} />
               }
             </div>
-            {/* Les graphiques internes (ClockChart, WeeklyChart, etc.) ont déjà été traduits dans l'étape précédente */}
+
             <div className={STYLES.grid.habits(range)}>
               <ClockChart data={processedData} metric={metric} daysCount={range==="today" ? 1 : 0}/>
               {range !== "today" && <WeeklyChart data={extendedStats.weeklyData} metric={metric}/>}
               {["6m", "1y", "year", "lifetime"].some(r => range.includes(r)) && 
-                <MonthlyChart data={extendedStats.monthlyData} metric={metric}/>
+                <div className={`${["lifetime"].some(r => range.includes(r)) ? "col-span-1" : "col-span-2 lg:col-span-1"}`}><MonthlyChart data={extendedStats.monthlyData} metric={metric}/></div>
+              }
+              {["lifetime"].some(r => range.includes(r)) &&
+                <div className="col-span-1 lg:col-span-3"><AnnualChart data={extendedStats.annualData} metric={metric}/></div>
               }
             </div>
-            {["lifetime"].some(r => range.includes(r)) &&
-              <AnnualChart data={extendedStats.annualData} metric={metric}/>
-            }
           </AccordionItem>
         </div>
       </div>

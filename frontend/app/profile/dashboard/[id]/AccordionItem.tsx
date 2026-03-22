@@ -18,13 +18,18 @@ const COMPONENT_STYLES = {
       ${isOpen ? "opacity-0 invisible" : "opacity-100 visible"}
     `,
     content: (isOpen: boolean) => `
-      p-8 h-full transition-opacity duration-500 delay-200
+      p-4 md:p-6 lg:p-8 h-full transition-opacity duration-500 delay-200
       ${isOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"}
     `,
     indicator: (isOpen: boolean) => `
-      absolute bottom-8 left-1/2 -translate-x-1/2
-      transition-all duration-500 delay-300
-      ${isOpen ? 'opacity-0 translate-y-10' : 'opacity-100 translate-y-0'}
+      absolute transition-all duration-500 delay-300
+      ${isOpen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'}
+      
+      /* Format Mobile (md et moins) : à gauche, centré verticalement */
+      max-lg:left-4 max-lg:top-1/2 max-lg:-translate-y-1/2
+      
+      /* Format Desktop (lg et plus) : en bas, centré horizontalement */
+      lg:bottom-8 lg:left-1/2 lg:-translate-x-1/2
     `,
   },
 }
@@ -34,7 +39,7 @@ export default function AccordionItem({ title, isOpen, onClick, icon, children, 
     <div onClick={onClick} className={COMPONENT_STYLES.accordion.item(isOpen)}>
       {/* Label Vertical (Fermé) */}
       <div className={COMPONENT_STYLES.accordion.titleVertical(isOpen)}>
-        <span className="rotate-[-90deg] whitespace-nowrap text-gray-500 font-bold uppercase tracking-[0.2em] text-sm flex items-center gap-3">
+        <span className="lg:rotate-[-90deg] whitespace-nowrap text-gray-500 font-bold uppercase tracking-[0.2em] text-sm flex items-center gap-3">
           {icon} {title}
         </span>
       </div>
@@ -50,12 +55,12 @@ export default function AccordionItem({ title, isOpen, onClick, icon, children, 
 
       {/* Contenu (Ouvert) */}
       <div className={COMPONENT_STYLES.accordion.content(isOpen)}>
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-4">
           <div className="p-2 rounded-xl bg-white/5">{icon}</div>
           <h2 className="text-2xl font-bold">{title}</h2>
           {switchOption}
         </div>
-        <div className="flex flex-col gap-8">{children}</div>
+        <div className="flex flex-col gap-4">{children}</div>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useLanguage } from '@/app/context/languageContext';
+import { useEffect, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarAngleAxis, PolarGrid, Radar, PolarRadiusAxis } from 'recharts';
 import { LineChart, Line, Legend } from 'recharts';
 
@@ -51,11 +52,17 @@ const ChartToolTip = ({ active, payload }: any) => {
 
 function CustomBarChart({data, type, metric}:{data:any[], type:string, metric: 'streams' | 'minutes'}) {
   const { t } = useLanguage();
+  const [screenWidth, setScreenWidth] = useState(250);
+
+  useEffect(() => {
+    setScreenWidth(window.innerWidth);
+  }, []);
+  
   // Titre dynamique
   const title = type === "day" ? t.charts.weekly : type === "month" ? t.charts.monthly : t.charts.annual;
   
   return (
-    <GraphContainer height={250} title={title} additional={"flex flex-col"}>
+    <GraphContainer height={screenWidth < 1024 ? 200 : 250} title={title} additional={"flex flex-col"}>
       <BarChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }} barGap={0}>
           <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#ffffff05" />
           <XAxis dataKey={type} axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }} dy={10}/>
@@ -89,11 +96,17 @@ const formatTicks = (hour: string) => {
 
 export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: any[], metric: 'streams' | 'minutes', daysCount: number}) {
   const { t } = useLanguage();
+  const [screenWidth, setScreenWidth] = useState(250);
+
+  useEffect(() => {
+    setScreenWidth(window.innerWidth);
+  }, []);
+
   const maxRange = metric === 'minutes' && daysCount !== 0 ? 60 * daysCount : undefined;
   return (
-    <GraphContainer height={250} title={t.charts.hourly}>
+    <GraphContainer height={screenWidth < 1024 ? 200 : 250} title={t.charts.hourly}>
       <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data} startAngle={90} endAngle={-270}>
-        <PolarGrid stroke="#374151" />
+        <PolarGrid stroke="#374151"/>
         <PolarAngleAxis dataKey="hour" tickFormatter={formatTicks} tick={{ fill: '#9CA3AF', fontSize: 10 }}/>
         <PolarRadiusAxis domain={[0, maxRange || 'auto']} tick={false} axisLine={false}/>
         <Tooltip content={<ChartToolTip/>} cursor={{ stroke: '#c084fc', strokeWidth: 1 }}/>
@@ -113,7 +126,7 @@ export function CumulativeChart({ data }:{ data: any[] }) {
   const color1 = '#1DD05D', color2 = '#065e25';
   return (
     <GraphContainer height={250} title={t.charts.cumulative}>
-      <AreaChart data={data}>
+      <AreaChart data={data} margin={{ top: 0, right: 0, left: -15, bottom: 0 }}>
         <defs>
           <linearGradient id="colorArea1" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={color1} stopOpacity={0.3}/>
@@ -142,7 +155,7 @@ export const EvolutionChart = ({ data }:{data: any[]}) => {
   const color1 = "#1DB954", color2 = "#60a5fa", color3 = "#a78bfa";
   return (
     <GraphContainer height={300} title={t.charts.discoveries}>
-      <LineChart data={data}>
+      <LineChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
         <Tooltip content={<ChartToolTip c1={color1} c2={color2} c3={color3}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
         <GraphLegend/>
@@ -161,7 +174,7 @@ export const EvolutionStreamsChart = ({ data }:{data: any[]}) => {
   const color1 = '#1DD05D', color2 = '#065e25';
   return (
     <GraphContainer height={280} title={t.charts.streamsEvolution}>
-      <LineChart data={data}>
+      <LineChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
         <GraphXAxis data={"date"}/>
         <GraphYAxis/>
@@ -209,8 +222,8 @@ const GraphYAxis = () => {
 
 function GraphContainer({children, height, title, additional}:any) {
   return (
-    <div style={{ height: `${height}px` }} className={`flex flex-col w-full bg-white/[0.02] border border-white/5 p-4 rounded-2xl ${additional}`}>
-      <h3 className={`text-gray-400 text-xs font-bold uppercase`}>{title}</h3>
+    <div style={{ height: `${height}px` }} className={`flex flex-col w-full bg-white/[0.02] border border-white/5 px-2 py-4 md:p-4 rounded-2xl ${additional}`}>
+      <h3 className={`text-gray-400 text-[9px] md:text-xs font-bold uppercase`}>{title}</h3>
       <div className='flex-1 min-h-0 w-full'>
         <ResponsiveContainer width="100%" height="100%">
           {children}
