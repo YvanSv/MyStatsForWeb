@@ -7,6 +7,10 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const { t } = useLanguage();
   const dict = t.common;
+  const RATING = (rating: number) => {
+    const color = rating >= 1.35 ? `text2` : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
+    return `text-3xl font-mono font-bold text-center ${color}`;
+  }
   return (
     <section className="flex flex-col gap-4 my-12">
       {/* Header de la section */}
@@ -87,8 +91,8 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
                         {(selectedItem.engagement || 0).toLocaleString(t.common.locale)}%
                       </p>
                     </div>
-                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5 col-span-3">
-                      <p className="text-3xl font-mono font-bold text-white text-center">
+                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5 col-span-3">
+                      <p className={RATING(selectedItem.rating || 0)}>
                         {(selectedItem.rating || 0).toLocaleString(t.common.locale)}★
                       </p>
                     </div>
