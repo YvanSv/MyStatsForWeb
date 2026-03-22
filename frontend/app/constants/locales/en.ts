@@ -141,9 +141,7 @@ export const en = {
     logout: "Logout",
     login: "Login",
     live: "Live",
-    viewGridSm: "Small grid",
-    viewGrid: "Grid",
-    viewList: "List",
+    settings: "Settings",
   },
   footer: {
     dashboard: "My dashboard",
@@ -194,7 +192,10 @@ export const en = {
       track: "tracks",
       album: "albums",
       artist: "artists"
-    }
+    },
+    viewGridSm: "Small grid",
+    viewGrid: "Grid",
+    viewList: "List",
   },
   charts: {
     weekly: "Weekly activity",
@@ -299,5 +300,21 @@ export const en = {
     topArtist: "Top Artist",
     none: "None",
     unitMin: "min"
-  }
+  },
+  settings: {
+    title: "Settings",
+    subtitle: "Manage your preferences and account configuration",
+    appearance: "Appearance & Language",
+    languageLabel: "Interface Language",
+    languageDescription: "Choose your preferred language for the application",
+    account: "Account",
+    profile: "User Profile",
+    notifications: "Notifications",
+    privacy: "Privacy",
+    logout: "Log out",
+    save: "Save changes",
+    successUpdate: "Settings updated successfully!",
+    titleLanguage: "Interface language",
+    subtitleLanguage: "Choose your preferred language for the application"
+  },
 }

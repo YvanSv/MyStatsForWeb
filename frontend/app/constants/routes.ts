@@ -55,4 +55,5 @@ export const FRONT_ROUTES = {
   PROFILE: '/profile',
   PROFILE_EDIT: '/profile/edit',
   HELP: '/faq',
+  SETTINGS: '/settings',
 }

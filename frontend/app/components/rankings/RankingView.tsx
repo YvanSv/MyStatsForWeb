@@ -7,9 +7,10 @@ import { DataInfo } from "@/app/data/DataInfos";
 import GridCell from "./GridCell";
 import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
-import { GENERAL_STYLES } from "@/app/styles/general";
-import { PrimaryButton, SecondaryButton } from "../Atomic/Buttons";
+import { PrimaryButton, SecondaryButton, TertiaryButton } from "../Atomic/Buttons";
 import { useLanguage } from "@/app/context/languageContext";
+import { MenuButton, PopoverMenu } from "../Atomic/Nav/Navbar";
+import { Grid2X2, Grid3X3, List } from "lucide-react";
 
 interface RankingViewProps {
   title: string;
@@ -25,20 +26,20 @@ interface RankingViewProps {
 
 const RANKING_VIEW_STYLES = {
   // Layout Principal
-  MAIN_CONTAINER: "flex flex-col lg:flex-row gap-8 py-8 px-12 md:py-12 md:px-16 max-w-[1440px] mx-auto",
-  CONTENT_SECTION: "flex-1 space-y-10",
+  MAIN_CONTAINER: "flex flex-col lg:flex-row py-8 px-4 sm:px-8 md:py-8 md:px-12 max-w-[1440px] mx-auto",
+  CONTENT_SECTION: "flex-1 space-y-4",
   
   // Header de la vue (Titre + Contrôles)
   HEADER_WRAPPER: "flex flex-col-reverse md:flex-row md:items-center justify-between lg:mb-4 gap-4",
-  CONTROLS_GROUP: "flex flex-row gap-2 w-full md:w-auto items-center mb-6",
 
   // Sélecteur de Tri (Select)
   SORT_SELECT_WRAPPER: "relative flex-[1.5] md:flex-none group",
   SORT_LABEL: `text3 absolute -top-2 left-4 px-1.5 bg-bg1 text-[8px] md:text-[10px] font-bold uppercase tracking-wider z-10`,
   SORT_ICON_POS: `text3 absolute right-3 pointer-events-none`,
+  RIGHT_WRAPPER: "relative group",
 
   // Titre de la page
-  PAGE_TITLE: "text-3xl md:text-5xl font-hias tracking-tighter text-left md:text-right",
+  PAGE_TITLE: "text-3xl md:text-5xl tracking-tighter text-left md:text-right",
   
   // Grilles de contenu (ViewModes)
   LIST_CONTAINER: "space-y-2.5",
@@ -47,12 +48,20 @@ const RANKING_VIEW_STYLES = {
 };
 
 export default function RankingView({ title, type, items, sortConfig, onSort, loading, hasMore, loadMore, filterConfig }: RankingViewProps) {
-  const { viewMode } = useViewMode();
   const { showFilters, toggleShowFilters } = useShowFilters();
+  const { viewMode, toggleViewMode } = useViewMode();
   const { t } = useLanguage();
   const dict = t.ranking;
 
   const normalizedItems: DataInfo[] = items.map(item => ({ ...item, type }));
+
+  const views = [
+    { id: 'grid_sm', label: dict.viewGridSm, icon: <Grid3X3/>, hideMobile: true },
+    { id: 'grid', label: dict.viewGrid, icon: <Grid2X2/>, hideMobile: false },
+    { id: 'list', label: dict.viewList, icon: <List/>, hideMobile: false },
+  ] as const;
+
+  const activeView = views.find(v => v.id === viewMode) || views[1];
 
   return (
     <main className={`text1 min-h-screen relative overflow-hidden`}>
@@ -105,6 +114,23 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
                   ⇅
                 </span>
               </SecondaryButton>
+
+              {/* View Mode Selector */}
+              <div className={RANKING_VIEW_STYLES.RIGHT_WRAPPER}>
+                <SecondaryButton additional="text2 flex flex-col items-center p-1 lg:p-2 justify-center">
+                  <div className="flex items-center justify-center">{activeView.icon}</div>
+                </SecondaryButton>
+      
+                <PopoverMenu>
+                  {views.map(v => (
+                    <MenuButton key={v.id} onClick={() => toggleViewMode(v.id)} additional={`duration-300 ease-out
+                        ${viewMode === v.id ? `text2 bg-white/5` : `text3 hover:text-white hover:bg-white/5`}
+                        ${v.hideMobile ? 'hidden lg:flex' : 'flex'}
+                      `}
+                    >{v.icon}</MenuButton>
+                  ))}
+                </PopoverMenu>
+              </div>
             </div>
 
             {/* Titre de la page */}

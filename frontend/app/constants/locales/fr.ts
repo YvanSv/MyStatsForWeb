@@ -141,9 +141,7 @@ export const fr = {
     logout: "Déconnexion",
     login: "Se connecter",
     live: "Direct",
-    viewGridSm: "Petite grille",
-    viewGrid: "Grille",
-    viewList: "Liste",
+    settings: "Paramètres",
   },
   footer: {
     dashboard: "Mon dashboard",
@@ -194,7 +192,10 @@ export const fr = {
       track: "titres",
       album: "albums",
       artist: "artistes"
-    }
+    },
+    viewGridSm: "Petite grille",
+    viewGrid: "Grille",
+    viewList: "Liste",
   },
   charts: {
     weekly: "Activité hebdomadaire",
@@ -299,5 +300,21 @@ export const fr = {
     topArtist: "Top Artiste",
     none: "Aucun",
     unitMin: "min"
-  }
+  },
+  settings: {
+    title: "Paramètres",
+    subtitle: "Gérez vos préférences et la configuration de votre compte",
+    appearance: "Apparence & Langue",
+    languageLabel: "Langue de l'interface",
+    languageDescription: "Choisissez votre langue préférée pour l'application",
+    account: "Compte",
+    profile: "Profil utilisateur",
+    notifications: "Notifications",
+    privacy: "Confidentialité",
+    logout: "Se déconnecter",
+    save: "Enregistrer les modifications",
+    successUpdate: "Paramètres mis à jour avec succès !",
+    titleLanguage: "Langue de l'interface",
+    subtitleLanguage: "Choisissez votre langue préférée pour l'application",
+  },
 }
