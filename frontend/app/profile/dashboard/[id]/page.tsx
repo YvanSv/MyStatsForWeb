@@ -17,6 +17,7 @@ import { SecondaryButton } from "@/app/components/Atomic/Buttons";
 import { ErrorState } from "@/app/components/Atomic/Error/Error";
 import { ApiError } from "@/app/services/api";
 import { useLanguage } from "@/app/context/languageContext";
+import { eachDayOfInterval, format, isAfter, min, parseISO } from 'date-fns';
 
 const STYLES = {
   main: "min-h-screen bg-bg1 text-white",
@@ -111,6 +112,78 @@ export default function DashboardPage() {
 
     fetchStats();
   }, [id, range, offset]);
+
+  const filledEvolutionData = useMemo(() => {
+    const rawData = extendedStats.streamsEvolution;
+    if (!rawData || !startDate || !endDate) return [];
+
+    try {
+      const start = parseISO(startDate);
+      const actualEnd = min([parseISO(endDate), new Date()]);
+      if (isAfter(start, actualEnd)) return [];
+
+      const allDays = eachDayOfInterval({ start, end: actualEnd });
+      const dataMap = new Map(rawData.map(item => [item.date, item]));
+
+      return allDays.map((day: Date) => {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        const existing = dataMap.get(dateStr);
+
+        return {
+          date: dateStr,
+          streams: existing ? Number(existing.streams) : 0,
+          minutes: existing ? Number(existing.minutes) : 0,
+        };
+      });
+    } catch (e) {
+      console.error("Erreur Evolution Chart:", e);
+      return [];
+    }
+  }, [extendedStats.streamsEvolution, startDate, endDate]);
+
+  const filledCumlativeData = useMemo(() => {
+    const rawData = extendedStats.cumulativeData;
+    if (!rawData || !startDate || !endDate) return [];
+
+    try {
+        // 1. Forcer le parsing des dates
+        const start = parseISO(startDate);
+        const actualEnd = min([parseISO(endDate), new Date()]);
+
+        if (isNaN(start.getTime()) || isNaN(actualEnd.getTime())) {
+            console.error("Dates invalides :", { startDate, endDate });
+            return [];
+        }
+
+        if (isAfter(start, actualEnd)) return [];
+
+        const allDays = eachDayOfInterval({ start, end: actualEnd });
+        const dataMap = new Map(rawData.map(item => [item.date, item]));
+        
+        let lastValidStreams = 0;
+        let lastValidMinutes = 0;
+
+        const result = allDays.map((day: Date) => {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            const existing = dataMap.get(dateStr);
+
+            if (existing) {
+                lastValidStreams = Number(existing.streams);
+                lastValidMinutes = Number(existing.minutes);
+            }
+
+            return {
+                date: dateStr,
+                streams: lastValidStreams,
+                minutes: lastValidMinutes,
+            };
+        });
+        return result;
+    } catch (e) {
+        console.error("Erreur format dates Cumulative:", e);
+        return [];
+    }
+  }, [extendedStats.cumulativeData, startDate, endDate]);
 
   if (error && error.status === 404 && !profile) return <ErrorState title={dict.notFound} status={error.status}/>;
 
@@ -222,8 +295,8 @@ export default function DashboardPage() {
             </div>
             {range !== "today" && (
               <>
-                <CumulativeChart data={extendedStats.cumulativeData}/>
-                <EvolutionStreamsChart data={extendedStats.streamsEvolution}/>
+                <CumulativeChart data={filledCumlativeData}/>
+                <EvolutionStreamsChart data={filledEvolutionData}/>
               </>
             )}
           </AccordionItem>
@@ -252,7 +325,7 @@ export default function DashboardPage() {
               <TopMediaCard type="artist" label={dict.topArtist} item={extendedStats.topArtist} loading={loading} metric={metric}/>
             </div>
 
-            {range !== "today" && <EvolutionChart data={extendedStats.entityEvolution} loading={false}/>}
+            {range !== "today" && <EvolutionChart data={extendedStats.entityEvolution}/>}
           </AccordionItem>
 
           {/* SECTION 3 : HABITUDES */}

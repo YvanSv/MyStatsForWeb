@@ -108,12 +108,12 @@ export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: 
   );
 }
 
-export function CumulativeChart({ data }: { data: any[] }) {
+export function CumulativeChart({ data }:{ data: any[] }) {
   const { t } = useLanguage();
   const color1 = '#1DD05D', color2 = '#065e25';
   return (
     <GraphContainer height={250} title={t.charts.cumulative}>
-      <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={data}>
         <defs>
           <linearGradient id="colorArea1" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={color1} stopOpacity={0.3}/>
@@ -126,7 +126,7 @@ export function CumulativeChart({ data }: { data: any[] }) {
         </defs>
         
         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-        <GraphXAxis data={"full_date"}/>
+        <GraphXAxis data={"date"}/>
         <GraphYAxis/>
         <GraphLegend/>
         <Tooltip content={<ChartToolTip c1={color1} c2={color2}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
@@ -137,7 +137,7 @@ export function CumulativeChart({ data }: { data: any[] }) {
   );
 }
 
-export const EvolutionChart = ({ data, loading }:{data: any[], loading: boolean}) => {
+export const EvolutionChart = ({ data }:{data: any[]}) => {
   const { t } = useLanguage();
   const color1 = "#1DB954", color2 = "#60a5fa", color3 = "#a78bfa";
   return (

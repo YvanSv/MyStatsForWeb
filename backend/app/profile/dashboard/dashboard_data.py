@@ -8,8 +8,7 @@ from app.models import TrackHistory, Track, Album, Artist, User
 
 router = APIRouter()
 
-@router.get(
-    "/{slug}",
+@router.get("/{slug}",
     summary="Récupérer l'analyse complète d'un profil",
     responses={
         200: {"description": "Calcul complet des statistiques et graphiques"},
@@ -37,24 +36,230 @@ def get_dashboard_data(
     - **Ratio de complétion** : Pourcentage moyen d'écoute des morceaux (écoute intégrale vs zapping).
     - **Intensité** : Moyennes quotidiennes de temps et de streams.
     """
-    # Récupérer le propriétaire du profil
-    if slug.isdigit(): target_user = session.get(User, int(slug))
-    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
-    if not target_user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-    # Identifier le visiteur via le cookie
-    visitor = None
-    if session_id: visitor = session.exec(select(User).where(User.session_id == session_id)).first()
-    is_owner = visitor is not None and visitor.id == target_user.id
-    # Vérification de la permission Dashboard
-    if not is_owner and not target_user.perms.get("dashboard", True): raise HTTPException(status_code=403, detail="Ce dashboard est privé")
+    # # 1. Stats Globales
+    # res = session.exec(
+    #     select(
+    #         func.coalesce(func.sum(TrackHistory.ms_played), 0).label("total_ms"),
+    #         func.count(TrackHistory.id).label("total_streams"),
+    #         func.count(func.distinct(TrackHistory.spotify_id)).label("unique_tracks"),
+    #         func.count(func.distinct(Track.album_id)).label("unique_albums"),
+    #         func.count(func.distinct(Track.artist_id)).label("unique_artists"),
+    #         func.count(func.distinct(func.date(TrackHistory.played_at))).label("days_count"),
+    #         func.avg((col(TrackHistory.ms_played) * 1.0 / col(Track.duration_ms)) * 100).label("completion")
+    #     )
+    #     .join(Track, Track.spotify_id == TrackHistory.spotify_id)
+    #     .where(*filters)
+    #     .where(Track.duration_ms > 0)
+    # ).first()
 
-    # 0. Filtres communs
+    # # --- 1. Requête unique pour tous les graphiques temporels ---
+    # # On récupère la donnée brute par JOUR et par HEURE
+    # raw_time_data = session.exec(
+    #     select(
+    #         func.date(TrackHistory.played_at).label("date"),
+    #         func.extract('hour', TrackHistory.played_at + func.cast('1 hours', sqlalchemy.Interval)).label("hour"),
+    #         func.sum(TrackHistory.ms_played).label("ms"),
+    #         func.count(TrackHistory.id).label("streams")
+    #     )
+    #     .where(*filters)
+    #     .group_by("date", "hour")
+    #     .order_by("date")
+    # ).all()
+
+    # # --- 2. Agrégation Python (Zéro appel DB supplémentaire) ---
+    # clock_data = [{"hour": f"{i}h", "value": 0, "streams": 0} for i in range(24)]
+    # weekly_data = [{"day": d, "value": 0, "streams": 0} for d in ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]]
+    # monthly_data = [{"month": m, "value": 0, "streams": 0} for m in ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"]]
+    # days_names = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+    # months_names = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+    # cumulative_data = []
+
+    # running_ms, running_streams = 0, 0
+    # current_day_data = {}
+    # annual_dict = {}
+
+    # for r in raw_time_data:
+    #     ms, streams = r.ms, r.streams
+    #     h_int = int(r.hour)
+    #     d_idx = (int(r.date.strftime("%w")) + 6) % 7
+    #     m_idx = r.date.month - 1
+        
+    #     # Clock
+    #     clock_data[h_int]["value"] += round(ms / 60000)
+    #     clock_data[h_int]["streams"] += streams
+        
+    #     # Weekly
+    #     weekly_data[d_idx]["value"] += round(ms / 60000)
+    #     weekly_data[d_idx]["streams"] += streams
+        
+    #     # Monthly
+    #     monthly_data[m_idx]["value"] += round(ms / 60000)
+    #     monthly_data[m_idx]["streams"] += streams
+        
+    #     # Cumulative (on groupe par date car raw_time_data a plusieurs entrées par jour via l'heure)
+    #     day_str = r.date.isoformat()
+    #     if day_str not in current_day_data:
+    #         current_day_data[day_str] = {"ms": 0, "streams": 0, "obj": r.date}
+    #     current_day_data[day_str]["ms"] += ms
+    #     current_day_data[day_str]["streams"] += streams
+
+    #     year = r.date.year
+    #     if year not in annual_dict:
+    #         annual_dict[year] = {"year": str(year), "value": 0, "streams": 0}
+    #     annual_dict[year]["value"] += round(r.ms / 60000)
+    #     annual_dict[year]["streams"] += r.streams
+
+    # years_present = sorted(annual_dict.keys())
+    # annual_data = []
+
+    # if years_present:
+    #     for y in range(min(years_present), max(years_present) + 1):
+    #         if y in annual_dict:
+    #             annual_data.append(annual_dict[y])
+    #         else:
+    #             # Année vide pour la continuité du graphique
+    #             annual_data.append({"year": str(y), "value": 0, "streams": 0})
+
+    # # Finalisation du cumulé
+    # for d_str in sorted(current_day_data.keys()):
+    #     d = current_day_data[d_str]
+    #     running_ms += d["ms"]
+    #     running_streams += d["streams"]
+    #     cumulative_data.append({
+    #         "full_date": d_str,
+    #         "display_date": d["obj"].strftime("%d/%m/%y"),
+    #         "minutes": round(running_ms / 60000, 1),
+    #         "streams": running_streams
+    #     })
+    
+    # peak_h_min_val = max(range(24), key=lambda h: clock_data[h]["value"]) if any(h["value"] > 0 for h in clock_data) else None
+    # peak_h_str_val = max(range(24), key=lambda h: clock_data[h]["streams"]) if any(h["streams"] > 0 for h in clock_data) else None
+    # peak_d_min_idx = max(range(7), key=lambda d: weekly_data[d]["value"]) if any(d["value"] > 0 for d in weekly_data) else None
+    # peak_d_str_idx = max(range(7), key=lambda d: weekly_data[d]["streams"]) if any(d["streams"] > 0 for d in weekly_data) else None
+    # peak_m_min_idx = max(range(12), key=lambda m: monthly_data[m]["value"]) if any(m["value"] > 0 for m in monthly_data) else None
+    # peak_m_str_idx = max(range(12), key=lambda m: monthly_data[m]["streams"]) if any(m["streams"] > 0 for m in monthly_data) else None
+    
+    # # --- 3. Factorisation des Découvertes (Discovery) ---
+    # def get_discovery(id_col, join_track=False):
+    #     stmt = select(id_col.label("id"), func.min(TrackHistory.played_at).label("fs"))
+    #     if join_track:
+    #         stmt = stmt.join(Track, Track.spotify_id == TrackHistory.spotify_id)
+        
+    #     subq = stmt.where(TrackHistory.user_id == target_user.id, *filters).group_by(id_col).subquery()
+        
+    #     return session.exec(
+    #         select(func.date(subq.c.fs).label("d"), func.count(subq.c.id).label("c"))
+    #         .group_by("d").order_by("d")
+    #     ).all()
+
+    # daily_tracks = get_discovery(TrackHistory.spotify_id)
+    # daily_albums = get_discovery(Track.album_id, join_track=True)
+    # daily_artists = get_discovery(Track.artist_id, join_track=True)
+
+    # all_dates = sorted(list(set(
+    #     [r.d for r in daily_tracks] + 
+    #     [r.d for r in daily_albums] + 
+    #     [r.d for r in daily_artists]
+    # )))
+
+    # entity_evolution = {d.isoformat(): {"date": d.isoformat(), "tracks": 0, "albums": 0, "artists": 0} for d in all_dates}
+    # for r in daily_tracks: entity_evolution[r.d.isoformat()]["tracks"] = r.c
+    # for r in daily_albums: entity_evolution[r.d.isoformat()]["albums"] = r.c
+    # for r in daily_artists: entity_evolution[r.d.isoformat()]["artists"] = r.c
+
+    # evolution_sorted = []
+    # last_t, last_al, last_ar = 0, 0, 0
+
+    # for d_str in sorted(entity_evolution.keys()):
+    #     entry = entity_evolution[d_str]
+        
+    #     # On ajoute la valeur du jour au cumul précédent
+    #     last_t += entry["tracks"]
+    #     last_al += entry["albums"]
+    #     last_ar += entry["artists"]
+        
+    #     evolution_sorted.append({
+    #         "date": d_str,
+    #         "tracks": last_t,
+    #         "albums": last_al,
+    #         "artists": last_ar
+    #     })
+
+    # Auth & Filtres
+    target_user, is_owner = get_target_user_and_check_perms(slug, session_id, session)
     filters = [TrackHistory.user_id == target_user.id]
     if start_date: filters.append(TrackHistory.played_at >= start_date)
     if end_date: filters.append(TrackHistory.played_at <= end_date)
 
-    # 1. Stats Globales
-    res = session.exec(
+    # Collecte des données via les services
+    res = fetch_global_stats(session, filters)
+    clock, weekly, monthly, day_map, annual_dict = process_temporal_data(session, filters)
+
+    # Calcul des "Peaks" (Pics d'activité)
+    days_names = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+    months_names = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+    def get_peak_indices(dataset, key="value"):
+        if not any(d[key] > 0 for d in dataset): return None, None
+        idx_min = max(range(len(dataset)), key=lambda i: dataset[i]["value"])
+        idx_str = max(range(len(dataset)), key=lambda i: dataset[i]["streams"])
+        return idx_min, idx_str
+    p_h_min, p_h_str = get_peak_indices(clock)
+    p_d_min, p_d_str = get_peak_indices(weekly)
+    p_m_min, p_m_str = get_peak_indices(monthly)
+
+    # Finalisation de CumulativeData (Calcul du running total)
+    cumulative_data = []
+    running_ms, running_streams = 0, 0
+    for d_str in sorted(day_map.keys()):
+        d = day_map[d_str]
+        running_ms += d["ms"]
+        running_streams += d["streams"]
+        cumulative_data.append({
+            "date": d_str,
+            "minutes": round(running_ms / 60000, 1),
+            "streams": running_streams
+        })
+
+    return {
+        "totalTime": (res.total_ms // 60000),
+        "totalStreams": res.total_streams,
+        "uniqueTracks": res.unique_tracks,
+        "uniqueAlbums": res.unique_albums,
+        "uniqueArtists": res.unique_artists,
+        "peakHour": [f"{p_h_min}h", f"{p_h_str}h"] if p_h_min is not None else "--h",
+        "peakDay": [days_names[p_d_min], days_names[p_d_str]] if p_d_min is not None else "--",
+        "peakMonth": [months_names[p_m_min], months_names[p_m_str]] if p_m_min is not None else "--",
+        "avgTimePerDay": (res.total_ms // 60000) // (res.days_count or 1),
+        "avgStreamsPerDay": round(res.total_streams / (res.days_count or 1), 1),
+        "ratio": min(round(res.completion or 0, 1), 100.0),
+        "clockData": clock,
+        "weeklyData": weekly,
+        "monthlyData": monthly,
+        "annualData": sorted(annual_dict.values(), key=lambda x: x['year']),
+        "cumulativeData": cumulative_data,
+        "topTrack": get_top_item(session,filters,'track'),
+        "topAlbum": get_top_item(session,filters,'album'),
+        "topArtist": get_top_item(session,filters,'artist'),
+        "entityEvolution": fetch_discovery_evolution(session, target_user.id, filters),
+        "streamsEvolution": get_streams_evolution(target_user.id,start_date,end_date,session)
+    }
+
+def get_target_user_and_check_perms(slug: str, session_id: str, session: Session):
+    # Récupération de l'utilisateur cible
+    if slug.isdigit(): target_user = session.get(User, int(slug))
+    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
+    if not target_user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        
+    # Vérification visiteur
+    visitor = None
+    if session_id: visitor = session.exec(select(User).where(User.session_id == session_id)).first()
+    is_owner = visitor is not None and visitor.id == target_user.id
+    if not is_owner and not target_user.perms.get("dashboard", True): raise HTTPException(status_code=403, detail="Ce dashboard est privé")
+        
+    return target_user, is_owner
+
+def fetch_global_stats(session, filters):
+    return session.exec(
         select(
             func.coalesce(func.sum(TrackHistory.ms_played), 0).label("total_ms"),
             func.count(TrackHistory.id).label("total_streams"),
@@ -69,8 +274,7 @@ def get_dashboard_data(
         .where(Track.duration_ms > 0)
     ).first()
 
-    # --- 1. Requête unique pour tous les graphiques temporels ---
-    # On récupère la donnée brute par JOUR et par HEURE
+def process_temporal_data(session, filters):
     raw_time_data = session.exec(
         select(
             func.date(TrackHistory.played_at).label("date"),
@@ -78,153 +282,105 @@ def get_dashboard_data(
             func.sum(TrackHistory.ms_played).label("ms"),
             func.count(TrackHistory.id).label("streams")
         )
-        .where(*filters)
-        .group_by("date", "hour")
-        .order_by("date")
+        .where(*filters).group_by("date", "hour").order_by("date")
     ).all()
 
-    # --- 2. Agrégation Python (Zéro appel DB supplémentaire) ---
-    clock_data = [{"hour": f"{i}h", "value": 0, "streams": 0} for i in range(24)]
-    weekly_data = [{"day": d, "value": 0, "streams": 0} for d in ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]]
-    monthly_data = [{"month": m, "value": 0, "streams": 0} for m in ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"]]
-    days_names = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-    months_names = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-    cumulative_data = []
-
-    running_ms, running_streams = 0, 0
-    current_day_data = {}
+    # Initialisation des structures (Clock, Weekly, Monthly)
+    clock = [{"hour": f"{i}h", "value": 0, "streams": 0} for i in range(24)]
+    weekly = [{"day": d, "value": 0, "streams": 0} for d in ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]]
+    monthly = [{"month": m, "value": 0, "streams": 0} for m in ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"]]
+    
+    current_day_map = {}
     annual_dict = {}
 
     for r in raw_time_data:
-        ms, streams = r.ms, r.streams
-        h_int = int(r.hour)
-        d_idx = (int(r.date.strftime("%w")) + 6) % 7
-        m_idx = r.date.month - 1
+        h_int, d_idx, m_idx = int(r.hour), (int(r.date.strftime("%w")) + 6) % 7, r.date.month - 1
+        mins = round(r.ms / 60000)
         
-        # Clock
-        clock_data[h_int]["value"] += round(ms / 60000)
-        clock_data[h_int]["streams"] += streams
-        
-        # Weekly
-        weekly_data[d_idx]["value"] += round(ms / 60000)
-        weekly_data[d_idx]["streams"] += streams
-        
-        # Monthly
-        monthly_data[m_idx]["value"] += round(ms / 60000)
-        monthly_data[m_idx]["streams"] += streams
-        
-        # Cumulative (on groupe par date car raw_time_data a plusieurs entrées par jour via l'heure)
-        day_str = r.date.isoformat()
-        if day_str not in current_day_data:
-            current_day_data[day_str] = {"ms": 0, "streams": 0, "obj": r.date}
-        current_day_data[day_str]["ms"] += ms
-        current_day_data[day_str]["streams"] += streams
+        clock[h_int]["value"] += mins
+        clock[h_int]["streams"] += r.streams
+        weekly[d_idx]["value"] += mins
+        weekly[d_idx]["streams"] += r.streams
+        monthly[m_idx]["value"] += mins
+        monthly[m_idx]["streams"] += r.streams
 
+        # Cumul par jour pour cumulativeData
+        day_str = r.date.isoformat()
+        if day_str not in current_day_map:
+            current_day_map[day_str] = {"ms": 0, "streams": 0, "obj": r.date}
+        current_day_map[day_str]["ms"] += r.ms
+        current_day_map[day_str]["streams"] += r.streams
+
+        # Annuel
         year = r.date.year
-        if year not in annual_dict:
-            annual_dict[year] = {"year": str(year), "value": 0, "streams": 0}
-        annual_dict[year]["value"] += round(r.ms / 60000)
+        if year not in annual_dict: annual_dict[year] = {"year": str(year), "value": 0, "streams": 0}
+        annual_dict[year]["value"] += mins
         annual_dict[year]["streams"] += r.streams
 
-    years_present = sorted(annual_dict.keys())
-    annual_data = []
+    return clock, weekly, monthly, current_day_map, annual_dict
 
-    if years_present:
-        for y in range(min(years_present), max(years_present) + 1):
-            if y in annual_dict:
-                annual_data.append(annual_dict[y])
-            else:
-                # Année vide pour la continuité du graphique
-                annual_data.append({"year": str(y), "value": 0, "streams": 0})
-
-    # Finalisation du cumulé
-    for d_str in sorted(current_day_data.keys()):
-        d = current_day_data[d_str]
-        running_ms += d["ms"]
-        running_streams += d["streams"]
-        cumulative_data.append({
-            "full_date": d_str,
-            "display_date": d["obj"].strftime("%d/%m/%y"),
-            "minutes": round(running_ms / 60000, 1),
-            "streams": running_streams
-        })
-    
-    peak_h_min_val = max(range(24), key=lambda h: clock_data[h]["value"]) if any(h["value"] > 0 for h in clock_data) else None
-    peak_h_str_val = max(range(24), key=lambda h: clock_data[h]["streams"]) if any(h["streams"] > 0 for h in clock_data) else None
-    peak_d_min_idx = max(range(7), key=lambda d: weekly_data[d]["value"]) if any(d["value"] > 0 for d in weekly_data) else None
-    peak_d_str_idx = max(range(7), key=lambda d: weekly_data[d]["streams"]) if any(d["streams"] > 0 for d in weekly_data) else None
-    peak_m_min_idx = max(range(12), key=lambda m: monthly_data[m]["value"]) if any(m["value"] > 0 for m in monthly_data) else None
-    peak_m_str_idx = max(range(12), key=lambda m: monthly_data[m]["streams"]) if any(m["streams"] > 0 for m in monthly_data) else None
-    
-    # --- 3. Factorisation des Découvertes (Discovery) ---
-    def get_discovery(id_col, join_track=False):
+def fetch_discovery_evolution(session, user_id, filters):
+    """
+    Calcule l'évolution du catalogue : compte quand chaque entité 
+    a été écoutée pour la toute première fois.
+    """
+    def get_discovery_query(id_col, join_track=False):
+        # Sous-requête : Trouve la date de PREMIÈRE écoute (fs = first sight) pour chaque ID
         stmt = select(id_col.label("id"), func.min(TrackHistory.played_at).label("fs"))
-        if join_track:
+        if join_track: 
             stmt = stmt.join(Track, Track.spotify_id == TrackHistory.spotify_id)
         
-        subq = stmt.where(TrackHistory.user_id == target_user.id, *filters).group_by(id_col).subquery()
+        subq = stmt.where(TrackHistory.user_id == user_id, *filters).group_by(id_col).subquery()
         
+        # Requête principale : Compte combien d'entités ont été "découvertes" par jour
         return session.exec(
             select(func.date(subq.c.fs).label("d"), func.count(subq.c.id).label("c"))
             .group_by("d").order_by("d")
         ).all()
 
-    daily_tracks = get_discovery(TrackHistory.spotify_id)
-    daily_albums = get_discovery(Track.album_id, join_track=True)
-    daily_artists = get_discovery(Track.artist_id, join_track=True)
+    # 1. Récupération des données brutes pour les 3 catégories
+    daily_tracks = get_discovery_query(TrackHistory.spotify_id)
+    daily_albums = get_discovery_query(Track.album_id, join_track=True)
+    daily_artists = get_discovery_query(Track.artist_id, join_track=True)
 
+    # 2. Fusion des dates uniques pour créer un axe temporel commun
     all_dates = sorted(list(set(
         [r.d for r in daily_tracks] + 
         [r.d for r in daily_albums] + 
         [r.d for r in daily_artists]
     )))
 
-    entity_evolution = {d.isoformat(): {"date": d.isoformat(), "tracks": 0, "albums": 0, "artists": 0} for d in all_dates}
+    # 3. Initialisation du dictionnaire de travail
+    entity_evolution = {
+        d.isoformat(): {"date": d.isoformat(), "tracks": 0, "albums": 0, "artists": 0} 
+        for d in all_dates
+    }
+
+    # 4. Remplissage avec les découvertes du jour (valeurs incrémentales)
     for r in daily_tracks: entity_evolution[r.d.isoformat()]["tracks"] = r.c
     for r in daily_albums: entity_evolution[r.d.isoformat()]["albums"] = r.c
     for r in daily_artists: entity_evolution[r.d.isoformat()]["artists"] = r.c
 
-    evolution_sorted = []
+    # 5. Calcul du cumul (Running Total) pour le graphique
+    discovery_sorted_list = []
     last_t, last_al, last_ar = 0, 0, 0
 
     for d_str in sorted(entity_evolution.keys()):
         entry = entity_evolution[d_str]
         
-        # On ajoute la valeur du jour au cumul précédent
+        # On cumule les découvertes du jour avec le total précédent
         last_t += entry["tracks"]
         last_al += entry["albums"]
         last_ar += entry["artists"]
         
-        evolution_sorted.append({
+        discovery_sorted_list.append({
             "date": d_str,
             "tracks": last_t,
             "albums": last_al,
             "artists": last_ar
         })
 
-    return {
-        "totalTime": (res.total_ms // 60000),
-        "totalStreams": res.total_streams,
-        "uniqueTracks": res.unique_tracks,
-        "uniqueAlbums": res.unique_albums,
-        "uniqueArtists": res.unique_artists,
-        "peakHour": [f"{peak_h_min_val}h",f"{peak_h_str_val}h"] if peak_h_min_val is not None and peak_h_str_val is not None else "--h",
-        "peakDay": [days_names[peak_d_min_idx],days_names[peak_d_str_idx]] if peak_d_min_idx is not None and peak_d_str_idx is not None else "--",
-        "peakMonth": [months_names[peak_m_min_idx],months_names[peak_m_str_idx]] if peak_m_min_idx is not None and peak_m_str_idx is not None else "--",
-        "avgTimePerDay": (res.total_ms // 60000) // (res.days_count or 1),
-        "avgStreamsPerDay": round(res.total_streams / (res.days_count or 1), 1),
-        "ratio": min(round(res.completion or 0, 1), 100.0),
-        "clockData": clock_data,
-        "weeklyData": weekly_data,
-        "monthlyData": monthly_data,
-        "annualData": annual_data,
-        "cumulativeData": cumulative_data,
-        "topTrack": get_top_item(session,filters,'track'),
-        "topAlbum": get_top_item(session,filters,'album'),
-        "topArtist": get_top_item(session,filters,'artist'),
-        "entityEvolution": evolution_sorted,
-        "streamsEvolution": get_streams_evolution(target_user.id,start_date,end_date,session)
-    }
+    return discovery_sorted_list
 
 def get_top_item(session, filters, target: Literal['track', 'album', 'artist']):
     def get_top_stat(target: Literal['track', 'album', 'artist'], metric: Literal['ms', 'count']):
@@ -261,17 +417,12 @@ def get_top_item(session, filters, target: Literal['track', 'album', 'artist']):
     
     return [format_item(get_top_stat(target, 'ms'),target),format_item(get_top_stat(target, 'count'),target)]
 
-def get_streams_evolution(
-    user_id: int,
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
-    session: Session = Depends(get_session)
-):
+def get_streams_evolution(user_id:int, start_date:Optional[datetime] = Query(None),end_date:Optional[datetime] = Query(None),session:Session = Depends(get_session)):
     filters = [TrackHistory.user_id == user_id]
-    if start_date: filters.append(TrackHistory.played_at >= start_date)
-    if end_date: filters.append(TrackHistory.played_at <= end_date)
-
-    daily_streams_stmt = (
+    if start_date is not None: filters.append(TrackHistory.played_at >= start_date)
+    if end_date is not None: filters.append(TrackHistory.played_at <= end_date)
+    
+    results = session.exec(
         select(
             func.date(TrackHistory.played_at).label("day"),
             func.count(TrackHistory.id).label("streams"),
@@ -280,36 +431,6 @@ def get_streams_evolution(
         .where(*filters)
         .group_by("day")
         .order_by("day")
-    )
-    results = session.exec(daily_streams_stmt).all()
-    
-    if not results: return []
-    evolution_data = []
-    
-    # Dictionnaire pour accès rapide : {date_str: {streams, minutes}}
-    data_map = {
-        r.day.isoformat(): {
-            "streams": r.streams,
-            "minutes": round(r.ms / 60000, 1)
-        } for r in results
-    }
-    
-    start_day = results[0].day
-    end_day = results[-1].day
-    current_day = start_day
-    
-    from datetime import timedelta
-    
-    while current_day <= end_day:
-        d_str = current_day.isoformat()
-        day_data = data_map.get(d_str, {"streams": 0, "minutes": 0})
-        
-        evolution_data.append({
-            "date": d_str,
-            "display_date": current_day.strftime("%d/%m"),
-            "streams": day_data["streams"],
-            "minutes": day_data["minutes"]
-        })
-        current_day += timedelta(days=1)
+    ).all()
 
-    return evolution_data
+    return [{"date": r.day.isoformat(), "streams": r.streams, "minutes": round(r.ms/60000, 1)} for r in results]
