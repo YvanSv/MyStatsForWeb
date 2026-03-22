@@ -6,7 +6,8 @@ from sqlalchemy import Date, Float, cast, func
 from sqlmodel import Session
 from app.response_message import AlbumStatsResponse, AlbumMetadataResponse
 from app.auth.utils.auth_utils import get_current_user_id
-from .utils.metadata import get_entity_stats, get_formulas, get_generic_metadata
+from .utils.metadata import get_entity_stats, get_generic_metadata
+from app.utils.rating import get_formulas
 
 router = APIRouter()
 

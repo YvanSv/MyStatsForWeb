@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Cookie
+from fastapi import APIRouter, Depends
 from sqlalchemy import Float, cast
 from sqlmodel import Session, func
 from typing import Optional, List
@@ -6,7 +6,8 @@ from app.database import get_session
 from app.models import Artist, Track, TrackHistory
 from app.response_message import ArtistStatsResponse, ArtistMetadataResponse
 from app.auth.utils.auth_utils import get_current_user_id
-from .utils.metadata import get_entity_stats, get_formulas, get_generic_metadata
+from .utils.metadata import get_entity_stats, get_generic_metadata
+from app.utils.rating import get_formulas
 
 router = APIRouter()
 

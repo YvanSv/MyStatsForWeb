@@ -212,6 +212,7 @@ export const en = {
     tracks: "tracks",
     albums: "albums",
     artists: "artists",
+    engagement: "engagement"
   },
   importData: {
     title: "Import your data",

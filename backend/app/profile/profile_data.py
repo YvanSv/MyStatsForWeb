@@ -1,6 +1,7 @@
 import asyncio
 from typing import Optional
 from fastapi import APIRouter, Cookie, HTTPException, Depends
+from sqlalchemy import Float, cast
 from sqlmodel import Session, select, func, desc, text
 from sqlalchemy.orm import joinedload
 from app.database import get_session
@@ -9,6 +10,7 @@ from app.response_message import UserProfileResponse, BaseUserProfile, UserProfi
 from app.spotify.utils.api_call import run_spotify_task
 from app.spotify.utils.spotify_api import get_spotify_users_client
 from app.spotify.utils.spotify_token import get_valid_access_token
+from app.utils.rating import get_formula
 
 def get_optional_user(session_id: Optional[str], db: Session):
     if not session_id:
@@ -55,23 +57,41 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
     # --- INITIALISATION ---
     top_tracks, top_artists, top_albums = [], [], []
     total_minutes,total_streams = 0,0
-    top_track,top_artist = None,None
 
     # --- TOP 50 TRACKS ---
     if target_user.perms.get("favorites", True) or is_owner:
         top_tracks_raw = get_top_entities(session, Track, TrackHistory.spotify_id,target_user.id,50)
-        top_tracks = [{"name": t.title,"image_url": alb.image_url,"sub": art.name,"count": count} for t, count, art, alb  in top_tracks_raw]
+        top_tracks = [{
+            "name": t.title,
+            "album_name": alb.name,
+            "artist_name": art.name,
+            "image_url": alb.image_url,
+            "count": cnt,
+            "minutes": round(m),
+            "engagement": round(eng,2),
+            "rating": round(r,2)
+        } for t, cnt, m, eng, r, art, alb in top_tracks_raw]
+
+        top_albums_raw = get_top_entities(session, Album, TrackHistory.album_id,target_user.id,50)
+        top_albums = [{
+            "name": alb.name,
+            "artist_name": art.name,
+            "image_url": alb.image_url,
+            "count": count,
+            "minutes": round(m),
+            "engagement": round(eng,2),
+            "rating": round(r,2)
+        } for alb, count, m, eng, r, art in top_albums_raw]
 
         top_artists_raw = get_top_entities(session, Artist, TrackHistory.artist_id,target_user.id,50)
         top_artists = [{
             "name": art.name,
             "image_url": art.image_url or f"https://api.dicebear.com/7.x/initials/svg?seed={art.name}",
-            "sub": f"{count} streams",
-            "count": count
-        } for art, count in top_artists_raw]
-
-        top_albums_raw = get_top_entities(session, Album, TrackHistory.album_id,target_user.id,50)
-        top_albums = [{"name": alb.name,"image_url": alb.image_url,"sub": art.name,"count": count} for alb, count, art in top_albums_raw]
+            "count": count,
+            "minutes": round(m),
+            "engagement": round(eng,2),
+            "rating": round(r,2)
+        } for art, count, m, eng, r in top_artists_raw]
 
     # --- STATS GLOBALES (Minutes & Streams) ---
     if target_user.perms.get("stats", True) or is_owner:
@@ -185,26 +205,48 @@ def get_peak_hour(user_id: int, session: Session):
     return f"{int(peak_hour_res[0])}h" if peak_hour_res is not None else "N/A"
 
 def get_top_entities(session, model, history_id_col, user_id, limit=50):
-    """
-    Fonction générique pour récupérer les Tops (Tracks, Artists ou Albums).
-    """
-    group_cols = [model.spotify_id]
+    total_ms = func.sum(TrackHistory.ms_played)
+    play_count = func.count(TrackHistory.id).label("play_count")
+    minutes = (cast(total_ms, Float) / 60000.0).label("minutes")
+    
     statement = (
-        select(model, func.count(TrackHistory.id).label("play_count"))
-        .join(model, history_id_col == model.spotify_id)
+        select(model, play_count, minutes)
+        .join(TrackHistory, history_id_col == model.spotify_id)
         .where(TrackHistory.user_id == user_id)
     )
-    # Pour une Track, on veut l'Artiste et l'Album (pour le nom et l'image)
+
+    # Calcul de l'engagement et du Rating
     if model == Track:
-        statement = statement.join(Artist, model.artist_id == Artist.spotify_id).add_columns(Artist)
-        statement = statement.join(Album, model.album_id == Album.spotify_id).add_columns(Album)
+        potential_dur = func.max(Track.duration_ms) * play_count
+        engagement = ((cast(total_ms, Float) * 100) / func.nullif(cast(potential_dur, Float), 0)).label("engagement")
+        rating = get_formula(model, total_ms, potential_dur, play_count)
+        statement = statement.add_columns(engagement, rating)
+    else:
+        # Pour Artiste/Album, on doit joindre Track
+        statement = statement.join(Track, TrackHistory.spotify_id == Track.spotify_id)
+        potential_dur = func.sum(Track.duration_ms)
+        engagement = ((cast(total_ms, Float) * 100) / func.nullif(cast(potential_dur, Float), 0)).label("engagement")
+        rating = get_formula(model, total_ms, potential_dur, play_count)
+        statement = statement.add_columns(engagement, rating)
+
+    # 4. Jointures de relations (Artistes, Albums)
+    group_cols = [model.spotify_id]
+    if model == Track:
+        statement = statement.join(Artist, Track.artist_id == Artist.spotify_id).add_columns(Artist)
+        statement = statement.join(Album, Track.album_id == Album.spotify_id).add_columns(Album)
         group_cols.extend([Artist.spotify_id, Album.spotify_id])
-    # Pour un Album, on veut juste l'Artiste (pour le nom de l'auteur)
     elif model == Album:
-        statement = statement.join(Artist, model.artist_id == Artist.spotify_id).add_columns(Artist)
+        statement = statement.join(Artist, Album.artist_id == Artist.spotify_id).add_columns(Artist)
         group_cols.extend([Artist.spotify_id])
+
+    # 5. Finalisation avec TRI PAR RATING
+    # On trie par rating DESC, puis par play_count en cas d'égalité
+    statement = (
+        statement.group_by(*group_cols)
+        .order_by(desc("rating"), desc("play_count"))
+        .limit(limit)
+    )
     
-    statement = statement.group_by(*group_cols).order_by(desc("play_count")).limit(limit)
     return session.exec(statement).all()
 
 @router.get(

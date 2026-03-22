@@ -12,7 +12,6 @@ from .currently_playing import router as currently_playing_router
 router = APIRouter(prefix="/data/my", tags=["My datas"])
 router.include_router(albums_router, prefix="/albums")
 router.include_router(artists_router, prefix="/artists")
-# router.include_router(history_router, prefix="/history")
 router.include_router(import_data_router, prefix="/upload-json")
 router.include_router(tracks_router, prefix="/tracks")
 router.include_router(clear_router, prefix="/clear")

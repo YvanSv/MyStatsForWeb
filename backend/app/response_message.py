@@ -88,9 +88,13 @@ class TrackStatsResponse(BaseStatsResponse):
 
 class ProfileItem(BaseModel):
     name: str
+    album_name: Optional[str] = None
+    artist_name: Optional[str] = None
     image_url: str
-    sub: str
     count: int
+    minutes: int
+    engagement: float
+    rating: float
 
 class RecentTrack(BaseModel):
     id: int

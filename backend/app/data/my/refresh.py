@@ -27,7 +27,6 @@ async def refresh(user_id: int = Depends(get_current_user_id), db: Session = Dep
     return {"status": "success", "message": "Synchronisation terminée."}
 
 
-
 async def refresh_history(user_id: int, session: Session, before: str = None, cache_history=None, cache_tracks=None, cache_albums=None, cache_artists=None):
     """
     Récupère l'historique Spotify et remonte dans le temps jusqu'à trouver une écoute déjà enregistrée.

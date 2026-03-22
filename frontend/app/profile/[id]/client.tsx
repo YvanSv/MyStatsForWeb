@@ -146,7 +146,7 @@ export default function ProfilePage({ id }: { id: string }) {
             <StatCard title={dict.statStreams} value={profile.total_streams.toLocaleString(t.common.locale)} sub={dict.statStreamsSub} color="text-blue-400"/>
             <StatCard title={dict.statPeak} value={profile.peak_hour} sub={dict.statPeakSub} color="text-purple-400"/>
             <TopStatCard color="text-orange-400" item={topData && topData.top_track}/>
-            <TopStatCard color="text-yellow-400" item={topData && topData.top_artist}/>
+            <TopStatCard color="text-yellow-300" item={topData && topData.top_artist}/>
           </div>
         )}
 
@@ -168,7 +168,6 @@ export default function ProfilePage({ id }: { id: string }) {
           </div>
         )}
         
-
         {/* ÉCOUTES RÉCENTES */}
         {profile.perms.history && (
           <div className={PROFILE_STYLES.RECENT_CONTAINER}>

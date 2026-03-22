@@ -212,6 +212,7 @@ export const fr = {
     tracks: "titres",
     albums: "albums",
     artists: "artistes",
+    engagement: "engagement"
   },
   importData: {
     title: "Importer vos données",

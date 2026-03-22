@@ -5,20 +5,6 @@ from sqlmodel import Session
 from app.database import get_session
 from app.models import Album, Artist, Track, TrackHistory
 
-def get_formulas():
-    raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
-    raw_duration = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)
-    cnt = func.count(TrackHistory.id)
-    
-    m = raw_ms / 60000.0
-    e = raw_ms / raw_duration
-    
-    f_track = ((e * m / (20.0 * func.nullif(cnt, 0)) + (m / 40.0)) / 8.0)
-    f_album = (e * m / (7.0 * func.nullif(cnt, 0)) + (e * m / 3200.0)) * 1.75 * e
-    f_artist = (((e / (7.0 * func.nullif(cnt, 0))) + (func.log(func.greatest(m, 0.001)) / 25.0)) * 4.0 + (cnt * e / 10000.0))
-    
-    return f_track, f_album, f_artist
-
 def get_generic_metadata(db: Session, user_id: int, group_col, rating_expression):
     """
     Calcule les métadonnées max (streams, minutes, rating) et les bornes temporelles
