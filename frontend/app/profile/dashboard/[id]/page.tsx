@@ -115,11 +115,16 @@ export default function DashboardPage() {
 
   const filledEvolutionData = useMemo(() => {
     const rawData = extendedStats.streamsEvolution;
-    if (!rawData || !startDate || !endDate) return [];
+    if (!rawData || rawData.length === 0) return [];
 
     try {
-      const start = parseISO(startDate);
-      const actualEnd = min([parseISO(endDate), new Date()]);
+      const start = startDate 
+          ? parseISO(startDate) 
+          : parseISO(rawData[0].date);
+      const endRequested = endDate ? parseISO(endDate) : new Date();
+      const actualEnd = min([endRequested, new Date()]);
+
+      if (isNaN(start.getTime()) || isNaN(actualEnd.getTime())) return [];
       if (isAfter(start, actualEnd)) return [];
 
       const allDays = eachDayOfInterval({ start, end: actualEnd });
@@ -143,18 +148,16 @@ export default function DashboardPage() {
 
   const filledCumlativeData = useMemo(() => {
     const rawData = extendedStats.cumulativeData;
-    if (!rawData || !startDate || !endDate) return [];
+    if (!rawData || rawData.length === 0) return [];
 
     try {
-        // 1. Forcer le parsing des dates
-        const start = parseISO(startDate);
-        const actualEnd = min([parseISO(endDate), new Date()]);
+        const start = startDate 
+            ? parseISO(startDate) 
+            : parseISO(rawData[0].date);
+        const endRequested = endDate ? parseISO(endDate) : new Date();
+        const actualEnd = min([endRequested, new Date()]);
 
-        if (isNaN(start.getTime()) || isNaN(actualEnd.getTime())) {
-            console.error("Dates invalides :", { startDate, endDate });
-            return [];
-        }
-
+        if (isNaN(start.getTime()) || isNaN(actualEnd.getTime())) return [];
         if (isAfter(start, actualEnd)) return [];
 
         const allDays = eachDayOfInterval({ start, end: actualEnd });
