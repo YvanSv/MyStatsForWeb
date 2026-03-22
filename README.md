@@ -13,5 +13,14 @@
 - optimisation appel SQL (calcul rating) sur les routes data/all/
 - page de détail d'une donnée quand on clique dessus
 - tests
+- pouvoir changer de langue
 - Provider Apple Music
 - Data reader Apple Music
+- Images de partage
+- Réparer les écoutes sans durée lors de l'import de data
+- Fusionner les albums duppliqués
+    -> Détecter un conflit
+    -> Demander à Spotify l'identité du vrai album
+    -> Reconstruire un nouvel album tout propre
+    -> Affecter toutes les anciennes écoutes au nouvel album
+    -> Supprimer les deux anciens albums

@@ -1,3 +1,4 @@
+import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { useLanguage } from "@/app/context/languageContext";
 import { TopStatCardProps } from "@/app/data/DataInfos";
 import { AnimatePresence, motion } from "framer-motion";
@@ -124,7 +125,11 @@ export function StatCard({title,value,sub,color}:{title:string,value:React.React
 }
 
 export function TopStatCard({color,item}:{color:string,item:TopStatCardProps|null}) {
-  if (!item) return <div className="flex flex-col justify-between bg-bg2/40 backdrop-blur-md border duration-300 border-white/5 p-5 rounded-3xl hover:border-vert/30 transition-all group relative overflow-hidden h-full"/>;
+  if (!item) return(
+    <div className="flex flex-col justify-between bg-bg2/40 backdrop-blur-md border duration-300 border-white/5 p-5 rounded-3xl hover:border-vert/30 transition-all group relative overflow-hidden h-full">
+      <LoadingSpinner/>
+    </div>
+  );
   return (
     <div className="flex flex-col justify-between bg-bg2/40 backdrop-blur-md border duration-300 border-white/5 p-5 rounded-3xl hover:border-vert/30 transition-all group relative overflow-hidden h-full">
       <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 blur-3xl -mr-12 -mt-12 group-hover:bg-vert/10 transition-colors pointer-events-none"/>
