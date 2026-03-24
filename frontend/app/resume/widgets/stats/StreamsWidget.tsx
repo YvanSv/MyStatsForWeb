@@ -1,62 +1,63 @@
 import Widget from "../Widget";
-import { Timer } from "lucide-react";
+import { Play } from "lucide-react";
 
-interface MinutesWidgetProps {
+interface StreamsWidgetProps {
   w: number;
   h: number;
-  minutes: number;
+  streams: number;
   settings: any;
 }
 
-export function MinutesWidget({ w, h, minutes, settings }: MinutesWidgetProps) {
+export function StreamsWidget({ w, h, streams, settings }: StreamsWidgetProps) {
   const color = settings?.color || "#1DB954";
   const showIcon = settings?.showIcon ?? true;
-  const label = settings?.label || "Minutes d'écoute";
+  const label = settings?.label || "Streams";
 
   // Formate le nombre en "1.2k" ou "1.2M" si l'utilisateur le souhaite
   const formatNumber = (num: number) => {
     if (!settings?.shorten) return num.toLocaleString();
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-    return num.toLocaleString();
+    return num.toString();
   };
 
   const layouts = {
-    // Format 1x1 : Le badge compact
+    // 1x1 : Le petit bouton de lecture stylisé
     "1x1": (
       <div className="w-full h-full flex flex-col items-center justify-center rounded-xl">
-        {showIcon && <Timer size={14} style={{ color }} className="mb-1" />}
+        {showIcon && <Play size={14} style={{ color }} className="mb-1"/>}
         <span className="text-sm font-black tracking-tighter text-white leading-none">
-          {formatNumber(minutes)}
+          {formatNumber(streams)}
         </span>
-        <span className="text-[7px] uppercase font-bold text-gray-500 tracking-widest mt-1">Min</span>
+        <span className="text-[7px] uppercase font-bold text-gray-500 tracking-widest mt-1">{label}</span>
       </div>
     ),
 
-    // Format 2x1 ou 3x1 : La barre horizontale
+    // 2x1 ou 3x1 : Le bandeau de stats
     "2x1": (
-      <div className="w-full h-full flex items-center justify-between px-3 rounded-xl">
-        <div className="flex flex-col">
-          <span className="text-[8px] uppercase font-black text-gray-500 tracking-[0.2em] mb-1">{label}</span>
-          <span className="text-xl font-black italic leading-none" style={{ color }}>{formatNumber(minutes)}</span>
+      <div className="w-full h-full flex items-center gap-4 px-3 rounded-xl overflow-hidden">
+        {showIcon && <Play size={20} fill={color} stroke={color} className="shrink-0"/>}
+        <div className="flex flex-col min-w-0">
+          <span className="text-[14px] font-black italic truncate uppercase" style={{ color }}>
+            {formatNumber(streams)}
+          </span>
+          <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest leading-none">
+            {label}
+          </span>
         </div>
-        {showIcon && <Timer size={24} className="opacity-20 text-white" />}
       </div>
     ),
 
-    // Format 2x2 ou 3x3 : Le Score Géant
+    // 2x2 ou plus : Le format "Certification"
     "2x2": (
-      <div className="w-full h-full flex flex-col items-center justify-center p-4 relative">
-        <div className="absolute inset-0 flex items-center justify-center opacity-5">
-           <Timer size={120} strokeWidth={1} />
-        </div>
-        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-2 italic">
+      <div className="w-full h-full flex flex-col items-center justify-center p-4 relative rounded-2xl">
+        {showIcon && <Play size={32} fill={color} stroke={color} className="shrink-0 relative z-10"/>}
+        <span className="text-3xl font-black tracking-tighter text-white relative z-10">
+          {formatNumber(streams)}
+        </span>
+        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em] mt-2 relative z-10">
           {label}
         </span>
-        <span className="text-4xl font-black italic tracking-tighter leading-none mb-1" style={{ color }}>
-          {formatNumber(minutes)}
-        </span>
-        <div className="h-1 w-12 rounded-full" style={{ backgroundColor: color }} />
       </div>
     )
   };
@@ -68,16 +69,16 @@ export function MinutesWidget({ w, h, minutes, settings }: MinutesWidgetProps) {
   );
 }
 
-export function MinutesSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
+export function StreamsSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
   const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
 
   return (
     <div className="space-y-6">
-      {/* Couleur du compteur */}
+      {/* Couleur */}
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Couleur accentuée</label>
         <div className="flex gap-2">
-          {["#1DB954", "#FFFFFF", "#FBBF24", "#F87171"].map(c => (
+          {["#1DB954", "#FFFFFF", "#38BDF8", "#A855F7"].map(c => (
             <button key={c} onClick={() => update('color', c)}
               className={`w-6 h-6 rounded-full border-2 ${settings.color === c ? 'border-white' : 'border-transparent'}`}
               style={{ backgroundColor: c }}
@@ -88,16 +89,16 @@ export function MinutesSettings({ settings, onChange }: { settings: any, onChang
 
       {/* Libellé personnalisé */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Texte d'accompagnement</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Titre du widget</label>
         <input 
           type="text" 
-          value={settings.label || "Minutes d'écoute"} 
+          value={settings.label || "Total Streams"} 
           onChange={(e) => update('label', e.target.value)}
           className="bg-white/5 border border-white/10 rounded-lg p-2 text-[10px] text-white focus:border-vert outline-none"
         />
       </div>
 
-      {/* Options Binaires */}
+      {/* Options */}
       <div className="space-y-2">
         <button onClick={() => update('showIcon', !settings.showIcon)}
           className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold"

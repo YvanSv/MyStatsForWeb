@@ -23,6 +23,7 @@ export function WidgetsView({resumeData}:WidgetsViewProps) {
 
           <AccordionSection title="Stats" defaultOpen={false}>
             <DraggablePreview title="Temps d'écoute" type='minutes' data={resumeData.minutes} subtitle={`${resumeData.minutes.toLocaleString()} min`} icon="⏳"/>
+            <DraggablePreview title="Nombre de streams" type='streams' data={resumeData.streams} subtitle={`${resumeData.streams.toLocaleString()} écoutes`} icon="▶️​"/>
           </AccordionSection>
 
           {/* ENTAMES */}
