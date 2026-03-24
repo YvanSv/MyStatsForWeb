@@ -8,6 +8,7 @@ import { ProfilePictureWidget } from './widgets/atomic/ProfilePictureWidget';
 import { PlacedWidget, SelectedWidget } from './interfaces';
 import { UsernameWidget } from './widgets/atomic/UsernameWidget';
 import { BackgroundWidget } from './widgets/atomic/BackgroundWidget';
+import { BioWidget } from './widgets/atomic/BioWidget';
 
 interface ResumeCanvasProps {
   range: string | number;
@@ -212,9 +213,10 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
                   {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={w.data} settings={w.settings}/>}
                   {w.type === 'username' && <UsernameWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
                   {w.type === 'background' && <BackgroundWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
+                  {w.type === 'bio' && <BioWidget w={w.w} h={w.h} bio={w.data} settings={w.settings}/>}
 
-                  {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data}/>}
-                  {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>}
+                  {/* {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data}/>}
+                  {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>} */}
 
                   {/* --- BOUTON SUPPRIMER (POUBELLE) --- */}
                   <button onClick={(e) => {e.stopPropagation();deleteWidget(w.id)}} title="Supprimer le widget"

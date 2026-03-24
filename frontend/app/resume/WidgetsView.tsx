@@ -18,6 +18,7 @@ export function WidgetsView({resumeData}:WidgetsViewProps) {
             <DraggablePreview title="Photo de profil" type='profile_picture' data={resumeData.user} subtitle="Votre avatar" icon="👤"/>
             <DraggablePreview title="Pseudonyme" type='username' data={resumeData.user.display_name} subtitle="Votre nom d'utilisateur" icon="🖋️"/>
             <DraggablePreview title="Fond d'écran" type='background' data={resumeData.user.banner} subtitle={`Votre bannière`} icon="🖼️"/>
+            <DraggablePreview title="Description" type='bio' data={resumeData.user.bio} subtitle="Votre bio" icon="📝"/>
           </AccordionSection>
 
           {/* ENTAMES */}

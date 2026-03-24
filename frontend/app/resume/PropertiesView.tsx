@@ -4,6 +4,7 @@ import { ProfilePictureSettings } from "./widgets/atomic/ProfilePictureWidget";
 import { useLanguage } from "../context/languageContext";
 import { UsernameSettings } from "./widgets/atomic/UsernameWidget";
 import { BackgroundSettings } from "./widgets/atomic/BackgroundWidget";
+import { BioSettings } from "./widgets/atomic/BioWidget";
 
 interface PropertiesViewProps {
   selectedWidget: SelectedWidget | null;
@@ -50,6 +51,7 @@ export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets, e
                 {selectedWidget.type === 'profile_picture' && <ProfilePictureSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
                 {selectedWidget.type === 'username' && <UsernameSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
                 {selectedWidget.type === 'background' && <BackgroundSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+                {selectedWidget.type === 'bio' && <BioSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
                 {/* {selectedWidget.type === 'top_tracks' && (
                   <TopTracksSettings settings={selectedWidget.settings} onChange={updateWidgetSettings} />
                 )} */}
