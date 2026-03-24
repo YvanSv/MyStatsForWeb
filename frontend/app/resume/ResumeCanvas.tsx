@@ -162,7 +162,7 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
   };
 
   return (
-    <div className="max-w-lg mx-auto flex flex-col gap-4 bg-white/[0.02] rounded-xl border border-white/10">
+    <div id="capture-canvas" className="max-w-lg mx-auto flex flex-col gap-4 bg-white/[0.02] rounded-xl border border-white/10">
       {/* CONTENEUR RELATIF QUI REGROUPE TOUT */}
       <div ref={gridRef} className="relative p-2 select-none"
         onDragLeave={onDragLeave} onDragOver={showGrid}

@@ -7,6 +7,7 @@ import { PropertiesView } from './PropertiesView';
 import { DataFormat, PlacedWidget, RangeOption, SelectedWidget, SortOption } from './interfaces';
 import { HeaderComponent } from './HeaderComponent';
 import { useApiMyDatas } from '../hooks/useApiMyDatas';
+import * as htmlToImage from 'html-to-image';
 
 export default function ResumePage() {
   const { getResumeStats } = useApiMyDatas();
@@ -63,6 +64,29 @@ export default function ResumePage() {
     fetchResume();
   }, [range, offset, sortBy]); // Se déclenche dès qu'un filtre change
 
+  const exportImage = async () => {
+    const node = document.getElementById('capture-canvas');
+    if (!node) return;
+
+    try {
+      // 1. On génère l'URL de l'image (PNG)
+      // On peut ajouter des options pour améliorer la qualité
+      const dataUrl = await htmlToImage.toPng(node, {
+        quality: 1,
+        pixelRatio: 2, // Double la résolution pour un rendu net (Retina)
+        backgroundColor: '#000000', // Force le fond noir
+      });
+
+      // 2. Création d'un lien invisible pour déclencher le téléchargement
+      const link = document.createElement('a');
+      link.download = `mystats-${range}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Erreur lors de l'export :", error);
+    }
+  };
+
   if (!resumeData) return <LoadingSpinner />;
 
   return (
@@ -81,7 +105,7 @@ export default function ResumePage() {
         </main>
 
         {/* PANNEAU DROIT : OPTIONS */}
-        <PropertiesView selectedWidget={selectedWidget} setSelectedWidget={setSelectedWidget} setWidgets={setWidgets}/>
+        <PropertiesView selectedWidget={selectedWidget} setSelectedWidget={setSelectedWidget} setWidgets={setWidgets} exportImage={exportImage}/>
       </div>
     </div>
   );
