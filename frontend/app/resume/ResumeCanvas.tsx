@@ -7,6 +7,7 @@ import { TopFiveWidget } from './widgets/TopFiveWidget';
 import { ProfilePictureWidget } from './widgets/atomic/ProfilePictureWidget';
 import { PlacedWidget, SelectedWidget } from './interfaces';
 import { UsernameWidget } from './widgets/atomic/UsernameWidget';
+import { BackgroundWidget } from './widgets/atomic/BackgroundWidget';
 
 interface ResumeCanvasProps {
   range: string | number;
@@ -209,7 +210,8 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
               >
                 <div className="w-full h-full rounded-md text-black font-bold text-[10px] flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-white">
                   {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={w.data} settings={w.settings}/>}
-                  {w.type === 'username' && <UsernameWidget  w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
+                  {w.type === 'username' && <UsernameWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
+                  {w.type === 'background' && <BackgroundWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
 
                   {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data}/>}
                   {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>}

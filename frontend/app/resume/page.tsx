@@ -79,7 +79,7 @@ export default function ResumePage() {
 
       // 2. Création d'un lien invisible pour déclencher le téléchargement
       const link = document.createElement('a');
-      link.download = `mystats-${range}.png`;
+      link.download = `mystats-${range}-${resumeData?.user.display_name}-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
     } catch (error) {

@@ -3,6 +3,7 @@ import { PlacedWidget, SelectedWidget } from "./interfaces";
 import { ProfilePictureSettings } from "./widgets/atomic/ProfilePictureWidget";
 import { useLanguage } from "../context/languageContext";
 import { UsernameSettings } from "./widgets/atomic/UsernameWidget";
+import { BackgroundSettings } from "./widgets/atomic/BackgroundWidget";
 
 interface PropertiesViewProps {
   selectedWidget: SelectedWidget | null;
@@ -46,12 +47,9 @@ export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets, e
 
               {/* RENDER DES PARAMÈTRES SELON LE TYPE */}
               <div className="flex flex-col gap-4">
-                {selectedWidget.type === 'profile_picture' && (
-                  <ProfilePictureSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>
-                )}
-                {selectedWidget.type === 'username' && (
-                  <UsernameSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>
-                )}
+                {selectedWidget.type === 'profile_picture' && <ProfilePictureSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+                {selectedWidget.type === 'username' && <UsernameSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+                {selectedWidget.type === 'background' && <BackgroundSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
                 {/* {selectedWidget.type === 'top_tracks' && (
                   <TopTracksSettings settings={selectedWidget.settings} onChange={updateWidgetSettings} />
                 )} */}
