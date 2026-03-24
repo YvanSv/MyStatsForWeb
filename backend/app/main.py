@@ -25,7 +25,6 @@ app = FastAPI(title="MyStats Spotify API",lifespan=lifespan)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    print(f"Erreur de validation : {exc.errors()}") # <--- CECI VA TE DIRE LE CHAMP COUPABLE
     return JSONResponse(
         status_code=422,
         content={"detail": exc.errors()},
