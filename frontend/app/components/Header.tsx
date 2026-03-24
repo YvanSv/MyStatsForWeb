@@ -42,8 +42,6 @@ export default function Header() {
   const { listening, localProgress } = useSpotify();
   // --- ÉTATS UI ---
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  // --- MENUS DEROULANTS ---
-  // const containerRef = useRef<HTMLDivElement>(null);
 
   const navigation_menu = [
     { id: 'Rankings', label: dict.rankings, path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal className="w-4 h-4 lg:w-6 lg:h-6"/> },
@@ -70,21 +68,12 @@ export default function Header() {
     { id: 'Import de données', label: dict.import, icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
     { id: 'Mon compte', label: dict.myAccount, icon: <User size={18}/>, path: FRONT_ROUTES.ACCOUNT },
     { id: 'Paramètres', label: dict.settings, icon:<Settings size={18}/>, path: FRONT_ROUTES.SETTINGS},
+    { id: 'Aide', label: dict.help, icon: <BadgeQuestionMark size={18}/>, path: FRONT_ROUTES.HELP},
   ];
-
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     if (containerRef.current && !containerRef.current.contains(event.target as Node))
-  //       setIsViewMenuOpen(false);
-  //   };
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => document.removeEventListener("mousedown", handleClickOutside);
-  // }, []);
 
   const navigate = (path: string) => {
     router.push(path);
     setIsMobileNavOpen(false);
-    // setIsViewMenuOpen(false);
   };
 
   return (

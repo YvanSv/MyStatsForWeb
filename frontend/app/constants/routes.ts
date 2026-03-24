@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
   RESUME: `${API_BASE_URL}/data/my/currently-playing/resume`,
   NEXT: `${API_BASE_URL}/data/my/currently-playing/next`,
   PREVIOUS: `${API_BASE_URL}/data/my/currently-playing/previous`,
+  SHARE: `${API_BASE_URL}/data/my/resume`,
 };
 
 export const FRONT_ROUTES = {
@@ -56,4 +57,5 @@ export const FRONT_ROUTES = {
   PROFILE_EDIT: '/profile/edit',
   HELP: '/faq',
   SETTINGS: '/settings',
+  RESUME: '/resume',
 }

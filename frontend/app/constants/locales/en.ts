@@ -13,6 +13,9 @@ export const en = {
     stats4: "Albums",
     stats5: "Artists",
     techtitre: "The MyStats Project",
+    shareTitle: "Share your universe",
+    shareSub: "Generate a visual summary of your listening habits.",
+    btnShare: "Create my summary"
   },
   account: {
     successToast: "Account successfully updated!",
@@ -317,4 +320,12 @@ export const en = {
     titleLanguage: "Interface language",
     subtitleLanguage: "Choose your preferred language for the application"
   },
+  resume: {
+    title: "Your universe",
+    share: "Share",
+    topArtist: "",
+    totalTime: "",
+    topTrack: "",
+    artistStats: "",
+  }
 }

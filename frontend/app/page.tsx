@@ -5,8 +5,10 @@ import { useApiAllDatas } from "./hooks/useApiAllDatas";
 import { PrimaryButton, SecondaryButton } from "./components/Atomic/Buttons";
 import { useAuth } from "./context/authContext";
 import { useApiMyDatas } from "./hooks/useApiMyDatas";
-import { Play } from "lucide-react";
+import { Play, Share2, Sparkles } from "lucide-react";
 import { useLanguage } from "./context/languageContext";
+import { FRONT_ROUTES } from "./constants/routes";
+import { useRouter } from "next/navigation";
 
 const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
 const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
@@ -19,6 +21,7 @@ const INITIALS_STATS = {
 };
 
 export default function HomePage() {
+  const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
   const { refreshUserData, getTodayStats } = useApiMyDatas();
@@ -49,46 +52,73 @@ export default function HomePage() {
   return (
     <main className={ACCUEIL_STYLES.MAIN}>
       {user?.is_logged_in && (
-        <section className="pt-12 flex justify-center gap-48 md:px-24">
-          <section className=" animate-in fade-in slide-in-from-top-4 duration-1000 md:max-w-xl">
-            <p className={ACCUEIL_STYLES.TECH_H2}>{t.home.titre}</p>
-            
-            <div className="grid grid-cols-2 gap-4">
-              {/* Carte Streams */}
-              <div className="relative group overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-3 md:p-6 transition-all hover:bg-white/10 hover:border-purple-500/50">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-purple-500/20 text-purple-400">
-                    <Play/>
+        <>
+          <section className="pt-12 flex justify-center gap-48 md:px-24">
+            <section className=" animate-in fade-in slide-in-from-top-4 duration-1000 md:max-w-xl">
+              <p className={ACCUEIL_STYLES.TECH_H2}>{t.home.titre}</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Carte Streams */}
+                <div className="relative group overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-3 md:p-6 transition-all hover:bg-white/10 hover:border-purple-500/50">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-purple-500/20 text-purple-400">
+                      <Play/>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-black text-white leading-none">
+                        {userStats.nb_streams.toLocaleString()}
+                      </p>
+                      <p className="text-gray-400 text-sm font-medium mt-1 uppercase tracking-tight">Streams</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-3xl font-black text-white leading-none">
-                      {userStats.nb_streams.toLocaleString()}
-                    </p>
-                    <p className="text-gray-400 text-sm font-medium mt-1 uppercase tracking-tight">Streams</p>
-                  </div>
+                  {/* Effet de brillance en arrière-plan */}
+                  <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-500/10 blur-3xl rounded-full group-hover:bg-purple-500/20 transition-colors"></div>
                 </div>
-                {/* Effet de brillance en arrière-plan */}
-                <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-500/10 blur-3xl rounded-full group-hover:bg-purple-500/20 transition-colors"></div>
-              </div>
 
-              {/* Carte Minutes */}
-              <div className="relative group overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-3 md:p-6 transition-all hover:bg-white/10 hover:border-blue-500/50">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-blue-500/20 text-blue-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {/* Carte Minutes */}
+                <div className="relative group overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-3 md:p-6 transition-all hover:bg-white/10 hover:border-blue-500/50">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-blue-500/20 text-blue-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-black text-white leading-none">
+                        {userStats.nb_minutes.toLocaleString()}
+                      </p>
+                      <p className="text-gray-400 text-sm font-medium mt-1 uppercase tracking-tight">Minutes</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-3xl font-black text-white leading-none">
-                      {userStats.nb_minutes.toLocaleString()}
-                    </p>
-                    <p className="text-gray-400 text-sm font-medium mt-1 uppercase tracking-tight">Minutes</p>
-                  </div>
+                  <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/10 blur-3xl rounded-full group-hover:bg-blue-500/20 transition-colors"></div>
                 </div>
-                <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/10 blur-3xl rounded-full group-hover:bg-blue-500/20 transition-colors"></div>
               </div>
+            </section>
+          </section>
+
+          {/* SECTION INTERMÉDIAIRE : PARTAGE DE RÉSUMÉ */}
+          <section className="mt-8 flex justify-center px-4 animate-in fade-in zoom-in duration-1000 delay-300">
+            <div className="w-full md:max-w-2xl p-6 rounded-3xl border bg-gradient-to-br from-purple-500/10 via-transparent to-blue-500/10 border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-sm">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-purple-400 shadow-inner">
+                  <Share2 size={24} />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg leading-tight">
+                    {t.home.shareTitle || "Partagez votre univers"}
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    {t.home.shareSub || "Générez un résumé visuel de vos écoutes."}
+                  </p>
+                </div>
+              </div>
+              
+              <SecondaryButton onClick={() => router.push(FRONT_ROUTES.RESUME)} additional="group relative px-6 py-3 rounded-xl text1 font-bold transition-all hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden">
+                <span className="relative z-10 flex items-center gap-2">
+                   {t.home.btnShare || "Créer mon résumé"} <Sparkles size={16} />
+                </span>
+              </SecondaryButton>
             </div>
           </section>
-        </section>
+        </>
       )}
       <section className={ACCUEIL_STYLES.HERO_SECTION}>
         {/* TEXTES DU HERO */}
