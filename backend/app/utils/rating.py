@@ -1,4 +1,4 @@
-from sqlalchemy import Float, cast, func
+from sqlalchemy import Float, Numeric, cast, func
 from app.models import Track, TrackHistory
 
 def get_formula(model, total_ms, potential_dur, play_count):
@@ -29,8 +29,14 @@ def get_formulas():
     m = raw_ms / 60000.0
     e = raw_ms / raw_duration
     
-    f_track = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e / 3.1
-    f_album = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e / 3.75
-    f_artist = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e / 3.75
+    def secure_rating(formula, divider):
+        raw_score = formula / divider
+        return func.coalesce(cast(raw_score, Numeric), 0.0)
+
+    base_formula = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e
+
+    f_track = secure_rating(base_formula, 3.1)
+    f_album = secure_rating(base_formula, 3.75)
+    f_artist = secure_rating(base_formula, 3.75)
     
     return f_track, f_album, f_artist

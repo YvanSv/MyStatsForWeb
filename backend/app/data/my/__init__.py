@@ -8,6 +8,7 @@ from .clear import router as clear_router
 from .today import router as today_router
 from .refresh import router as refresh_router
 from .currently_playing import router as currently_playing_router
+from .resume import router as resume_router
 
 router = APIRouter(prefix="/data/my", tags=["My datas"])
 router.include_router(albums_router, prefix="/albums")
@@ -18,3 +19,4 @@ router.include_router(clear_router, prefix="/clear")
 router.include_router(today_router, prefix="/today")
 router.include_router(refresh_router, prefix="/refresh")
 router.include_router(currently_playing_router, prefix="/currently-playing")
+router.include_router(resume_router, prefix="/resume")
