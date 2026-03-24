@@ -14,11 +14,15 @@ export function WidgetsView({resumeData}:WidgetsViewProps) {
         
         <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
           {/* TERMINES */}
-          <AccordionSection title="Atomic" defaultOpen={true}>
+          <AccordionSection title="Compte" defaultOpen={false}>
             <DraggablePreview title="Photo de profil" type='profile_picture' data={resumeData.user} subtitle="Votre avatar" icon="👤"/>
             <DraggablePreview title="Pseudonyme" type='username' data={resumeData.user.display_name} subtitle="Votre nom d'utilisateur" icon="🖋️"/>
             <DraggablePreview title="Fond d'écran" type='background' data={resumeData.user.banner} subtitle={`Votre bannière`} icon="🖼️"/>
             <DraggablePreview title="Description" type='bio' data={resumeData.user.bio} subtitle="Votre bio" icon="📝"/>
+          </AccordionSection>
+
+          <AccordionSection title="Stats" defaultOpen={false}>
+            <DraggablePreview title="Temps d'écoute" type='minutes' data={resumeData.minutes} subtitle={`${resumeData.minutes.toLocaleString()} min`} icon="⏳"/>
           </AccordionSection>
 
           {/* ENTAMES */}
