@@ -1,17 +1,10 @@
-import Widget from "./Widget";
-
-interface UserProfileData {
-  display_name: string;
-  avatar: string;
-  bio: string;
-  banner: string;
-  perms: any[];
-}
+import Widget from "../Widget";
+import { UserProfile } from '../../interfaces';
 
 interface ProfileWidgetProps {
   w: number;
   h: number;
-  user: UserProfileData;
+  user: UserProfile;
   settings: any;
 }
 

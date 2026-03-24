@@ -4,29 +4,15 @@ import { Trash2 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { ProfileWidget } from './widgets/ProfileWidgets';
 import { TopFiveWidget } from './widgets/TopFiveWidget';
-import { ProfilePictureWidget } from './widgets/ProfilePictureWidget';
+import { ProfilePictureWidget } from './widgets/atomic/ProfilePictureWidget';
+import { PlacedWidget, SelectedWidget } from './interfaces';
+import { UsernameWidget } from './widgets/atomic/UsernameWidget';
 
 interface ResumeCanvasProps {
   range: string | number;
   widgets: PlacedWidget[];
   setWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>;
   onSelectWidget: (w: SelectedWidget | null) => void;
-}
-
-interface SelectedWidget {
-  id: number;
-  type: string;
-  settings: any;
-}
-
-interface PlacedWidget {
-  id: number;
-  type: string;
-  index: number;
-  data: any;
-  w: number;
-  h: number;
-  settings: any;
 }
 
 export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:ResumeCanvasProps) {
@@ -222,9 +208,11 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
                 }}
               >
                 <div className="w-full h-full rounded-md text-black font-bold text-[10px] flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-white">
-                  {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data} />}
                   {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={w.data} settings={w.settings}/>}
-                  {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data} />}
+                  {w.type === 'username' && <UsernameWidget  w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
+
+                  {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data}/>}
+                  {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>}
 
                   {/* --- BOUTON SUPPRIMER (POUBELLE) --- */}
                   <button onClick={(e) => {e.stopPropagation();deleteWidget(w.id)}} title="Supprimer le widget"

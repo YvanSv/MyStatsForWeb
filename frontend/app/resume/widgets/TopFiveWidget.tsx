@@ -1,12 +1,5 @@
+import { ItemBrief } from "../interfaces";
 import Widget from "./Widget";
-
-interface ItemBrief {
-  name: string;
-  minutes: number;
-  rating: number;
-  streams: number;
-  image: string;
-}
 
 interface TopFiveProps {
   w: number;

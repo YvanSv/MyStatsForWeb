@@ -1,18 +1,10 @@
-import { Plus } from "lucide-react";
 import Widget from "./Widget";
-
-interface UserProfileData {
-  display_name: string;
-  avatar: string;
-  bio: string;
-  banner: string;
-  perms: any[];
-}
+import { UserProfile } from "../interfaces";
 
 interface ProfileWidgetProps {
   w: number;
   h: number;
-  user: UserProfileData;
+  user: UserProfile;
 }
 
 export function ProfileWidget({ w, h, user }: ProfileWidgetProps) {
