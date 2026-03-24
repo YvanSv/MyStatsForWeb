@@ -81,7 +81,7 @@ function RankingItemCell({dict,top1,top2_5,color,sort}:any) {
       {/* Liste des 4 artistes suivants */}
       <div className="relative flex-shrink-0 w-full md:w-64 p-3 rounded-2xl bg-white/2 border border-white/10 space-y-3">
         {/* <p className="text-xs font-bold uppercase tracking-wider text-purple-300 mb-2">Suivants</p> */}
-        {top2_5.map((artist, index) => (
+        {/* {top2_5.map((artist, index) => (
           <div key={artist.name} className="flex items-center gap-3">
             <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-gray-500 text-xs font-bold">
               {index + 2}
@@ -90,16 +90,16 @@ function RankingItemCell({dict,top1,top2_5,color,sort}:any) {
               <p className="text-sm font-semibold text-white leading-tight truncate max-w-[140px]">{artist.name}</p>
               <p className="text-xs text-gray-600">{sort === "streams" ? artist.streams.toLocaleString() : sort === "minutes" ? artist.minutes.toLocaleString() : (Math.round(artist.rating*100)/100).toLocaleString()}{sort === "rating" ? "★" : " "+sort}</p>
             </div>
-            {/* Image à l'extrémité droite */}
+            {/* Image à l'extrémité droite *//*}
             <div className="relative flex-shrink-0">
               <img src={artist.image} alt={artist.name}
                 className="w-10 h-10 rounded-full object-cover border border-white/10 transition-all duration-300"
               />
-              {/* Petit reflet discret */}
+              {/* Petit reflet discret *//*}
               <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/10 to-transparent pointer-events-none"/>
             </div>
           </div>
-        ))}
+        ))} */}
       </div>
     </div>
   );

@@ -144,6 +144,20 @@ class UserUpdateResponse(BaseResponse):
     message: str = "Profil mis à jour avec succès"
     user: UserSettingsResponse
 
+class ItemBrief(BaseModel):
+    name: str
+    minutes: int
+    rating: float
+    streams: int
+    image: Optional[str]
+
+class ResumeDataResponse(BaseModel):
+    user: BaseUserProfile
+    topArtists: List[ItemBrief]
+    topTracks: List[ItemBrief]
+    topAlbums: List[ItemBrief]
+    minutes: int
+    streams: int
 # --- 5. SYSTÈME & MAINTENANCE ---
 
 class GlobalStatsResponse(BaseModel):
