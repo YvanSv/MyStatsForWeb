@@ -24,6 +24,9 @@ export interface DataFormat {
   topAlbums: ItemBrief[];
   minutes: number;
   streams: number;
+  distinct_tracks: number;
+  distinct_albums: number;
+  distinct_artists: number;
 }
 
 export interface PlacedWidget {

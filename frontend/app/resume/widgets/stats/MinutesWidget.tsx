@@ -1,5 +1,7 @@
 import Widget from "../Widget";
 import { Timer } from "lucide-react";
+import { CustomLabel, ShortenFilter, ShowIconFilter } from "./common_filters";
+import { Layout1x1, Layout2x1, Layout2x2 } from "./common_layouts";
 
 interface MinutesWidgetProps {
   w: number;
@@ -10,55 +12,11 @@ interface MinutesWidgetProps {
 
 export function MinutesWidget({ w, h, minutes, settings }: MinutesWidgetProps) {
   const color = settings?.color || "#1DB954";
-  const showIcon = settings?.showIcon ?? true;
-  const label = settings?.label || "Minutes d'écoute";
-
-  // Formate le nombre en "1.2k" ou "1.2M" si l'utilisateur le souhaite
-  const formatNumber = (num: number) => {
-    if (!settings?.shorten) return num.toLocaleString();
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-    return num.toLocaleString();
-  };
 
   const layouts = {
-    // Format 1x1 : Le badge compact
-    "1x1": (
-      <div className="w-full h-full flex flex-col items-center justify-center rounded-xl">
-        {showIcon && <Timer size={14} style={{ color }} className="mb-1" />}
-        <span className="text-sm font-black tracking-tighter text-white leading-none">
-          {formatNumber(minutes)}
-        </span>
-        <span className="text-[7px] uppercase font-bold text-gray-500 tracking-widest mt-1">Min</span>
-      </div>
-    ),
-
-    // Format 2x1 ou 3x1 : La barre horizontale
-    "2x1": (
-      <div className="w-full h-full flex items-center justify-between px-3 rounded-xl">
-        <div className="flex flex-col">
-          <span className="text-[8px] uppercase font-black text-gray-500 tracking-[0.2em] mb-1">{label}</span>
-          <span className="text-xl font-black italic leading-none" style={{ color }}>{formatNumber(minutes)}</span>
-        </div>
-        {showIcon && <Timer size={24} className="opacity-20 text-white" />}
-      </div>
-    ),
-
-    // Format 2x2 ou 3x3 : Le Score Géant
-    "2x2": (
-      <div className="w-full h-full flex flex-col items-center justify-center p-4 relative">
-        <div className="absolute inset-0 flex items-center justify-center opacity-5">
-           <Timer size={120} strokeWidth={1} />
-        </div>
-        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-2 italic">
-          {label}
-        </span>
-        <span className="text-4xl font-black italic tracking-tighter leading-none mb-1" style={{ color }}>
-          {formatNumber(minutes)}
-        </span>
-        <div className="h-1 w-12 rounded-full" style={{ backgroundColor: color }} />
-      </div>
-    )
+    "1x1": <Layout1x1 icon={<Timer size={14} style={{ color }} className="mb-1"/>} data={minutes} settings={settings}/>,
+    "2x1": <Layout2x1 icon={<Timer size={24} className="opacity-20 text-white" />} data={minutes} settings={settings}/>,
+    "2x2": <Layout2x2 data={minutes} settings={settings} icon={<Timer size={36} className="opacity-20 text-white"/>}/>
   };
 
   return (
@@ -72,7 +30,7 @@ export function MinutesSettings({ settings, onChange }: { settings: any, onChang
   const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mr-2">
       {/* Couleur du compteur */}
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Couleur accentuée</label>
@@ -87,35 +45,12 @@ export function MinutesSettings({ settings, onChange }: { settings: any, onChang
       </div>
 
       {/* Libellé personnalisé */}
-      <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Texte d'accompagnement</label>
-        <input 
-          type="text" 
-          value={settings.label || "Minutes d'écoute"} 
-          onChange={(e) => update('label', e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg p-2 text-[10px] text-white focus:border-vert outline-none"
-        />
-      </div>
+      <CustomLabel update={update} settings={settings}/>
 
       {/* Options Binaires */}
       <div className="space-y-2">
-        <button onClick={() => update('showIcon', !settings.showIcon)}
-          className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold"
-        >
-          Afficher l'icône
-          <div className={`w-7 h-4 rounded-full p-0.5 transition-all ${settings?.showIcon ? 'bg-vert' : 'bg-white/20'}`}>
-            <div className={`w-3 h-3 bg-white rounded-full transition-all ${settings?.showIcon ? 'translate-x-3' : 'translate-x-0'}`} />
-          </div>
-        </button>
-
-        <button onClick={() => update('shorten', !settings.shorten)}
-          className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold"
-        >
-          Abréger (1.2M)
-          <div className={`w-7 h-4 rounded-full p-0.5 transition-all ${settings?.shorten ? 'bg-vert' : 'bg-white/20'}`}>
-            <div className={`w-3 h-3 bg-white rounded-full transition-all ${settings?.shorten ? 'translate-x-3' : 'translate-x-0'}`} />
-          </div>
-        </button>
+        <ShowIconFilter update={update} settings={settings}/>
+        <ShortenFilter update={update} settings={settings}/>
       </div>
     </div>
   );

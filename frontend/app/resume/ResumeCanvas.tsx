@@ -11,6 +11,9 @@ import { BackgroundWidget } from './widgets/atomic/BackgroundWidget';
 import { BioWidget } from './widgets/atomic/BioWidget';
 import { MinutesWidget } from './widgets/stats/MinutesWidget';
 import { StreamsWidget } from './widgets/stats/StreamsWidget';
+import { DistinctTracksWidget } from './widgets/stats/DistinctTracksWidget';
+import { DistinctAlbumsWidget } from './widgets/stats/DistinctAlbumsWidget';
+import { DistinctArtistsWidget } from './widgets/stats/DistinctArtistsWidget';
 
 interface ResumeCanvasProps {
   range: string | number;
@@ -166,7 +169,7 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
   };
 
   return (
-    <div id="capture-canvas" className="max-w-lg mx-auto flex flex-col gap-4 bg-white/[0.02] rounded-xl border border-white/10">
+    <div id="capture-canvas" className="flex flex-col bg-white/[0.02] w-[38%] rounded-xl border border-white/10">
       {/* CONTENEUR RELATIF QUI REGROUPE TOUT */}
       <div ref={gridRef} className="relative p-2 select-none"
         onDragLeave={onDragLeave} onDragOver={showGrid}
@@ -217,8 +220,11 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
                   {w.type === 'background' && <BackgroundWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
                   {w.type === 'bio' && <BioWidget w={w.w} h={w.h} bio={w.data} settings={w.settings}/>}
                   
-                  {w.type === 'minutes' && <MinutesWidget w={w.w} h={w.h} minutes={w.data} settings={w.settings} />}
-                  {w.type === 'streams' && <StreamsWidget w={w.w} h={w.h} streams={w.data} settings={w.settings} />}
+                  {w.type === 'minutes' && <MinutesWidget w={w.w} h={w.h} minutes={w.data} settings={w.settings}/>}
+                  {w.type === 'streams' && <StreamsWidget w={w.w} h={w.h} streams={w.data} settings={w.settings}/>}
+                  {w.type === 'nb_tracks' && <DistinctTracksWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
+                  {w.type === 'nb_albums' && <DistinctAlbumsWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
+                  {w.type === 'nb_artists' && <DistinctArtistsWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
 
                   {/* {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data}/>}
                   {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>} */}
@@ -245,10 +251,10 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
       </div>
 
       {/* BRANDING */}
-      <div className={`col-span-3 relative overflow-hidden p-2 flex items-center justify-center`}>
-        <div className="text-center opacity-40 space-y-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.5em]">Generated with MyStats</p>
-          <p className="text-[10px] uppercase font-medium">{range}</p>
+      <div className={`px-2 py-1 flex items-center justify-center`}>
+        <div className="text-[10px] uppercase text-center opacity-40 space-y-1">
+          <p className="font-black tracking-[0.3em]">POWERED BY MyStats</p>
+          <p className="font-medium">{range}</p>
         </div>
       </div>
     </div>
