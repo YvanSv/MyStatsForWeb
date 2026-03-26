@@ -111,10 +111,10 @@ export default function ResumePage() {
       </div>
 
       {/* CENTRE : LE CANVAS 3x5 */}
-      <div className='flex-col min-w-[52%] max-w-[52%] items-center'>
-        {/* BARRE DE FILTRES */}
+      {/* <div className='flex-col min-w-[52%] max-w-[52%] items-center'>
+        {/* BARRE DE FILTRES *//*}
         <div className="flex items-center justify-between gap-2 px-2 py-1 border-b border-white/5">
-          {/* Sélecteur de Tri */}
+          {/* Sélecteur de Tri *//*}
           <div className="flex items-center gap-3 pr-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
             <div className="px-2 text-gray-500"><ListFilter size={16}/></div>
             {[
@@ -135,7 +135,7 @@ export default function ResumePage() {
           <div className="hidden md:block w-px h-6 bg-white/10" />
 
           <div className='flex gap-2 w-full'>
-            {/* Sélecteur de Type (Range) */}
+            {/* Sélecteur de Type (Range) *//*}
             <div className="flex items-center gap-3 px-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
               {(['day', 'month', 'season', 'year', 'lifetime'] as RangeOption[]).map((opt) => (
                 <button key={opt} onClick={() => handleRangeChange(opt)}
@@ -146,7 +146,7 @@ export default function ResumePage() {
               ))}
             </div>
 
-            {/* Contrôleur de Navigation Temporelle */}
+            {/* Contrôleur de Navigation Temporelle *//*}
             <div className="min-w-[40%] justify-between flex items-center gap-1 bg-black/40 rounded-xl border border-white/5">
               <button onClick={() => setOffset(prev => prev + 1)} disabled={range === 'lifetime'}
                 className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
@@ -166,10 +166,10 @@ export default function ResumePage() {
         <div className='flex w-full h-full justify-center items-center max-h-[93%] overflow-y-auto custom-scrollbar'>
           <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget}/>
         </div>
-      </div>
+      </div> */}
 
       {/* PANNEAU DROIT : OPTIONS */}
-      <div className='min-w-[24%] max-w-[24%]'>
+      {/* <div className='min-w-[24%] max-w-[24%]'>
         <div className="flex px-6 pt-4 pb-3 border-l border-white/10 justify-between">
           <SecondaryButton onClick={exportImage} additional='px-5 py-2 gap-2'>
             <Download size={20}/> {t.resume.download || "Télécharger"}
@@ -184,7 +184,7 @@ export default function ResumePage() {
         <p className="p-4 bg-vert/10 border border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
           Sélectionnez un élément sur la grille pour le modifier.
         </p>
-      </div>
+      </div> */}
     </div>
     // <div className="min-h-screen bg-black text-white p-4 md:pt-6 md:p-4 animate-in fade-in duration-700">
     //   {/* HEADER ACTIONS */}
