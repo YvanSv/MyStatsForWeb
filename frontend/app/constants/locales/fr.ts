@@ -327,5 +327,6 @@ export const fr = {
     totalTime: "",
     topTrack: "",
     artistStats: "",
+    download: "Télécharger"
   }
 }
