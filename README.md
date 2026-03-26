@@ -1,5 +1,6 @@
 ### TO DO LIST :
 - **page /about**
+- page détail item
 - réparer la responsive dashboard
 - réparer la responsive profile
 - embellir l'accueil
@@ -18,6 +19,8 @@
 - Provider Apple Music
 - Data reader Apple Music
 - Images de partage
+- créer des widgets
+- ajouter une protection 429
 - Fusionner les albums duppliqués
     -> Détecter un conflit
     -> Demander à Spotify l'identité du vrai album

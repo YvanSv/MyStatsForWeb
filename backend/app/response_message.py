@@ -158,6 +158,10 @@ class ResumeDataResponse(BaseModel):
     topAlbums: List[ItemBrief]
     minutes: int
     streams: int
+    distinct_tracks: int
+    distinct_albums: int
+    distinct_artists: int
+
 # --- 5. SYSTÈME & MAINTENANCE ---
 
 class GlobalStatsResponse(BaseModel):

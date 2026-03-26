@@ -1,7 +1,7 @@
 from calendar import monthrange
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from sqlalchemy import Integer, cast, func, desc
+from sqlalchemy import Integer, cast, func, desc, select
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.auth.utils.auth_utils import get_current_user_id
@@ -41,6 +41,7 @@ async def get_resume_data(
 
     # STATS GLOBALES
     total_stats = get_global_stats(db,user_id,range,start_date,end_date)
+    distincts = get_distinct_entities(db,user_id,range,start_date,end_date)
 
     if not total_stats: raise HTTPException(status_code=404, detail="No data found for this period")
 
@@ -50,7 +51,10 @@ async def get_resume_data(
         "topTracks": top_tracks,
         "topAlbums": top_albums,
         "minutes": int(total_stats.total_ms / 60000) if total_stats.total_ms else 0,
-        "streams": total_stats.total_streams or 0
+        "streams": total_stats.total_streams or 0,
+        "distinct_tracks": distincts.nb_tracks,
+        "distinct_albums": distincts.nb_albums,
+        "distinct_artists": distincts.nb_artists
     }
 
 def get_range_dates(range,offset):
@@ -111,6 +115,16 @@ def get_top_entities(db, user_id, range, start, end, rating_f, sort_column, mode
     query = query.filter(TrackHistory.user_id == user_id)
     if range != "lifetime" and start and end: query = query.filter(TrackHistory.played_at >= start, TrackHistory.played_at < end)
     return query.group_by(id_field, name_column, img_column).order_by(desc(sort_column)).limit(limit).all()
+
+def get_distinct_entities(db,user_id,range,start_date,end_date):
+    stats_query = db.query(
+        func.count(func.distinct(TrackHistory.spotify_id)).label("nb_tracks"),
+        func.count(func.distinct(TrackHistory.album_id)).label("nb_albums"),
+        func.count(func.distinct(TrackHistory.artist_id)).label("nb_artists")
+    ).filter(TrackHistory.user_id == user_id)
+    
+    if range != "lifetime": stats_query = stats_query.filter(TrackHistory.played_at >= start_date, TrackHistory.played_at < end_date)
+    return stats_query.first()
 
 def get_global_stats(db,user_id,range,start_date,end_date):
     stats_query = db.query(
