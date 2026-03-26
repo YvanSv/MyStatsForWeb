@@ -100,12 +100,12 @@ export default function ResumePage() {
   return (
     <div className='flex justify-between text1'>
       {/* PANNEAU GAUCHE : ÉLÉMENTS À GLISSER */}
-      <div className='min-w-[24%] max-w-[24%]'>
-        <h1 className="pt-4 px-4 pb-3 text1 text-4xl font-black border-r border-white/10 tracking-tighter uppercase italic">{t.resume.title || "Your Universe"}</h1>
+      <div className='min-w-[24%] max-w-[24%] flex flex-col h-[calc(100vh-142px)] border-r border-white/10'>
+        <h1 className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic">{t.resume.title || "Your Universe"}</h1>
 
         <WidgetsView resumeData={resumeData}/>
 
-        <p className="p-4 bg-vert/10 border border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
+        <p className="p-4 bg-vert/10 border-t border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight shrink-0">
           Glissez un widget sur la grille pour l'ajouter au visuel.
         </p>
       </div>

@@ -6,12 +6,12 @@ interface WidgetsViewProps {
 
 export function WidgetsView({resumeData}:WidgetsViewProps) {
   return (
-    <div className="pl-2 pt-3 min-w-[100%] border-t border-r border-white/10">
+    <div className="flex-1 flex flex-col min-h-0 border-t border-white/10 pl-2 pt-3">
       <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 italic">
         Widgets disponibles
       </h2>
       
-      <div className="flex flex-col gap-3 min-h-[428px] max-h-[428px] overflow-y-auto custom-scrollbar pr-2">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
         <AccordionSection title="Compte" defaultOpen={false}>
           <DraggablePreview title="Photo de profil" type='profile_picture' data={resumeData.user} subtitle="Votre avatar" icon="👤"/>
           <DraggablePreview title="Pseudonyme" type='username' data={resumeData.user.display_name} subtitle="Votre nom d'utilisateur" icon="🖋️"/>
