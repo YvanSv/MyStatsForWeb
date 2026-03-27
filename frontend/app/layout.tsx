@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <div className={`${jost.variable} flex flex-col h-screen overflow-hidden text1`}>
                     <Header/>
 
-                    <div className="flex-1">
+                    <div className="flex-1 overflow-y-auto">
                       <div className="flex flex-col min-h-full">
                         <main className="flex-1 flex flex-col">
                           {children}
