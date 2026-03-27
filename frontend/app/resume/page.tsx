@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LoadingSpinner } from '../components/small_elements/CustomSpinner';
 import { WidgetsView } from './WidgetsView';
 import { PropertiesView } from './PropertiesView';
@@ -7,9 +7,10 @@ import { DataFormat, PlacedWidget, RangeOption, SelectedWidget, SortOption } fro
 import { useApiMyDatas } from '../hooks/useApiMyDatas';
 import * as htmlToImage from 'html-to-image';
 import { useLanguage } from '../context/languageContext';
-import { Download, ListFilter, Minus, Plus, Share2 } from 'lucide-react';
+import { Download, Share2 } from 'lucide-react';
 import { PrimaryButton, SecondaryButton } from '../components/Atomic/Buttons';
 import ResumeCanvas from './ResumeCanvas';
+import { HeaderComponent } from './HeaderComponent';
 
 export default function ResumePage() {
   const { t } = useLanguage();
@@ -90,11 +91,6 @@ export default function ResumePage() {
     }
   };
 
-  const handleRangeChange = (newRange: RangeOption) => {
-    setRange(newRange);
-    setOffset(0);
-  };
-
   if (!resumeData) return <LoadingSpinner />;
 
   return (
@@ -116,57 +112,11 @@ export default function ResumePage() {
 
       <div className='flex flex-col flex-13 items-center'>
         {/* BARRE DE FILTRES */}
-        <div className="flex items-center justify-between gap-2 px-2 py-1">
-          {/* Sélecteur de Tri */}
-          <div className="flex items-center gap-3 pr-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
-            <div className="px-2 text-gray-500"><ListFilter size={16}/></div>
-            {[
-              { id: 'streams', label: 'Streams' },
-              { id: 'minutes', label: 'Temps' },
-              { id: 'rating', label: 'Rating' }
-            ].map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => setSortBy(opt.id as SortOption)}
-                className={`px-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all  ${
-                  sortBy === opt.id ? "bg-white/10 text-white" : "text-gray-600 hover:text-gray-400"
-                }`}
-              >{opt.label}</button>
-            ))}
-          </div>
+        <HeaderComponent range={range} setRange={setRange} offset={offset}
+          setOffset={setOffset} displayLabel={displayLabel}
+        />
 
-          <div className="hidden md:block w-px h-6 bg-white/10" />
-
-          <div className='flex gap-2'>
-            {/* Sélecteur de Type (Range) */}
-            <div className="flex items-center gap-3 px-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
-              {(['day', 'month', 'season', 'year', 'lifetime'] as RangeOption[]).map((opt) => (
-                <button key={opt} onClick={() => handleRangeChange(opt)}
-                  className={`px-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                    range === opt ? "bg-white/10 text-white" : "text-gray-600 hover:text-gray-400"
-                  }`}
-                >{opt}</button>
-              ))}
-            </div>
-
-            {/* Contrôleur de Navigation Temporelle */}
-            <div className="justify-between flex items-center gap-1 bg-black/40 rounded-xl border border-white/5">
-              <button onClick={() => setOffset(prev => prev + 1)} disabled={range === 'lifetime'}
-                className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
-              ><Minus size={16} strokeWidth={3}/></button>
-
-              <p className="text-sm font-black uppercase italic tracking-tighter leading-none w-[150px] text-center">
-                {displayLabel}
-              </p>
-
-              <button onClick={() => setOffset(prev => Math.max(0, prev - 1))} disabled={range === 'lifetime' || offset === 0}
-                className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
-              ><Plus size={16} strokeWidth={3} /></button>
-            </div>
-          </div>
-        </div>
-
-        <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget}/>
+        <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget} resumeData={resumeData}/>
       </div>
 
       <div className="flex flex-col flex-5 border-r border-white/10 min-h-0">
@@ -283,56 +233,5 @@ export default function ResumePage() {
     //   {/* HEADER ACTIONS */}
     //   <HeaderComponent range={range} setRange={setRange} offset={offset} setOffset={setOffset} sortBy={sortBy} setSortBy={setSortBy} displayLabel={displayLabel}/>
     // </div>
-  );
-}
-
-function DraggablePreview({ title, subtitle, icon, type, data }: { title: string, subtitle?: string, icon: string, type: string, data: any }) {
-  const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData("widgetType", type);
-    e.dataTransfer.setData("widgetData", JSON.stringify(data));
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  return (
-    <div draggable onDragStart={handleDragStart}
-      className="group flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-vert/50 hover:bg-white/10 transition-all cursor-grab active:cursor-grabbing"
-    >
-      <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
-        {icon}
-      </div>
-      <div className="flex flex-col overflow-hidden">
-        <span className="text-[10px] font-black uppercase tracking-tighter text-white">{title}</span>
-        <span className="text-[10px] text-gray-500 truncate font-medium uppercase">{subtitle || "N/A"}</span>
-      </div>
-    </div>
-  );
-}
-
-import { ChevronDown } from "lucide-react";
-
-function AccordionSection({ title, children, defaultOpen = false }: { title: string, children: React.ReactNode, defaultOpen?: boolean }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  return (
-    <div className="border-b border-white/5 last:border-none">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between py-3 px-1 hover:text-white transition-colors group"
-      >
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-gray-300 italic">
-          {title}
-        </span>
-        <ChevronDown 
-          size={14} 
-          className={`text-gray-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} 
-        />
-      </button>
-      
-      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
-        <div className="flex flex-col gap-2.5">
-          {children}
-        </div>
-      </div>
-    </div>
   );
 }

@@ -12,7 +12,6 @@ export function BackgroundWidget({ w, h, data, settings }: BackgroundWidgetProps
   // Récupération des réglages (avec valeurs par défaut sécurisées)
   const blur = settings?.blur ?? 10; // Flou en pixels
   const opacity = settings?.opacity ?? 0.3; // Opacité de l'image (0 à 1)
-//   const overlayColor = settings?.overlayColor || "#000000"; // Couleur du calque de superposition
   const gradient = settings?.gradient ?? true; // Activer le dégradé vers le noir en bas
 
   // Style pour l'image de fond
@@ -22,11 +21,6 @@ export function BackgroundWidget({ w, h, data, settings }: BackgroundWidgetProps
     opacity: opacity,
   };
 
-  // Style pour le calque de couleur
-//   const overlayStyle = {
-//     backgroundColor: overlayColor,
-//   };
-
   // Conteneur commun pour les layouts
   const containerClass = "w-full h-full relative overflow-hidden bg-black rounded-xl";
 
@@ -34,19 +28,13 @@ export function BackgroundWidget({ w, h, data, settings }: BackgroundWidgetProps
     // Layout unique pour le background : il remplit tout le widget
     "1x1": (
       <div className={containerClass}>
-        {/* 1. L'image floutée */}
+        {/* L'image floutée */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-all duration-500"
           style={backgroundStyle}
         />
-        
-        {/* 2. Le calque de couleur superposé */}
-        {/* <div 
-          className="absolute inset-0 transition-colors duration-500"
-          style={overlayStyle}
-        /> */}
 
-        {/* 3. Le dégradé optionnel vers le noir (style Spotify) */}
+        {/* Le dégradé optionnel vers le noir (style Spotify) */}
         {gradient && (
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
         )}
@@ -66,8 +54,6 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
   const update = (key: string, value: any) => {
     onChange({ ...settings, [key]: value });
   };
-
-  const colors = ["#000000", "#1A1A1A", "#121212", "#080808", "#1DB954"];
 
   return (
     <div className="space-y-6">
@@ -101,23 +87,6 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
           />
         </div>
       </div>
-
-      {/* SECTION COULEUR DE SUPERPOSITION */}
-      {/* <div className="flex flex-col gap-3">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><Palette size={13}/> Teinte du fond</label>
-        <div className="flex gap-2.5">
-          {colors.map(c => (
-            <button key={c} onClick={() => update('overlayColor', c)}
-              className={`w-7 h-7 rounded-full border-2 transition-transform ${settings.overlayColor === c ? 'border-vert scale-110 shadow-lg' : 'border-white/10 hover:border-white/30'}`}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-          {/* Option pour une couleur personnalisée (simplifiée) *//*}
-          <input type="color" value={settings.overlayColor || "#000000"} onChange={(e) => update('overlayColor', e.target.value)}
-            className="w-7 h-7 rounded-full bg-transparent border-2 border-white/10 cursor-pointer p-0 overflow-hidden"
-          />
-        </div>
-      </div> */}
 
       {/* SECTION DÉGRADÉ */}
       <div className="flex flex-col gap-2">

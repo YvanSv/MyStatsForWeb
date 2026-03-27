@@ -17,12 +17,13 @@ import { DistinctArtistsWidget } from './widgets/stats/DistinctArtistsWidget';
 
 interface ResumeCanvasProps {
   range: string | number;
+  resumeData: any;
   widgets: PlacedWidget[];
   setWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>;
   onSelectWidget: (w: SelectedWidget | null) => void;
 }
 
-export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:ResumeCanvasProps) {
+export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSelectWidget}:ResumeCanvasProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [resizingConfig, setResizingConfig] = useState<{id: number, handle: string} | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -145,7 +146,6 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
       id: Date.now(),
       type: type,
       index: targetIndex,
-      data: data,
       w: 1,
       h: 1,
       settings: {}
@@ -166,6 +166,21 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
   const deselect = () => {
     setSelectedId(null);
     onSelectWidget(null as any); // On informe aussi le parent pour vider le panneau "Propriétés"
+  };
+
+  const getFreshData = (type: string) => {
+    switch (type) {
+      case 'profile_picture': return resumeData.user;
+      case 'username': return resumeData.user.display_name;
+      case 'background': return resumeData.user.banner;
+      case 'bio': return resumeData.user.bio;
+      case 'minutes': return resumeData.minutes;
+      case 'streams': return resumeData.streams;
+      case 'nb_tracks': return resumeData.distinct_tracks;
+      case 'nb_albums': return resumeData.distinct_albums;
+      case 'nb_artists': return resumeData.distinct_artists;
+      default: return null;
+    }
   };
 
   return (
@@ -198,6 +213,7 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
             const colStart = (w.index % 3) + 1;
             const rowStart = Math.floor(w.index / 3) + 1;
             const isSelected = selectedId === w.id;
+            const currentData = getFreshData(w.type);
 
             return (
               <div 
@@ -215,16 +231,16 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
                 }}
               >
                 <div className="w-full h-full rounded-md text-black font-bold text-[10px] flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-white">
-                  {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={w.data} settings={w.settings}/>}
-                  {w.type === 'username' && <UsernameWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
-                  {w.type === 'background' && <BackgroundWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
-                  {w.type === 'bio' && <BioWidget w={w.w} h={w.h} bio={w.data} settings={w.settings}/>}
+                  {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={currentData} settings={w.settings}/>}
+                  {w.type === 'username' && <UsernameWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
+                  {w.type === 'background' && <BackgroundWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
+                  {w.type === 'bio' && <BioWidget w={w.w} h={w.h} bio={currentData} settings={w.settings}/>}
                   
-                  {w.type === 'minutes' && <MinutesWidget w={w.w} h={w.h} minutes={w.data} settings={w.settings}/>}
-                  {w.type === 'streams' && <StreamsWidget w={w.w} h={w.h} streams={w.data} settings={w.settings}/>}
-                  {w.type === 'nb_tracks' && <DistinctTracksWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
-                  {w.type === 'nb_albums' && <DistinctAlbumsWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
-                  {w.type === 'nb_artists' && <DistinctArtistsWidget w={w.w} h={w.h} data={w.data} settings={w.settings}/>}
+                  {w.type === 'minutes' && <MinutesWidget w={w.w} h={w.h} minutes={currentData} settings={w.settings}/>}
+                  {w.type === 'streams' && <StreamsWidget w={w.w} h={w.h} streams={currentData} settings={w.settings}/>}
+                  {w.type === 'nb_tracks' && <DistinctTracksWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
+                  {w.type === 'nb_albums' && <DistinctAlbumsWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
+                  {w.type === 'nb_artists' && <DistinctArtistsWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
 
                   {/* {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data}/>}
                   {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>} */}

@@ -33,7 +33,6 @@ export interface PlacedWidget {
   id: number;
   type: string;
   index: number;
-  data: any;
   w: number;
   h: number;
   settings: any;

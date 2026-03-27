@@ -28,43 +28,6 @@ export function WidgetsView({resumeData}:WidgetsViewProps) {
         </AccordionSection>
       </div>
     </div>
-    // <div className="flex flex-1 flex-col border-t border-white/10 pl-2 pt-3">
-    //   {/* <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 italic shrink-0">
-    //     Widgets disponibles
-    //   </h2> */}
-
-    //   <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3 min-h-full max-h-full">
-    //     <AccordionSection title="Compte" defaultOpen={false}>
-    //       <DraggablePreview title="Photo de profil" type='profile_picture' data={resumeData.user} subtitle="Votre avatar" icon="👤"/>
-    //       <DraggablePreview title="Pseudonyme" type='username' data={resumeData.user.display_name} subtitle="Votre nom d'utilisateur" icon="🖋️"/>
-    //       <DraggablePreview title="Fond d'écran" type='background' data={resumeData.user.banner} subtitle={`Votre bannière`} icon="🖼️"/>
-    //       <DraggablePreview title="Description" type='bio' data={resumeData.user.bio} subtitle="Votre bio" icon="📝"/>
-    //     </AccordionSection>
-
-    //     <AccordionSection title="Stats" defaultOpen={false}>
-    //       <DraggablePreview title="Temps d'écoute" type='minutes' data={resumeData.minutes} subtitle={`${resumeData.minutes.toLocaleString()} min`} icon="⏳"/>
-    //       <DraggablePreview title="Nombre de streams" type='streams' data={resumeData.streams} subtitle={`${resumeData.streams.toLocaleString()} écoutes`} icon="▶️​"/>
-    //       <DraggablePreview title="Titres différents" type='nb_tracks' data={resumeData.distinct_tracks} subtitle={`${resumeData.distinct_tracks} morceaux uniques`} icon="💿"/>
-    //       <DraggablePreview title="Albums différents" type='nb_albums' data={resumeData.distinct_albums} subtitle={`${resumeData.distinct_albums} albums uniques`} icon="💽​"/>
-    //       <DraggablePreview title="Artistes différents" type='nb_artists' data={resumeData.distinct_artists} subtitle={`${resumeData.distinct_artists} artistes uniques`} icon="​🎤​"/>
-    //     </AccordionSection>
-
-    //     {/* ENTAMES */}
-    //     {/* <DraggablePreview title="Profil" type='profile' data={resumeData.user} subtitle={`Votre profil`} icon="👤"/>
-    //     <DraggablePreview title="Top Tracks" type='top_tracks' data={resumeData.topTracks} subtitle={"Top 5"} icon="🎵"/> */}
-
-    //     {/* A FAIRE */}
-    //     {/* <DraggablePreview title="Top Artistes" type='artists' data={""} subtitle={"Top 5"} icon="👤"/>
-    //     <DraggablePreview title="Top Albums" type='albums' data={""} subtitle={"Top 5"} icon=""/>
-    //     <DraggablePreview title="Temps d'écoute" type='minutes' data={""} subtitle={`${resumeData.minutes.toLocaleString()} min`} icon="⏳"/>
-    //     <DraggablePreview title="Nombre de streams" type='streams' data={""} subtitle={`${resumeData.streams.toLocaleString()} streams`} icon=""/>
-    //     <DraggablePreview title="Nombre d'artistes" type='nb_artists' data={""} subtitle={resumeData.minutes} icon=""/>
-    //     <DraggablePreview title="Nombre de tracks" type='nb_tracks' data={""} subtitle={resumeData.minutes} icon=""/>
-    //     <DraggablePreview title="Nombre d'albums" type='nb_albums' data={""} subtitle={resumeData.minutes} icon=""/>
-    //     <DraggablePreview title="Background" type='background' data={""} subtitle={`Background personnalisé`} icon=""/>
-    //     <DraggablePreview title="Stats Temps" type='minutes' data={""} subtitle={`${resumeData.minutes} min`} icon=""/> */}
-    //   </div>
-    // </div>
   );
 }
 
@@ -84,7 +47,7 @@ function DraggablePreview({ title, subtitle, icon, type, data }: { title: string
         {icon}
       </div>
       <div className="flex flex-col overflow-hidden">
-        <span className="text-[10px] font-black uppercase tracking-tighter text-white">{title}</span>
+        <span className="text-[10px] font-black uppercase text-white">{title}</span>
         <span className="text-[10px] text-gray-500 truncate font-medium uppercase">{subtitle || "N/A"}</span>
       </div>
     </div>
