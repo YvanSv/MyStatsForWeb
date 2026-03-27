@@ -155,7 +155,7 @@ export default function ResumePage() {
                 className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
               ><Minus size={16} strokeWidth={3}/></button>
 
-              <p className="text-sm font-black uppercase italic tracking-tighter leading-none">
+              <p className="text-sm font-black uppercase italic tracking-tighter leading-none w-[150px] text-center">
                 {displayLabel}
               </p>
 
