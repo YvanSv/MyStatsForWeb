@@ -7,7 +7,7 @@ import { useLanguage } from '../context/languageContext';
 
 const FOOTER_STYLES = {
   // Structure globale
-  CONTENT_GRID: "bg-bg1/60 border-t border-white/5 px-3 py-3 md:px-4 md:py-4 md:pt-5 grid grid-cols-1 md:grid-cols-3 items-center",
+  CONTENT_GRID: "bg-bg1/60 border-t border-white/5 px-3 py-2.5 md:px-4 grid grid-cols-1 md:grid-cols-3 items-center",
 
   // Section Logo (Gauche)
   LOGO_SECTION: "hidden md:flex items-center gap-4 justify-start",

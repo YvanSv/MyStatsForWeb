@@ -6,8 +6,8 @@ interface WidgetsViewProps {
 
 export function WidgetsView({resumeData}:WidgetsViewProps) {
   return (
-    <div className="flex-1 flex flex-col min-h-0 border-t border-white/10 pl-2 pt-3">
-      <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 italic">
+    <div className="flex flex-1 flex-col border-t border-white/10 pl-2 pt-3 min-h-0">
+      <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 italic shrink-0">
         Widgets disponibles
       </h2>
       

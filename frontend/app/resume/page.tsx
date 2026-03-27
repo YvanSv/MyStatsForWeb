@@ -100,8 +100,8 @@ export default function ResumePage() {
   return (
     <div className='flex justify-between text1'>
       {/* PANNEAU GAUCHE : ÉLÉMENTS À GLISSER */}
-      <div className='min-w-[24%] max-w-[24%] flex flex-col h-[calc(100vh-142px)] border-r border-white/10'>
-        <h1 className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic">{t.resume.title || "Your Universe"}</h1>
+      <div className='flex flex-col w-[24%] border-r border-white/10 h-[calc(83.315vh)]'>
+        <h1 className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic shrink-0">{t.resume.title || "Your Universe"}</h1>
 
         <WidgetsView resumeData={resumeData}/>
 
