@@ -42,11 +42,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SpotifyProvider>
                   <div className={`${jost.variable} flex flex-col h-screen overflow-hidden text1`}>
                     <Header/>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                      {/* div wrapper pour gérer la hauteur minimale */}
+
+                    <div className="flex-1">
                       <div className="flex flex-col min-h-full">
-                        {/* children prend tout l'espace restant (flex-grow) */}
-                        <main className="flex-1 min-h-full">
+                        <main className="flex-1 flex flex-col">
                           {children}
                         </main>
                         <Footer />

@@ -98,23 +98,26 @@ export default function ResumePage() {
   if (!resumeData) return <LoadingSpinner />;
 
   return (
-    <div className='flex justify-between text1'>
-      {/* PANNEAU GAUCHE : ÉLÉMENTS À GLISSER */}
-      <div className='flex flex-col w-[24%] border-r border-white/10 h-[calc(83.315vh)]'>
-        <h1 className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic shrink-0">{t.resume.title || "Your Universe"}</h1>
+    <div className="flex flex-1 h-full min-h-0">
+      <div className="flex flex-col flex-5 border-r border-white/10 min-h-0">
+        {/* HEADER FIXE */}
+        <p className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic shrink-0">
+          {t.resume.title || "Your Universe"}
+        </p>
 
+        {/* ZONE SCROLLABLE */}
         <WidgetsView resumeData={resumeData}/>
 
-        <p className="p-4 bg-vert/10 border-t border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight shrink-0">
-          Glissez un widget sur la grille pour l'ajouter au visuel.
-        </p>
+        {/* FOOTER */}
+        <div className="p-4 bg-vert/10 border-t border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight shrink-0">
+          Glissez un widget sur la grille.
+        </div>
       </div>
 
-      {/* CENTRE : LE CANVAS 3x5 */}
-      {/* <div className='flex-col min-w-[52%] max-w-[52%] items-center'>
-        {/* BARRE DE FILTRES *//*}
-        <div className="flex items-center justify-between gap-2 px-2 py-1 border-b border-white/5">
-          {/* Sélecteur de Tri *//*}
+      <div className='flex flex-col flex-13 items-center'>
+        {/* BARRE DE FILTRES */}
+        <div className="flex items-center justify-between gap-2 px-2 py-1">
+          {/* Sélecteur de Tri */}
           <div className="flex items-center gap-3 pr-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
             <div className="px-2 text-gray-500"><ListFilter size={16}/></div>
             {[
@@ -134,8 +137,8 @@ export default function ResumePage() {
 
           <div className="hidden md:block w-px h-6 bg-white/10" />
 
-          <div className='flex gap-2 w-full'>
-            {/* Sélecteur de Type (Range) *//*}
+          <div className='flex gap-2'>
+            {/* Sélecteur de Type (Range) */}
             <div className="flex items-center gap-3 px-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
               {(['day', 'month', 'season', 'year', 'lifetime'] as RangeOption[]).map((opt) => (
                 <button key={opt} onClick={() => handleRangeChange(opt)}
@@ -146,8 +149,8 @@ export default function ResumePage() {
               ))}
             </div>
 
-            {/* Contrôleur de Navigation Temporelle *//*}
-            <div className="min-w-[40%] justify-between flex items-center gap-1 bg-black/40 rounded-xl border border-white/5">
+            {/* Contrôleur de Navigation Temporelle */}
+            <div className="justify-between flex items-center gap-1 bg-black/40 rounded-xl border border-white/5">
               <button onClick={() => setOffset(prev => prev + 1)} disabled={range === 'lifetime'}
                 className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
               ><Minus size={16} strokeWidth={3}/></button>
@@ -163,32 +166,173 @@ export default function ResumePage() {
           </div>
         </div>
 
-        <div className='flex w-full h-full justify-center items-center max-h-[93%] overflow-y-auto custom-scrollbar'>
-          <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget}/>
-        </div>
-      </div> */}
+        <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget}/>
+      </div>
 
-      {/* PANNEAU DROIT : OPTIONS */}
-      {/* <div className='min-w-[24%] max-w-[24%]'>
-        <div className="flex px-6 pt-4 pb-3 border-l border-white/10 justify-between">
-          <SecondaryButton onClick={exportImage} additional='px-5 py-2 gap-2'>
+      <div className="flex flex-col flex-5 border-r border-white/10 min-h-0">
+        {/* HEADER FIXE */}
+        <div className="flex px-3 pt-4 pb-3 border-l border-white/10 justify-between">
+          <SecondaryButton onClick={exportImage} additional='px-4 py-2 gap-2'>
             <Download size={20}/> {t.resume.download || "Télécharger"}
           </SecondaryButton>
-          <PrimaryButton additional='px-8 py-2 gap-2 font-bold'>
+          <PrimaryButton additional='px-5 py-2 gap-2 font-bold'>
             <Share2 size={18}/> {t.resume.share || "Partager"}
           </PrimaryButton>
         </div>
-        
+
+        {/* ZONE SCROLLABLE */}
         <PropertiesView selectedWidget={selectedWidget} setSelectedWidget={setSelectedWidget} setWidgets={setWidgets} exportImage={exportImage}/>
 
+        {/* FOOTER */}
         <p className="p-4 bg-vert/10 border border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
-          Sélectionnez un élément sur la grille pour le modifier.
+          Sélectionnez un élément sur la grille pour l'éditer.
         </p>
-      </div> */}
+      </div>
     </div>
+    // <div className='flex'>
+    //   {/* PANNEAU GAUCHE : ÉLÉMENTS À GLISSER */}
+    //   <div className='flex flex-col w-[24%] border-r border-white/10'>
+    //     <h1 className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic">{t.resume.title || "Your Universe"}</h1>
+
+    //     <div className='flex-1 flex flex-col h-0'>
+    //       <WidgetsView resumeData={resumeData}/>
+    //     </div>
+
+    //     <p className="p-4 bg-vert/10 border-t border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
+    //       Glissez un widget sur la grille pour l'ajouter au visuel.
+    //     </p>
+    //   </div>
+    // </div>
+      
+
+    //   {/* CENTRE : LE CANVAS 3x5 */}
+    //   <div className='flex flex-col flex-1 min-w-[52%] max-w-[52%]'>
+        // {/* BARRE DE FILTRES */}
+        // <div className="flex items-center justify-between gap-2 px-2 py-1 border-b border-white/5">
+        //   {/* Sélecteur de Tri */}
+        //   <div className="flex items-center gap-3 pr-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
+        //     <div className="px-2 text-gray-500"><ListFilter size={16}/></div>
+        //     {[
+        //       { id: 'streams', label: 'Streams' },
+        //       { id: 'minutes', label: 'Temps' },
+        //       { id: 'rating', label: 'Rating' }
+        //     ].map((opt) => (
+        //       <button
+        //         key={opt.id}
+        //         onClick={() => setSortBy(opt.id as SortOption)}
+        //         className={`px-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all  ${
+        //           sortBy === opt.id ? "bg-white/10 text-white" : "text-gray-600 hover:text-gray-400"
+        //         }`}
+        //       >{opt.label}</button>
+        //     ))}
+        //   </div>
+
+        //   <div className="hidden md:block w-px h-6 bg-white/10" />
+
+        //   <div className='flex gap-2 w-full'>
+        //     {/* Sélecteur de Type (Range) */}
+        //     <div className="flex items-center gap-3 px-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
+        //       {(['day', 'month', 'season', 'year', 'lifetime'] as RangeOption[]).map((opt) => (
+        //         <button key={opt} onClick={() => handleRangeChange(opt)}
+        //           className={`px-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+        //             range === opt ? "bg-white/10 text-white" : "text-gray-600 hover:text-gray-400"
+        //           }`}
+        //         >{opt}</button>
+        //       ))}
+        //     </div>
+
+        //     {/* Contrôleur de Navigation Temporelle */}
+        //     <div className="min-w-[40%] justify-between flex items-center gap-1 bg-black/40 rounded-xl border border-white/5">
+        //       <button onClick={() => setOffset(prev => prev + 1)} disabled={range === 'lifetime'}
+        //         className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
+        //       ><Minus size={16} strokeWidth={3}/></button>
+
+        //       <p className="text-sm font-black uppercase italic tracking-tighter leading-none">
+        //         {displayLabel}
+        //       </p>
+
+        //       <button onClick={() => setOffset(prev => Math.max(0, prev - 1))} disabled={range === 'lifetime' || offset === 0}
+        //         className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
+        //       ><Plus size={16} strokeWidth={3} /></button>
+        //     </div>
+        //   </div>
+        // </div>
+
+        // <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget}/>
+    //   </div>
+
+    //   {/* PANNEAU DROIT : OPTIONS */}
+    //   <div className='flex-1 min-w-[24%] max-w-[24%]'>
+        // <div className="flex px-6 pt-4 pb-3 border-l border-white/10 justify-between">
+        //   <SecondaryButton onClick={exportImage} additional='px-5 py-2 gap-2'>
+        //     <Download size={20}/> {t.resume.download || "Télécharger"}
+        //   </SecondaryButton>
+        //   <PrimaryButton additional='px-8 py-2 gap-2 font-bold'>
+        //     <Share2 size={18}/> {t.resume.share || "Partager"}
+        //   </PrimaryButton>
+        // </div>
+        
+        // <PropertiesView selectedWidget={selectedWidget} setSelectedWidget={setSelectedWidget} setWidgets={setWidgets} exportImage={exportImage}/>
+
+        // <p className="p-4 bg-vert/10 border border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
+        //   Sélectionnez un élément sur la grille pour le modifier.
+        // </p>
+    //   </div>
+    // </div>
     // <div className="min-h-screen bg-black text-white p-4 md:pt-6 md:p-4 animate-in fade-in duration-700">
     //   {/* HEADER ACTIONS */}
     //   <HeaderComponent range={range} setRange={setRange} offset={offset} setOffset={setOffset} sortBy={sortBy} setSortBy={setSortBy} displayLabel={displayLabel}/>
     // </div>
+  );
+}
+
+function DraggablePreview({ title, subtitle, icon, type, data }: { title: string, subtitle?: string, icon: string, type: string, data: any }) {
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData("widgetType", type);
+    e.dataTransfer.setData("widgetData", JSON.stringify(data));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  return (
+    <div draggable onDragStart={handleDragStart}
+      className="group flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-vert/50 hover:bg-white/10 transition-all cursor-grab active:cursor-grabbing"
+    >
+      <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
+        {icon}
+      </div>
+      <div className="flex flex-col overflow-hidden">
+        <span className="text-[10px] font-black uppercase tracking-tighter text-white">{title}</span>
+        <span className="text-[10px] text-gray-500 truncate font-medium uppercase">{subtitle || "N/A"}</span>
+      </div>
+    </div>
+  );
+}
+
+import { ChevronDown } from "lucide-react";
+
+function AccordionSection({ title, children, defaultOpen = false }: { title: string, children: React.ReactNode, defaultOpen?: boolean }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="border-b border-white/5 last:border-none">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between py-3 px-1 hover:text-white transition-colors group"
+      >
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-gray-300 italic">
+          {title}
+        </span>
+        <ChevronDown 
+          size={14} 
+          className={`text-gray-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} 
+        />
+      </button>
+      
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
+        <div className="flex flex-col gap-2.5">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 }

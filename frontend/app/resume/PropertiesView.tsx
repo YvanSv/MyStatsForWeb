@@ -37,40 +37,38 @@ export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets, e
   };
 
   return (
-    <div className="pl-2 pt-3 border-t border-l border-white/10">
+    <div className="flex-1 pl-2 pt-3 border-t border-l border-white/10">
       <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 italic">
         Propriétés
       </h2>
       
-      <div className='min-h-[427px] max-h-[427px] overflow-y-auto custom-scrollbar'>
-        {selectedWidget && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-3 pb-4 border-b border-white/5">
-              <div className="w-8 h-8 rounded-lg bg-vert/20 flex items-center justify-center text-vert text-xs font-bold">
-                {selectedWidget.type[0].toUpperCase()}
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest">{selectedWidget.type}</span>
+      {selectedWidget && (
+        <div className="pr-2 space-y-6 animate-in slide-in-from-right-4 duration-300 overflow-y-auto custom-scrollbar max-h-[61vh]">
+          <div className="flex items-center gap-3 pb-4 border-b border-white/5">
+            <div className="w-8 h-8 rounded-lg bg-vert/20 flex items-center justify-center text-vert text-xs font-bold">
+              {selectedWidget.type[0].toUpperCase()}
             </div>
-
-            {/* RENDER DES PARAMÈTRES SELON LE TYPE */}
-            <div className="flex flex-col gap-4">
-              {selectedWidget.type === 'profile_picture' && <ProfilePictureSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              {selectedWidget.type === 'username' && <UsernameSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              {selectedWidget.type === 'background' && <BackgroundSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              {selectedWidget.type === 'bio' && <BioSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              
-              {selectedWidget.type === 'minutes' && <MinutesSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              {selectedWidget.type === 'streams' && <StreamsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              {selectedWidget.type === 'nb_tracks' && <DistinctTracksSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              {selectedWidget.type === 'nb_albums' && <DistinctAlbumsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              {selectedWidget.type === 'nb_artists' && <DistinctArtistsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-              {/* {selectedWidget.type === 'top_tracks' && (
-                <TopTracksSettings settings={selectedWidget.settings} onChange={updateWidgetSettings} />
-              )} */}
-            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest">{selectedWidget.type}</span>
           </div>
-        )}
-      </div>
+
+          {/* RENDER DES PARAMÈTRES SELON LE TYPE */}
+          <div className="flex flex-col gap-4 mb-5">
+            {selectedWidget.type === 'profile_picture' && <ProfilePictureSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            {selectedWidget.type === 'username' && <UsernameSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            {selectedWidget.type === 'background' && <BackgroundSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            {selectedWidget.type === 'bio' && <BioSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            
+            {selectedWidget.type === 'minutes' && <MinutesSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            {selectedWidget.type === 'streams' && <StreamsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            {selectedWidget.type === 'nb_tracks' && <DistinctTracksSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            {selectedWidget.type === 'nb_albums' && <DistinctAlbumsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            {selectedWidget.type === 'nb_artists' && <DistinctArtistsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
+            {/* {selectedWidget.type === 'top_tracks' && (
+              <TopTracksSettings settings={selectedWidget.settings} onChange={updateWidgetSettings} />
+            )} */}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

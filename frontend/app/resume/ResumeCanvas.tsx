@@ -169,7 +169,7 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
   };
 
   return (
-    <div id="capture-canvas" className="flex flex-col bg-white/[0.02] w-[38%] rounded-xl border border-white/10">
+    <div id="capture-canvas" className="mt-2 flex flex-col bg-white/[0.02] w-[35%] rounded-xl border border-white/10">
       {/* CONTENEUR RELATIF QUI REGROUPE TOUT */}
       <div ref={gridRef} className="relative p-2 select-none"
         onDragLeave={onDragLeave} onDragOver={showGrid}
@@ -179,7 +179,7 @@ export default function ResumeCanvas({range,widgets,setWidgets,onSelectWidget}:R
         }}
       >
         {/* 1. LA GRILLE DE FOND (Fixe, 15 cases) */}
-        <div className="grid grid-cols-3 gap-2 w-full" style={{ opacity: isDragging || widgets.length === 0 ? 1 : 0 }}>
+        <div className="grid grid-cols-3 gap-2" style={{ opacity: isDragging || widgets.length === 0 ? 1 : 0 }}>
           {Array.from({ length: 3 * 5 }).map((_, index) => (
             <div key={`cell-${index}`} onDragOver={onDragOver} onDrop={(e) => onDrop(e, index)}
               className="aspect-square border border-dashed border-white/20 rounded-md flex items-center justify-center text-[8px] text-white/5 hover:bg-white/10 transition-colors"
