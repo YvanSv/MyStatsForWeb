@@ -46,6 +46,8 @@ function AccountContent() {
     errorPw: '',
     errorConfirmPw: '',
   });
+  // Erreur renvoyée par l'API lors de l'enregistrement (ex : email déjà utilisé)
+  const [errorApi, setErrorApi] = useState('');
 
   useEffect(() => {
     if (user?.user_name) setUsername(user.user_name);
@@ -58,9 +60,10 @@ function AccountContent() {
     if (errors.errorPw !== "" || errors.errorName !== "" || errors.errorConfirmPw !== "") return;
 
     setUpdating(true);
+    setErrorApi('');
 
     try {
-      const updateData: any = {};
+      const updateData: Record<string, string> = {};
       if (username !== user?.user_name) updateData.username = username;
       if (email !== user?.email) updateData.email = email;
       if (password) updateData.password = password;
@@ -69,8 +72,8 @@ function AccountContent() {
         style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
-    } catch (err: any) {
-      setErrors({...errors, errorEmail: err.message});
+    } catch (err) {
+      setErrorApi(err instanceof Error ? err.message : dict.errorDeleteMessage);
     } finally {setUpdating(false)}
   };
 
@@ -84,7 +87,7 @@ function AccountContent() {
           style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
           iconTheme: { primary: '#1DD05D', secondary: '#fff' },
         });
-      } catch (err) {toast.error(dict.errorDeleteMessage)}
+      } catch {toast.error(dict.errorDeleteMessage)}
     }
   };
 
@@ -98,7 +101,7 @@ function AccountContent() {
           style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
           iconTheme: { primary: '#1DD05D', secondary: '#fff' },
         });
-      } catch (err) {toast.error(dict.errorDeleteMessage)}
+      } catch {toast.error(dict.errorDeleteMessage)}
     }
   };
 
@@ -211,6 +214,7 @@ function AccountContent() {
               </span>
             ) : dict.save}
           </button>
+          {errorApi && (<label role="alert" className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] block text-center`}>{errorApi}</label>)}
         </div>
       </>,
   }
