@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { BASE_UI } from "../styles/general";
-import { useApiSpotifyData } from "../hooks/useApiSpotifyData";
+import { useApiUploadData } from "../hooks/useApiUploadData";
 import { ApiError } from "../services/api";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
@@ -10,6 +10,8 @@ import { SkeletonImport } from "./Skeleton";
 import { useAuth } from "../context/authContext";
 import { API_ENDPOINTS } from "../constants/routes";
 import { useLanguage } from "../context/languageContext";
+import Papa from 'papaparse';
+import { AppleCSVRow, CleanAppleData } from "../data/DataInfos";
 
 export default function ImportPage() {
   return (
@@ -64,12 +66,14 @@ export function ImportContent() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [progress, setProgress] = useState(0);
-  const { uploadSpotifyJson, loading } = useApiSpotifyData();
+  const [processing, setProcessing] = useState(false);
+  const [processingMsg, setProcessingMsg] = useState<string | null>("");
+  const { uploadSpotifyJson, uploadAppleJson, loading } = useApiUploadData();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
-      const invalidFiles = selectedFiles.filter(f => !f.name.endsWith('.json'));
+      const invalidFiles = selectedFiles.filter(f => !f.name.endsWith('.json') && !f.name.endsWith('.csv'));
       if (invalidFiles.length > 0) return setError(dict.errorJsonOnly);
 
       setFiles(selectedFiles);
@@ -82,22 +86,59 @@ export function ImportContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) return setError(dict.errorNoFile);
+    
+    // Supposons qu'on détecte le type par l'extension du premier fichier
+    const isApple = files[0].name.endsWith('.csv');
+
     setError("");
     setSuccess("");
     setProgress(0);
 
     const ws = new WebSocket(`${API_ENDPOINTS.WEBSOCKET_PROGRESS}/${user?.id}`);
+
     const startUpload = () => {
       return new Promise((resolve, reject) => {
         ws.onopen = async () => {
-          try {resolve(await uploadSpotifyJson(files))}
-          catch (err) {reject(err)}
+          try {
+            if (isApple) {
+              setProcessing(true);
+              let nb = 0;
+              let totalAdded = 0;
+              for (const file of files) {
+                nb++;
+                await parseAppleCSVInChunks(
+                  file, 
+                  async (chunk) => {
+                    const response = await uploadAppleJson(chunk); 
+        
+                    // On incrémente le compteur avec la valeur retournée par le backend
+                    if (response && typeof response.added === 'number') {
+                      totalAdded += response.added;
+                      // Optionnel : mettre à jour un message pour afficher le cumul
+                      setProcessingMsg(`Traitement du fichier "${file.name}" (${nb}/${files.length}) (${totalAdded} écoutes importées)`);
+                    }
+                  },
+                  (processed, total) => {
+                    const percent = Math.round((processed / total) * 100);
+                    setProgress(percent);
+                  }
+                );
+              }
+              setProcessing(false);
+              setProcessingMsg(null);
+              // Le backend Apple ne pousse pas de progression : on ferme le WebSocket nous-mêmes
+              ws.close();
+              resolve({ message: "Notre serveur a reçu vos données .csv, il est en train de les traiter. " + totalAdded + " écoutes envoyées.", added: totalAdded });
+            } else resolve(await uploadSpotifyJson(files));
+          } catch (err) {reject(err)}
         };
 
         ws.onmessage = (event) => {
-          setProgress(JSON.parse(event.data).percentage);
-          if (progress === 100) ws.close();
+          const data = JSON.parse(event.data);
+          setProgress(data.percentage);
+          if (data.percentage === 100) ws.close();
         };
+        
         ws.onerror = () => reject(new Error(dict.errorWs));
       });
     };
@@ -108,8 +149,88 @@ export function ImportContent() {
       setFiles([]);
     } catch (err: any) {
       setError(err instanceof ApiError ? err.message : dict.errorGeneric);
-      ws.close();
+      if (ws.readyState === WebSocket.OPEN) ws.close();
     }
+  };
+
+  const parseAppleCSVInChunks = (file: File, onChunk: (data: CleanAppleData[]) => Promise<void>,
+    onProgress: (processed: number, total: number) => void
+  ): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      let linesProcessed = 0;
+      const totalSize = file.size; // On utilise la taille du fichier pour la progression globale
+
+      Papa.parse<AppleCSVRow>(file, {
+        header: true,
+        skipEmptyLines: true,
+        worker: false,
+        transformHeader: (h) => h.trim(),
+        
+        chunk: async (results, parser) => {
+          parser.pause(); 
+
+          // 1. Calcul des lignes (on compte tout, même les filtrées, pour la barre de progression)
+          linesProcessed += results.data.length;
+          
+          // 2. Filtrage et Mapping
+          const cleanData = results.data
+            .filter(row => row["Track Identifier"] && Math.floor((parseInt(row["Play Duration Milliseconds"]) || 0) / (parseInt(row["Play Count"]) || 1)) > 30000)
+            .flatMap(row => {
+              const playCount = parseInt(row["Play Count"]) || 1;
+              const totalMs = parseInt(row["Play Duration Milliseconds"]) || 0;
+              const msPerPlay = Math.floor(totalMs / playCount);
+              
+              // Reconstruction de la date de base
+              const rawDate = row["Date Played"];
+              const year = rawDate.substring(0, 4);
+              const month = rawDate.substring(4, 6);
+              const day = rawDate.substring(6, 8);
+              const hour = (parseInt(row["Hours"]) || 0).toString().padStart(2, '0');
+
+              const description = row["Track Description"] || "";
+              const parts = description.split(" - ");
+              const artist = parts.length > 1 ? parts[0] : "Unknown Artist";
+              const song = parts.length > 1 ? parts.slice(1).join(" - ") : description;
+
+              // On crée un tableau d'écoutes basé sur le playCount
+              const plays = [];
+              for (let i = 0; i < playCount; i++) {
+                // Écoutes réparties seconde par seconde dans l'heure (i = 60 -> 00:01:00)
+                const minutes = Math.floor(i / 60).toString().padStart(2, '0');
+                const seconds = (i % 60).toString().padStart(2, '0');
+                const playedAt = `${year}-${month}-${day}T${hour}:${minutes}:${seconds}.000Z`;
+
+                plays.push({
+                  apple_track_id: String(row["Track Identifier"]),
+                  song_name: song,
+                  artist_name: artist,
+                  played_at: playedAt,
+                  ms_played: msPerPlay
+                });
+              }
+              return plays;
+            })
+
+          // 3. Envoi au backend
+          if (cleanData.length > 0) {
+            console.log("Envoi de", cleanData.length, "écoutes")
+            await onChunk(cleanData);
+          }
+
+          // 4. Notification de progression (basée sur la position du curseur dans le fichier)
+          // meta.cursor donne l'index de l'octet actuel dans le fichier
+          onProgress(results.meta.cursor, totalSize);
+
+          parser.resume();
+        },
+        complete: () => {
+          // On force à 100% à la fin pour être sûr
+          onProgress(totalSize, totalSize);
+          resolve();
+        },
+        error: (err) => reject(err)
+      });
+    });
   };
 
   const left_col = {
@@ -119,7 +240,7 @@ export function ImportContent() {
     content:
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="relative group">
-        <input type="file" multiple accept=".json" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
+        <input type="file" multiple accept=".json, .csv" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
         <div className={`${IMPORT_STYLES.DROPZONE(files.length > 0)} text3`}>
           <FileIcon size={40}/>
           <p className={`text3 text-xs text-center`}>
@@ -138,8 +259,8 @@ export function ImportContent() {
 
       {error && <div className={IMPORT_STYLES.ALERT_ERROR}>{error}</div>}
       {success && <div className={IMPORT_STYLES.ALERT_SUCCESS}>{success}</div>}
-      
-      {loading && (
+      {processingMsg && <div className={IMPORT_STYLES.FOOTER_TEXT}>{processingMsg}</div>}
+      {(processing || loading) && (
         <div className={IMPORT_STYLES.PROGRESS_CONTAINER}>
           {progress}%
           <div className={IMPORT_STYLES.PROGRESS_BAR}>
@@ -148,7 +269,7 @@ export function ImportContent() {
         </div>
       )}
 
-      {(loading || files.length === 0) ? (
+      {(processing || loading || files.length === 0) ? (
         <button type="submit" disabled={true} className="text3 w-full py-4 rounded-full font-bold bg-white/5 border border-white/5 cursor-not-allowed">
           {loading ? dict.loadingBtn : dict.submitBtn}
         </button>

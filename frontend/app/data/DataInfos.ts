@@ -56,3 +56,25 @@ export interface EditableProfile {
   avatar: string;
   banner: string;
 }
+
+export interface AppleCSVRow {
+  "Apple ID Number": string;
+  "Song Name": string;
+  "Container Artist Name": string;
+  "Container Album Name": string;
+  "Event Start Timestamp": string;
+  "Play Duration Milliseconds": string;
+  "Media Duration In Milliseconds": string;
+  [key: string]: string; // Pour les 140+ autres colonnes ignorées
+}
+
+// Interface pour les données nettoyées envoyées au backend
+export interface CleanAppleData {
+  apple_track_id: string;
+  song_name: string;
+  artist_name: string;
+  album_name?: string;
+  played_at: string;
+  ms_played: number;
+  track_duration?: number;
+}

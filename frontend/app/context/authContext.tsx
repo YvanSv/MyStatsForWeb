@@ -6,15 +6,25 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from './languageContext';
 
 // Structure exacte de ce que renvoie /me
+interface ProviderInfo {
+  has: boolean;
+  email: string | null;
+}
+
 interface AuthResponse {
   id: number;
   user_name: string;
   slug: string;
-  has_spotify: boolean;
-  is_logged_in: boolean;
   email: string;
-  spotify_email: string;
   avatar: string;
+  is_logged_in: boolean;
+  isAdmin: boolean;
+  // Clés = valeurs de MusicProvider côté backend
+  providers: {
+    SPOTIFY: ProviderInfo;
+    APPLE_MUSIC: ProviderInfo;
+    MUSICBRAINZ: ProviderInfo;
+  };
 }
 
 interface AuthContextType {
@@ -91,14 +101,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginSpotify = () => {window.location.href = API_ENDPOINTS.SPOTIFY_LOGIN};
-
-  // const unlinkSpotify = async () => {
-  //   try {setUser(prev => prev ? { ...prev, has_spotify: false } : null)}
-  //   catch (err) {
-  //     console.error("Erreur lors du déliage :", err);
-  //     throw err; 
-  //   }
-  // };
 
   const deleteAccount = async () => {
     try {

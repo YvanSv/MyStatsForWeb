@@ -30,8 +30,8 @@ export const useApiMyDatas = () => {
   }, []);
 
   // --- CORE ---
-  const uploadJson = useCallback((formData: FormData) =>
-    request(API_ENDPOINTS.IMPORT_DATA, { method: 'POST', body: formData }), [request]);
+  // const uploadJson = useCallback((formData: FormData) =>
+  //   request(API_ENDPOINTS.SPOTIFY_IMPORT, { method: 'POST', body: formData }), [request]);
 
   // --- DATA LISTS ---
   const getHistory = useCallback((offset: number, limit: number = 50) =>
@@ -56,10 +56,10 @@ export const useApiMyDatas = () => {
   const getResumeStats = useCallback((filters?: Record<string, any>) => request(`${API_ENDPOINTS.SHARE}?${buildParams(filters)}`), [request]);
 
   return useMemo(() => ({
-    loading, uploadJson, getHistory, getTracks, getArtists, getAlbums, getResumeStats,
+    loading, getHistory, getTracks, getArtists, getAlbums, getResumeStats,
     getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   }), [
-    loading, uploadJson, getHistory, getTracks, getArtists, getAlbums, getResumeStats,
+    loading, getHistory, getTracks, getArtists, getAlbums, getResumeStats,
     getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   ]);
 };

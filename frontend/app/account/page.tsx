@@ -220,14 +220,14 @@ function AccountContent() {
     subtitle: dict.rightsubtitle,
     content:
       <>
-        <div className={PROFILE_STYLES.SERVICE_CARD(user.has_spotify)}>
+        <div className={PROFILE_STYLES.SERVICE_CARD(user.providers.SPOTIFY.has)}>
           <div className="flex items-center gap-5 mb-6">
-            <div className={PROFILE_STYLES.SPOTIFY_ICON_BOX(user.has_spotify)}>
+            <div className={PROFILE_STYLES.SPOTIFY_ICON_BOX(user.providers.SPOTIFY.has)}>
               <SpotifyIcon />
             </div>
             <div>
               <h3 className={`text1 font-bold text-lg`}>Spotify</h3>
-              {user.has_spotify ?
+              {user.providers.SPOTIFY.has ?
                 <div className={PROFILE_STYLES.BADGE_SUCCESS}>
                   <CheckIcon/> {dict.synchronized}
                 </div>
@@ -239,10 +239,10 @@ function AccountContent() {
             </div>
           </div>
 
-          {user.has_spotify ? (
+          {user.providers.SPOTIFY.has ? (
             <div className="space-y-4">
               <p className="text3 w-full py-3 text-[11px] font-bold uppercase tracking-widest">
-                {user.spotify_email}
+                {user.providers.SPOTIFY.email}
               </p>
             </div>
           ) : (
