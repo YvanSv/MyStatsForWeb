@@ -8,9 +8,8 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 import httpx
 from sqlmodel import Session, select
-from app.models import User
+from app.models import MusicProvider, User, UserAccount
 from app.database import get_session
-from app.response_message import DetailMessage
 
 load_dotenv()
 
@@ -51,11 +50,8 @@ def spotify_login(response: Response):
     - `user-top-read` : Utilisé pour générer les classements des 50 meilleurs titres/artistes.
     - `user-read-private` / `user-read-email` : Essentiel pour la création et la liaison du compte MyStatsfy.
     """
-    # state = secrets.token_urlsafe(16)
-
     response.set_cookie(
         key="spotify_auth_state",
-        # value=state,
         httponly=True,
         max_age=600, 
         samesite="none",
@@ -77,61 +73,16 @@ def spotify_login(response: Response):
         "response_type": "code",
         "scope": " ".join(scopes),
         "redirect_uri": REDIRECT_URI,
-        # "state": state,
         "show_dialog": "true"
     }
 
     return RedirectResponse(f"https://accounts.spotify.com/authorize?{urlencode(params)}")
 
-# @router.post(
-#     "/unlink-spotify",
-#     summary="Délier le compte Spotify",
-#     response_model=UnlinkSuccessResponse,
-#     responses={
-#         401: {"model": DetailMessage},
-#         404: {"model": DetailMessage}
-#     }
-# )
-# async def unlink_spotify(
-#     session_id: Optional[str] = Cookie(None), 
-#     session: Session = Depends(get_session)
-# ):
-#     """
-#     Supprime les jetons et identifiants Spotify du profil utilisateur.
-
-#     **Effets :**
-#     1. Réinitialise `spotify_id` et `spotify_email`.
-#     2. Efface les jetons OAuth (`access_token`, `refresh_token`).
-#     3. L'utilisateur garde son compte MyStatsfy mais ses statistiques ne seront plus synchronisées.
-#     """
-#     if not session_id: raise HTTPException(status_code=401, detail="Non authentifié")
-#     user = session.exec(select(User).where(User.session_id == session_id)).first()
-#     if not user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-
-#     user.spotify_id = None
-#     user.spotify_email = None
-#     user.access_token = None
-#     user.refresh_token = None
-#     user.expires_at = None
-    
-#     session.add(user)
-#     session.commit()
-
-#     return UnlinkSuccessResponse()
-
-@router.get(
-    "/callback",
-    summary="Callback Spotify : Échange du code et liaison",
-    responses={
-        302: {"description": "Redirection vers le Frontend (/account ou /dashboard)"},
-        400: {"model": DetailMessage}
-    }
-)
+@router.get("/callback", summary="Callback Spotify : Échange du code et liaison")
 async def callback(
     request: Request,
     code: Optional[str] = None,
     error: Optional[str] = None,
-    state: Optional[str] = None,
     session: Session = Depends(get_session)
 ):
     """
@@ -153,22 +104,14 @@ async def callback(
     - Vers `/` pour une connexion standard.
     - Vers `/account?error=...` en cas de conflit (compte Spotify déjà lié ailleurs).
     """
-    # # 1. Vérification du STATE (Anti-CSRF)
-    # stored_state = request.cookies.get("spotify_auth_state")
-    # if IS_PRODUCTION and (not state or state != stored_state): return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=state_mismatch")
-
-    # --- GESTION DE L'ANNULATION OU DES ERREURS SPOTIFY ---
+    # --- GESTION DES ERREURS (Inchangé) ---
     if error:
-        # Si l'utilisateur a cliqué sur "Annuler"
-        if error == "access_denied": return RedirectResponse(url=f"{FRONTEND_URL}/auth")
-        # Pour toute autre erreur venant de Spotify
         return RedirectResponse(url=f"{FRONTEND_URL}/auth?error={error}")
-
-    # Si on n'a ni code ni erreur (accès direct louche à l'URL)
-    if not code: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=missing_code")
+    if not code: 
+        return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=missing_code")
 
     async with httpx.AsyncClient() as client:
-        # 1. Échange du code contre les tokens
+        # 1. Échange du code contre les tokens (Inchangé)
         token_res = await client.post(
             "https://accounts.spotify.com/api/token",
             data={
@@ -180,107 +123,101 @@ async def callback(
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-        
-        if token_res.status_code != 200: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=spotify_token_error")
+        if token_res.status_code != 200: 
+            return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=spotify_token_error")
 
         token_data = token_res.json()
         access_token = token_data["access_token"]
         refresh_token = token_data.get("refresh_token")
-        
-        # # 2. Échange du code contre Token
-        # token_url = "https://accounts.spotify.com/api/token"
-        # auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
-        
-        # payload = {
-        #     "grant_type": "authorization_code",
-        #     "code": code,
-        #     "redirect_uri": REDIRECT_URI,
-        # }
-        
-        # headers = {"Authorization": f"Basic {auth_header}", "Content-Type": "application/x-www-form-urlencoded"}
-        
-        # # Appel à Spotify pour les tokens
-        # token_res = requests.post(token_url, data=payload, headers=headers).json()
-        # access_token = token_res.get("access_token")
-        # refresh_token = token_res.get("refresh_token")
+        # UTC naïf : la colonne expires_at est un timestamp sans fuseau
+        expiration_date = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=token_data.get("expires_in", 3600))
 
-        
-        expires_in = token_data.get("expires_in", 3600)
-        # Calcul de la date d'expiration
-        expiration_date = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
-
-        # Récupération du profil Spotify
+        # 2. Récupération du profil Spotify (Inchangé)
         user_res = await client.get(
             "https://api.spotify.com/v1/me",
             headers={"Authorization": f"Bearer {access_token}"}
         )
-
-        if user_res.status_code != 200: return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=spotify_profile_error")
+        if user_res.status_code != 200: 
+            return RedirectResponse(url=f"{FRONTEND_URL}/auth?error=spotify_profile_error")
 
         user_info = user_res.json()
         spotify_id = user_info["id"]
         spotify_email = user_info.get("email")
 
-    # --- LOGIQUE DE RÉCONCILIATION ---
+    # --- NOUVELLE LOGIQUE DE RÉCONCILIATION ---
     current_session_id = request.cookies.get("session_id")
     user = None
     target_path = "/"
 
-    # Cas A : Utilisateur déjà loggé par email -> On lie le compte Spotify
+    # A. On cherche si ce compte Spotify est déjà lié à QUELQU'UN
+    account_statement = select(UserAccount).where(
+        UserAccount.provider == MusicProvider.SPOTIFY,
+        UserAccount.provider_user_id == spotify_id
+    )
+    existing_account = session.exec(account_statement).first()
+
+    # B. Stratégie pour trouver l'utilisateur "User"
     if current_session_id:
+        # L'utilisateur est déjà connecté à son compte MyStatsfy (Email/Pass)
         user = session.exec(select(User).where(User.session_id == current_session_id)).first()
         if user: target_path = "/account?linked=true"
-
-    # Cas B : Pas loggé -> On cherche par ID Spotify (reconnexion)
-    if not user: user = session.exec(select(User).where(User.spotify_id == spotify_id)).first()
-
-    # Cas C : Pas d'ID Spotify -> On cherche par Email (fusion automatique)
+    
+    if not user and existing_account:
+        # Reconnexion simple : On a trouvé le compte Spotify, on prend l'user associé
+        user = session.exec(select(User).where(User.id == existing_account.user_id)).first()
+    
     if not user and spotify_email:
+        # Fusion par email : L'utilisateur n'est pas loggé mais son email Spotify matche un User
         user = session.exec(select(User).where(User.email == spotify_email)).first()
         if user: target_path = "/account?linked=true"
 
-    # Traitement Final : Création ou Mise à jour
+    # C. Création de l'utilisateur si vraiment rien trouvé
     if not user:
-        # Inscription (Nouveau compte)
         user = User(
-            spotify_id=spotify_id,
-            display_name=user_info.get("display_name", "Inconnu"),
             email=spotify_email or f"{spotify_id}@spotify.user",
-            spotify_email=spotify_email,
-            refresh_token=refresh_token,
-            access_token=access_token,
-            expires_at=expiration_date,
+            display_name=user_info.get("display_name", "Inconnu"),
             session_id=str(uuid.uuid4())
         )
         session.add(user)
-    else:
-        # Sécurité : Vérifier si ce Spotify ID n'appartient pas déjà à quelqu'un d'autre
-        conflict = session.exec(select(User).where(User.spotify_id == spotify_id, User.id != user.id)).first()
-        if conflict: return RedirectResponse(url=f"{FRONTEND_URL}/account?error=spotify_already_linked")
-        
-        # Mise à jour des infos
-        user.spotify_id = spotify_id
-        user.spotify_email = spotify_email
-        user.access_token = access_token
-        if refresh_token: user.refresh_token = refresh_token
-        user.expires_at = expiration_date
-        
-        # On s'assure qu'il a une session active
-        if not user.session_id: user.session_id = str(uuid.uuid4())
+        session.flush() # Pour récupérer user.id
+
+    # D. Mise à jour ou création du UserAccount (Le lien technique)
+    if existing_account and existing_account.user_id != user.id:
+        # Sécurité : Le compte Spotify est déjà lié à un AUTRE utilisateur
+        return RedirectResponse(url=f"{FRONTEND_URL}/account?error=spotify_already_linked")
+
+    if not existing_account:
+        existing_account = UserAccount(
+            provider=MusicProvider.SPOTIFY,
+            provider_user_id=spotify_id,
+            user_id=user.id
+        )
+    
+    # Mise à jour des tokens dans UserAccount
+    existing_account.provider_email = spotify_email
+    existing_account.access_token = access_token
+    if refresh_token: 
+        existing_account.refresh_token = refresh_token
+    existing_account.expires_at = expiration_date
+    
+    session.add(existing_account)
+
+    # On s'assure que l'utilisateur a une session_id pour le cookie
+    if not user.session_id:
+        user.session_id = str(uuid.uuid4())
         session.add(user)
 
     session.commit()
-    session.refresh(user)
+    
+    # --- RÉPONSE ET COOKIE (Inchangé) ---
     response = RedirectResponse(url=f"{FRONTEND_URL}{target_path}")
-    response.delete_cookie("spotify_auth_state", path="/")
     response.set_cookie(
         key="session_id",
         value=user.session_id,
         httponly=True,
         samesite="none" if IS_PRODUCTION else "lax",
         secure=IS_PRODUCTION,
-        max_age=3600 * 24 * 30, # 30 jours
+        max_age=3600 * 24 * 30,
         path="/"
     )
     return response
-

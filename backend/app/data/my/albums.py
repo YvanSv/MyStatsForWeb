@@ -1,8 +1,8 @@
 from app.database import get_session
-from app.models import TrackHistory, Track, Artist, Album
+from app.models import TrackHistory, Artist, Album
 from typing import Optional, List
 from fastapi import APIRouter, Depends
-from sqlalchemy import Date, Float, cast, func
+from sqlalchemy import Date, cast
 from sqlmodel import Session
 from app.response_message import AlbumStatsResponse, AlbumMetadataResponse
 from app.auth.utils.auth_utils import get_current_user_id
@@ -11,7 +11,7 @@ from app.utils.rating import get_formulas
 
 router = APIRouter()
 
-@router.get("",response_model=List[AlbumStatsResponse])
+@router.get("", response_model=List[AlbumStatsResponse])
 async def get_user_albums(
     *,
     user_id: int = Depends(get_current_user_id),
@@ -33,38 +33,21 @@ async def get_user_albums(
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
-    """
-    Récupère les albums de l'utilisateur avec calcul de score en temps réel.
+    # Récupération de la formule globale centralisée
+    _, f_album, _ = get_formulas()
     
-    **Optimisations SQL :**
-    - **Calculs Natifs** : Le rating et l'engagement sont calculés via des fonctions SQL (`CASE`, `CAST`, `SUM`).
-    - **Filtrage HAVING** : Les bornes (min/max) sont appliquées sur les agrégats avant le retour des données.
-    - **Tri Hiérarchique** : En cas d'égalité sur le critère principal, un tri secondaire (ex: minutes ou ID) est appliqué pour une pagination stable.
-    - **Sécurité** : Filtrage automatique par `current_user_id` extrait de la session.
-    """
-    # 1. Définition de la formule de rating spécifique Album
-    raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
-    raw_dur = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)
-    cnt = func.count(TrackHistory.id)
-
-    m = raw_ms / 60000.0
-    e = raw_ms / raw_dur
-    
-    # f_album = (e * m / (7.0 * func.nullif(cnt, 0)) + (e * m / 3200.0)) * 1.75 * e
-    f_album = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e / 3.75
-    
-    # 2. Clauses WHERE spécifiques
+    # Clauses WHERE spécifiques
     search_filters = []
     if artist: search_filters.append(Artist.name.ilike(f"%{artist}%"))
     if album: search_filters.append(Album.name.ilike(f"%{album}%"))
     if date_min: search_filters.append(cast(TrackHistory.played_at, Date) >= date_min)
+    if date_max: search_filters.append(cast(TrackHistory.played_at, Date) <= date_max)
 
-    # 3. Appel du moteur
-    results = get_entity_stats(db, user_id, Album, Album.spotify_id, f_album, locals(), search_filters)
+    results = get_entity_stats(db, user_id, Album, Album.id, f_album, locals(), search_filters)
 
-    # 4. Formatage final
+    # Formatage final propre
     return [{
-        "spotify_id": r[0].spotify_id,
+        "id": r[0].id,
         "name": r[0].name,
         "artist": r[0].artist.name,
         "cover": r[0].image_url,
@@ -88,4 +71,4 @@ async def get_user_albums_metadata(db: Session = Depends(get_session),user_id: i
     Si l'utilisateur n'a aucune donnée, les dates sont fixées par défaut (1890-01-01 à [date du jour]) pour éviter les plantages du sélecteur de date.
     """
     _, f_album, _ = get_formulas()
-    return get_generic_metadata(db, user_id, Track.album_id, f_album)
+    return get_generic_metadata(db, user_id, Album.id, f_album)

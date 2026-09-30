@@ -7,14 +7,13 @@ from sqlalchemy.orm import joinedload
 from app.database import get_session
 from app.models import User, TrackHistory, Track, Artist, Album
 from app.response_message import UserProfileResponse, BaseUserProfile, UserProfileTopsResponse
-from app.spotify.utils.api_call import run_spotify_task
-from app.spotify.utils.spotify_api import get_spotify_users_client
-from app.spotify.utils.spotify_token import get_valid_access_token
+from app.data_import.workers.spotify.utils.api_call import run_spotify_task
+from app.data_import.workers.spotify.utils.spotify_api import get_spotify_users_client
+from app.data_import.workers.spotify.utils.spotify_token import get_valid_access_token
 from app.utils.rating import get_formula
 
 def get_optional_user(session_id: Optional[str], db: Session):
-    if not session_id:
-        return None
+    if not session_id: return None
     return db.exec(select(User).where(User.session_id == session_id)).first()
 
 router = APIRouter()
@@ -60,7 +59,7 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
 
     # --- TOP 50 TRACKS ---
     if target_user.perms.get("favorites", True) or is_owner:
-        top_tracks_raw = get_top_entities(session, Track, TrackHistory.spotify_id,target_user.id,50)
+        top_tracks_raw = get_top_entities(session, Track, TrackHistory.track_id,target_user.id,50)
         top_tracks = [{
             "name": t.title,
             "album_name": alb.name,
@@ -68,7 +67,7 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
             "image_url": alb.image_url,
             "count": cnt,
             "minutes": round(m),
-            "engagement": round(eng,2),
+            "engagement": round(eng or 0,2),
             "rating": round(r,2)
         } for t, cnt, m, eng, r, art, alb in top_tracks_raw]
 
@@ -79,7 +78,7 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
             "image_url": alb.image_url,
             "count": count,
             "minutes": round(m),
-            "engagement": round(eng,2),
+            "engagement": round(eng or 0,2),
             "rating": round(r,2)
         } for alb, count, m, eng, r, art in top_albums_raw]
 
@@ -89,7 +88,7 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
             "image_url": art.image_url or f"https://api.dicebear.com/7.x/initials/svg?seed={art.name}",
             "count": count,
             "minutes": round(m),
-            "engagement": round(eng,2),
+            "engagement": round(eng or 0,2),
             "rating": round(r,2)
         } for art, count, m, eng, r in top_artists_raw]
 
@@ -211,7 +210,7 @@ def get_top_entities(session, model, history_id_col, user_id, limit=50):
     
     statement = (
         select(model, play_count, minutes)
-        .join(TrackHistory, history_id_col == model.spotify_id)
+        .join(TrackHistory, history_id_col == model.id)
         .where(TrackHistory.user_id == user_id)
     )
 
@@ -223,21 +222,21 @@ def get_top_entities(session, model, history_id_col, user_id, limit=50):
         statement = statement.add_columns(engagement, rating)
     else:
         # Pour Artiste/Album, on doit joindre Track
-        statement = statement.join(Track, TrackHistory.spotify_id == Track.spotify_id)
+        statement = statement.join(Track, TrackHistory.track_id == Track.id)
         potential_dur = func.sum(Track.duration_ms)
         engagement = ((cast(total_ms, Float) * 100) / func.nullif(cast(potential_dur, Float), 0)).label("engagement")
         rating = get_formula(model, total_ms, potential_dur, play_count)
         statement = statement.add_columns(engagement, rating)
 
     # 4. Jointures de relations (Artistes, Albums)
-    group_cols = [model.spotify_id]
+    group_cols = [model.id]
     if model == Track:
-        statement = statement.join(Artist, Track.artist_id == Artist.spotify_id).add_columns(Artist)
-        statement = statement.join(Album, Track.album_id == Album.spotify_id).add_columns(Album)
-        group_cols.extend([Artist.spotify_id, Album.spotify_id])
+        statement = statement.join(Artist, Track.artist_id == Artist.id).add_columns(Artist)
+        statement = statement.join(Album, Track.album_id == Album.id).add_columns(Album)
+        group_cols.extend([Artist.id, Album.id])
     elif model == Album:
-        statement = statement.join(Artist, Album.artist_id == Artist.spotify_id).add_columns(Artist)
-        group_cols.extend([Artist.spotify_id])
+        statement = statement.join(Artist, Album.artist_id == Artist.id).add_columns(Artist)
+        group_cols.extend([Artist.id])
 
     # 5. Finalisation avec TRI PAR RATING
     # On trie par rating DESC, puis par play_count en cas d'égalité

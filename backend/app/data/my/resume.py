@@ -1,7 +1,7 @@
 from calendar import monthrange
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
-from sqlalchemy import Integer, cast, func, desc, select
+from sqlalchemy import Integer, cast, func, desc
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.auth.utils.auth_utils import get_current_user_id
@@ -35,9 +35,9 @@ async def get_resume_data(
     track_sort = f_album if sort == "rating" else sort_mapping.get(sort)
 
     # Exécution des tops
-    top_artists = get_top_entities(db, user_id, range, start_date, end_date, f_artist, artist_sort, Artist, Artist.spotify_id)
-    top_albums = get_top_entities(db, user_id, range, start_date, end_date, f_album, album_sort, Album, Album.spotify_id)
-    top_tracks = get_top_entities(db, user_id, range, start_date, end_date, f_track, track_sort, Track, Track.spotify_id)
+    top_artists = get_top_entities(db, user_id, range, start_date, end_date, f_artist, artist_sort, Artist, Artist.id)
+    top_albums = get_top_entities(db, user_id, range, start_date, end_date, f_album, album_sort, Album, Album.id)
+    top_tracks = get_top_entities(db, user_id, range, start_date, end_date, f_track, track_sort, Track, Track.id)
 
     # STATS GLOBALES
     total_stats = get_global_stats(db,user_id,range,start_date,end_date)
@@ -89,15 +89,22 @@ def get_range_dates(range,offset):
     return start_date, end_date
 
 def get_top_entities(db, user_id, range, start, end, rating_f, sort_column, model, id_field, limit=5):
-    # 1. On détermine le nom de la clé étrangère dans TrackHistory
-    fk_name = "spotify_id" if model == Track else f"{model.__name__.lower()}_id"
-    fk_column = getattr(TrackHistory, fk_name)
+    # 1. On détermine la clé étrangère correcte dans TrackHistory (Integer PK)
+    if model == Track:
+        fk_column = TrackHistory.track_id
+    elif model == Album:
+        fk_column = TrackHistory.album_id
+    else:
+        fk_column = TrackHistory.artist_id
 
     img_column = model.image_url if hasattr(model, 'image_url') else Album.image_url
     name_column = model.name if hasattr(model, 'name') else Track.title
 
+    # 2. Construction de la requête
+    # On ajoute explicitement l'ID pour le frontend
     query = (
         db.query(
+            id_field.label("id"), # Renvoie l'ID numérique
             name_column.label("name"), 
             img_column.label("image"),
             func.count(TrackHistory.id).label("streams"),
@@ -106,24 +113,29 @@ def get_top_entities(db, user_id, range, start, end, rating_f, sort_column, mode
         )
     )
 
-    # 3. JOINTURES
+    # 3. JOINTURES (Utilisation des IDs Integer)
     query = query.join(TrackHistory, id_field == fk_column)
-    if model == Track: query = query.join(Album, Album.spotify_id == Track.album_id)
-    else: query = query.join(Track, Track.spotify_id == TrackHistory.spotify_id)
+    
+    # Si on demande le Top Tracks, il nous faut l'image de l'album
+    if model == Track:
+        query = query.join(Album, Album.id == Track.album_id)
 
     # 4. FILTRES
     query = query.filter(TrackHistory.user_id == user_id)
-    if range != "lifetime" and start and end: query = query.filter(TrackHistory.played_at >= start, TrackHistory.played_at < end)
+    if range != "lifetime" and start and end:
+        query = query.filter(TrackHistory.played_at >= start, TrackHistory.played_at < end)
+    
     return query.group_by(id_field, name_column, img_column).order_by(desc(sort_column)).limit(limit).all()
 
-def get_distinct_entities(db,user_id,range,start_date,end_date):
+def get_distinct_entities(db, user_id, range, start_date, end_date):
     stats_query = db.query(
-        func.count(func.distinct(TrackHistory.spotify_id)).label("nb_tracks"),
+        func.count(func.distinct(TrackHistory.track_id)).label("nb_tracks"),
         func.count(func.distinct(TrackHistory.album_id)).label("nb_albums"),
         func.count(func.distinct(TrackHistory.artist_id)).label("nb_artists")
     ).filter(TrackHistory.user_id == user_id)
     
-    if range != "lifetime": stats_query = stats_query.filter(TrackHistory.played_at >= start_date, TrackHistory.played_at < end_date)
+    if range != "lifetime":
+        stats_query = stats_query.filter(TrackHistory.played_at >= start_date, TrackHistory.played_at < end_date)
     return stats_query.first()
 
 def get_global_stats(db,user_id,range,start_date,end_date):

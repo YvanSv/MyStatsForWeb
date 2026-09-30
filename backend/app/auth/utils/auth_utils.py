@@ -2,7 +2,7 @@ from typing import Optional
 import uuid
 import bcrypt
 from fastapi import Cookie, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import Row, select
 from sqlmodel import Session
 from app.models import User
 from app.database import get_session
@@ -12,6 +12,15 @@ async def get_current_user_id(session_id: Optional[str] = Cookie(None), db: Sess
     user_id = db.exec(select(User.id).where(User.session_id == session_id)).scalar()
     if user_id is None: raise HTTPException(status_code=401, detail="Utilisateur introuvable")
     return int(user_id)
+
+async def get_current_user(session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)) -> User:
+    if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
+    statement = select(User).where(User.session_id == session_id)
+    result = db.exec(statement).first()
+    if isinstance(result, Row): user = result[0]
+    else: user = result
+    if not user: raise HTTPException(status_code=401, detail="Session invalide")
+    return user
 
 def create_uuid_session():
     return str(uuid.uuid4())

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import Float, cast
-from sqlmodel import Session, func
+from sqlalchemy import cast, Date
+from sqlmodel import Session
 from typing import Optional, List
 from app.database import get_session
 from app.models import Artist, Track, TrackHistory
@@ -46,36 +46,29 @@ async def get_artists(
     - Filtrage par `user_id` obligatoire.
     - Pagination exécutée côté base de données (`offset`, `limit`).
     """
-    # 1. Définition de la formule de rating spécifique ARTISTE
-    raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
-    raw_dur = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)
-    cnt = func.count(TrackHistory.id)
-    
-    m = raw_ms / 60000.0
-    e = raw_ms / raw_dur
-    
-    f_artist = (func.log(func.nullif(m, 0)) + func.log(func.nullif(cnt, 0))) * e / 3.75
+    _, _, f_artist = get_formulas()
 
-    # 2. Clauses WHERE (Filtre sur le nom de l'artiste et les dates)
+    # Clauses de filtrage textuel et temporel
     search_filters = []
     if artist: search_filters.append(Artist.name.ilike(f"%{artist}%"))
-    if date_min: search_filters.append(TrackHistory.played_at >= date_min)
-    if date_max: search_filters.append(TrackHistory.played_at <= f"{date_max} 23:59:59")
+    if date_min: search_filters.append(cast(TrackHistory.played_at, Date) >= date_min)
+    if date_max: search_filters.append(cast(TrackHistory.played_at, Date) <= date_max)
 
-    # 3. Appel du moteur générique
-    # Ici, le base_model est Artist et on groupe par Artist.spotify_id
+    # Appel du moteur d'agrégation
+    # Note : On groupe par Artist.id (Integer PK) pour la performance maximale
     results = get_entity_stats(
         db=db,
         user_id=user_id,
         base_model=Artist,
-        group_col=Artist.spotify_id,
+        group_col=Artist.id,
         rating_formula=f_artist,
         filters=locals(),
         search_filters=search_filters
     )
 
+    # Formatage du retour JSON
     return [{
-        "id": r[0].spotify_id,
+        "id": r[0].id,
         "name": r[0].name,
         "image_url": r[0].image_url,
         "play_count": r.play_count,

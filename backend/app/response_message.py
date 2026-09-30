@@ -23,38 +23,6 @@ class BaseStatsResponse(BaseModel):
     engagement: float
     rating: float
 
-# --- 2. AUTHENTIFICATION & COMPTE ---
-
-class DetailMessage(BaseModel):
-    detail: str
-
-class LoginSuccessResponse(BaseResponse):
-    user_id: int
-
-class RegisterSuccessResponse(MessageResponse):
-    user_id: int
-
-class LogoutResponse(MessageResponse):
-    message: str = "Déconnexion réussie"
-
-class UserMeResponse(BaseModel):
-    id: int
-    slug: Optional[str]
-    user_name: str
-    email: Optional[str]
-    has_spotify: bool
-    is_logged_in: bool
-    spotify_email: Optional[str] = None
-    avatar : str
-
-class UpdateSuccessResponse(MessageResponse):
-    message: str = "Profil mis à jour"
-    user_name: str
-    email: str
-
-class UnlinkSuccessResponse(MessageResponse):
-    message: str = "Spotify délié"
-
 # --- 3. STATISTIQUES MUSICALES (Héritage) ---
 
 # Métadonnées pour les filtres
@@ -64,19 +32,19 @@ class TrackMetadataResponse(BaseMetadataResponse): pass
 
 # Objets de statistiques
 class AlbumStatsResponse(BaseStatsResponse):
-    spotify_id: str
+    id: int
     name: str
     artist: str
     cover: Optional[str]
 
 class ArtistStatsResponse(BaseStatsResponse):
-    id: str
+    id: int
     name: str
     image_url: Optional[str]
     total_minutes: int  # Override pour les artistes
 
 class TrackStatsResponse(BaseStatsResponse):
-    spotify_id: str
+    id: int
     title: str
     artist: str
     album: str
@@ -90,7 +58,7 @@ class ProfileItem(BaseModel):
     name: str
     album_name: Optional[str] = None
     artist_name: Optional[str] = None
-    image_url: str
+    image_url: Optional[str] = None
     count: int
     minutes: int
     engagement: float
@@ -100,7 +68,7 @@ class RecentTrack(BaseModel):
     id: int
     title: str
     artist: str
-    image_url: str
+    image_url: Optional[str] = None
     played_at: datetime
 
 class BaseUserProfile(BaseModel):

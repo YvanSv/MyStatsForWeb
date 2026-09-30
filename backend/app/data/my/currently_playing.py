@@ -1,13 +1,13 @@
 from typing import Optional
 from pydantic import BaseModel
 from app.database import get_session
-from app.models import User
+from app.models import MusicProvider, User, UserAccount
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 from app.auth.utils.auth_utils import get_current_user_id
-from app.spotify.utils.api_call import run_spotify_task
-from app.spotify.utils.spotify_api import get_spotify_users_client
-from app.spotify.utils.spotify_token import get_valid_access_token
+from app.data_import.workers.spotify.utils.api_call import run_spotify_task
+from app.data_import.workers.spotify.utils.spotify_api import get_spotify_users_client
+from app.data_import.workers.spotify.utils.spotify_token import get_valid_access_token
 
 class TrackData(BaseModel):
     title: str
@@ -27,57 +27,75 @@ router = APIRouter()
 async def get_today(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
     user = db.get(User, user_id)
     if not user: raise HTTPException(status_code=401, detail="Session invalide")
-    if user.spotify_email is None : return CurrentlyPlaying(is_listening=False, data=None)
-    sp = get_spotify_users_client(await get_valid_access_token(user,db))
+    
+    # Pas de compte Spotify lié -> rien à interroger
+    spotify_account = db.exec(select(UserAccount).where(
+        UserAccount.user_id == user.id,
+        UserAccount.provider == MusicProvider.SPOTIFY
+    )).first()
+    if not spotify_account: return CurrentlyPlaying(is_listening=False)
+
+    token = await get_valid_access_token(user, db)
+    sp = get_spotify_users_client(token)
     data = await run_spotify_task(sp.currently_playing)
 
-    if not data or not data.get("item") or not data["is_playing"]: return CurrentlyPlaying(is_listening=False, data=None)
+    # Si rien n'est écouté ou si c'est une pub/autre
+    if not data or not data.get("item") or not data.get("is_playing"):
+        return CurrentlyPlaying(is_listening=False)
 
-    title, duration_ms, progress_ms, album_name, cover_url, artist_name = "",0,0,"","",""
-    playing_type = data["currently_playing_type"]
-    title = data["item"]["name"]
-    duration_ms = data["item"]["duration_ms"]
+    item = data["item"]
+    playing_type = data.get("currently_playing_type", "track")
+    
+    # Initialisation des valeurs par défaut
+    track_info = {
+        "title": item.get("name", "Inconnu"),
+        "duration_ms": item.get("duration_ms", 0),
+        "progress_ms": data.get("progress_ms", 0),
+        "album_name": "Podcast",
+        "artist_name": "Animateur inconnu",
+        "cover_url": ""
+    }
+
     if playing_type == "track":
-        progress_ms = data["progress_ms"]
-        album_name = data["item"]["album"]["name"]
-        cover_url = data["item"]["album"]["images"][0]["url"]
-        artist_name = data["item"]["artists"][0]["name"]
+        album = item.get("album", {})
+        track_info["album_name"] = album.get("name", "Single")
+        track_info["artist_name"] = item["artists"][0]["name"] if item.get("artists") else "Artiste inconnu"
+        if album.get("images"):
+            track_info["cover_url"] = album["images"][0]["url"]
+            
     elif playing_type == "episode":
-        progress_ms = data["item"]["resume_point"]["resume_position_ms"]
-        cover_url = data["item"]["images"][0]["url"]
+        # Pour les podcasts
+        show = item.get("show", {})
+        track_info["album_name"] = show.get("name", "Podcast")
+        track_info["artist_name"] = show.get("publisher", "Spotify")
+        if item.get("images"):
+            track_info["cover_url"] = item["images"][0]["url"]
 
     return CurrentlyPlaying(
         is_listening=True,
-        data=TrackData(
-            title=title,
-            duration_ms=duration_ms,
-            progress_ms=progress_ms,
-            album_name=album_name,
-            artist_name=artist_name,
-            cover_url=cover_url
-        )
+        data=TrackData(**track_info)
     )
 
-@router.put("/pause")
-async def pause_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-    user = db.get(User, user_id)
-    sp = get_spotify_users_client(await get_valid_access_token(user, db))
-    return await run_spotify_task(sp.pause_playback)
+# @router.put("/pause")
+# async def pause_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+#     user = db.get(User, user_id)
+#     sp = get_spotify_users_client(await get_valid_access_token(user, db))
+#     return await run_spotify_task(sp.pause_playback)
 
-@router.put("/resume")
-async def resume_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-    user = db.get(User, user_id)
-    sp = get_spotify_users_client(await get_valid_access_token(user, db))
-    return await run_spotify_task(sp.start_playback)
+# @router.put("/resume")
+# async def resume_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+#     user = db.get(User, user_id)
+#     sp = get_spotify_users_client(await get_valid_access_token(user, db))
+#     return await run_spotify_task(sp.start_playback)
 
-@router.post("/next")
-async def next_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-    user = db.get(User, user_id)
-    sp = get_spotify_users_client(await get_valid_access_token(user, db))
-    return await run_spotify_task(sp.next_track)
+# @router.post("/next")
+# async def next_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+#     user = db.get(User, user_id)
+#     sp = get_spotify_users_client(await get_valid_access_token(user, db))
+#     return await run_spotify_task(sp.next_track)
 
-@router.post("/previous")
-async def previous_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-    user = db.get(User, user_id)
-    sp = get_spotify_users_client(await get_valid_access_token(user, db))
-    return await run_spotify_task(sp.previous_track)
+# @router.post("/previous")
+# async def previous_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+#     user = db.get(User, user_id)
+#     sp = get_spotify_users_client(await get_valid_access_token(user, db))
+#     return await run_spotify_task(sp.previous_track)

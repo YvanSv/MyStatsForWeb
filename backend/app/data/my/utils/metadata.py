@@ -6,97 +6,105 @@ from app.database import get_session
 from app.models import Album, Artist, Track, TrackHistory
 
 def get_generic_metadata(db: Session, user_id: int, group_col, rating_expression):
-    """
-    Calcule les métadonnées max (streams, minutes, rating) et les bornes temporelles
-    en fonction de la colonne de regroupement fournie.
-    """
-    # Mesures de base communes
-    raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
-    raw_duration = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)
-    cnt = func.count(TrackHistory.id)
-    mins_calc = raw_ms / 60000.0
-    eng_calc = raw_ms / raw_duration
-
-    # Sous-requête
-    stats_subq = (
+    # 1. Base de la requête (on a toujours besoin de Track pour le rating/duration)
+    stats_query = (
         select(
-            cnt.label("c"),
-            mins_calc.label("m"),
-            rating_expression.label("r"),
-            func.min(func.min(func.date(TrackHistory.played_at))).over().label("d_min"),
-            func.max(func.max(func.date(TrackHistory.played_at))).over().label("d_max")
+            func.count(TrackHistory.id).label("c"),
+            (func.sum(TrackHistory.ms_played) / 60000.0).label("m"),
+            rating_expression.label("r")
         )
-        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
+        .join(Track, Track.id == TrackHistory.track_id)
+    )
+
+    # 2. AJOUT DYNAMIQUE DES JOINS
+    # On regarde si group_col appartient à Album ou Artist
+    # group_col.table.name nous donne le nom de la table SQL
+    target_table = getattr(group_col, "table", None)
+    
+    if target_table is not None:
+        if target_table.name == "album":
+            stats_query = stats_query.join(Album, Album.id == Track.album_id)
+        elif target_table.name == "artist":
+            stats_query = stats_query.join(Artist, Artist.id == Track.artist_id)
+
+    # 3. Construction de la sous-requête
+    stats_subq = (
+        stats_query
         .where(TrackHistory.user_id == user_id)
         .group_by(group_col)
     ).subquery()
 
-    # Agrégation finale des MAX
-    res = db.exec(
+    # 4. Calcul des bornes de dates (sur la table history pure)
+    dates = db.exec(
+        select(
+            func.min(TrackHistory.played_at),
+            func.max(TrackHistory.played_at)
+        ).where(TrackHistory.user_id == user_id)
+    ).first()
+
+    # 5. Calcul des plafonds (Max)
+    max_stats = db.exec(
         select(
             func.max(stats_subq.c.c),
             func.max(stats_subq.c.m),
-            func.max(stats_subq.c.r),
-            func.min(stats_subq.c.d_min),
-            func.max(stats_subq.c.d_max)
+            func.max(stats_subq.c.r)
         )
     ).first()
 
-    max_c, max_m, max_r, d_min, d_max = res if res else (0, 0, 0, None, None)
+    res_c, res_m, res_r = max_stats if max_stats else (0, 0, 0)
+    d_min, d_max = dates if dates else (None, None)
 
     return {
-        "max_streams": max_c or 0,
-        "max_minutes": round(max_m or 0),
-        "max_rating": round((max_r or 0) + 0.05, 2),
-        "date_min": str(d_min) if d_min else "1890-01-01",
-        "date_max": str(d_max) if d_max else "2026-12-31"
+        "max_streams": res_c or 0,
+        "max_minutes": round(float(res_m or 0)),
+        "max_rating": round(float(res_r or 0) + 0.05, 2),
+        "date_min": d_min.strftime("%Y-%m-%d") if d_min else "2020-01-01",
+        "date_max": d_max.strftime("%Y-%m-%d") if d_max else "2026-12-31"
     }
 
 def get_entity_stats(db, user_id, base_model, group_col, rating_formula, filters, search_filters):
+    # Expressions de base
     raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
     raw_duration = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)
     
-    # On définit les expressions avec leurs labels
     cnt_expr = func.count(TrackHistory.id).label("play_count")
     mins_expr = func.round(cast(raw_ms / 60000.0, Numeric)).label("total_minutes")
     eng_expr = func.round(cast((raw_ms / raw_duration) * 100, Numeric), 2).label("engagement")
     
+    # Rating calculé seulement si > 5 streams pour la pertinence statistique
     rating_expr = case(
         (func.count(TrackHistory.id) > 5, func.round(cast(rating_formula, Numeric), 2)), 
         else_=0.0
     ).label("rating")
 
     query = select(base_model, cnt_expr, mins_expr, eng_expr, rating_expr)
-    # 2. On gère les jointures selon le modèle
-    if base_model == Track: query = query.join(TrackHistory, TrackHistory.spotify_id == Track.spotify_id)
-        
+    
+    # --- JOINTURES CORRIGÉES (Utilisation des IDs Integer) ---
+    if base_model == Track:
+        query = query.join(TrackHistory, TrackHistory.track_id == Track.id)
     elif base_model == Album:
-        query = query.join(Track, Track.album_id == Album.spotify_id)
-        query = query.join(TrackHistory, TrackHistory.spotify_id == Track.spotify_id)
-        
+        query = query.join(Track, Track.album_id == Album.id)
+        query = query.join(TrackHistory, TrackHistory.track_id == Track.id)
     elif base_model == Artist:
-        query = query.join(Track, Track.artist_id == Artist.spotify_id)
-        query = query.join(TrackHistory, TrackHistory.spotify_id == Track.spotify_id)
+        query = query.join(Track, Track.artist_id == Artist.id)
+        query = query.join(TrackHistory, TrackHistory.track_id == Track.id)
 
-    # 3. On applique le filtre de sécurité
     query = query.where(TrackHistory.user_id == user_id)
-
-    # Application des filtres de recherche (title, artist, dates)
     for f in search_filters: query = query.where(f)
 
-    query = query.group_by(group_col)
+    query = query.group_by(group_col, base_model.id) # Groupement par ID interne
 
-    # Filtres HAVING (min/max)
-    if filters.get('streams_min', 0) > 0: query = query.having(cnt_expr >= filters['streams_min'])
-    if filters.get('streams_max', 0): query = query.having(cnt_expr <= filters['streams_max'])
-    if filters.get('minutes_min', 0) > 0: query = query.having(mins_expr >= filters['minutes_min'])
-    if filters.get('minutes_max', 0): query = query.having(mins_expr <= filters['minutes_max'])
-    if filters.get('engagement_min', 0) > 0: query = query.having(eng_expr >= filters['engagement_min'])
-    if filters.get('engagement_max', 0) < 100: query = query.having(eng_expr <= filters['engagement_max'])
-    if filters.get('rating_min', 0) > 0: query = query.having(rating_expr >= filters['rating_min'])
-    if filters.get('rating_max', 0): query = query.having(rating_expr <= filters['rating_max'])
+    # Filtrage HAVING (Performance : exécuté après l'agrégation)
+    if filters.get('streams_min'): query = query.having(cnt_expr >= filters['streams_min'])
+    if filters.get('streams_max'): query = query.having(cnt_expr <= filters['streams_max'])
+    if filters.get('minutes_min'): query = query.having(mins_expr >= filters['minutes_min'])
+    if filters.get('minutes_max'): query = query.having(mins_expr <= filters['minutes_max'])
+    if filters.get('rating_min'): query = query.having(rating_expr >= filters['rating_min'])
+    if filters.get('rating_max'): query = query.having(rating_expr <= filters['rating_max'])
+    if (filters.get('engagement_min') or 0) > 0: query = query.having(eng_expr >= filters['engagement_min'])
+    if filters.get('engagement_max') is not None and filters['engagement_max'] < 100: query = query.having(eng_expr <= filters['engagement_max'])
 
-    # Logique de tri
+    # Tri stable
     cols = {"play_count": cnt_expr, "total_minutes": mins_expr, "engagement": eng_expr, "rating": rating_expr, "id": group_col}
     sort_h = [cols.get(filters['sort'], cnt_expr), cols["total_minutes"], cols["id"]]
     order_func = desc if filters['direction'] == "desc" else asc

@@ -1,14 +1,14 @@
 import os
-from typing import Optional
+from typing import Dict, Optional
 from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Cookie, Depends, HTTPException, Response
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import User
+from app.models import MusicProvider, User
 from .utils.auth_utils import create_uuid_session, get_password_hash, verify_password
-from app.response_message import DetailMessage, UpdateSuccessResponse, UserMeResponse, LogoutResponse, RegisterSuccessResponse, LoginSuccessResponse
+from app.response_message import BaseResponse, MessageResponse
 
 load_dotenv()
 FRONTEND_URL = os.getenv("FRONTEND_URL")
@@ -23,6 +23,37 @@ class RegisterSchema(BaseModel):
     username: str = Field(..., min_length=3, max_length=30)
     email: EmailStr
     password: str = Field(..., min_length=8)
+
+class DetailMessage(BaseModel):
+    detail: str
+
+class LoginSuccessResponse(BaseResponse):
+    user_id: int
+
+class RegisterSuccessResponse(MessageResponse):
+    user_id: int
+
+class LogoutResponse(MessageResponse):
+    message: str = "Déconnexion réussie"
+
+class ProviderInfo(BaseModel):
+    has: bool
+    email: Optional[str] = None
+
+class UserMeResponse(BaseModel):
+    id: int
+    slug: Optional[str]
+    user_name: str
+    email: Optional[str]
+    is_logged_in: bool
+    isAdmin: bool
+    avatar : str
+    providers: Dict[str, ProviderInfo]
+
+class UpdateSuccessResponse(MessageResponse):
+    message: str = "Profil mis à jour"
+    user_name: str
+    email: str
 
 class UpdateProfileSchema(BaseModel):
     username: str | None = None
@@ -165,16 +196,27 @@ async def get_me(response: Response, session_id: Optional[str] = Cookie(None), d
     if not user:
         response.delete_cookie(key="session_id", path="/")
         raise HTTPException(status_code=401, detail="Session expirée ou invalide")
+    
+    user_providers = {
+        p.value: ProviderInfo(has=False) for p in MusicProvider if p != MusicProvider.ISRC
+    }
+
+    for acc in user.accounts:
+        if acc.provider in user_providers:
+            user_providers[acc.provider] = ProviderInfo(
+                has=True,
+                email=acc.provider_email
+            )
 
     return UserMeResponse(
         id=user.id,
         slug=user.slug,
         user_name=user.display_name,
-        has_spotify=user.spotify_id is not None,
         is_logged_in=True,
+        isAdmin=user.isadmin,
         email=user.email,
-        spotify_email=user.spotify_email,
-        avatar=user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={user.id}"
+        avatar=user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={user.id}",
+        providers=user_providers
     )
 
 @router.patch(
