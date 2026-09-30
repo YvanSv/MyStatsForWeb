@@ -22,6 +22,9 @@ export default function ResumePage() {
   const [range, setRange] = useState<RangeOption>("year");
   const [offset, setOffset] = useState(0);
   const [sortBy, setSortBy] = useState<SortOption>("streams");
+  // Échec du chargement : sans ça, le spinner tournait indéfiniment quand l'API échouait
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Calcul du libellé affiché (ex: "2025" ou "Mars 2026")
   const displayLabel = useMemo(() => {
@@ -52,21 +55,24 @@ export default function ResumePage() {
   }, [range, offset]);
 
   useEffect(() => {
+    // Une réponse arrivée après un changement de filtre (ou un démontage) ne doit pas écraser la plus récente
+    let cancelled = false;
+    setLoadFailed(false);
+
     const fetchResume = async () => {
-      // setLoading(true);
       try {
-        // On passe les paramètres à ton hook API
         const data = await getResumeStats({"range":range,"sort":sortBy,"offset":offset});
-        setResumeData(data);
+        if (!cancelled) setResumeData(data);
       } catch (error) {
+        if (cancelled) return;
         console.error("Erreur lors de la récupération du résumé:", error);
-      } finally {
-        // setLoading(false);
+        setLoadFailed(true);
       }
     };
 
     fetchResume();
-  }, [range, offset, sortBy]); // Se déclenche dès qu'un filtre change
+    return () => { cancelled = true };
+  }, [range, offset, sortBy, reloadKey]); // Se déclenche dès qu'un filtre change ou qu'on relance le chargement
 
   const exportImage = async () => {
     const node = document.getElementById('capture-canvas');
@@ -91,7 +97,17 @@ export default function ResumePage() {
     }
   };
 
-  if (!resumeData) return <LoadingSpinner />;
+  if (!resumeData) {
+    if (!loadFailed) return <LoadingSpinner />;
+    return (
+      <div role="alert" className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+        <p className="text-lg font-bold">{t.resume.loadError}</p>
+        <PrimaryButton onClick={() => setReloadKey(k => k + 1)} additional="px-6 py-2">
+          {t.resume.retry}
+        </PrimaryButton>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 h-full min-h-0">

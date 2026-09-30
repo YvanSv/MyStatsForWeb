@@ -333,6 +333,8 @@ export const fr = {
     topTrack: "Titre n°1",
     totalTime: "Temps d'écoute",
     totalStreams: "Nombre de streams",
+    loadError: "Impossible de charger votre résumé.",
+    retry: "Réessayer",
     download: "Télécharger"
   }
 }

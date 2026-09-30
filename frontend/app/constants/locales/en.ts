@@ -333,6 +333,8 @@ export const en = {
     topTrack: "Track #1",
     totalTime: "Listening time",
     totalStreams: "Number of streams",
+    loadError: "Unable to load your summary.",
+    retry: "Try again",
     download: "Download"
   }
 }
