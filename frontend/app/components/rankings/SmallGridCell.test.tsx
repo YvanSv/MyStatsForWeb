@@ -12,7 +12,7 @@ vi.mock("@/app/context/languageContext", async () => {
   return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
 });
 
-const dict = languages.fr.smallgridcell;
+const dict = languages.fr.rankingcell;
 const fmt = (n: number) => n.toLocaleString(dict.locale).replace(/\s/g, " "); // même normalisation des espaces que Testing Library
 
 const track: DataInfo = {
@@ -57,10 +57,13 @@ describe("SmallGridCell – contenu par type", () => {
     expect(screen.getByText("0,5 ★")).toBeInTheDocument();
   });
 
-  it("n'affiche pas d'étoile pour un titre ou un album", () => {
-    renderCell(album);
-    expect(screen.getByText("0,9")).toBeInTheDocument();
-    expect(screen.queryByText(/★/)).not.toBeInTheDocument();
+  it.each([
+    ["un titre", track],
+    ["un album", album],
+    ["un artiste", artist],
+  ])("affiche l'étoile sur la note de %s", (_label, element) => {
+    renderCell(element);
+    expect(screen.getByText(/★/)).toBeInTheDocument();
   });
 
   it("image ronde pour un artiste uniquement", () => {
@@ -133,15 +136,15 @@ describe("SmallGridCell – couleur de la note", () => {
     [0, "text-rouge"],
   ])("note %s -> classe %s", (rating, cls) => {
     renderCell({ ...track, rating });
-    expect(screen.getByText(rating.toLocaleString("fr-FR"))).toHaveClass(cls);
+    expect(screen.getByText(`${rating.toLocaleString("fr-FR")} ★`)).toHaveClass(cls);
   });
 
   it("met la note en gras uniquement quand le tri est rating", () => {
     const { unmount } = renderCell(track, 0, "rating");
-    expect(screen.getByText("1,5")).toHaveClass("font-bold");
+    expect(screen.getByText("1,5 ★")).toHaveClass("font-bold");
     unmount();
     renderCell(track, 0, "play_count");
-    expect(screen.getByText("1,5")).toHaveClass("font-medium");
+    expect(screen.getByText("1,5 ★")).toHaveClass("font-medium");
   });
 });
 
@@ -167,5 +170,34 @@ describe("SmallGridCell – rang", () => {
   it.each([[0, "#1"], [99, "#100"]])("index %s -> %s", (index, label) => {
     renderCell(track, index);
     expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("SmallGridCell – valeurs absentes", () => {
+  const incomplete = { ...track, play_count: undefined, engagement: undefined, rating: undefined } as unknown as DataInfo;
+
+  it("ne plante pas quand play_count, engagement ou rating sont absents", () => {
+    expect(() => renderCell(incomplete)).not.toThrow();
+  });
+
+  it("affiche un tiret à la place des valeurs absentes", () => {
+    renderCell(incomplete);
+    // play_count, engagement et rating (« - ★ »)
+    expect(screen.getAllByText(/^-( ★)?$/).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("ne produit aucun NaN ni « undefined » dans l'affichage", () => {
+    const { container } = renderCell(incomplete);
+    expect(container.textContent).not.toMatch(/NaN|undefined/);
+  });
+
+  it("n'affiche pas de séparateur « ● » quand l'album d'un titre est absent", () => {
+    const { container } = renderCell({ ...track, album: undefined });
+    expect(container.textContent).not.toContain("●");
+  });
+
+  it("affiche le séparateur « ● » quand l'album d'un titre est présent", () => {
+    const { container } = renderCell(track);
+    expect(container.textContent).toContain("●");
   });
 });

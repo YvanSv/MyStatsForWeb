@@ -7,7 +7,7 @@ import { DataInfo } from "@/app/data/DataInfos";
 import GridCell from "./GridCell";
 import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
-import { PrimaryButton, SecondaryButton, TertiaryButton } from "../Atomic/Buttons";
+import { PrimaryButton, SecondaryButton } from "../Atomic/Buttons";
 import { useLanguage } from "@/app/context/languageContext";
 import { MenuButton, PopoverMenu } from "../Atomic/Nav/Navbar";
 import { Grid2X2, Grid3X3, List } from "lucide-react";
@@ -15,12 +15,17 @@ import { Grid2X2, Grid3X3, List } from "lucide-react";
 interface RankingViewProps {
   title: string;
   type: 'track' | 'album' | 'artist';
+  // Les éléments arrivent de l'API (éventuellement partiels) : les cellules tolèrent les valeurs absentes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   items: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sortConfig: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSort: (key: any) => void;
   loading: boolean;
   hasMore: boolean;
   loadMore: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filterConfig: any;
 }
 

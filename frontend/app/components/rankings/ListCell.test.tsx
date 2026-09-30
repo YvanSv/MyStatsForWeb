@@ -12,7 +12,7 @@ vi.mock("@/app/context/languageContext", async () => {
   return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
 });
 
-const dict = languages.fr.smallgridcell;
+const dict = languages.fr.rankingcell;
 const fmt = (n: number) => n.toLocaleString(dict.locale).replace(/\s/g, " "); // même normalisation des espaces que Testing Library
 
 const track: DataInfo = {
@@ -203,5 +203,34 @@ describe("ListCell – rang", () => {
   it.each([[0, "#1"], [49, "#50"]])("index %s -> %s", (index, label) => {
     renderCell(track, index);
     expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("ListCell – valeurs absentes", () => {
+  const incomplete = { ...track, play_count: undefined, engagement: undefined, rating: undefined } as unknown as DataInfo;
+
+  it("ne plante pas quand play_count, engagement ou rating sont absents", () => {
+    expect(() => renderCell(incomplete)).not.toThrow();
+  });
+
+  it("affiche un tiret à la place des valeurs absentes", () => {
+    renderCell(incomplete);
+    // play_count (desktop + mobile si tri play_count), engagement et rating
+    expect(screen.getAllByText(/-/).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("ne produit aucun NaN ni « undefined » dans l'affichage", () => {
+    const { container } = renderCell(incomplete);
+    expect(container.textContent).not.toMatch(/NaN|undefined/);
+  });
+
+  it("n'affiche pas de séparateur « ● » quand l'album d'un titre est absent", () => {
+    const { container } = renderCell({ ...track, album: undefined });
+    expect(container.textContent).not.toContain("●");
+  });
+
+  it("affiche le séparateur « ● » quand l'album d'un titre est présent", () => {
+    const { container } = renderCell(track);
+    expect(container.textContent).toContain("●");
   });
 });

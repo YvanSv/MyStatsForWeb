@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
+import { languages } from "../../constants/locales/lang";
 import { ApiStatusBadge } from "./StatusBadge";
+
+const dict = languages.fr.api;
 
 const { api } = vi.hoisted(() => ({ api: { getSpotifyStatus: vi.fn() } }));
 
@@ -21,10 +24,10 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("ApiStatusBadge", () => {
-  it("affiche 'System Active' au départ et interroge l'API au montage", async () => {
+  it("affiche « Système actif » au départ et interroge l'API au montage", async () => {
     render(<ApiStatusBadge />);
     await flush();
-    expect(screen.getByText("System Active")).toBeInTheDocument();
+    expect(screen.getByText(dict.statusActive)).toBeInTheDocument();
     expect(api.getSpotifyStatus).toHaveBeenCalledTimes(1);
   });
 
@@ -36,13 +39,13 @@ describe("ApiStatusBadge", () => {
     expect(container.firstElementChild).toHaveClass("border-white/5");
   });
 
-  it("affiche Rate Limited et le délai quand l'API est limitée", async () => {
+  it("affiche « Limite atteinte » et le délai quand l'API est limitée", async () => {
     api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 42 });
     const { container } = render(<ApiStatusBadge />);
     await flush();
-    expect(screen.getByText(/Rate Limited/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(dict.statusRateLimited))).toBeInTheDocument();
     expect(screen.getByText("42", { exact: false })).toHaveTextContent("42s");
-    expect(screen.queryByText("System Active")).not.toBeInTheDocument();
+    expect(screen.queryByText(dict.statusActive)).not.toBeInTheDocument();
     expect(container.querySelector(".bg-rouge")).toBeInTheDocument();
     expect(container.firstElementChild).toHaveClass("border-rouge/20");
   });
@@ -53,7 +56,7 @@ describe("ApiStatusBadge", () => {
     api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 5 });
     await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
     expect(api.getSpotifyStatus).toHaveBeenCalledTimes(2);
-    expect(screen.getByText(/Rate Limited/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(dict.statusRateLimited))).toBeInTheDocument();
   });
 
   it("ne rafraîchit pas avant 60 secondes", async () => {
@@ -78,7 +81,7 @@ describe("ApiStatusBadge", () => {
     render(<ApiStatusBadge />);
     await flush();
     expect(spy).toHaveBeenCalledWith(expect.any(String), err);
-    expect(screen.getByText("System Active")).toBeInTheDocument();
+    expect(screen.getByText(dict.statusActive)).toBeInTheDocument();
     spy.mockRestore();
   });
 });

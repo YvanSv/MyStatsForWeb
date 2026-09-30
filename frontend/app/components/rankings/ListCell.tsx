@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { DataInfo } from "@/app/data/DataInfos";
 import { useLanguage } from "@/app/context/languageContext";
+import { formatStat, safeNumber } from "./format";
 
 interface ListCellProps {
   element: DataInfo;
@@ -49,7 +50,7 @@ const LIST_CELL_STYLES = {
 
 export default function ListCell({ element, index, sort }: ListCellProps) {
   const { t } = useLanguage();
-  const dict = t.smallgridcell;
+  const dict = t.rankingcell;
   const isArtist = element.type === 'artist';
   const displayName = element.title || element.name || dict.unknown;
   const displayImage = element.cover || element.image_url;
@@ -59,8 +60,13 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
     if (element.type === 'track') {
       return (
         <>
-          {element.artist} ●
-          <span className="italic opacity-80"> {element.album}</span>
+          {element.artist}
+          {element.album && (
+            <>
+              {" ●"}
+              <span className="italic opacity-80"> {element.album}</span>
+            </>
+          )}
         </>
       );
     }
@@ -71,8 +77,8 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
     if (sort === 'rating') return <div className="h-5 md:hidden"/>;
     
     const config = {
-      play_count: { val: element.play_count, unit: "STR" },
-      engagement: { val: `${element.engagement}%`, unit: "" },
+      play_count: { val: element.play_count ?? "-", unit: "STR" },
+      engagement: { val: `${element.engagement ?? "-"}%`, unit: "" },
       total_minutes: { val: Math.round(element.total_minutes || 0), unit: "MIN" }
     };
 
@@ -105,7 +111,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
 
       {/* COLONNES DESKTOP */}
       <div className={LIST_CELL_STYLES.COLUMN_DESKTOP(sort === 'play_count')}>
-        {element.play_count.toLocaleString(dict.locale)} <span className="text-[10px]">{dict.unitStreams}</span>
+        {formatStat(element.play_count, dict.locale)} <span className="text-[10px]">{dict.unitStreams}</span>
       </div>
 
       <div className={LIST_CELL_STYLES.COLUMN_DESKTOP(sort === 'total_minutes')}>
@@ -115,12 +121,12 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
       <div className="hidden lg:flex justify-center">
         <div className="flex items-center gap-2">
           <span className={sort === 'engagement' ? `text2 font-bold` : `text3 text-sm`}>
-            {element.engagement.toLocaleString(dict.locale)}%
+            {formatStat(element.engagement, dict.locale)}%
           </span>
           <div className={LIST_CELL_STYLES.ENGAGEMENT_BAR_CONTAINER}>
             <div 
               className={LIST_CELL_STYLES.ENGAGEMENT_BAR_FILL(sort === 'engagement')} 
-              style={{ width: `${element.engagement}%` }} 
+              style={{ width: `${safeNumber(element.engagement)}%` }} 
             />
           </div>
         </div>
@@ -129,8 +135,8 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
       {/* BLOC DROITE */}
       <div className={LIST_CELL_STYLES.RIGHT_BLOCK}>
         <div className="lg:hidden">{renderMobileStat()}</div>
-        <div className={LIST_CELL_STYLES.RATING(element.rating, sort === 'rating')}>
-          {element.rating.toLocaleString(dict.locale)}★
+        <div className={LIST_CELL_STYLES.RATING(safeNumber(element.rating), sort === 'rating')}>
+          {formatStat(element.rating, dict.locale)}★
         </div>
       </div>
     </div>

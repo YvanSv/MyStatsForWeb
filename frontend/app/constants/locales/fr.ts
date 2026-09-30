@@ -87,6 +87,8 @@ export const fr = {
     errorConnecting: "Connexion au serveur impossible.",
     status: "Impossible de récupérer le statut API",
     currentListeningOff: "Silence radio sur Spotify",
+    statusActive: "Système actif",
+    statusRateLimited: "Limite atteinte",
   },
   error: {
     title1: "Accès Privé",
@@ -171,7 +173,7 @@ export const fr = {
     dateFrom: "De",
     dateTo: "À",
   },
-  smallgridcell: {
+  rankingcell: {
     unknown: "Inconnu",
     unitStreams: "str",
     unitMinutes: "min",

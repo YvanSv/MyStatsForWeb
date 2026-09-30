@@ -38,7 +38,7 @@ export const ApiStatusBadge = () => {
       const data = await getSpotifyStatus(); 
       setStatus(data);
     } catch (err) {console.error(dict.status, err)}
-  }, [getSpotifyStatus]);
+  }, [getSpotifyStatus, dict.status]);
 
   useEffect(() => {
     checkStatus();
@@ -60,13 +60,13 @@ export const ApiStatusBadge = () => {
       <span className={BADGE_STYLES.TEXT}>
         {isLimited ? (
           <>
-            Rate Limited 
+            {dict.statusRateLimited}{" "}
             <span className={BADGE_STYLES.TIMER}>
               {status.retry_after_seconds}
               <span className={BADGE_STYLES.UNIT}>s</span>
             </span>
           </>
-        ) : ("System Active")}
+        ) : dict.statusActive}
       </span>
     </div>
   );

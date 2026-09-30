@@ -1,6 +1,7 @@
 import { useLanguage } from "@/app/context/languageContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import Image from "next/image";
+import { formatStat, safeNumber } from "./format";
 
 interface GridCellProps {
   element: DataInfo;
@@ -64,7 +65,7 @@ const GRID_CELL_STYLES = {
 
 export default function GridCell({ element, index, sort }: GridCellProps) {
   const { t } = useLanguage();
-  const dict = t.smallgridcell;
+  const dict = t.rankingcell;
   const isArtist = element.type === 'artist';
   const displayName = element.title || element.name || dict.unknown;
   const displayImage = element.cover || element.image_url;
@@ -75,8 +76,12 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
       return (
         <>
           {element.artist}
-          <span className="hidden md:inline"> ● </span>
-          <span className="hidden md:inline italic opacity-80">{element.album}</span>
+          {element.album && (
+            <>
+              <span className="hidden md:inline"> ● </span>
+              <span className="hidden md:inline italic opacity-80">{element.album}</span>
+            </>
+          )}
         </>
       );
     }
@@ -99,8 +104,8 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
 
         {/* Badge Rating */}
         <div className={GRID_CELL_STYLES.RATING_BADGE(isArtist)}>
-          <span className={GRID_CELL_STYLES.RATING_TEXT(element.rating, sort === "rating")}>
-            {element.rating.toLocaleString(dict.locale)} {isArtist && "★"}
+          <span className={GRID_CELL_STYLES.RATING_TEXT(safeNumber(element.rating), sort === "rating")}>
+            {formatStat(element.rating, dict.locale)} ★
           </span>
         </div>
       </div>
@@ -119,7 +124,7 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
       <div className={GRID_CELL_STYLES.FOOTER_PC}>
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
           <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'play_count')}>
-            {element.play_count.toLocaleString(dict.locale)}
+            {formatStat(element.play_count, dict.locale)}
           </span>
           <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitStreams}</span>
         </div>
@@ -137,7 +142,7 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
 
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
           <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'engagement')}>
-            {element.engagement.toLocaleString(dict.locale)}
+            {formatStat(element.engagement, dict.locale)}
           </span>
           <span className={GRID_CELL_STYLES.STAT_LABEL}>%</span>
         </div>
@@ -146,7 +151,7 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
       {/* FOOTER MOBILE */}
       <div className={GRID_CELL_STYLES.FOOTER_MOBILE}>
         <span className={GRID_CELL_STYLES.MOBILE_VALUE(sort === 'play_count')}>
-          {element.play_count}
+          {element.play_count ?? "-"}
         </span>
         {element.total_minutes !== undefined && (
           <span className={GRID_CELL_STYLES.MOBILE_VALUE(sort === 'total_minutes')}>
@@ -154,7 +159,7 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
           </span>
         )}
         <span className={GRID_CELL_STYLES.MOBILE_VALUE(sort === 'engagement')}>
-          {element.engagement}%
+          {element.engagement ?? "-"}%
         </span>
       </div>
     </div>
