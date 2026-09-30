@@ -1,11 +1,13 @@
 import datetime
+from typing import Optional
 from fastapi import Depends
 from sqlalchemy import Float, Numeric, asc, case, cast, desc, func, select
 from sqlmodel import Session
 from app.database import get_session
 from app.models import Album, Artist, Track, TrackHistory
 
-def get_generic_metadata(db: Session, user_id: int, group_col, rating_expression):
+def get_generic_metadata(db: Session, user_id: Optional[int], group_col, rating_expression):
+    # user_id=None : statistiques globales (tous les utilisateurs)
     # 1. Base de la requête (on a toujours besoin de Track pour le rating/duration)
     stats_query = (
         select(
@@ -29,18 +31,14 @@ def get_generic_metadata(db: Session, user_id: int, group_col, rating_expression
 
     # 3. Construction de la sous-requête
     stats_subq = (
-        stats_query
-        .where(TrackHistory.user_id == user_id)
+        (stats_query.where(TrackHistory.user_id == user_id) if user_id is not None else stats_query)
         .group_by(group_col)
     ).subquery()
 
     # 4. Calcul des bornes de dates (sur la table history pure)
-    dates = db.exec(
-        select(
-            func.min(TrackHistory.played_at),
-            func.max(TrackHistory.played_at)
-        ).where(TrackHistory.user_id == user_id)
-    ).first()
+    dates_query = select(func.min(TrackHistory.played_at), func.max(TrackHistory.played_at))
+    if user_id is not None: dates_query = dates_query.where(TrackHistory.user_id == user_id)
+    dates = db.exec(dates_query).first()
 
     # 5. Calcul des plafonds (Max)
     max_stats = db.exec(
@@ -62,7 +60,7 @@ def get_generic_metadata(db: Session, user_id: int, group_col, rating_expression
         "date_max": d_max.strftime("%Y-%m-%d") if d_max else "2026-12-31"
     }
 
-def get_entity_stats(db, user_id, base_model, group_col, rating_formula, filters, search_filters):
+def get_entity_stats(db, user_id: Optional[int], base_model, group_col, rating_formula, filters, search_filters):
     # Expressions de base
     raw_ms = cast(func.sum(TrackHistory.ms_played), Float)
     raw_duration = func.nullif(cast(func.sum(Track.duration_ms), Float), 0)
@@ -89,7 +87,7 @@ def get_entity_stats(db, user_id, base_model, group_col, rating_formula, filters
         query = query.join(Track, Track.artist_id == Artist.id)
         query = query.join(TrackHistory, TrackHistory.track_id == Track.id)
 
-    query = query.where(TrackHistory.user_id == user_id)
+    if user_id is not None: query = query.where(TrackHistory.user_id == user_id)
     for f in search_filters: query = query.where(f)
 
     query = query.group_by(group_col, base_model.id) # Groupement par ID interne

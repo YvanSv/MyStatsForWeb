@@ -1,23 +1,20 @@
-from .utils.metadata import get_date_metadata
-from app.database import get_session
-from app.models import TrackHistory, Track, Artist, Album
-from typing import Optional, List
+from typing import List, Optional
 from fastapi import APIRouter, Depends
-from sqlalchemy import Date, Float, cast, func, select, text
-from sqlmodel import Session
-from app.response_message import TrackStatsResponse, TrackMetadataResponse, DetailMessage
 from fastapi_cache.decorator import cache
+from sqlalchemy import Date, cast
+from sqlmodel import Session
+from app.database import get_session
+from app.models import Album, Artist, Track, TrackHistory
+from app.response_message import TrackMetadataResponse, TrackStatsResponse
+from app.data.my.utils.metadata import get_entity_stats, get_generic_metadata
+from app.utils.rating import get_formulas
 
 router = APIRouter()
 
 @router.get(
     "",
-    summary="Récupérer les statistiques des musiques",
-    response_model=List[TrackStatsResponse],
-    responses={
-        200: {"description": "Liste des morceaux avec statistiques d'écoute et scores calculés"},
-        400: {"model": DetailMessage, "description": "Erreur dans les paramètres de filtrage"}
-    }
+    summary="Classement global des musiques",
+    response_model=List[TrackStatsResponse]
 )
 @cache(expire=300)
 async def get_all_musics(
@@ -41,133 +38,34 @@ async def get_all_musics(
     date_min: Optional[str] = None,
     date_max: Optional[str] = None,
 ):
-    """
-    Analyse détaillée des habitudes d'écoute par morceau individuel.
+    """Statistiques par morceau, tous utilisateurs confondus (mêmes calculs que `/data/my/tracks`)."""
+    f_track, _, _ = get_formulas()
 
-    **Indicateurs clés :**
-    - **Engagement** : Calculé en comparant le temps d'écoute total à la durée théorique de la piste (`ms_played` / `duration_ms`).
-    - **Rating Musique** : Algorithme spécifique qui combine l'engagement et le volume d'écoute brut, normalisé pour les morceaux individuels.
+    search_filters = []
+    if track: search_filters.append(Track.title.ilike(f"%{track}%"))
+    if artist: search_filters.append(Artist.name.ilike(f"%{artist}%"))
+    if album: search_filters.append(Album.name.ilike(f"%{album}%"))
+    if date_min: search_filters.append(cast(TrackHistory.played_at, Date) >= date_min)
+    if date_max: search_filters.append(cast(TrackHistory.played_at, Date) <= date_max)
 
-    **Filtrage technique :**
-    - Utilise des **JOINS** triples (Track -> Album -> Artist -> History) pour permettre un filtrage croisé (ex: toutes les musiques de tel artiste dans tel album).
-    - Les agrégations SQL sont effectuées avant le calcul du rating final en Python.
-    """
-    play_count = func.count(TrackHistory.id).label("play_count")
-    total_minutes = (cast(func.sum(TrackHistory.ms_played), Float) / 60000).label("total_minutes")
-    sum_played = func.sum(TrackHistory.ms_played)
-    sum_duration = func.sum(Track.duration_ms)
-    engagement_sql = (cast(sum_played, Float) / func.nullif(cast(sum_duration, Float), 0)).label("engagement")
+    results = get_entity_stats(db, None, Track, Track.id, f_track, locals(), search_filters)
 
-    query = (select(
-            Track,
-            Artist.name.label("artist"),
-            Album.name.label("album"),
-            Album.image_url.label("cover"),
-            play_count,
-            total_minutes,
-            engagement_sql
-        )
-        .join(Album, Track.album_id == Album.spotify_id)
-        .join(Artist, Track.artist_id == Artist.spotify_id)
-        .join(TrackHistory, Track.spotify_id == TrackHistory.spotify_id)
-    )
-    if track: query = query.where(Track.title.ilike(f"%{track}%"))
-    if artist: query = query.where(Artist.name.ilike(f"%{artist}%"))
-    if album: query = query.where(Album.name.ilike(f"%{album}%"))
-    if date_min: query = query.where(cast(TrackHistory.played_at, Date) >= date_min)
-    if date_max: query = query.where(cast(TrackHistory.played_at, Date) <= f"{date_max} 23:59:59")
-    query = query.group_by(
-        Track.spotify_id,
-        Artist.name,
-        Album.name,
-        Album.image_url
-    )
-    if streams_min is not None: query = query.having(play_count >= streams_min)
-    if streams_max is not None: query = query.having(play_count <= streams_max)
-    if minutes_min is not None: query = query.having(total_minutes >= minutes_min)
-    if minutes_max is not None: query = query.having(total_minutes <= minutes_max)
-    if engagement_min is not None: query = query.having(engagement_sql >= engagement_min / 100)
-    if engagement_max is not None: query = query.having(engagement_sql <= engagement_max / 100)
-    results = db.exec(query).all()
+    return [{
+        "id": r[0].id,
+        "title": r[0].title,
+        "artist": r[0].artist.name if r[0].artist else "Inconnu",
+        "album": r[0].album.name if r[0].album else "Inconnu",
+        "cover": r[0].album.image_url if r[0].album else None,
+        "duration_ms": r[0].duration_ms,
+        "play_count": r.play_count,
+        "total_minutes": r.total_minutes or 0,
+        "engagement": min(r.engagement or 0, 100),
+        "rating": r.rating or 0
+    } for r in results]
 
-    all_musics = []
-    for row in results:
-        track_obj, artist_name, album_name, cover_url, count, mins, eng = row
-        eng = min(eng or 0.0, 1.0)
-        rating = (eng * mins / (20.0 * count) + mins / 40.0) / 8.0
-        if rating_min and rating <= rating_min: continue
-        if rating_max and rating >= rating_max: continue
-
-        all_musics.append({
-            "spotify_id": track_obj.spotify_id,
-            "title": track_obj.title,
-            "artist": artist_name,
-            "album": album_name,
-            "cover": cover_url,        
-            "duration_ms": track_obj.duration_ms,
-            "play_count": count,
-            "total_minutes": round(mins),
-            "engagement": round(eng * 100, 2),
-            "rating": round(rating,2) or 0
-        })
-    if sort in ["name", "play_count", "total_minutes", "engagement", "rating"]:
-        all_musics.sort(key=lambda x: x["title" if sort == "name" else sort], reverse=(direction == "desc"))
-    return all_musics[offset : offset + limit]
-
-@router.get(
-    "/metadata",
-    summary="Récupérer les bornes maximales des musiques",
-    response_model=TrackMetadataResponse,
-    responses={
-        200: {
-            "description": "Retourne les records (streams, temps, rating) pour configurer les filtres de morceaux.",
-            "model": TrackMetadataResponse
-        }
-    }
-)
+@router.get("/metadata", summary="Bornes maximales des musiques", response_model=TrackMetadataResponse)
 @cache(expire=300)
 async def get_musics_metadata(db: Session = Depends(get_session)):
-    """
-    Analyse l'historique d'écoute pour extraire les valeurs plafonds de chaque morceau.
-    
-    **Calculs réalisés :**
-    - Identifie le morceau le plus écouté en volume (**max_streams**).
-    - Calcule le temps total en minutes passé sur ce morceau spécifique (**max_minutes**).
-    - Applique la formule de **Rating Musique** sur ce record pour définir le plafond du score.
-    - Récupère la plage de dates globale de l'historique utilisateur.
-
-    **Utilité technique :**
-    Contrairement aux artistes ou albums, les morceaux individuels ont des ratios d'engagement très différents (souvent plus élevés car plus courts). Cette route garantit que les sliders du Frontend ne sont pas limités par une échelle arbitraire.
-    """
-    # 1. On récupère les stats de la track la plus écoutée pour calculer le rating max théorique
-    # On ajoute la durée de la track (Track.duration_ms) pour l'engagement
-    stats = db.exec(
-        select(
-            func.count(TrackHistory.id).label("max_streams"),
-            func.sum(TrackHistory.ms_played).label("max_ms"),
-            func.sum(Track.duration_ms).label("total_duration")
-        )
-        .join(Track, Track.spotify_id == TrackHistory.spotify_id)
-        .group_by(TrackHistory.spotify_id)
-        .order_by(text("max_streams DESC"))
-        .limit(1)
-    ).first()
-
-    date_min, date_max = get_date_metadata(db)
-    if not stats: return {"max_streams": 100, "max_minutes": 100, "max_rating": 10, "date_min": date_min, "date-max": date_max}
-
-    count = stats[0]
-    mins = (stats[1] or 0) / 60000
-    total_duration = stats[2] or 0
-    
-    # Calcul de l'engagement pour le top élément
-    eng = min((stats[1] / total_duration) if total_duration > 0 else 0, 1.0)
-    max_rating = (eng * mins / (20.0 * count) + mins / 40.0) / 8.0
-
-    return {
-        "max_streams": count,
-        "max_minutes": round(mins),
-        "max_rating": max(round(max_rating,2)+.05, 0),
-        "date_min": date_min,
-        "date_max": date_max
-    }
+    """Records (streams, minutes, rating) et plage de dates globale, pour calibrer les filtres."""
+    f_track, _, _ = get_formulas()
+    return get_generic_metadata(db, None, Track.id, f_track)

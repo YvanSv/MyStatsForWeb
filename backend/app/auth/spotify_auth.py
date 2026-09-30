@@ -47,6 +47,7 @@ def spotify_login(response: Response):
 
     **Permissions demandées (Scopes) :**
     - `user-read-recently-played` : Nécessaire pour synchroniser l'historique d'écoute.
+    - `user-modify-playback-state` : Permet les contrôles de lecture (pause, reprise, suivant, précédent) — Spotify Premium requis.
     - `user-top-read` : Utilisé pour générer les classements des 50 meilleurs titres/artistes.
     - `user-read-private` / `user-read-email` : Essentiel pour la création et la liaison du compte MyStatsfy.
     """
@@ -63,6 +64,7 @@ def spotify_login(response: Response):
         "user-read-recently-played",
         "user-read-currently-playing",
         "user-read-playback-state",
+        "user-modify-playback-state",
         "user-top-read",
         "user-read-private",
         "user-read-email"

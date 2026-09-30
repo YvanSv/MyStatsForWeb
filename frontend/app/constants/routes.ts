@@ -27,7 +27,6 @@ export const API_ENDPOINTS = {
   DASHBOARD_DATA: `${API_BASE_URL}/profile/dashboard`,
   WEBSOCKET_PROGRESS: `${API_BASE_URL}/ws/progress`,
   
-  ALL_HISTORY:`${API_ALL_DATA}/history`,
   ALL_TRACKS:`${API_ALL_DATA}/tracks`,
   ALL_TRACKS_METADATA:`${API_ALL_DATA}/tracks/metadata`,
   ALL_ARTISTS:`${API_ALL_DATA}/artists`,
@@ -35,7 +34,6 @@ export const API_ENDPOINTS = {
   ALL_ALBUMS:`${API_ALL_DATA}/albums`,
   ALL_ALBUMS_METADATA:`${API_ALL_DATA}/albums/metadata`,
 
-  HISTORY:`${API_MY_DATA}/history`,
   TRACKS:`${API_MY_DATA}/tracks`,
   TRACKS_METADATA:`${API_MY_DATA}/tracks/metadata`,
   ARTISTS:`${API_MY_DATA}/artists`,

@@ -26,10 +26,6 @@ export const useApiAllDatas = () => {
     return params.toString();
   };
 
-  const getHistory = useCallback((offset: number, limit: number = 50) => 
-    request(`${API_ENDPOINTS.ALL_HISTORY}?offset=${offset}&limit=${limit}`), 
-  [request]);
-
   const getTracks = useCallback(async (filters?: Record<string, any>) => {
     const query = buildParams(filters);
     return request(`${API_ENDPOINTS.ALL_TRACKS}?${query}`);
@@ -52,7 +48,6 @@ export const useApiAllDatas = () => {
 
   return useMemo(() => ({
     loading,
-    getHistory,
     getTracks,
     getArtists,
     getAlbums,
@@ -62,7 +57,6 @@ export const useApiAllDatas = () => {
     getHomeData
   }), [
     loading, 
-    getHistory, 
     getTracks, 
     getArtists, 
     getAlbums, 

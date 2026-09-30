@@ -9,7 +9,7 @@ from .database import create_db_and_tables
 from .auth import router as auth_router
 from .data import router as overview_router
 from .data.my import router as my_data_router
-# from .data.everyone import router as all_data_router
+from .data.everyone import router as all_data_router
 from .data_import.workers.spotify import router as status_router
 from .profile import router as profile_router
 from .utils.progress_manager import router as utils_router
@@ -44,7 +44,7 @@ app.include_router(import_router)
 app.include_router(utils_router)
 app.include_router(status_router)
 app.include_router(my_data_router)
-# app.include_router(all_data_router)
+app.include_router(all_data_router)
 app.include_router(profile_router)
 app.include_router(overview_router)
 app.include_router(admin_router)

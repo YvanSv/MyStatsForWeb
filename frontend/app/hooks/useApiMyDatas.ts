@@ -34,9 +34,6 @@ export const useApiMyDatas = () => {
   //   request(API_ENDPOINTS.SPOTIFY_IMPORT, { method: 'POST', body: formData }), [request]);
 
   // --- DATA LISTS ---
-  const getHistory = useCallback((offset: number, limit: number = 50) =>
-    request(`${API_ENDPOINTS.HISTORY}?offset=${offset}&limit=${limit}`), [request]);
-
   const getTracks = useCallback((filters?: Record<string, any>) => 
     request(`${API_ENDPOINTS.TRACKS}?${buildParams(filters)}`), [request, buildParams]);
 
@@ -56,10 +53,10 @@ export const useApiMyDatas = () => {
   const getResumeStats = useCallback((filters?: Record<string, any>) => request(`${API_ENDPOINTS.SHARE}?${buildParams(filters)}`), [request]);
 
   return useMemo(() => ({
-    loading, getHistory, getTracks, getArtists, getAlbums, getResumeStats,
+    loading, getTracks, getArtists, getAlbums, getResumeStats,
     getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   }), [
-    loading, getHistory, getTracks, getArtists, getAlbums, getResumeStats,
+    loading, getTracks, getArtists, getAlbums, getResumeStats,
     getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   ]);
 };

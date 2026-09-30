@@ -1,4 +1,5 @@
 from typing import Optional
+import spotipy
 from pydantic import BaseModel
 from app.database import get_session
 from app.models import MusicProvider, User, UserAccount
@@ -76,26 +77,36 @@ async def get_today(user_id: int = Depends(get_current_user_id), db: Session = D
         data=TrackData(**track_info)
     )
 
-# @router.put("/pause")
-# async def pause_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-#     user = db.get(User, user_id)
-#     sp = get_spotify_users_client(await get_valid_access_token(user, db))
-#     return await run_spotify_task(sp.pause_playback)
+async def _spotify_action(action: str, user_id: int, db: Session):
+    """Exécute une commande de lecture (pause, reprise, suivant, précédent) sur le compte Spotify de l'utilisateur."""
+    user = db.get(User, user_id)
+    if not user: raise HTTPException(status_code=401, detail="Session invalide")
+    has_account = db.exec(select(UserAccount).where(
+        UserAccount.user_id == user.id,
+        UserAccount.provider == MusicProvider.SPOTIFY
+    )).first()
+    if not has_account: raise HTTPException(status_code=400, detail="Compte Spotify non lié")
 
-# @router.put("/resume")
-# async def resume_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-#     user = db.get(User, user_id)
-#     sp = get_spotify_users_client(await get_valid_access_token(user, db))
-#     return await run_spotify_task(sp.start_playback)
+    sp = get_spotify_users_client(await get_valid_access_token(user, db))
+    try:
+        await run_spotify_task(getattr(sp, action))
+    except spotipy.exceptions.SpotifyException as e:
+        # 403 : Premium requis, 404 : aucun appareil actif (le frontend les traduit en message)
+        raise HTTPException(status_code=e.http_status if e.http_status in (403, 404, 429) else 502, detail=str(e.msg))
+    return {"status": "success"}
 
-# @router.post("/next")
-# async def next_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-#     user = db.get(User, user_id)
-#     sp = get_spotify_users_client(await get_valid_access_token(user, db))
-#     return await run_spotify_task(sp.next_track)
+@router.put("/pause")
+async def pause_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+    return await _spotify_action("pause_playback", user_id, db)
 
-# @router.post("/previous")
-# async def previous_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
-#     user = db.get(User, user_id)
-#     sp = get_spotify_users_client(await get_valid_access_token(user, db))
-#     return await run_spotify_task(sp.previous_track)
+@router.put("/resume")
+async def resume_playback(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+    return await _spotify_action("start_playback", user_id, db)
+
+@router.post("/next")
+async def next_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+    return await _spotify_action("next_track", user_id, db)
+
+@router.post("/previous")
+async def previous_track(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_session)):
+    return await _spotify_action("previous_track", user_id, db)
