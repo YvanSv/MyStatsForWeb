@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import { languages } from "../../constants/locales/lang";
 import {
@@ -422,5 +422,77 @@ describe("Effet sur la largeur d'écran", () => {
     });
     expect((container.firstChild as HTMLElement).style.height).toBe("200px");
     vi.stubGlobal("innerWidth", 1024);
+  });
+});
+
+describe("Dates sans décalage de fuseau horaire", () => {
+  const originalTZ = process.env.TZ;
+  // Fuseau négatif : new Date("2024-01-01") (UTC) afficherait le 31/12/2023 en heure locale
+  beforeEach(() => { process.env.TZ = "America/Los_Angeles"; });
+  afterEach(() => { if (originalTZ === undefined) delete process.env.TZ; else process.env.TZ = originalTZ; });
+
+  it("le tooltip affiche le 1er janvier et non la veille", () => {
+    tooltip.payload = [{ name: "streams", value: 3, payload: { date: "2024-01-01" } }];
+    render(<WeeklyChart data={sampleData} metric="streams" />);
+    expect(tooltipText()).toContain("01/01/2024");
+    expect(tooltipText()).not.toContain("31/12/2023");
+  });
+
+  it("le tick de l'axe X affiche le 1er janvier et non la veille", () => {
+    render(<CumulativeChart data={sampleData} />);
+    expect(last("XAxis").tickFormatter("2024-01-01")).toBe("01/01/24");
+  });
+
+  it.each([
+    ["2024-12-31", "31/12/24"],
+    ["2024-03-10", "10/03/24"], // jour de changement d'heure aux États-Unis
+    ["2024-02-29", "29/02/24"], // année bissextile
+  ])("tick %s -> %s", (input, expected) => {
+    render(<CumulativeChart data={sampleData} />);
+    expect(last("XAxis").tickFormatter(input)).toBe(expected);
+  });
+});
+
+describe("Redimensionnement de la fenêtre", () => {
+  const heightOf = (container: HTMLElement) => (container.firstChild as HTMLElement).style.height;
+
+  it("met à jour la hauteur du graphique quand la fenêtre est redimensionnée", async () => {
+    vi.stubGlobal("innerWidth", 1280);
+    let container!: HTMLElement;
+    await act(async () => { ({ container } = render(<MonthlyChart data={[]} metric="minutes" />)); });
+    expect(heightOf(container)).toBe("250px");
+
+    vi.stubGlobal("innerWidth", 500);
+    await act(async () => { window.dispatchEvent(new Event("resize")); });
+    expect(heightOf(container)).toBe("200px");
+
+    vi.stubGlobal("innerWidth", 1400);
+    await act(async () => { window.dispatchEvent(new Event("resize")); });
+    expect(heightOf(container)).toBe("250px");
+    vi.stubGlobal("innerWidth", 1024);
+  });
+
+  it("met aussi à jour la hauteur du ClockChart", async () => {
+    vi.stubGlobal("innerWidth", 1280);
+    let container!: HTMLElement;
+    await act(async () => { ({ container } = render(<ClockChart data={sampleData} />)); });
+    expect(heightOf(container)).toBe("250px");
+    vi.stubGlobal("innerWidth", 600);
+    await act(async () => { window.dispatchEvent(new Event("resize")); });
+    expect(heightOf(container)).toBe("200px");
+    vi.stubGlobal("innerWidth", 1024);
+  });
+
+  it("retire l'écouteur de redimensionnement au démontage", async () => {
+    const remove = vi.spyOn(window, "removeEventListener");
+    let unmount!: () => void;
+    await act(async () => { ({ unmount } = render(<MonthlyChart data={[]} metric="minutes" />)); });
+    unmount();
+    expect(remove).toHaveBeenCalledWith("resize", expect.any(Function));
+    remove.mockRestore();
+  });
+
+  it("ClockChart s'affiche sans metric ni daysCount (valeurs par défaut)", () => {
+    expect(() => render(<ClockChart data={sampleData} />)).not.toThrow();
   });
 });

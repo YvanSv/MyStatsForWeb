@@ -39,7 +39,32 @@ const SIDEBAR_STYLES = {
   DATE_LABEL: `text2 text-[10px] uppercase tracking-tight`
 };
 
-export default function SidebarFilters({ config, loading, isVisible, toggleShowFilters }: any) {
+type StatKey = 'streams' | 'minutes' | 'engagement' | 'rating';
+interface RangeConfig { min: number; max: number }
+
+export interface SidebarFiltersConfig {
+  search?: Partial<Record<'track' | 'album' | 'artist', boolean>>;
+  stats: Partial<Record<StatKey, RangeConfig>>;
+  period?: { min: string; max: string };
+}
+
+interface SidebarFiltersProps {
+  config: SidebarFiltersConfig;
+  loading: boolean;
+  isVisible: boolean;
+  toggleShowFilters: () => void;
+}
+
+const STAT_KEYS: StatKey[] = ['streams', 'minutes', 'engagement', 'rating'];
+
+// Valeur d'un curseur : 0 est une valeur valide, seule l'absence (ou une valeur invalide) retombe sur le repli
+const toNumber = (value: string | undefined, fallback: number) => {
+  if (value === undefined || value === "") return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+export default function SidebarFilters({ config, loading, isVisible, toggleShowFilters }: SidebarFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -78,7 +103,9 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
         params.set(key, value);
       }
     });
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    const query = params.toString();
+    // Pas de « ? » orphelin quand aucun filtre n'est renseigné
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
     // Fermer la sidebar sur mobile après application
     if (window.innerWidth < 1024) toggleShowFilters();
   };
@@ -134,18 +161,19 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
 
           <FilterGroup title={dict.statsGroup}>
             <div className="space-y-6 pt-2">
-              {['streams', 'minutes', 'engagement', 'rating'].map((stat) => (
-                 config.stats[stat] && (
+              {STAT_KEYS.map((stat) => {
+                 const range = config.stats[stat];
+                 return range && (
                    <RangeFilter key={stat} param={stat} onChange={handleLocalChange}
                     label={getStatLabel(stat)}
                     unit={stat === 'engagement' ? "%" : ""}
-                    min={config.stats[stat].min}
-                    max={config.stats[stat].max}
-                    valueMin={Number(localFilters[`${stat}_min`]) || config.stats[stat].min}
-                    valueMax={Number(localFilters[`${stat}_max`]) || config.stats[stat].max}
+                    min={range.min}
+                    max={range.max}
+                    valueMin={toNumber(localFilters[`${stat}_min`], range.min)}
+                    valueMax={toNumber(localFilters[`${stat}_max`], range.max)}
                    />
-                 )
-              ))}
+                 );
+              })}
             </div>
           </FilterGroup>
 
@@ -174,7 +202,7 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
 }
 
 // --- SOUS-COMPOSANTS ---
-function SearchInput({ placeholder, value, onChange }: any) {
+function SearchInput({ placeholder, value, onChange }: { placeholder: string; value: string; onChange: (value: string) => void }) {
   return (
     <input 
       type="text" placeholder={placeholder} value={value}
@@ -198,8 +226,20 @@ function FilterGroup({ title, children }: { title: string, children: React.React
   );
 }
 
-function RangeFilter({ label, param, min, max, valueMin, valueMax, unit = "", onChange }: any) {
-  const step = label === "Rating" ? 0.05 : 1;
+interface RangeFilterProps {
+  label: string;
+  param: StatKey;
+  min: number;
+  max: number;
+  valueMin: number;
+  valueMax: number;
+  unit?: string;
+  onChange: (key: string, value: string) => void;
+}
+
+function RangeFilter({ label, param, min, max, valueMin, valueMax, unit = "", onChange }: RangeFilterProps) {
+  // Le pas dépend du paramètre (et non du libellé, qui change avec la langue)
+  const step = param === "rating" ? 0.05 : 1;
   return (
     <div className="flex flex-col gap-3 group">
       <div className="flex justify-between items-center">
@@ -211,11 +251,11 @@ function RangeFilter({ label, param, min, max, valueMin, valueMax, unit = "", on
       </div>
       <div className="flex items-center gap-2">
         <input type="range" min={min} max={max} step={step} value={valueMin > valueMax ? valueMax : valueMin} 
-          onChange={(e) => onChange(`${param}_min`, e.target.value > valueMax ? valueMax : e.target.value)} 
+          onChange={(e) => onChange(`${param}_min`, Number(e.target.value) > valueMax ? String(valueMax) : e.target.value)} 
           className={SIDEBAR_STYLES.RANGE_TRACK}
         />
         <input type="range" min={min} max={max} step={step} value={valueMax < valueMin ? valueMin : valueMax} 
-          onChange={(e) => onChange(`${param}_max`, e.target.value < valueMin ? valueMin : e.target.value)} 
+          onChange={(e) => onChange(`${param}_max`, Number(e.target.value) < valueMin ? String(valueMin) : e.target.value)} 
           className={SIDEBAR_STYLES.RANGE_TRACK}
         />
       </div>

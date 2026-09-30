@@ -63,7 +63,7 @@ function AuthContent() {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
-  }, [searchParams]);
+  }, [searchParams, dict]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,11 +74,11 @@ function AuthContent() {
       await login(loginData.email, loginData.password);
       router.push(FRONT_ROUTES.ACCUEIL);
       router.refresh();
-    } catch (err: any) {
+    } catch (err) {
       // Utilise le message extrait par ApiError (ex: "Email ou mot de passe incorrect")
       setLoginMessage({ 
         type: "error", 
-        text: err.message || dict.errorOccured 
+        text: (err instanceof Error && err.message) || dict.errorOccured 
       });
     } finally {setLoading(false)}
   };
@@ -97,9 +97,10 @@ function AuthContent() {
         style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
-    } catch (err: any) {
-      if (err.status === 422) setRegisterMessage({type: "error",text: dict.errorPw1});
-      else if (err.status === 400) setRegisterMessage({type: "error",text: err.message});
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      if (status === 422) setRegisterMessage({type: "error",text: dict.errorPw1});
+      else if (status === 400) setRegisterMessage({type: "error",text: err instanceof Error ? err.message : dict.errorPw2});
       else setRegisterMessage({type: "error",text: dict.errorPw2});
     } finally {setLoading(false)}
   };

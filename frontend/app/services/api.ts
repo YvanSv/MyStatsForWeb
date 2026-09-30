@@ -1,5 +1,3 @@
-import { useLanguage } from "../context/languageContext";
-
 /**
  * Extrait un message lisible du détail d'une erreur :
  * - une chaîne (ex : message fourni directement) est utilisée telle quelle ;
@@ -15,9 +13,9 @@ const extractMessage = (detail: unknown): string => {
 
 export class ApiError extends Error {
   status: number;
-  detail: any;
+  detail: unknown;
 
-  constructor(status: number, detail: any) {
+  constructor(status: number, detail: unknown) {
     super(extractMessage(detail));
     this.status = status;
     this.detail = detail;

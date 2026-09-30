@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { languages } from "../constants/locales/lang";
@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
   push: vi.fn(),
   pathname: "/my/tracks",
   search: "",
+  ratingLabel: null as string | null, // libellé traduit du rating (null = celui du dictionnaire)
   cache: { key: null as string | null, params: null as unknown as URLSearchParams },
 }));
 
@@ -26,7 +27,15 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("../context/languageContext", async () => {
   const { languages } = await import("../constants/locales/lang");
-  return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
+  return {
+    useLanguage: () => ({
+      t: h.ratingLabel === null
+        ? languages.fr
+        : { ...languages.fr, sidebarFilters: { ...languages.fr.sidebarFilters, statRating: h.ratingLabel } },
+      language: "fr",
+      changeLanguage: vi.fn(),
+    }),
+  };
 });
 
 // --- Helpers ---------------------------------------------------------------
@@ -41,7 +50,7 @@ const fullConfig = () => ({
   },
 });
 
-let toggle: ReturnType<typeof vi.fn>;
+let toggle: Mock<() => void>;
 
 const renderSidebar = (props: Record<string, unknown> = {}) =>
   render(<SidebarFilters config={fullConfig()} loading={false} isVisible toggleShowFilters={toggle} {...props} />);
@@ -56,7 +65,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.pathname = "/my/tracks";
   h.search = "";
-  toggle = vi.fn();
+  h.ratingLabel = null;
+  toggle = vi.fn<() => void>();
   setWidth(1280);
 });
 
@@ -142,6 +152,22 @@ describe("SidebarFilters – rendu", () => {
     expect(all[0]).toHaveAttribute("step", "1");
     expect(all[6]).toHaveAttribute("step", "0.05");
     expect(all[7]).toHaveAttribute("step", "0.05");
+  });
+
+  it("utilise un pas de 1 pour les minutes et l'engagement", () => {
+    renderSidebar();
+    const all = sliders();
+    for (const i of [2, 3, 4, 5]) expect(all[i]).toHaveAttribute("step", "1");
+  });
+
+  it("garde le pas de 0,05 du rating quand le libellé est traduit (le pas ne dépend pas du texte)", () => {
+    h.ratingLabel = "Note";
+    renderSidebar();
+    expect(screen.getByText("Note")).toBeInTheDocument();
+    const all = sliders();
+    expect(all[6]).toHaveAttribute("step", "0.05");
+    expect(all[7]).toHaveAttribute("step", "0.05");
+    expect(all[0]).toHaveAttribute("step", "1");
   });
 
   it("affiche l'unité % uniquement pour l'engagement", () => {
@@ -248,6 +274,13 @@ describe("SidebarFilters – initialisation depuis l'URL", () => {
     expect(max).toHaveValue("500");
   });
 
+  it("prend en compte une valeur 0 de l'URL même quand la borne min de la config est supérieure", () => {
+    h.search = "streams_min=0";
+    renderSidebar();
+    expect(sliders()[0]).toHaveValue("1"); // borné par min=1 du curseur, mais la valeur lue est bien 0 et non la borne
+    expect(screen.getByText(/^0 ⟷ 500/)).toBeInTheDocument();
+  });
+
   it("ignore une valeur d'URL non numérique pour un curseur", () => {
     h.search = "streams_min=abc";
     renderSidebar();
@@ -320,7 +353,14 @@ describe("SidebarFilters – saisie et application", () => {
     const user = userEvent.setup();
     renderSidebar();
     await user.click(applyBtn());
-    expect(h.push).toHaveBeenCalledWith("/my/tracks?", { scroll: false });
+    expect(h.push).toHaveBeenCalledWith("/my/tracks", { scroll: false });
+  });
+
+  it("n'ajoute jamais de « ? » orphelin à l'URL", async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+    await user.click(applyBtn());
+    expect(h.push.mock.calls[0][0]).not.toMatch(/\?$/);
   });
 
   it("utilise le chemin courant pour construire l'URL", async () => {
@@ -408,7 +448,7 @@ describe("SidebarFilters – réinitialisation", () => {
     renderSidebar();
     await user.click(resetBtn());
     await user.click(applyBtn());
-    expect(h.push).toHaveBeenLastCalledWith("/my/tracks?", { scroll: false });
+    expect(h.push).toHaveBeenLastCalledWith("/my/tracks", { scroll: false });
   });
 });
 

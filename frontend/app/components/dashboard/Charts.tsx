@@ -3,6 +3,25 @@ import { useEffect, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarAngleAxis, PolarGrid, Radar, PolarRadiusAxis } from 'recharts';
 import { LineChart, Line, Legend } from 'recharts';
 
+// new Date("YYYY-MM-DD") est interprété en UTC puis affiché en heure locale : dans un fuseau négatif
+// on obtiendrait la veille. Une date sans heure est donc construite directement en heure locale.
+const parseChartDate = (value: string | number) => {
+  const match = typeof value === 'string' ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null;
+  return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : new Date(value);
+};
+
+// Largeur de la fenêtre, mise à jour au redimensionnement
+function useScreenWidth(initial = 250) {
+  const [width, setWidth] = useState(initial);
+  useEffect(() => {
+    const update = () => setWidth(window.innerWidth);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return width;
+}
+
 const CustomBar = (props: any) => {
   const { x, y, width, height, value } = props;
   if (!height || height < 0) return null;
@@ -18,7 +37,7 @@ const ChartToolTip = ({ active, payload }: any) => {
   
   // Formatage de date dynamique selon la langue
   const formattedDate = rawDate && /^\d{4}-\d{2}-\d{2}/.test(rawDate)
-    ? new Date(rawDate).toLocaleDateString(t.common.locale, {day:'2-digit', month:'2-digit', year:'numeric'})
+    ? parseChartDate(rawDate).toLocaleDateString(t.common.locale, {day:'2-digit', month:'2-digit', year:'numeric'})
     : rawDate;
     
   const formatter = new Intl.NumberFormat(t.common.locale, { maximumFractionDigits: 0 });
@@ -52,11 +71,7 @@ const ChartToolTip = ({ active, payload }: any) => {
 
 function CustomBarChart({data, type, metric}:{data:any[], type:string, metric: 'streams' | 'minutes'}) {
   const { t } = useLanguage();
-  const [screenWidth, setScreenWidth] = useState(250);
-
-  useEffect(() => {
-    setScreenWidth(window.innerWidth);
-  }, []);
+  const screenWidth = useScreenWidth();
   
   // Titre dynamique
   const title = type === "day" ? t.charts.weekly : type === "month" ? t.charts.monthly : t.charts.annual;
@@ -94,13 +109,9 @@ const formatTicks = (hour: string) => {
   return keys.includes(hour) ? hour : "";
 };
 
-export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: any[], metric: 'streams' | 'minutes', daysCount: number}) {
+export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: any[], metric?: 'streams' | 'minutes', daysCount?: number}) {
   const { t } = useLanguage();
-  const [screenWidth, setScreenWidth] = useState(250);
-
-  useEffect(() => {
-    setScreenWidth(window.innerWidth);
-  }, []);
+  const screenWidth = useScreenWidth();
 
   const maxRange = metric === 'minutes' && daysCount !== 0 ? 60 * daysCount : undefined;
   return (
@@ -142,7 +153,7 @@ export function CumulativeChart({ data }:{ data: any[] }) {
         <GraphXAxis data={"date"}/>
         <GraphYAxis/>
         <GraphLegend/>
-        <Tooltip content={<ChartToolTip c1={color1} c2={color2}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
+        <Tooltip content={<ChartToolTip/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
         <Area type="monotone" dataKey={"minutes"} stroke={color1} fillOpacity={1} fill="url(#colorArea1)" strokeWidth={2} dot={false}/>
         <Area type="monotone" dataKey={"streams"} stroke={color2} fillOpacity={1} fill="url(#colorArea2)" strokeWidth={2} dot={false}/>
       </AreaChart>
@@ -157,7 +168,7 @@ export const EvolutionChart = ({ data }:{data: any[]}) => {
     <GraphContainer height={300} title={t.charts.discoveries}>
       <LineChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-        <Tooltip content={<ChartToolTip c1={color1} c2={color2} c3={color3}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
+        <Tooltip content={<ChartToolTip/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
         <GraphLegend/>
         <GraphXAxis data={"date"}/>
         <GraphYAxis/>
@@ -179,7 +190,7 @@ export const EvolutionStreamsChart = ({ data }:{data: any[]}) => {
         <GraphXAxis data={"date"}/>
         <GraphYAxis/>
         <GraphLegend/>
-        <Tooltip content={<ChartToolTip c1={color1} c2={color2}/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
+        <Tooltip content={<ChartToolTip/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
         <Line type="monotone" dataKey="minutes" name={t.common.minutes} stroke={`${color1}`} strokeWidth={3} dot={false}/>
         <Line type="monotone" dataKey="streams" name={t.common.streams} stroke={`${color2}`} strokeWidth={3} dot={false} />
       </LineChart>
@@ -201,7 +212,7 @@ const GraphXAxis = ({data}:any) => {
   return (
     <XAxis dataKey={data} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }} minTickGap={30}
       tickFormatter={(str) => {
-        const date = new Date(str);
+        const date = parseChartDate(str);
         return date.toLocaleDateString(t.common.locale, { day: '2-digit', month: '2-digit', year: '2-digit' });
       }}
     />
