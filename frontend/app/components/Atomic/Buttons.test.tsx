@@ -91,3 +91,47 @@ describe("TertiaryButton", () => {
     expect(screen.getByRole("button")).toHaveClass("rounded-2xl", "bg-white/5", "p-4", "cursor-pointer");
   });
 });
+
+describe.each([
+  ["PrimaryButton", PrimaryButton],
+  ["SecondaryButton", SecondaryButton],
+  ["TertiaryButton", TertiaryButton],
+])("%s – attributs HTML transmis", (_name, Button) => {
+  it.each(["submit", "button", "reset"] as const)("transmet type=%s au bouton", (type) => {
+    render(<Button type={type}>Go</Button>);
+    expect(screen.getByRole("button")).toHaveAttribute("type", type);
+  });
+
+  it("soumet un formulaire avec type=submit", async () => {
+    const onSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
+    render(<form onSubmit={onSubmit}><Button type="submit">Envoyer</Button></form>);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Envoyer" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it("ne soumet pas un formulaire avec type=button", async () => {
+    const onSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
+    render(<form onSubmit={onSubmit}><Button type="button">Annuler</Button></form>);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Annuler" }));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("est désactivé quand disabled et n'appelle pas onClick", async () => {
+    const onClick = vi.fn();
+    render(<Button disabled onClick={onClick}>Go</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn).toBeDisabled();
+    await userEvent.setup().click(btn);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("est actif par défaut", () => {
+    render(<Button>Go</Button>);
+    expect(screen.getByRole("button")).toBeEnabled();
+  });
+
+  it("utilise ariaLabel comme nom accessible (bouton icône)", () => {
+    render(<Button ariaLabel="Fermer"><svg /></Button>);
+    expect(screen.getByRole("button", { name: "Fermer" })).toBeInTheDocument();
+  });
+});

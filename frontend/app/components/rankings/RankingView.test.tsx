@@ -192,6 +192,31 @@ describe("RankingView – modes d'affichage", () => {
     expect(cells[0].parentElement).toHaveClass(cls);
   });
 
+  it.each([
+    ["grid", dict.viewGrid],
+    ["grid_sm", dict.viewGridSm],
+    ["list", dict.viewList],
+  ])("mode %s : le bouton de vue actif a pour nom accessible « %s »", (mode, label) => {
+    h.viewMode = mode;
+    renderView();
+    // bouton actif + entrée du menu de vues
+    expect(screen.getAllByRole("button", { name: label })).toHaveLength(2);
+  });
+
+  it("donne un nom accessible aux trois choix de vue (grille, petite grille, liste)", () => {
+    renderView();
+    for (const label of [dict.viewGrid, dict.viewGridSm, dict.viewList]) {
+      expect(screen.getAllByRole("button", { name: label }).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("change de vue en cliquant sur un choix nommé", async () => {
+    const user = userEvent.setup();
+    renderView();
+    await user.click(screen.getAllByRole("button", { name: dict.viewList })[0]);
+    expect(h.toggleViewMode).toHaveBeenCalledWith("list");
+  });
+
   it("mode inconnu : retombe sur la grille standard", () => {
     h.viewMode = "bizarre";
     renderView();

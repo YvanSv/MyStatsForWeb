@@ -61,6 +61,16 @@ describe.each([
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it("utilise label comme nom accessible (bouton icône)", () => {
+    render(<Comp label="Grille"><svg /></Comp>);
+    expect(screen.getByRole("button", { name: "Grille" })).toBeInTheDocument();
+  });
+
+  it("n'ajoute pas d'aria-label sans label", () => {
+    render(<Comp>Action</Comp>);
+    expect(screen.getByRole("button")).not.toHaveAttribute("aria-label");
+  });
+
   it("applique son style et les classes additionnelles", () => {
     render(<Comp additional="mt-2">Action</Comp>);
     expect(screen.getByRole("button")).toHaveClass(colorClass, "mt-2", "w-full");

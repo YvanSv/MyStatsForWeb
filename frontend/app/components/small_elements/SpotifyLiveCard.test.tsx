@@ -74,6 +74,9 @@ describe("SpotifyLiveCard – lecture en cours", () => {
     [0, "0:00"],
     [9000, "0:09"],
     [59000, "0:59"],
+    [59600, "1:00"],
+    [59499, "0:59"],
+    [119600, "2:00"],
     [600000, "10:00"],
   ])("formate %i ms en %s", (ms, label) => {
     renderCard({ currentProgress: ms });
@@ -84,6 +87,29 @@ describe("SpotifyLiveCard – lecture en cours", () => {
     const { container } = renderCard({ currentProgress: 50000 });
     const bar = container.querySelector(".bg-green-500.rounded-full.transition-all") as HTMLElement;
     expect(bar.style.width).toBe("25%");
+  });
+
+  it("n'affiche jamais « 0:60 » (arrondi de la seconde au-dessus)", () => {
+    renderCard({ currentProgress: 59600 });
+    expect(screen.queryByText("0:60")).not.toBeInTheDocument();
+  });
+
+  it("garde une barre à 0% quand la durée est inconnue (0), sans NaN ni Infinity", () => {
+    const { container } = renderCard({ data: { ...data, duration_ms: 0 }, currentProgress: 5000 });
+    const bar = container.querySelector(".transition-all.duration-1000") as HTMLElement;
+    expect(bar.style.width).toBe("0%");
+  });
+
+  it("ne dépasse jamais 100% même si la progression locale dépasse la durée", () => {
+    const { container } = renderCard({ currentProgress: 250000 });
+    const bar = container.querySelector(".transition-all.duration-1000") as HTMLElement;
+    expect(bar.style.width).toBe("100%");
+  });
+
+  it("ne passe jamais sous 0% avec une progression négative", () => {
+    const { container } = renderCard({ currentProgress: -500 });
+    const bar = container.querySelector(".transition-all.duration-1000") as HTMLElement;
+    expect(bar.style.width).toBe("0%");
   });
 
   it("barre vide à 0 et pleine à la fin", () => {

@@ -40,27 +40,27 @@ export function PopoverMenu({children,additional}:any) {
   );
 }
 
-export function MenuButton({children,onClick,additional}:any) {
+export function MenuButton({children,onClick,additional,label}:any) {
   const agencement = 'flex items-center text-left';
   const forme = 'w-full px-3 py-2.5 rounded-lg gap-4';
   const couleur = 'text-sm hover:text-vert hover:bg-white/[0.05]';
   const transformation = 'transition-colors';
 
   return (
-    <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick}>
+    <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick} aria-label={label}>
       {children}
     </button>
   );
 }
 
-export function MenuButtonDanger({children,onClick,additional}:any) {
+export function MenuButtonDanger({children,onClick,additional,label}:any) {
   const agencement = 'flex items-center text-left';
   const forme = 'w-full px-3 py-2.5 rounded-lg gap-4';
   const couleur = 'text-sm text-red-400 hover:bg-red-500/10';
   const transformation = 'transition-colors';
 
   return (
-    <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick}>
+    <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick} aria-label={label}>
       {children}
     </button>
   );

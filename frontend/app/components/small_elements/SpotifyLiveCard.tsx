@@ -45,7 +45,8 @@ export default function SpotifyLiveCard({data,currentProgress,size='md'}:{
 }) {
   // const { pause, resume, next, previous } = useSpotify();
   const { t } = useLanguage();
-  const progress = data ? (currentProgress / data.duration_ms) * 100 : 0;
+  // Borné à [0, 100] : une durée inconnue (0) ne doit pas produire Infinity/NaN
+  const progress = data && data.duration_ms > 0 ? Math.min(100, Math.max(0, (currentProgress / data.duration_ms) * 100)) : 0;
   const config = configOptions[size];
 
   if (!data) {
@@ -115,7 +116,9 @@ export default function SpotifyLiveCard({data,currentProgress,size='md'}:{
 
 // Utilitaire de formatage (03:45)
 function formatMs(ms:number) {
-  const minutes = Math.floor(ms / 60000);
-  const seconds = ((ms % 60000) / 1000).toFixed(0);
-  return `${minutes}:${seconds.padStart(2, '0')}`;
+  // On arrondit au total de secondes avant de découper, sinon 59 600 ms donnerait « 0:60 »
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }

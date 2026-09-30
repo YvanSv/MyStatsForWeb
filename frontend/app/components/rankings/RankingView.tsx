@@ -117,13 +117,13 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
 
               {/* View Mode Selector */}
               <div className={RANKING_VIEW_STYLES.RIGHT_WRAPPER}>
-                <SecondaryButton additional="text2 flex flex-col items-center p-1 lg:p-2 justify-center">
+                <SecondaryButton ariaLabel={activeView.label} additional="text2 flex flex-col items-center p-1 lg:p-2 justify-center">
                   <div className="flex items-center justify-center">{activeView.icon}</div>
                 </SecondaryButton>
       
                 <PopoverMenu>
                   {views.map(v => (
-                    <MenuButton key={v.id} onClick={() => toggleViewMode(v.id)} additional={`duration-300 ease-out
+                    <MenuButton key={v.id} label={v.label} onClick={() => toggleViewMode(v.id)} additional={`duration-300 ease-out
                         ${viewMode === v.id ? `text2 bg-white/5` : `text3 hover:text-white hover:bg-white/5`}
                         ${v.hideMobile ? 'hidden lg:flex' : 'flex'}
                       `}

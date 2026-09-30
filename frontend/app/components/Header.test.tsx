@@ -102,11 +102,15 @@ describe("Header – navigation principale", () => {
     await user.click(nav.getByRole("button", { name: dict.tracks }));
     await user.click(nav.getByRole("button", { name: dict.albums }));
     await user.click(nav.getByRole("button", { name: dict.artists }));
-    expect(h.push.mock.calls.map((c) => c[0])).toEqual([
-      `${FRONT_ROUTES.MY_RANKINGS}/tracks`,
-      `${FRONT_ROUTES.MY_RANKINGS}/albums`,
-      `${FRONT_ROUTES.MY_RANKINGS}/artists`,
-    ]);
+    expect(h.push.mock.calls.map((c) => c[0])).toEqual(["/my/tracks", "/my/albums", "/my/artists"]);
+  });
+
+  it("ne génère jamais de double slash dans les chemins du sous-menu des classements", async () => {
+    const user = userEvent.setup();
+    render(<Header />);
+    const nav = within(pcNav());
+    for (const name of [dict.tracks, dict.albums, dict.artists]) await user.click(nav.getByRole("button", { name }));
+    for (const [path] of h.push.mock.calls) expect(path).not.toContain("//");
   });
 
   it("propose le sous-menu du profil public (profil, import, compte)", async () => {
@@ -239,6 +243,12 @@ describe("Header – écoute Spotify en direct", () => {
     expect(card).toHaveAttribute("data-size", "xs");
   });
 
+  it("décrit la pochette avec le titre du morceau (texte alternatif)", () => {
+    h.spotify.listening = { is_listening: true, data: { cover_url: "https://img/cover.png", title: "Song" } };
+    render(<Header />);
+    expect(screen.getByAltText("Song")).toHaveAttribute("src", "https://img/cover.png");
+  });
+
   it("transmet l'état « en pause » à la carte quand is_listening est faux", () => {
     h.spotify.listening = { is_listening: false, data: { cover_url: "c.png", title: "Paused" } };
     render(<Header />);
@@ -250,6 +260,23 @@ describe("Header – menu mobile", () => {
   it("est fermé par défaut", () => {
     render(<Header />);
     expect(screen.getAllByRole("navigation")).toHaveLength(1);
+  });
+
+  it("donne un nom accessible au bouton burger", () => {
+    const { container } = render(<Header />);
+    const button = screen.getByRole("button", { name: dict.menu });
+    expect(button).toBe(burger(container));
+  });
+
+  it("indique l'état ouvert/fermé du burger avec aria-expanded", async () => {
+    const user = userEvent.setup();
+    render(<Header />);
+    const button = screen.getByRole("button", { name: dict.menu });
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    await user.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    await user.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "false");
   });
 
   it("s'ouvre au clic sur le burger avec les quatre entrées principales", async () => {

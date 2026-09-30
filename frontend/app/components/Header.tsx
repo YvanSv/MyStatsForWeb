@@ -118,7 +118,7 @@ export default function Header() {
           <div className={`${HEADER_STYLES.RIGHT_WRAPPER} pt-2`}>
             <TertiaryButton>
               <div className="relative flex-shrink-0">
-                <img src={listening.data?.cover_url} className="w-10 h-10 rounded-xl"/>
+                <img src={listening.data?.cover_url} alt={listening.data?.title ?? ""} className="w-10 h-10 rounded-xl"/>
                 <div className={`shadow-lg object-cover absolute -top-1.5 -left-1.5 bg-green-500 text-[8px] px-1 font-black py-0.5 rounded-full text-black uppercase tracking-tighter shadow-xl`}>
                   {dict.live}
                 </div>
@@ -158,7 +158,9 @@ export default function Header() {
         )}
 
         {/* BURGER BUTTON MOBILE */}
-        <button className="md:hidden p-1" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}>
+        <button className="md:hidden p-1" onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+          aria-label={dict.menu} aria-expanded={isMobileNavOpen}
+        >
           <div className="space-y-1.5">
             <div className={`w-6 h-0.5 bg-white transition-all ${isMobileNavOpen ? 'rotate-45 translate-y-2' : ''}`} />
             <div className={`w-6 h-0.5 bg-white ${isMobileNavOpen ? 'opacity-0' : ''}`} />

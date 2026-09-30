@@ -132,6 +132,7 @@ export const fr = {
     descDash: "Autoriser les autres à accéder à votre dashboard",
   },
   header: {
+    menu: "Menu",
     rankings: "Classements",
     dashboard: "Dashboard",
     publicProfile: "Profil public",
