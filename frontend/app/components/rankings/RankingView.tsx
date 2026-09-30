@@ -26,7 +26,7 @@ interface RankingViewProps {
 
 const RANKING_VIEW_STYLES = {
   // Layout Principal
-  MAIN_CONTAINER: "flex flex-col lg:flex-row py-8 px-4 sm:px-8 md:py-8 md:px-12 max-w-[1440px] mx-auto",
+  MAIN_CONTAINER: "flex flex-col lg:flex-row py-8 px-4 sm:px-8 md:py-8 md:px-10 gap-4 max-w-[1440px] mx-auto",
   CONTENT_SECTION: "flex-1 space-y-4",
   
   // Header de la vue (Titre + Contrôles)

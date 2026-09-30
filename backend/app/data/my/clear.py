@@ -7,15 +7,21 @@ from app.auth.utils.auth_utils import get_current_user_id
 router = APIRouter()
 
 @router.delete("")
-async def clear_user_data(db: Session = Depends(get_session),user_id: int = Depends(get_current_user_id)):
+async def clear_user_data(
+    db: Session = Depends(get_session),
+    user_id: int = Depends(get_current_user_id)
+):
     """
     Réinitialise le profil de l'utilisateur et supprime tout son historique d'écoute.
     """
     user = db.get(User, user_id)
-    if not user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    if not user: 
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
 
     try:
         # Supprimer l'historique d'écoute
+        # Le delete(TrackHistory) est efficace, mais pour de très gros volumes, 
+        # s'assurer qu'un index existe sur user_id est primordial.
         statement = delete(TrackHistory).where(TrackHistory.user_id == user_id)
         db.exec(statement)
 
