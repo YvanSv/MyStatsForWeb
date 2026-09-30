@@ -16,15 +16,15 @@ const dict = languages.fr.rankingcell;
 const fmt = (n: number) => n.toLocaleString(dict.locale).replace(/\s/g, " "); // même normalisation des espaces que Testing Library
 
 const track: DataInfo = {
-  type: "track", spotify_id: "t1", title: "Titre A", artist: "Artiste A", album: "Album A",
+  type: "track", id: 1, title: "Titre A", artist: "Artiste A", album: "Album A",
   cover: "https://img/cover.jpg", play_count: 12345, total_minutes: 678.6, engagement: 42.5, rating: 1.5,
 };
 const album: DataInfo = {
-  type: "album", spotify_id: "a1", name: "Album B", artist: "Artiste B",
+  type: "album", id: 2, name: "Album B", artist: "Artiste B",
   cover: "https://img/album.jpg", play_count: 10, total_minutes: 20.2, engagement: 50, rating: 0.9,
 };
 const artist: DataInfo = {
-  type: "artist", id: "ar1", name: "Artiste C", image_url: "https://img/artist.jpg",
+  type: "artist", id: 3, name: "Artiste C", image_url: "https://img/artist.jpg",
   play_count: 3000, total_minutes: 4000, engagement: 10, rating: 0.5,
 };
 

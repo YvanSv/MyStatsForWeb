@@ -60,7 +60,7 @@ vi.mock("./SmallGridCell", () => ({ default: makeCell("grid_sm") }));
 
 type Props = React.ComponentProps<typeof RankingView>;
 
-const item = (n: number, extra: Record<string, unknown> = {}) => ({ id: `id${n}`, title: `Titre ${n}`, ...extra });
+const item = (n: number, extra: Record<string, unknown> = {}) => ({ id: n, title: `Titre ${n}`, ...extra });
 
 const baseProps = (): Props => ({
   title: "Tous mes",
@@ -299,16 +299,16 @@ describe("RankingView – éléments", () => {
     expect(instances()).toHaveLength(3);
   });
 
-  it("utilise spotify_id comme clé en priorité sur id", () => {
-    const a = item(1, { spotify_id: "sp1" });
-    const b = item(2, { spotify_id: "sp2" });
+  it("n'utilise plus le spotify_id d'un ancien format comme clé : seul l'id interne compte", () => {
+    const a = item(1, { spotify_id: "meme" });
+    const b = item(2, { spotify_id: "meme" });
     const { rerender, props } = renderView({ items: [a, b] });
     const [ia, ib] = instances();
     rerender(<RankingView {...props} items={[{ ...b }, { ...a }]} />);
     expect(instances()).toEqual([ib, ia]);
   });
 
-  it("utilise id comme clé quand spotify_id est absent", () => {
+  it("utilise id comme clé pour conserver les cellules quand l'ordre change", () => {
     const { rerender, props } = renderView({ items: [item(1), item(2)] });
     const [i1, i2] = instances();
     rerender(<RankingView {...props} items={[item(2), item(1)]} />);

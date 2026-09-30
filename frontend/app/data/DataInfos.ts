@@ -1,12 +1,12 @@
 export interface DataInfo {
-  spotify_id?: string;
-  id?: string;        // Artiste
+  id?: number;        // Identifiant interne (entier renvoyé par l'API)
   title?: string;     // Musique
   name?: string;      // Album/Artiste
   artist?: string;    // Musique/Album
   album?: string;     // Musique
-  cover?: string;     // Musique/Album
-  image_url?: string; // Artiste
+  cover?: string | null;     // Musique/Album (null sans pochette)
+  image_url?: string | null; // Artiste (null sans image)
+  duration_ms?: number | null; // Musique
   play_count: number;
   total_minutes: number;
   engagement: number;
@@ -57,15 +57,15 @@ export interface EditableProfile {
   banner: string;
 }
 
+// Colonnes de l'export Apple « Play History Daily Tracks.csv » lues par la page d'import
 export interface AppleCSVRow {
-  "Apple ID Number": string;
-  "Song Name": string;
-  "Container Artist Name": string;
-  "Container Album Name": string;
-  "Event Start Timestamp": string;
-  "Play Duration Milliseconds": string;
-  "Media Duration In Milliseconds": string;
-  [key: string]: string; // Pour les 140+ autres colonnes ignorées
+  "Track Identifier": string;
+  "Track Description": string; // « Artiste - Titre »
+  "Date Played": string;       // AAAAMMJJ
+  "Hours": string;             // heure d'écoute (0-23)
+  "Play Duration Milliseconds": string; // durée cumulée pour toutes les écoutes de la ligne
+  "Play Count": string;
+  [key: string]: string; // Autres colonnes de l'export, ignorées
 }
 
 // Interface pour les données nettoyées envoyées au backend

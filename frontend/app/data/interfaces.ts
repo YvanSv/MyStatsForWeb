@@ -1,7 +1,7 @@
 export interface Artist {
   id: number;
   name: string;
-  image_url?: string;
+  image_url?: string | null;
   // Relations (si incluses dans le fetch)
   albums?: Album[];
   tracks?: Track[];
@@ -11,7 +11,7 @@ export interface Artist {
 export interface Album {
   id: number;
   name: string;
-  image_url?: string;
+  image_url?: string | null;
   artist_id: number;
   // Relations
   artist?: Artist;
@@ -22,9 +22,9 @@ export interface Album {
 export interface Track {
   id: number;
   title: string;
-  duration_ms?: number;
-  artist_id: number;
-  album_id?: number;
+  duration_ms?: number | null;
+  artist_id: number | null; // null tant que l'artiste n'est pas identifié (import Apple Music)
+  album_id?: number | null;
   // Relations
   artist?: Artist;
   album?: Album;

@@ -19,10 +19,10 @@ export interface SuggestionMatch {
   artist_id: string;
   album: string;
   album_id: string;
-  image_url: string;
+  image_url: string | null;    // null quand l'album n'a pas de pochette
   duration_ms: number;
-  isrc: string;
-  release_date: string;
+  isrc: string | null;         // absent chez Spotify pour certains titres
+  release_date: string | null;
 }
 
 export interface MatchData {
@@ -32,7 +32,7 @@ export interface MatchData {
 export interface CreateRequest {
   id: number;
   track_id: number;
-  history_count: number;
+  history_count?: number; // fourni par la liste uniquement, pas par le détail
   match_data: MatchData;
   created_at: string;
   reason?: string;

@@ -152,7 +152,8 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
           }>
             {normalizedItems.map((item, i) => {
               const commonProps = { element: item, index: i, sort: sortConfig.sort };
-              const itemKey = item.spotify_id || item.id;
+              // id interne renvoyé par l'API (le spotify_id n'existe plus depuis le passage aux identifiants entiers)
+              const itemKey = item.id;
               if (viewMode === 'list') return <ListCell key={itemKey} {...commonProps} />;
               if (viewMode === 'grid_sm') return <SmallGridCell key={itemKey} {...commonProps} />;
               return <GridCell key={itemKey} {...commonProps} />;
