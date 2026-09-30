@@ -135,3 +135,33 @@ describe.each([
     expect(screen.getByRole("button", { name: "Fermer" })).toBeInTheDocument();
   });
 });
+
+describe.each([
+  ["PrimaryButton", PrimaryButton],
+  ["SecondaryButton", SecondaryButton],
+  ["TertiaryButton", TertiaryButton],
+])("%s – classes CSS", (_name, Button) => {
+  it("n'ajoute pas la classe littérale « undefined » quand additional est omis", () => {
+    render(<Button>Go</Button>);
+    expect(screen.getByRole("button").className).not.toMatch(/\bundefined\b/);
+  });
+
+  it("n'ajoute pas « false » ni « null » dans les classes", () => {
+    render(<Button>Go</Button>);
+    expect(screen.getByRole("button").className).not.toMatch(/\b(false|null)\b/);
+  });
+
+  it("applique les classes additionnelles fournies", () => {
+    render(<Button additional="mt-4 w-full">Go</Button>);
+    expect(screen.getByRole("button")).toHaveClass("mt-4", "w-full");
+  });
+});
+
+describe("Buttons désactivés – curseur", () => {
+  it("PrimaryButton utilise la classe Tailwind cursor-not-allowed (et non une classe inexistante)", () => {
+    render(<PrimaryButton disabled>Go</PrimaryButton>);
+    const btn = screen.getByRole("button");
+    expect(btn).toHaveClass("cursor-not-allowed");
+    expect(btn).not.toHaveClass("cursor-disabled");
+  });
+});

@@ -142,3 +142,21 @@ describe("SpotifyLiveCard – lecture en cours", () => {
     expect(container.querySelector(".blur-\\[80px\\]")).toHaveClass("w-40", "h-40");
   });
 });
+
+describe("SpotifyLiveCard – détails d'affichage", () => {
+  it("n'a pas de « $ » parasite dans les classes de la pochette", () => {
+    renderCard();
+    const img = screen.getByRole("img", { name: data.album_name });
+    expect(img.className).not.toContain("$");
+    expect(img).toHaveClass("object-cover");
+  });
+
+  it("utilise la taille md par défaut quand size est omis", () => {
+    const { container } = render(<SpotifyLiveCard data={null} currentProgress={0} />);
+    expect(container.firstElementChild).toHaveClass("p-5");
+  });
+
+  it("fonctionne sans la prop isListening", () => {
+    expect(() => render(<SpotifyLiveCard data={data} currentProgress={1000} />)).not.toThrow();
+  });
+});

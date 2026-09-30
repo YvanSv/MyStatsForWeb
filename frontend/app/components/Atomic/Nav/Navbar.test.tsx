@@ -76,3 +76,18 @@ describe.each([
     expect(screen.getByRole("button")).toHaveClass(colorClass, "mt-2", "w-full");
   });
 });
+
+describe("Navbar – classes CSS", () => {
+  it("PopoverMenu n'ajoute pas « undefined » quand additional est omis", () => {
+    render(<PopoverMenu><span>Entrée</span></PopoverMenu>);
+    expect(screen.getByText("Entrée").parentElement!.className).not.toMatch(/\bundefined\b/);
+  });
+
+  it.each([
+    ["MenuButton", MenuButton],
+    ["MenuButtonDanger", MenuButtonDanger],
+  ])("%s n'ajoute pas « undefined » quand additional est omis", (_n, Comp) => {
+    render(<Comp>Action</Comp>);
+    expect(screen.getByRole("button").className).not.toMatch(/\bundefined\b/);
+  });
+});

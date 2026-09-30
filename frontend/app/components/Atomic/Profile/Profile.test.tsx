@@ -48,3 +48,32 @@ describe("AvatarContainer", () => {
     expect(container.querySelector(".animate-gradient-xy")).toBeInTheDocument();
   });
 });
+
+describe("AvatarContainer – classes CSS", () => {
+  const classesOf = (container: HTMLElement) =>
+    [...container.querySelectorAll("[class]")].map((el) => el.getAttribute("class")).join(" ");
+
+  it.each([["utilisateur standard", "Yvan"], ["utilisateur spécial", "Yvantmtc"], ["sans nom", undefined]])(
+    "n'écrit jamais « false » ni « undefined » dans les classes (%s)",
+    (_label, username) => {
+      const { container } = render(<AvatarContainer url="x.png" username={username} />);
+      expect(classesOf(container)).not.toMatch(/\b(false|undefined|null)\b/);
+    },
+  );
+
+  it("donne une bordure à l'avatar standard mais pas au spécial", () => {
+    const { unmount } = render(<AvatarContainer url="x.png" username="Yvan" />);
+    expect(screen.getByAltText("Avatar")).toHaveClass("border-4", "border-bg1");
+    unmount();
+    render(<AvatarContainer url="x.png" username="Yvantmtc" />);
+    expect(screen.getByAltText("Avatar")).not.toHaveClass("border-4");
+  });
+
+  it("applique le dégradé animé uniquement à l'utilisateur spécial", () => {
+    const { container, unmount } = render(<AvatarContainer url="x.png" username="Yvantmtc" />);
+    expect(container.querySelector(".animate-gradient-xy")).toBeInTheDocument();
+    unmount();
+    const standard = render(<AvatarContainer url="x.png" username="Yvan" />);
+    expect(standard.container.querySelector(".animate-gradient-xy")).not.toBeInTheDocument();
+  });
+});

@@ -38,10 +38,10 @@ const configOptions = {
 };
 
 export default function SpotifyLiveCard({data,currentProgress,size='md'}:{
-  isListening: boolean,
+  isListening?: boolean, // réservé aux futurs contrôles de lecture (actuellement commentés)
   data: SpotifyListeningData | null,
   currentProgress: number,
-  size: 'xs' | 'md' | 'lg'
+  size?: 'xs' | 'md' | 'lg'
 }) {
   // const { pause, resume, next, previous } = useSpotify();
   const { t } = useLanguage();
@@ -66,7 +66,7 @@ export default function SpotifyLiveCard({data,currentProgress,size='md'}:{
       <div className={`relative flex items-center ${config.gap}`}>
         
         {/* Pochette d'album */}
-        <img src={data.cover_url} alt={data.album_name} className={`${config.image} shadow-lg object-cover$`}/>
+        <img src={data.cover_url} alt={data.album_name} className={`${config.image} shadow-lg object-cover`}/>
 
         {/* Infos Titre / Artiste */}
         <div className="flex-1 min-w-0">

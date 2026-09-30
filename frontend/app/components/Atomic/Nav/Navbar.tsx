@@ -1,6 +1,10 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
 
-export function HeaderLogo({onClick}:any) {
+interface ClickableProps { children?: ReactNode; onClick?: () => void }
+interface StyledProps { children?: ReactNode; additional?: string }
+
+export function HeaderLogo({onClick}:{onClick?: () => void}) {
   const agencement = 'flex items-center w-fit';
   const forme = 'gap-2 lg:gap-3';
   const couleur = 'text1 text-[28px] md:text-[32px] lg:text-[40px] tracking-tighter font-semibold';
@@ -14,7 +18,7 @@ export function HeaderLogo({onClick}:any) {
   );
 }
 
-export function NavButton({children,onClick}:any) {
+export function NavButton({children,onClick}:ClickableProps) {
   const agencement = 'w-fit h-fit flex items-center gap-1 lg:gap-2';
   const forme = 'text-md xl:text-2xl';
   const couleur = 'text1 hover:text-vert';
@@ -27,7 +31,7 @@ export function NavButton({children,onClick}:any) {
   );
 }
 
-export function PopoverMenu({children,additional}:any) {
+export function PopoverMenu({children,additional=''}:StyledProps) {
   const agencement = 'absolute top-full left-1/2 -translate-x-1/2 z-50 overflow-hidden whitespace-nowrap';
   const forme = 'rounded-xl mt-1 p-1';
   const couleur = 'bg-bg2 border border-white/10 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible';
@@ -40,7 +44,7 @@ export function PopoverMenu({children,additional}:any) {
   );
 }
 
-export function MenuButton({children,onClick,additional,label}:any) {
+export function MenuButton({children,onClick,additional='',label}:ClickableProps & StyledProps & { label?: string }) {
   const agencement = 'flex items-center text-left';
   const forme = 'w-full px-3 py-2.5 rounded-lg gap-4';
   const couleur = 'text-sm hover:text-vert hover:bg-white/[0.05]';
@@ -53,7 +57,7 @@ export function MenuButton({children,onClick,additional,label}:any) {
   );
 }
 
-export function MenuButtonDanger({children,onClick,additional,label}:any) {
+export function MenuButtonDanger({children,onClick,additional='',label}:ClickableProps & StyledProps & { label?: string }) {
   const agencement = 'flex items-center text-left';
   const forme = 'w-full px-3 py-2.5 rounded-lg gap-4';
   const couleur = 'text-sm text-red-400 hover:bg-red-500/10';
