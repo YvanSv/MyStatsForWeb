@@ -30,9 +30,11 @@ async def get_resume_data(
         "streams": func.count(TrackHistory.id),
         "minutes": func.sum(TrackHistory.ms_played)
     }
-    artist_sort = f_artist if sort == "rating" else sort_mapping.get(sort)
-    album_sort = f_track if sort == "rating" else sort_mapping.get(sort)
-    track_sort = f_album if sort == "rating" else sort_mapping.get(sort)
+    # Critère inconnu -> tri par nombre d'écoutes (sinon desc(None) provoque une erreur 500)
+    default_sort = sort_mapping.get(sort, sort_mapping["streams"])
+    artist_sort = f_artist if sort == "rating" else default_sort
+    album_sort = f_album if sort == "rating" else default_sort
+    track_sort = f_track if sort == "rating" else default_sort
 
     # Exécution des tops
     top_artists = get_top_entities(db, user_id, range, start_date, end_date, f_artist, artist_sort, Artist, Artist.id)
@@ -115,6 +117,11 @@ def get_top_entities(db, user_id, range, start, end, rating_f, sort_column, mode
 
     # 3. JOINTURES (Utilisation des IDs Integer)
     query = query.join(TrackHistory, id_field == fk_column)
+
+    # La formule de rating utilise Track.duration_ms : pour les artistes et les albums, Track doit être
+    # joint explicitement, sinon PostgreSQL fait un produit cartésien (requête très lente, compteurs faux)
+    if model != Track:
+        query = query.join(Track, Track.id == TrackHistory.track_id)
     
     # Si on demande le Top Tracks, il nous faut l'image de l'album
     if model == Track:
