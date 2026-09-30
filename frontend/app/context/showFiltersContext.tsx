@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLanguage } from './languageContext';
+import { readStorage, writeStorage } from './storage';
 
 interface ShowFiltersContextType {
   showFilters: boolean;
@@ -14,14 +15,16 @@ export function ShowFiltersProvider({ children }: { children: React.ReactNode })
   const [showFilters, setShowFilters] = useState<boolean>(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('globalShowFilters');
-    if (saved !== null) { setShowFilters(JSON.parse(saved)); }
+    const saved = readStorage('globalShowFilters');
+    // Seules les valeurs « true » et « false » sont acceptées (JSON invalide ou autre type ignoré)
+    if (saved === 'true') setShowFilters(true);
+    else if (saved === 'false') setShowFilters(false);
   }, []);
 
   const toggleShowFilters = () => {
     setShowFilters(prev => {
       const next = !prev;
-      localStorage.setItem('globalShowFilters', JSON.stringify(next));
+      writeStorage('globalShowFilters', JSON.stringify(next));
       return next;
     });
   };

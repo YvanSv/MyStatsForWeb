@@ -1,8 +1,13 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { languages } from '../constants/locales/lang';
+import { readStorage, writeStorage } from './storage';
 
 type LanguageType = keyof typeof languages;
+
+// Object.hasOwn : « constructor » ou « __proto__ » ne sont pas des langues
+const isLanguage = (value: unknown): value is LanguageType =>
+  typeof value === 'string' && Object.hasOwn(languages, value);
 interface LanguageContextType {
   language: LanguageType;
   t: typeof languages['fr'];
@@ -15,13 +20,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<LanguageType>("fr");
 
   useEffect(() => {
-    const saved = localStorage.getItem('language') as LanguageType;
-    if (saved !== null) { setLanguage(saved); }
+    const saved = readStorage('language');
+    if (isLanguage(saved)) setLanguage(saved);
   }, []);
 
   const changeLanguage = (newLanguage:string) => {
-    setLanguage(newLanguage as LanguageType);
-    localStorage.setItem('language', newLanguage);
+    if (!isLanguage(newLanguage)) return;
+    setLanguage(newLanguage);
+    writeStorage('language', newLanguage);
   };
 
   const t = languages[language];

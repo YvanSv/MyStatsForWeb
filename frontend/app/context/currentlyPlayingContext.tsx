@@ -31,6 +31,7 @@ const SpotifyContext = createContext<SpotifyContextType | undefined>(undefined);
 export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { request } = useApi();
     const { isLoggedIn } = useAuth();
+    const { t } = useLanguage();
     const [paused, setPaused] = useState(true);
     const [listening, setListening] = useState<{ is_listening: boolean; data: SpotifyListeningData | null }>({
         is_listening: false,
@@ -45,7 +46,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             // SI ON REÇOIT DE LA DATA (Lecture ou Pause)
             if (res && res.data) {
                 setListening(res);
-                setPaused(res.is_listening);
+                setPaused(!res.is_listening);
                 setLocalProgress(res.data.progress_ms);
             } 
             // SI SPOTIFY RENVOIE VIDE (Session terminée)
@@ -55,7 +56,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             }
             // On NE met PAS data à null ici pour garder l'affichage de la dernière track
         } catch (e) {console.error(e)}
-    }, [request]);
+    }, [request, isLoggedIn]);
 
     // Polling API toutes les 15 secondes
     useEffect(() => {
@@ -88,12 +89,12 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setTimeout(fetchCurrent, 500);
     }, [fetchCurrent]);
 
-    const handleSpotifyError = (error: any) => {
+    const handleSpotifyError = useCallback((error: any) => {
         const status = error.status || error.response?.status;
-        if (status === 403) toast.error("Spotify Premium est requis", {duration: 5000});
-        else if (status === 404) toast.error("Aucun appareil actif");
-        else toast.error("Erreur Spotify");
-    };
+        if (status === 403) toast.error(t.api.spotifyPremiumRequired, {duration: 5000});
+        else if (status === 404) toast.error(t.api.spotifyNoDevice);
+        else toast.error(t.api.spotifyError);
+    }, [t]);
 
     const pause = useCallback(async () => {
         try {
@@ -102,7 +103,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setPaused(true);
             refreshAfterAction();
         } catch(e) {handleSpotifyError(e)}
-    }, [request, refreshAfterAction]);
+    }, [request, refreshAfterAction, handleSpotifyError]);
 
     const resume = useCallback(async () => {
         try {
@@ -111,21 +112,21 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setPaused(false);
             refreshAfterAction();
         } catch(e) {handleSpotifyError(e)}
-    }, [request, refreshAfterAction]);
+    }, [request, refreshAfterAction, handleSpotifyError]);
 
     const next = useCallback(async () => {
         try {
             await request(API_ENDPOINTS.NEXT, { method: 'POST' });
             refreshAfterAction();
         } catch(e) {handleSpotifyError(e)}
-    }, [request, refreshAfterAction]);
+    }, [request, refreshAfterAction, handleSpotifyError]);
 
     const previous = useCallback(async () => {
         try {
             await request(API_ENDPOINTS.PREVIOUS, { method: 'POST' });
             refreshAfterAction();
         } catch(e) {handleSpotifyError(e)}
-    }, [request, refreshAfterAction]);
+    }, [request, refreshAfterAction, handleSpotifyError]);
 
     return (
         <SpotifyContext.Provider value={{

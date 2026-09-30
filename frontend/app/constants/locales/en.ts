@@ -89,6 +89,9 @@ export const en = {
     currentListeningOff: "Radio silence on Spotify",
     statusActive: "System Active",
     statusRateLimited: "Rate Limited",
+    spotifyPremiumRequired: "Spotify Premium is required",
+    spotifyNoDevice: "No active device",
+    spotifyError: "Spotify error",
   },
   error: {
     title1: "Private Access",

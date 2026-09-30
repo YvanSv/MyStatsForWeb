@@ -89,6 +89,9 @@ export const fr = {
     currentListeningOff: "Silence radio sur Spotify",
     statusActive: "Système actif",
     statusRateLimited: "Limite atteinte",
+    spotifyPremiumRequired: "Spotify Premium est requis",
+    spotifyNoDevice: "Aucun appareil actif",
+    spotifyError: "Erreur Spotify",
   },
   error: {
     title1: "Accès Privé",

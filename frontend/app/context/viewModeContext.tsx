@@ -2,8 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLanguage } from './languageContext';
+import { readStorage, writeStorage } from './storage';
 
-type ViewMode = 'grid_sm' | 'grid' | 'list';
+const VIEW_MODES = ['grid_sm', 'grid', 'list'] as const;
+type ViewMode = (typeof VIEW_MODES)[number];
+
+const isViewMode = (value: unknown): value is ViewMode => VIEW_MODES.includes(value as ViewMode);
 
 interface ViewModeContextType {
   viewMode: ViewMode;
@@ -16,13 +20,13 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   useEffect(() => {
-    const saved = localStorage.getItem('globalViewMode') as ViewMode;
-    if (saved) setViewMode(saved);
+    const saved = readStorage('globalViewMode');
+    if (isViewMode(saved)) setViewMode(saved);
   }, []);
 
   const toggleViewMode = (mode: ViewMode) => {
     setViewMode(mode);
-    localStorage.setItem('globalViewMode', mode);
+    writeStorage('globalViewMode', mode);
   };
 
   return (
