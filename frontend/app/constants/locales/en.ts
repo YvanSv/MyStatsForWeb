@@ -230,7 +230,7 @@ export const en = {
     errorNoFile: "Please select at least one file.",
     errorGeneric: "Error during importation.",
     errorWs: "Connection error to progress tracker.",
-    successImport: (count: any) => `${count} streams imported!`,
+    successImport: (count: number) => `${count} streams imported!`,
     loadingBtn: "Importing...",
     submitBtn: "Start import",
     footerHint: "Only Streaming_History_Audio_X.json files are supported",
@@ -326,10 +326,10 @@ export const en = {
   resume: {
     title: "Your universe",
     share: "Share",
-    topArtist: "",
-    totalTime: "",
-    topTrack: "",
-    artistStats: "",
+    topArtist: "Artist #1",
+    topTrack: "Track #1",
+    totalTime: "Listening time",
+    totalStreams: "Number of streams",
     download: "Download"
   }
 }

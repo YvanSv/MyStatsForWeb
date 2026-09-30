@@ -230,7 +230,7 @@ export const fr = {
     errorNoFile: "Veuillez sélectionner au moins un fichier.",
     errorGeneric: "Erreur lors de l'importation.",
     errorWs: "Erreur de connexion au suivi de progression.",
-    successImport: (count: any) => `${count} écoutes importées !`,
+    successImport: (count: number) => `${count} écoutes importées !`,
     loadingBtn: "Importation en cours...",
     submitBtn: "Lancer l'importation",
     footerHint: "Seuls les fichiers Streaming_History_Audio_X.json sont supportés",
@@ -326,10 +326,10 @@ export const fr = {
   resume: {
     title: "Votre univers",
     share: "Partager",
-    topArtist: "",
-    totalTime: "",
-    topTrack: "",
-    artistStats: "",
+    topArtist: "Artiste n°1",
+    topTrack: "Titre n°1",
+    totalTime: "Temps d'écoute",
+    totalStreams: "Nombre de streams",
     download: "Télécharger"
   }
 }

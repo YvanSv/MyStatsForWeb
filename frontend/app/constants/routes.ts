@@ -1,4 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+// Sans slash final, pour ne pas produire « http://hote//auth » quand la variable en contient un
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 const API_AUTH = API_BASE_URL+"/auth";
 const API_IMPORT = API_BASE_URL+"/import";
 const API_MY_DATA = API_BASE_URL+"/data/my";
