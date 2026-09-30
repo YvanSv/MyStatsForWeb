@@ -1,11 +1,24 @@
 import { useLanguage } from "../context/languageContext";
 
+/**
+ * Extrait un message lisible du détail d'une erreur :
+ * - une chaîne (ex : message fourni directement) est utilisée telle quelle ;
+ * - `{ detail: "..." }` est le format des HTTPException FastAPI ;
+ * - sinon (ex : erreurs de validation 422, sous forme de liste) on garde un code générique.
+ */
+const extractMessage = (detail: unknown): string => {
+  if (typeof detail === "string" && detail) return detail;
+  const nested = (detail as { detail?: unknown } | null | undefined)?.detail;
+  if (typeof nested === "string" && nested) return nested;
+  return "API_ERROR";
+};
+
 export class ApiError extends Error {
   status: number;
   detail: any;
 
   constructor(status: number, detail: any) {
-    super("API_ERROR");
+    super(extractMessage(detail));
     this.status = status;
     this.detail = detail;
   }

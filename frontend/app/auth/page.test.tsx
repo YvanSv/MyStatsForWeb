@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { languages } from "../constants/locales/lang";
+import { ApiError } from "../services/api";
 import AuthPage from "./page";
 
 const dict = languages.fr.auth;
@@ -420,6 +421,7 @@ describe("AuthPage – erreurs Spotify dans l'URL", () => {
     ["spotify_token_error", dict.spotifyError2],
     ["spotify_profile_error", dict.spotifyError3],
     ["missing_code", dict.spotifyError4],
+    ["access_denied", dict.spotifyError1],
   ])("traduit le code « %s » en message lisible", (code, message) => {
     setError(code);
     render(<AuthPage />);
@@ -430,12 +432,6 @@ describe("AuthPage – erreurs Spotify dans l'URL", () => {
     setError("quelque_chose");
     render(<AuthPage />);
     expect(screen.getByText(`${dict.spotifyErrorTemplate} : quelque_chose`)).toBeInTheDocument();
-  });
-
-  it("affiche le code brut pour « access_denied » (code renvoyé par Spotify quand l'utilisateur annule)", () => {
-    setError("access_denied");
-    render(<AuthPage />);
-    expect(screen.getByText(`${dict.spotifyErrorTemplate} : access_denied`)).toBeInTheDocument();
   });
 
   it("n'affiche aucune erreur sans paramètre dans l'URL", () => {
@@ -475,5 +471,35 @@ describe("AuthPage – erreurs Spotify dans l'URL", () => {
     await user.click(connectButton());
     expect(await screen.findByText("Refusé")).toBeInTheDocument();
     expect(screen.queryByText(dict.spotifyError4)).not.toBeInTheDocument();
+  });
+});
+
+describe("AuthPage – avec de vraies ApiError (format des erreurs FastAPI)", () => {
+  it("affiche le message du backend à la connexion, et non « API_ERROR »", async () => {
+    h.auth.login = vi.fn().mockRejectedValue(new ApiError(401, { detail: "Email ou mot de passe incorrect" }));
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await fillLogin(user);
+    await user.click(connectButton());
+    expect(await screen.findByText("Email ou mot de passe incorrect")).toBeInTheDocument();
+    expect(screen.queryByText("API_ERROR")).not.toBeInTheDocument();
+  });
+
+  it("affiche le message du backend sur un 400 à l'inscription", async () => {
+    h.auth.register = vi.fn().mockRejectedValue(new ApiError(400, { detail: "Cet email est déjà utilisé" }));
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await fillRegister(user);
+    await user.click(createButton());
+    expect(await screen.findByText("Cet email est déjà utilisé")).toBeInTheDocument();
+  });
+
+  it("affiche l'erreur de mot de passe sur un 422 (détail de validation sous forme de liste)", async () => {
+    h.auth.register = vi.fn().mockRejectedValue(new ApiError(422, { detail: [{ loc: ["body", "password"], msg: "trop court" }] }));
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await fillRegister(user);
+    await user.click(createButton());
+    expect(await screen.findByText(dict.errorPw1)).toBeInTheDocument();
   });
 });

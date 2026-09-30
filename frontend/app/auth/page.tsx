@@ -47,6 +47,8 @@ function AuthContent() {
     if (error) {
       const errorMap: Record<string, string> = {
         "spotify_cancelled": dict.spotifyError1,
+        // Code renvoyé tel quel par Spotify quand l'utilisateur annule l'autorisation
+        "access_denied": dict.spotifyError1,
         "spotify_token_error": dict.spotifyError2,
         "spotify_profile_error": dict.spotifyError3,
         "missing_code": dict.spotifyError4
