@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { languages } from "../constants/locales/lang";
 import { ApiError } from "../services/api";
@@ -294,7 +294,8 @@ describe("AuthPage – inscription", () => {
     render(<AuthPage />);
     await fillRegister(user, { password: "motdepasse", confirm: "autrechose" });
     await user.click(createButton());
-    expect(screen.getByText(dict.errorPw3)).toBeInTheDocument();
+    // l'erreur est signalée sous le champ ET dans le message du formulaire
+    expect(screen.getAllByText(dict.errorPw3).length).toBeGreaterThanOrEqual(1);
     expect(h.auth.register).not.toHaveBeenCalled();
   });
 
@@ -311,7 +312,7 @@ describe("AuthPage – inscription", () => {
     render(<AuthPage />);
     await fillRegister(user, { confirm: "autrechose" });
     await user.click(createButton());
-    expect(screen.getByText(dict.errorPw3)).toBeInTheDocument();
+    expect(screen.getAllByText(dict.errorPw3).length).toBeGreaterThanOrEqual(1);
     await user.clear(regConfirm());
     await user.type(regConfirm(), "motdepasse");
     await user.click(createButton());
@@ -332,13 +333,13 @@ describe("AuthPage – inscription", () => {
     expect(await screen.findByPlaceholderText("MusicFan_01")).toBeInTheDocument();
   });
 
-  it("affiche l'erreur de format (mot de passe) sur un 422", async () => {
+  it("affiche l'erreur de validation du serveur sur un 422", async () => {
     h.auth.register = vi.fn().mockRejectedValue(apiError(422));
     const user = userEvent.setup();
     render(<AuthPage />);
     await fillRegister(user);
     await user.click(createButton());
-    expect(await screen.findByText(dict.errorPw1)).toBeInTheDocument();
+    expect(await screen.findByText(dict.errorRegisterInvalid)).toBeInTheDocument();
   });
 
   it("affiche le message de l'API sur un 400 (ex : email déjà utilisé)", async () => {
@@ -494,12 +495,144 @@ describe("AuthPage – avec de vraies ApiError (format des erreurs FastAPI)", ()
     expect(await screen.findByText("Cet email est déjà utilisé")).toBeInTheDocument();
   });
 
-  it("affiche l'erreur de mot de passe sur un 422 (détail de validation sous forme de liste)", async () => {
+  it("affiche l'erreur de validation sur un 422 (détail de validation sous forme de liste)", async () => {
     h.auth.register = vi.fn().mockRejectedValue(new ApiError(422, { detail: [{ loc: ["body", "password"], msg: "trop court" }] }));
     const user = userEvent.setup();
     render(<AuthPage />);
     await fillRegister(user);
     await user.click(createButton());
-    expect(await screen.findByText(dict.errorPw1)).toBeInTheDocument();
+    expect(await screen.findByText(dict.errorRegisterInvalid)).toBeInTheDocument();
+  });
+});
+
+describe("AuthPage – validation de l'inscription côté client", () => {
+  const field = (v: string) => screen.queryByText(v);
+
+  it("n'affiche aucune erreur tant que les champs sont vides", () => {
+    render(<AuthPage />);
+    for (const msg of [dict.errorUsernameMin, dict.errorUsernameMax, dict.errorPw1, dict.errorPwMax, dict.errorPw3, dict.errorRequired])
+      expect(field(msg)).not.toBeInTheDocument();
+  });
+
+  it("signale un nom d'utilisateur trop court, puis trop long, puis valide", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.type(regUsername(), "ab");
+    expect(screen.getByText(dict.errorUsernameMin)).toBeInTheDocument();
+    expect(regUsername()).toHaveAttribute("aria-invalid", "true");
+    await user.clear(regUsername());
+    await user.type(regUsername(), "a".repeat(21));
+    expect(field(dict.errorUsernameMin)).not.toBeInTheDocument();
+    expect(screen.getByText(dict.errorUsernameMax)).toBeInTheDocument();
+    await user.clear(regUsername());
+    await user.type(regUsername(), "a".repeat(20));
+    expect(field(dict.errorUsernameMax)).not.toBeInTheDocument();
+    expect(regUsername()).toHaveAttribute("aria-invalid", "false");
+  });
+
+  it("des espaces autour du pseudo ne comptent pas dans la longueur", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.type(regUsername(), "  ab  ");
+    expect(screen.getByText(dict.errorUsernameMin)).toBeInTheDocument();
+  });
+
+  it("signale un mot de passe trop court (moins de 8) et accepte exactement 8", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.type(regPassword(), "1234567");
+    expect(screen.getByText(dict.errorPw1)).toBeInTheDocument();
+    await user.type(regPassword(), "8");
+    expect(field(dict.errorPw1)).not.toBeInTheDocument();
+  });
+
+  it("signale un mot de passe de plus de 128 caractères, accepte exactement 128", async () => {
+    render(<AuthPage />);
+    fireEvent.change(regPassword(), { target: { value: "a".repeat(129) } });
+    expect(screen.getByText(dict.errorPwMax)).toBeInTheDocument();
+    fireEvent.change(regPassword(), { target: { value: "a".repeat(128) } });
+    expect(field(dict.errorPwMax)).not.toBeInTheDocument();
+  });
+
+  it("signale une confirmation différente dès la saisie, et la retire quand elle correspond", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.type(regPassword(), "motdepasse");
+    await user.type(regConfirm(), "motdepass");
+    expect(screen.getByText(dict.errorPw3)).toBeInTheDocument();
+    await user.type(regConfirm(), "e");
+    expect(field(dict.errorPw3)).not.toBeInTheDocument();
+  });
+
+  it("n'envoie rien et le dit quand un champ est vide", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await fillRegister(user, { username: "" });
+    await user.click(createButton());
+    expect(screen.getByText(dict.errorRequired)).toBeInTheDocument();
+    expect(h.auth.register).not.toHaveBeenCalled();
+  });
+
+  it("n'envoie rien avec un pseudo trop court et affiche l'erreur dans le formulaire", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await fillRegister(user, { username: "ab" });
+    await user.click(createButton());
+    expect(screen.getAllByText(dict.errorUsernameMin).length).toBeGreaterThanOrEqual(2);
+    expect(h.auth.register).not.toHaveBeenCalled();
+  });
+
+  it("n'envoie rien avec un mot de passe trop court", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await fillRegister(user, { password: "court", confirm: "court" });
+    await user.click(createButton());
+    expect(h.auth.register).not.toHaveBeenCalled();
+  });
+
+  it("envoie l'inscription quand tout est valide", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await fillRegister(user);
+    await user.click(createButton());
+    await waitFor(() => expect(h.auth.register).toHaveBeenCalledWith("Yvan", "yvan@example.com", "motdepasse"));
+  });
+
+  it("l'erreur d'un champ est reliée à son champ (aria-describedby)", async () => {
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.type(regUsername(), "ab");
+    expect(regUsername()).toHaveAccessibleDescription(dict.errorUsernameMin);
+  });
+});
+
+describe("AuthPage – saisie automatique et libellés des champs", () => {
+  it("indique les bons autoComplete pour la connexion", () => {
+    render(<AuthPage />);
+    expect(loginEmail()).toHaveAttribute("autocomplete", "username");
+    expect(loginPassword()).toHaveAttribute("autocomplete", "current-password");
+  });
+
+  it("indique les bons autoComplete pour l'inscription (nouveau mot de passe)", () => {
+    render(<AuthPage />);
+    expect(regUsername()).toHaveAttribute("autocomplete", "username");
+    expect(regEmail()).toHaveAttribute("autocomplete", "email");
+    expect(regPassword()).toHaveAttribute("autocomplete", "new-password");
+    expect(regConfirm()).toHaveAttribute("autocomplete", "new-password");
+  });
+
+  it("relie chaque champ à son libellé (accessibles par leur nom)", () => {
+    render(<AuthPage />);
+    expect(screen.getAllByLabelText(dict.emailtitle)).toHaveLength(2);
+    expect(screen.getAllByLabelText(dict.pw)).toHaveLength(2);
+    expect(screen.getByLabelText(dict.username)).toBeInTheDocument();
+    expect(screen.getByLabelText(dict.confirm)).toBeInTheDocument();
+  });
+
+  it("les identifiants des champs de connexion et d'inscription sont tous distincts", () => {
+    const { container } = render(<AuthPage />);
+    const ids = [...container.querySelectorAll("input[id]")].map((i) => i.id);
+    expect(ids.length).toBeGreaterThanOrEqual(6);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

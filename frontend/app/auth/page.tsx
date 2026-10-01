@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useAuth } from "../context/authContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FRONT_ROUTES } from "../constants/routes";
@@ -27,11 +27,13 @@ const AUTH_STYLES = {
   ERROR_BOX: "bg-rouge/10 border border-rouge/20 text-rouge text-[10px] p-3 rounded-xl animate-shake",
   SUCCESS_BOX: "bg-vert/10 border border-vert/20 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500",
   PRIMARY_BUTTON: `text1 w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold border border-white/5 mt-4 transition-all active:scale-[0.98]`,
+  FIELD_ERROR: "text-rouge text-[10px] pt-1",
   FOOTER_TEXT: `text3 text-[10px] text-center mt-4 leading-relaxed px-4`
 };
 
 function AuthContent() {
   const router = useRouter();
+  const uid = useId();
   const searchParams = useSearchParams();
   const { login, register, loginSpotify } = useAuth();
   const { t } = useLanguage();
@@ -83,10 +85,22 @@ function AuthContent() {
     } finally {setLoading(false)}
   };
 
+  // Erreurs d'inscription calculées à partir des valeurs saisies (mêmes limites que le serveur : pseudo 3 à 20, mot de passe 8 à 128).
+  // Un champ vide n'affiche pas d'erreur tant qu'on ne valide pas le formulaire.
+  const registerErrors = {
+    username: regData.username === "" ? "" : regData.username.trim().length < 3 ? dict.errorUsernameMin : regData.username.trim().length > 20 ? dict.errorUsernameMax : "",
+    password: regData.password === "" ? "" : regData.password.length < 8 ? dict.errorPw1 : regData.password.length > 128 ? dict.errorPwMax : "",
+    confirm: regData.confirmPassword !== "" && regData.confirmPassword !== regData.password ? dict.errorPw3 : "",
+  };
+
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterMessage({ type: "", text: "" });
 
+    if (!regData.username.trim() || !regData.email.trim() || !regData.password || !regData.confirmPassword)
+      return setRegisterMessage({ type: "error", text: dict.errorRequired });
+    const firstError = registerErrors.username || registerErrors.password || registerErrors.confirm;
+    if (firstError) return setRegisterMessage({ type: "error", text: firstError });
     if (regData.password !== regData.confirmPassword)
       return setRegisterMessage({ type: "error", text: dict.errorPw3 });
 
@@ -99,7 +113,7 @@ function AuthContent() {
       });
     } catch (err) {
       const status = (err as { status?: number }).status;
-      if (status === 422) setRegisterMessage({type: "error",text: dict.errorPw1});
+      if (status === 422) setRegisterMessage({type: "error",text: dict.errorRegisterInvalid});
       else if (status === 400) setRegisterMessage({type: "error",text: err instanceof Error ? err.message : dict.errorPw2});
       else setRegisterMessage({type: "error",text: dict.errorPw2});
     } finally {setLoading(false)}
@@ -126,15 +140,15 @@ function AuthContent() {
             <div className={AUTH_STYLES.ERROR_BOX}>{loginMessage.text}</div>
           )}
           <div className="space-y-1">
-            <label className={AUTH_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
-            <input className={AUTH_STYLES.INPUT_FIELD}
+            <label htmlFor={`${uid}-login-email`} className={AUTH_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
+            <input id={`${uid}-login-email`} className={AUTH_STYLES.INPUT_FIELD} autoComplete="username"
               value={loginData.email} placeholder={dict.templateemail} type="email"
               onChange={(e) => setLoginData({...loginData, email: e.target.value})} 
             />
           </div>
           <div className="space-y-1">
-            <label className={AUTH_STYLES.INPUT_LABEL}>{dict.pw}</label>
-            <input type="password" value={loginData.password} placeholder="••••••••"
+            <label htmlFor={`${uid}-login-pw`} className={AUTH_STYLES.INPUT_LABEL}>{dict.pw}</label>
+            <input id={`${uid}-login-pw`} autoComplete="current-password" type="password" value={loginData.password} placeholder="••••••••"
               onChange={(e) => setLoginData({...loginData, password: e.target.value})}
               className={AUTH_STYLES.INPUT_FIELD}
             />
@@ -156,33 +170,39 @@ function AuthContent() {
             </div>
           )}
           <div className="space-y-1">
-            <label className={AUTH_STYLES.INPUT_LABEL}>{dict.username}</label>
-            <input type="text" value={regData.username} placeholder="MusicFan_01"
+            <label htmlFor={`${uid}-reg-username`} className={AUTH_STYLES.INPUT_LABEL}>{dict.username}</label>
+            <input id={`${uid}-reg-username`} autoComplete="username" type="text" value={regData.username} placeholder="MusicFan_01"
+              aria-invalid={!!registerErrors.username} aria-describedby={registerErrors.username ? `${uid}-reg-username-err` : undefined}
               onChange={(e) => setRegData({...regData, username: e.target.value})}
               className={AUTH_STYLES.INPUT_FIELD}
             />
+            {registerErrors.username && <p id={`${uid}-reg-username-err`} className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.username}</p>}
           </div>
           <div className="space-y-1">
-            <label className={AUTH_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
-            <input type="email" value={regData.email} placeholder={dict.templateemail}
+            <label htmlFor={`${uid}-reg-email`} className={AUTH_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
+            <input id={`${uid}-reg-email`} autoComplete="email" type="email" value={regData.email} placeholder={dict.templateemail}
               onChange={(e) => setRegData({...regData, email: e.target.value})}
               className={AUTH_STYLES.INPUT_FIELD}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className={AUTH_STYLES.INPUT_LABEL}>{dict.pw}</label>
-              <input type="password" value={regData.password} placeholder="••••"
+              <label htmlFor={`${uid}-reg-pw`} className={AUTH_STYLES.INPUT_LABEL}>{dict.pw}</label>
+              <input id={`${uid}-reg-pw`} autoComplete="new-password" type="password" value={regData.password} placeholder="••••"
+                aria-invalid={!!registerErrors.password} aria-describedby={registerErrors.password ? `${uid}-reg-pw-err` : undefined}
                 onChange={(e) => setRegData({...regData, password: e.target.value})}
                 className={AUTH_STYLES.INPUT_FIELD} 
               />
+              {registerErrors.password && <p id={`${uid}-reg-pw-err`} className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.password}</p>}
             </div>
             <div className="space-y-1">
-              <label className={AUTH_STYLES.INPUT_LABEL}>{dict.confirm}</label>
-              <input type="password" value={regData.confirmPassword} placeholder="••••"
+              <label htmlFor={`${uid}-reg-confirm`} className={AUTH_STYLES.INPUT_LABEL}>{dict.confirm}</label>
+              <input id={`${uid}-reg-confirm`} autoComplete="new-password" type="password" value={regData.confirmPassword} placeholder="••••"
+                aria-invalid={!!registerErrors.confirm} aria-describedby={registerErrors.confirm ? `${uid}-reg-confirm-err` : undefined}
                 onChange={(e) => setRegData({...regData, confirmPassword: e.target.value})}
                 className={AUTH_STYLES.INPUT_FIELD}
               />
+              {registerErrors.confirm && <p id={`${uid}-reg-confirm-err`} className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.confirm}</p>}
             </div>
           </div>
 
