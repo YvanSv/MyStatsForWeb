@@ -38,9 +38,11 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
             >
               {/* Image avec Overlay de Rank */}
               <div className="relative aspect-square mb-3 overflow-hidden rounded-xl shadow-lg border border-white/5">
-                <img src={item.image_url} alt={item.name}
-                  className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110`}
-                />
+                {item.image_url
+                  ? <img src={item.image_url} alt={item.name}
+                      className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110`}
+                    />
+                  : <div data-testid="top-image-fallback" className="w-full h-full bg-white/5"/>}
                 {/* Badge de classement */}
                 <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
                   <span className="text-[10px] font-mono font-bold text-white">#{index + 1}</span>
@@ -72,12 +74,16 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
                 className="relative bg-bg1 border border-white/10 w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl"
               >
                 {/* Image de fond floutée pour le style */}
-                <div className="absolute top-0 inset-x-0 h-32 opacity-20 blur-2xl" 
-                  style={{ backgroundImage: `url(${selectedItem.image_url})`, backgroundSize: 'cover' }}
-                />
+                {selectedItem.image_url && (
+                  <div className="absolute top-0 inset-x-0 h-32 opacity-20 blur-2xl" 
+                    style={{ backgroundImage: `url(${selectedItem.image_url})`, backgroundSize: 'cover' }}
+                  />
+                )}
 
                 <div className="relative p-8 flex flex-col items-center">
-                  <img src={selectedItem.image_url} className="w-32 h-32 rounded-2xl shadow-2xl mb-6 border border-white/10" />
+                  {selectedItem.image_url
+                    ? <img src={selectedItem.image_url} alt="" className="w-32 h-32 rounded-2xl shadow-2xl mb-6 border border-white/10" />
+                    : <div data-testid="modal-image-fallback" className="w-32 h-32 rounded-2xl mb-6 border border-white/10 bg-white/5"/>}
                   
                   <h3 className="text-2xl font-black text-white text-center mb-1">{selectedItem.name}</h3>
                   <p className="text-vert font-bold mb-8 uppercase tracking-widest text-xs w-full text-center">
@@ -137,10 +143,11 @@ export function StatCard({title,value,sub,color}:{title:string,value:React.React
   );
 }
 
-export function TopStatCard({color,item}:{color:string,item:TopStatCardProps|null}) {
+export function TopStatCard({color,item,loading=false}:{color:string,item:TopStatCardProps|null|undefined,loading?:boolean}) {
+  // Trois états : chargement (spinner), échec ou absence de données (« — »), données
   if (!item) return(
     <div className="flex flex-col justify-between bg-bg2/40 backdrop-blur-md border duration-300 border-white/5 p-5 rounded-3xl hover:border-vert/30 transition-all group relative overflow-hidden h-full">
-      <LoadingSpinner/>
+      {loading ? <LoadingSpinner/> : <p data-testid="top-stat-empty" className="text3 text-2xl font-bold">—</p>}
     </div>
   );
   return (
@@ -153,7 +160,9 @@ export function TopStatCard({color,item}:{color:string,item:TopStatCardProps|nul
       </div>
 
       <div className="relative flex items-end w-full mt-auto">
-        <img src={item.img_url} alt={item.name} className="shadow-lg object-cover w-[50%] aspect-square rounded-xl border border-white/10"/>
+        {item.img_url
+          ? <img src={item.img_url} alt={item.name} className="shadow-lg object-cover w-[50%] aspect-square rounded-xl border border-white/10"/>
+          : <div data-testid="top-stat-image-fallback" className="bg-white/5 w-[50%] aspect-square rounded-xl border border-white/10"/>}
         
         <div className="flex-1 min-w-0 ml-4 flex flex-col justify-end">
           <h3 className="text-white font-bold truncate leading-tight text-sm">

@@ -128,8 +128,38 @@ describe("ProfilePage - erreurs", () => {
     const { container } = await renderPage();
     expect(screen.getByRole("heading", { level: 1, name: "Yvan" })).toBeInTheDocument();
     expect(console.error).toHaveBeenCalled();
-    // les cartes top restent en chargement
+    // plus de spinner infini : les cartes top affichent « — »
+    expect(container.querySelectorAll(".animate-spin")).toHaveLength(0);
+    expect(screen.getAllByTestId("top-stat-empty")).toHaveLength(2);
+    expect(screen.getByText(dict.statTime)).toBeInTheDocument();
+    expect(screen.getByText("Titre 1")).toBeInTheDocument();
+  });
+
+  it("affiche un spinner dans les cartes top tant que les tops se chargent", async () => {
+    h.getTops.mockReturnValue(new Promise(() => {}));
+    const { container } = await renderPage();
     expect(container.querySelectorAll(".animate-spin")).toHaveLength(2);
+    expect(screen.queryByTestId("top-stat-empty")).toBeNull();
+  });
+
+  it("réinitialise le top de l'ancien profil quand l'id change", async () => {
+    const { rerender, container } = await renderPage("a");
+    expect(screen.getByText("BestTrack")).toBeInTheDocument();
+    h.getProfile.mockResolvedValue(makeProfile({ display_name: "Autre" }));
+    h.getTops.mockReturnValue(new Promise(() => {}));
+    rerender(<ProfilePage id="b" />);
+    await act(async () => {});
+    expect(screen.queryByText("BestTrack")).toBeNull();
+    expect(container.querySelectorAll(".animate-spin")).toHaveLength(2);
+  });
+
+  it("n'affiche pas le top de l'ancien profil si les tops du nouveau échouent", async () => {
+    const { rerender } = await renderPage("a");
+    h.getTops.mockRejectedValue(new Error("tops"));
+    rerender(<ProfilePage id="b" />);
+    await act(async () => {});
+    expect(screen.queryByText("BestTrack")).toBeNull();
+    expect(screen.getAllByTestId("top-stat-empty")).toHaveLength(2);
   });
 
   it("ignore la réponse périmée d'un ancien profil quand l'id change", async () => {
@@ -144,6 +174,58 @@ describe("ProfilePage - erreurs", () => {
   });
 });
 
+describe("ProfilePage - profil privé", () => {
+  const privateProfile = () => makeProfile({ perms: { profile: false, stats: true, favorites: true, history: true, dashboard: true } });
+
+  it("affiche l'erreur d'accès privé à un visiteur quand le profil n'est pas public", async () => {
+    h.getProfile.mockResolvedValue(privateProfile());
+    await renderPage("autre");
+    expect(screen.getByText(t.error.title1)).toBeInTheDocument();
+    expect(screen.getByText(t.error.message1)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(screen.queryByText("Ma bio")).toBeNull();
+  });
+
+  it("affiche l'erreur d'accès privé à un visiteur anonyme", async () => {
+    h.auth = { user: null };
+    h.getProfile.mockResolvedValue(privateProfile());
+    await renderPage();
+    expect(screen.getByText(t.error.title1)).toBeInTheDocument();
+  });
+
+  it("montre toujours son profil au propriétaire même s'il n'est pas public", async () => {
+    h.getProfile.mockResolvedValue(privateProfile());
+    await renderPage("yvan");
+    expect(screen.getByRole("heading", { level: 1, name: "Yvan" })).toBeInTheDocument();
+    expect(screen.queryByText(t.error.title1)).toBeNull();
+  });
+});
+
+describe("ProfilePage - données incomplètes", () => {
+  it("remplace l'image absente d'un titre récent par un bloc neutre", async () => {
+    h.getProfile.mockResolvedValue(makeProfile({ recent_tracks: [{ ...track(1), image_url: null }, { ...track(2), image_url: "" }] }));
+    await renderPage();
+    expect(screen.getAllByTestId("track-image-fallback")).toHaveLength(2);
+    expect(screen.queryByAltText("Titre 1")).toBeNull();
+    expect(screen.getByText("Titre 1")).toBeInTheDocument();
+  });
+
+  it.each([[undefined], [null], [""], ["pas une date"]])("affiche « — » pour la date de lecture %j", async (played_at) => {
+    h.getProfile.mockResolvedValue(makeProfile({ recent_tracks: [{ ...track(1), played_at }] }));
+    await renderPage();
+    expect(screen.getByText("—")).toBeInTheDocument();
+    expect(screen.queryByText("Invalid Date")).toBeNull();
+  });
+
+  it("ne plante pas quand total_minutes, total_streams et peak_hour sont absents ou null", async () => {
+    h.getProfile.mockResolvedValue(makeProfile({ total_minutes: null, total_streams: undefined, peak_hour: null }));
+    await renderPage();
+    expect(screen.getByText(`(${dict.unitDays(0)})`)).toBeInTheDocument();
+    expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe("ProfilePage - contenu", () => {
   it("affiche avatar, bannière, nom et bio", async () => {
     await renderPage();
@@ -152,13 +234,16 @@ describe("ProfilePage - contenu", () => {
     expect(screen.getByText("Ma bio")).toBeInTheDocument();
   });
 
-  it("utilise l'image de bannière optimisée pour la bannière par défaut", async () => {
+  it.each([["/banner_template.jpg"], [null], [undefined], [""]])("utilise l'image de bannière optimisée pour la valeur %j", async (banner) => {
+    h.getProfile.mockResolvedValue(makeProfile({ banner }));
     await renderPage();
-    h.getProfile.mockResolvedValue(makeProfile({ banner: "/banner_template.jpg" }));
-    const { unmount } = await renderPage();
-    const imgs = screen.getAllByAltText("Banner");
-    expect(imgs.some((i) => (i.getAttribute("src") ?? "").includes("banner_template_1100x390"))).toBe(true);
-    unmount();
+    const src = screen.getByAltText("Banner").getAttribute("src") ?? "";
+    expect(src).toContain("banner_template_1100x390");
+  });
+
+  it("n'affiche pas la bannière par défaut quand une bannière personnalisée existe", async () => {
+    await renderPage();
+    expect(screen.getByAltText("Banner").getAttribute("src")).toBe("ban.jpg");
   });
 
   it("affiche les cartes de statistiques formatées", async () => {

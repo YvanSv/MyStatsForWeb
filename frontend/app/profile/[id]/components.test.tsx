@@ -43,10 +43,29 @@ describe("StatCard", () => {
 describe("TopStatCard", () => {
   const top = { name: "Morceau", img_url: "m.jpg", rating: 88, isTrack: true, artist_name: "Art", album_name: "Alb" };
 
-  it("affiche le spinner de chargement quand l'item est null", () => {
-    const { container } = render(<TopStatCard color="c" item={null} />);
+  it("affiche le spinner de chargement quand l'item est null et que le chargement est en cours", () => {
+    const { container } = render(<TopStatCard color="c" item={null} loading />);
     expect(container.querySelector(".animate-spin")).toBeInTheDocument();
     expect(screen.queryByRole("img")).toBeNull();
+  });
+
+  it.each([[null], [undefined]])("affiche « — » sans spinner quand l'item est %s et que le chargement est terminé", (value) => {
+    const { container } = render(<TopStatCard color="c" item={value} />);
+    expect(container.querySelector(".animate-spin")).toBeNull();
+    expect(screen.getByTestId("top-stat-empty")).toHaveTextContent("—");
+  });
+
+  it("affiche les données plutôt que le spinner même si le chargement est signalé", () => {
+    const { container } = render(<TopStatCard color="c" item={top} loading />);
+    expect(container.querySelector(".animate-spin")).toBeNull();
+    expect(screen.getByText("Morceau")).toBeInTheDocument();
+  });
+
+  it.each([[""], [null]])("remplace l'image absente (%j) par un bloc neutre", (img_url) => {
+    render(<TopStatCard color="c" item={{ ...top, img_url: img_url as any }} />);
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByTestId("top-stat-image-fallback")).toBeInTheDocument();
+    expect(screen.getByText("Morceau")).toBeInTheDocument();
   });
 
   it("affiche nom, note, image, artiste et album pour un morceau", () => {
@@ -86,6 +105,17 @@ describe("HorizontalTopSection", () => {
     expect(screen.getByText("Titre B")).toBeInTheDocument();
     expect(screen.getByText("0.9★")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Titre A" })).toHaveAttribute("src", "a.jpg");
+  });
+
+  it.each([[null], [""], [undefined]])("remplace l'image %j d'un élément par un bloc neutre, dans la liste et la modale", async (image_url) => {
+    const user = userEvent.setup();
+    const { container } = render(<HorizontalTopSection title="T" items={[item({ image_url })]} />);
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByTestId("top-image-fallback")).toBeInTheDocument();
+    await user.click(screen.getByText("Titre A"));
+    expect(screen.getByTestId("modal-image-fallback")).toBeInTheDocument();
+    expect(container.querySelector("img")).toBeNull();
+    expect(document.querySelector("[style*='background-image']")).toBeNull();
   });
 
   it("ouvre la modale avec les statistiques formatées au clic", async () => {

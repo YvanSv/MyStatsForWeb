@@ -16,6 +16,7 @@ import { ProfileSkeleton } from "./Skeleton";
 import { HorizontalTopSection, StatCard, TopStatCard } from "./components";
 import Image from 'next/image';
 import { useLanguage } from "@/app/context/languageContext";
+import { DEFAULT_BANNER_IMAGE, isDefaultBanner } from "@/app/constants/images";
 
 const PROFILE_STYLES = {
   MAIN_WRAPPER: "min-h-screen pb-20 bg-bg1",
@@ -44,6 +45,13 @@ const PROFILE_STYLES = {
   TRACK_DATE: `text3 text-xs font-mono`
 };
 
+// Date de lecture lisible, « — » si absente ou invalide
+const formatPlayedAt = (value: unknown, locale: string) => {
+  if (!value) return "—";
+  const date = new Date(value as string);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString(locale);
+};
+
 export default function ProfilePage({ id }: { id: string }) {
   const router = useRouter();
   const { t } = useLanguage();
@@ -51,6 +59,8 @@ export default function ProfilePage({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [topData, setTopData] = useState<UserProfileTops | null>(null);
+  // Chargement et échec des tops, indépendants du profil
+  const [topsLoading, setTopsLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
   const { getProfile, getTopDataProfile } = useProfile();
   const { user: currentUser } = useAuth();
@@ -68,6 +78,10 @@ export default function ProfilePage({ id }: { id: string }) {
     
     // Si l'id change pendant un chargement, la réponse de l'ancien profil est ignorée
     let cancelled = false;
+
+    // Le top de l'ancien profil ne doit pas rester affiché
+    setTopData(null);
+    setTopsLoading(true);
 
     const loadData = async () => {
       setLoading(true);
@@ -90,6 +104,7 @@ export default function ProfilePage({ id }: { id: string }) {
         if (!cancelled) setTopData(tops);
       }
       catch (err) {console.error("Erreur lors du chargement des tops", err)}
+      finally {if (!cancelled) setTopsLoading(false)}
     };
 
     loadData();
@@ -97,7 +112,7 @@ export default function ProfilePage({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const totalDays = profile ? Math.floor(profile.total_minutes / 1440) : 0;
+  const totalDays = profile ? Math.floor((profile.total_minutes ?? 0) / 1440) : 0;
 
   const handleShare = async () => {
     try {
@@ -115,13 +130,15 @@ export default function ProfilePage({ id }: { id: string }) {
       : <ErrorState status={error.status} message={error.message}/>;
   }
   if (loading || !profile) return <ProfileSkeleton/>;
+  // Profil non public : seul le propriétaire le voit
+  if (!profile.perms?.profile && !isOwner) return <ErrorState status={403}/>;
   return (
     <div className={PROFILE_STYLES.MAIN_WRAPPER}>
       {/* --- BANNIÈRE --- */}
       <div className={PROFILE_STYLES.BANNER_WRAPPER}>
-        {profile.banner === "/banner_template.jpg"
-          ? <Image src="/banner_template_1100x390.jpg" alt="Banner" className={PROFILE_STYLES.BANNER_IMG} width={1100} height={390}/>
-          : <img src={profile.banner} className={PROFILE_STYLES.BANNER_IMG} alt="Banner"/>
+        {isDefaultBanner(profile.banner)
+          ? <Image src={DEFAULT_BANNER_IMAGE} alt="Banner" className={PROFILE_STYLES.BANNER_IMG} width={1100} height={390}/>
+          : <img src={profile.banner!} className={PROFILE_STYLES.BANNER_IMG} alt="Banner"/>
         }
         <div className={PROFILE_STYLES.GRADIENT_OVERLAY}/>
       </div>
@@ -157,12 +174,12 @@ export default function ProfilePage({ id }: { id: string }) {
         {profile.perms.stats && (
           <div className={PROFILE_STYLES.STATS_GRID}>
             <StatCard title={dict.statTime} sub={dict.statTimeSub} color="text2"
-              value={<>{profile.total_minutes.toLocaleString(t.common.locale)} <span className="text-sm opacity-50">{dict.unitMin}</span><p className="text-sm opacity-50">({dict.unitDays(totalDays)})</p></>}
+              value={<>{(profile.total_minutes ?? 0).toLocaleString(t.common.locale)} <span className="text-sm opacity-50">{dict.unitMin}</span><p className="text-sm opacity-50">({dict.unitDays(totalDays)})</p></>}
             />
-            <StatCard title={dict.statStreams} value={profile.total_streams.toLocaleString(t.common.locale)} sub={dict.statStreamsSub} color="text-blue-400"/>
-            <StatCard title={dict.statPeak} value={profile.peak_hour} sub={dict.statPeakSub} color="text-purple-400"/>
-            <TopStatCard color="text-orange-400" item={topData && topData.top_track}/>
-            <TopStatCard color="text-yellow-300" item={topData && topData.top_artist}/>
+            <StatCard title={dict.statStreams} value={(profile.total_streams ?? 0).toLocaleString(t.common.locale)} sub={dict.statStreamsSub} color="text-blue-400"/>
+            <StatCard title={dict.statPeak} value={profile.peak_hour ?? "—"} sub={dict.statPeakSub} color="text-purple-400"/>
+            <TopStatCard color="text-orange-400" loading={topsLoading} item={topData?.top_track ?? null}/>
+            <TopStatCard color="text-yellow-300" loading={topsLoading} item={topData?.top_artist ?? null}/>
           </div>
         )}
 
@@ -198,13 +215,15 @@ export default function ProfilePage({ id }: { id: string }) {
                 ) : (
                   profile.recent_tracks.map((track) => (
                     <div key={track.id} className={PROFILE_STYLES.TRACK_ITEM}>
-                      <img src={track.image_url} className={PROFILE_STYLES.TRACK_IMG} alt={track.title} />
+                      {track.image_url
+                        ? <img src={track.image_url} className={PROFILE_STYLES.TRACK_IMG} alt={track.title} />
+                        : <div data-testid="track-image-fallback" className={`${PROFILE_STYLES.TRACK_IMG} bg-white/5 shrink-0`}/>}
                       <div className="flex-1">
                         <p className={PROFILE_STYLES.TRACK_NAME}>{track.title}</p>
                         <p className={PROFILE_STYLES.TRACK_ARTIST}>{track.artist}</p>
                       </div>
                       <div className={PROFILE_STYLES.TRACK_DATE}>
-                        {new Date(track.played_at).toLocaleDateString(t.common.locale)}
+                        {formatPlayedAt(track.played_at, t.common.locale)}
                       </div>
                     </div>
                   ))
