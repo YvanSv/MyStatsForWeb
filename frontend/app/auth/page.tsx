@@ -70,6 +70,7 @@ function AuthContent() {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setLoginMessage({ type: "", text: "" });
 
@@ -96,6 +97,7 @@ function AuthContent() {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setRegisterMessage({ type: "", text: "" });
 
     if (!regData.username.trim() || !regData.email.trim() || !regData.password || !regData.confirmPassword)
@@ -212,8 +214,6 @@ function AuthContent() {
         </form>
       </>,
   }
-
-  if (loading) return <SkeletonAuth/>;
 
   return (
     <DoubleFrame

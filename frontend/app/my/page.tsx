@@ -63,7 +63,7 @@ function MyContent() {
 
           {/* Label discret en bas */}
           <span
-            className="absolute bottom-12 text-[10px] uppercase tracking-widest text-bg2 opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-[-10px]"
+            className="absolute bottom-12 text-[10px] uppercase tracking-widest text-white/80 opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-[-10px]"
           >{dict.viewRanking}</span>
         </button>
       ))}

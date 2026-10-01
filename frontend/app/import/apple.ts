@@ -15,12 +15,11 @@ export class AppleRowError extends Error {
   }
 }
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 /**
  * Transforme une ligne de l'export Apple en autant d'écoutes que de lectures, réparties à la seconde dans l'heure.
  * Renvoie [] pour une ligne à ignorer (sans identifiant ou écoute trop courte) et lève une erreur pour une date ou une heure invalide.
- * Les dates sont envoyées avec le suffixe « Z » (UTC), comme le serveur les attend.
+ * La date et l'heure de l'export sont celles du fuseau du navigateur : elles sont converties en vrai UTC (suffixe « Z ») avant l'envoi,
+ * pour que l'écoute tombe le bon jour côté serveur.
  */
 export function appleRowToPlays(row: AppleCSVRow): CleanAppleData[] {
   const playCount = parseInt(row["Play Count"]) || 1;
@@ -54,7 +53,7 @@ export function appleRowToPlays(row: AppleCSVRow): CleanAppleData[] {
       apple_track_id: String(row["Track Identifier"]),
       song_name: song,
       artist_name: artist,
-      played_at: `${rawDate.substring(0, 4)}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(Math.floor(i / 60))}:${pad(i % 60)}.000Z`,
+      played_at: new Date(year, month - 1, day, hour, Math.floor(i / 60), i % 60).toISOString(),
       ms_played: msPerPlay,
     });
   }

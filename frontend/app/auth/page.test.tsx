@@ -185,18 +185,34 @@ describe("AuthPage – connexion par email", () => {
     expect(h.toast.success).not.toHaveBeenCalled();
   });
 
-  it("affiche un squelette pendant la connexion, puis le formulaire en cas d'échec", async () => {
+  it("garde le formulaire affiché (même champ, focus conservé) pendant la connexion", async () => {
     const d = deferred();
     h.auth.login = vi.fn(() => d.promise);
     const user = userEvent.setup();
     render(<AuthPage />);
     await fillLogin(user);
+    const password = screen.getByPlaceholderText("••••••••");
+    password.focus();
     await user.click(connectButton());
-    expect(screen.queryByPlaceholderText("••••••••")).not.toBeInTheDocument();
-    expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(screen.getByPlaceholderText("••••••••")).toBe(password);
+    expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
+    expect(screen.getByRole("button", { name: dict.connecting })).toBeDisabled();
 
     d.reject(apiError(401, "Email ou mot de passe incorrect"));
-    expect(await screen.findByPlaceholderText("••••••••")).toBeInTheDocument();
+    expect(await screen.findByText("Email ou mot de passe incorrect")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("••••••••")).toBe(password);
+  });
+
+  it("n'envoie pas la connexion deux fois quand Entrée est pressé pendant le chargement", async () => {
+    const d = deferred();
+    h.auth.login = vi.fn(() => d.promise);
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await fillLogin(user);
+    await user.type(screen.getByPlaceholderText("••••••••"), "{Enter}");
+    await user.type(screen.getByPlaceholderText("••••••••"), "{Enter}");
+    expect(h.auth.login).toHaveBeenCalledTimes(1);
+    d.reject(apiError(401, "x"));
   });
 
   it("affiche le message d'erreur renvoyé par l'API", async () => {
@@ -320,17 +336,19 @@ describe("AuthPage – inscription", () => {
     expect(h.auth.register).toHaveBeenCalledTimes(1);
   });
 
-  it("affiche un squelette pendant la création, puis le formulaire en cas d'échec", async () => {
+  it("garde le formulaire affiché pendant la création, puis affiche l'erreur", async () => {
     const d = deferred();
     h.auth.register = vi.fn(() => d.promise);
     const user = userEvent.setup();
     render(<AuthPage />);
     await fillRegister(user);
+    const username = screen.getByPlaceholderText("MusicFan_01");
     await user.click(createButton());
-    expect(screen.queryByPlaceholderText("MusicFan_01")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("MusicFan_01")).toBe(username);
+    expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
 
     d.reject(apiError(500));
-    expect(await screen.findByPlaceholderText("MusicFan_01")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByPlaceholderText("MusicFan_01")).toBe(username));
   });
 
   it("affiche l'erreur de validation du serveur sur un 422", async () => {

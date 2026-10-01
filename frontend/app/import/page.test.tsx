@@ -6,6 +6,9 @@ import { API_ENDPOINTS } from "../constants/routes";
 import { ApiError } from "../services/api";
 import ImportPage, { ImportContent } from "./page";
 
+// Les écoutes sont envoyées en vrai UTC à partir de l'heure locale du navigateur : les attentes suivent le fuseau de la machine de test
+const local = (y: number, mo: number, d: number, h: number, mi = 0, s = 0) => new Date(y, mo - 1, d, h, mi, s).toISOString();
+
 const dict = languages.fr.importData;
 
 // --- Mocks -----------------------------------------------------------------
@@ -386,9 +389,9 @@ describe("ImportContent (import Apple CSV)", () => {
     await start(['"abc","Daft Punk - One More Time",20240131,14,720000,3']);
     await waitFor(() => expect(h.uploadAppleJson).toHaveBeenCalled());
     expect(h.uploadAppleJson.mock.calls[0][0]).toEqual([
-      { apple_track_id: "abc", song_name: "One More Time", artist_name: "Daft Punk", played_at: "2024-01-31T14:00:00.000Z", ms_played: 240000 },
-      { apple_track_id: "abc", song_name: "One More Time", artist_name: "Daft Punk", played_at: "2024-01-31T14:00:01.000Z", ms_played: 240000 },
-      { apple_track_id: "abc", song_name: "One More Time", artist_name: "Daft Punk", played_at: "2024-01-31T14:00:02.000Z", ms_played: 240000 },
+      { apple_track_id: "abc", song_name: "One More Time", artist_name: "Daft Punk", played_at: local(2024, 1, 31, 14, 0, 0), ms_played: 240000 },
+      { apple_track_id: "abc", song_name: "One More Time", artist_name: "Daft Punk", played_at: local(2024, 1, 31, 14, 0, 1), ms_played: 240000 },
+      { apple_track_id: "abc", song_name: "One More Time", artist_name: "Daft Punk", played_at: local(2024, 1, 31, 14, 0, 2), ms_played: 240000 },
     ]);
   });
 
@@ -399,8 +402,8 @@ describe("ImportContent (import Apple CSV)", () => {
     await waitFor(() => expect(h.uploadAppleJson).toHaveBeenCalled());
     const plays = h.uploadAppleJson.mock.calls[0][0];
     expect(plays).toHaveLength(61);
-    expect(plays[59].played_at).toBe("2024-01-31T09:00:59.000Z");
-    expect(plays[60].played_at).toBe("2024-01-31T09:01:00.000Z");
+    expect(plays[59].played_at).toBe(local(2024, 1, 31, 9, 0, 59));
+    expect(plays[60].played_at).toBe(local(2024, 1, 31, 9, 1, 0));
   });
 
   it("ignore les lectures de 30 s ou moins et les lignes sans identifiant", async () => {
@@ -480,7 +483,11 @@ describe("ImportContent (import Apple CSV)", () => {
     await waitFor(() => expect(h.uploadAppleJson).toHaveBeenCalled());
     const plays = h.uploadAppleJson.mock.calls.flatMap((c) => c[0]);
     expect(plays).toHaveLength(3600);
-    expect(plays.every((p: { played_at: string }) => /T01:[0-5]\d:[0-5]\d\.000Z$/.test(p.played_at))).toBe(true);
+    const hourStart = Date.parse(local(2024, 1, 1, 1));
+    expect(plays.every((p: { played_at: string }) => {
+      const elapsed = Date.parse(p.played_at) - hourStart;
+      return elapsed >= 0 && elapsed < 3600_000;
+    })).toBe(true);
   });
 
   it("refuse une date impossible (mois 13) avec un message précis et traduit, sans rien envoyer", async () => {

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { AppleCSVRow } from "../data/DataInfos";
 import { AppleRowError, appleRowToPlays, MAX_PLAYS_PER_ROW, MIN_PLAY_MS, toBatches, UPLOAD_BATCH_SIZE } from "./apple";
 
+// Les écoutes sont envoyées en vrai UTC à partir de l'heure locale du navigateur : les attentes suivent le fuseau de la machine de test
+const local = (y: number, mo: number, d: number, h: number, mi = 0, s = 0) => new Date(y, mo - 1, d, h, mi, s).toISOString();
+
 const row = (over: Partial<Record<keyof AppleCSVRow, string>> = {}): AppleCSVRow => ({
   "Track Identifier": "t1",
   "Track Description": "Daft Punk - One More Time",
@@ -16,9 +19,9 @@ describe("appleRowToPlays – transformation", () => {
   it("crée autant d'écoutes que de lectures, réparties à la seconde dans l'heure", () => {
     const plays = appleRowToPlays(row({ "Play Count": "3", "Play Duration Milliseconds": "720000" }));
     expect(plays.map((p) => p.played_at)).toEqual([
-      "2024-01-31T14:00:00.000Z",
-      "2024-01-31T14:00:01.000Z",
-      "2024-01-31T14:00:02.000Z",
+      local(2024, 1, 31, 14, 0, 0),
+      local(2024, 1, 31, 14, 0, 1),
+      local(2024, 1, 31, 14, 0, 2),
     ]);
     expect(plays.every((p) => p.ms_played === 240000)).toBe(true);
   });
@@ -38,11 +41,11 @@ describe("appleRowToPlays – transformation", () => {
   });
 
   it("traite des Hours absentes comme minuit", () => {
-    expect(appleRowToPlays(row({ Hours: "" }))[0].played_at).toBe("2024-01-31T00:00:00.000Z");
+    expect(appleRowToPlays(row({ Hours: "" }))[0].played_at).toBe(local(2024, 1, 31, 0, 0, 0));
   });
 
   it("met sur deux chiffres les mois, jours et heures", () => {
-    expect(appleRowToPlays(row({ "Date Played": "20240305", Hours: "7" }))[0].played_at).toBe("2024-03-05T07:00:00.000Z");
+    expect(appleRowToPlays(row({ "Date Played": "20240305", Hours: "7" }))[0].played_at).toBe(local(2024, 3, 5, 7, 0, 0));
   });
 });
 
@@ -72,20 +75,25 @@ describe("appleRowToPlays – Play Count borné", () => {
   it("garde toutes les écoutes jusqu'à 3600 (une par seconde), avec des minutes entre 00 et 59", () => {
     const plays = appleRowToPlays(many(MAX_PLAYS_PER_ROW));
     expect(plays).toHaveLength(3600);
-    expect(plays[0].played_at).toBe("2024-01-31T14:00:00.000Z");
-    expect(plays[3599].played_at).toBe("2024-01-31T14:59:59.000Z");
+    expect(plays[0].played_at).toBe(local(2024, 1, 31, 14, 0, 0));
+    expect(plays[3599].played_at).toBe(local(2024, 1, 31, 14, 59, 59));
   });
 
   it("passe à la minute suivante après 60 écoutes", () => {
     const plays = appleRowToPlays(many(61));
-    expect(plays[59].played_at).toBe("2024-01-31T14:00:59.000Z");
-    expect(plays[60].played_at).toBe("2024-01-31T14:01:00.000Z");
+    expect(plays[59].played_at).toBe(local(2024, 1, 31, 14, 0, 59));
+    expect(plays[60].played_at).toBe(local(2024, 1, 31, 14, 1, 0));
   });
 
   it("plafonne une valeur aberrante à 3600 écoutes : jamais de minute ≥ 60 ni de saturation mémoire", () => {
     const plays = appleRowToPlays(many(1_000_000));
     expect(plays).toHaveLength(MAX_PLAYS_PER_ROW);
-    for (const p of plays) expect(p.played_at).toMatch(/T14:[0-5]\d:[0-5]\d\.000Z$/);
+    const start = Date.parse(local(2024, 1, 31, 14, 0, 0));
+    for (const p of plays) {
+      const elapsed = Date.parse(p.played_at) - start;
+      expect(elapsed).toBeGreaterThanOrEqual(0);
+      expect(elapsed).toBeLessThan(3600_000);
+    }
   });
 
   it("produit des dates valides pour tout l'intervalle (aucune « Invalid Date »)", () => {
@@ -110,7 +118,7 @@ describe("appleRowToPlays – dates et heures invalides", () => {
   });
 
   it("accepte le 29 février d'une année bissextile", () => {
-    expect(appleRowToPlays(row({ "Date Played": "20240229" }))[0].played_at).toBe("2024-02-29T14:00:00.000Z");
+    expect(appleRowToPlays(row({ "Date Played": "20240229" }))[0].played_at).toBe(local(2024, 2, 29, 14, 0, 0));
   });
 
   it.each(["24", "25", "-1", "99"])("rejette l'heure %j", (hours) => {
