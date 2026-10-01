@@ -161,7 +161,7 @@ function AlbumNode({ album }: { album: any }) {
   return (
     <div className="ml-2 border-l border-white/10 pl-4 py-1">
       <div className="flex items-center justify-between group">
-        <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white">
+        <button type="button" aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white">
           <ChevronRight size={14} className={`transition-transform ${isOpen ? 'rotate-90 text-vert' : ''}`} />
           {album.title}
         </button>
@@ -177,7 +177,7 @@ function TrackNode({ track }: { track: any }) {
   return (
     <div className="ml-4 border-l border-white/10 pl-4 py-1">
       <div className="flex items-center justify-between group">
-        <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-200">
+        <button type="button" aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-200">
           <Music size={12} className={isOpen ? 'text-vert' : ''} />
           {track.title}
         </button>
@@ -203,7 +203,7 @@ function ExpandableRow({ icon, label, count, children }: { icon: any, label: str
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="bg-bg2/50 rounded-xl border border-white/5 overflow-hidden">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-all">
+      <button type="button" aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-all">
         <div className="flex items-center gap-3">
           <div className="text-gray-500 group-hover:text-vert">{icon}</div>
           <span className="text-sm font-semibold text-gray-200">{label}</span>

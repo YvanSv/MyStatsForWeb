@@ -26,10 +26,10 @@ const InfoBubble = ({ label, value }: { label: string, value: string | number | 
 
 // Formatage mm:ss pour la durée
 const formatDuration = (ms: number | undefined) => {
-  if (!ms) return "—";
-  const minutes = Math.floor(ms / 60000);
-  const seconds = ((ms % 60000) / 1000).toFixed(0);
-  return `${minutes}:${Number(seconds) < 10 ? '0' : ''}${seconds}`;
+  if (!ms || !Number.isFinite(ms)) return "—";
+  // On arrondit d'abord à la seconde : 59,5 s doit donner 1:00 et non 0:60
+  const total = Math.round(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 };
 
 // --- PAGE PRINCIPALE ---
@@ -149,7 +149,7 @@ export default function CreateRequestDetailPage() {
                 <InfoBubble label="Artiste" value={request.track?.title.split(" - ")[0]} />
                 <InfoBubble label="Titre" value={request.track?.title.split(" - ")[1]}/>
                 <InfoBubble label="ID Interne" value={request.track?.id}/>
-                <InfoBubble label="Durée max écoute" value={formatDuration(Math.max(...(request.track?.history?.map(h => h.ms_played) || [0])))}/>
+                <InfoBubble label="Durée max écoute" value={formatDuration(request.track?.history?.length ? Math.max(...request.track.history.map(h => h.ms_played)) : undefined)}/>
               </div>
 
               {/* Mappings Actuels */}

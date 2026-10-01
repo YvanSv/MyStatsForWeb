@@ -8,18 +8,22 @@ import { useEffect, useState } from 'react';
 export default function MergeRequestListPage() {
   const { getMergeRequests } = useApiAdmin();
   const [requests,setRequests] = useState<MergeRequest[] | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      try { setRequests(await getMergeRequests())}
-      catch {}
+      try {
+        const data = await getMergeRequests();
+        if (data) setRequests(data); else setFailed(true);
+      }
+      catch { setFailed(true) }
     };
 
     fetchData();
   }, [getMergeRequests]);
 
   if (!requests) return (
-    <div>Erreur</div>
+    <div className="p-8 text3">{failed ? "Erreur" : "Chargement..."}</div>
   );
 
   return (
@@ -42,7 +46,7 @@ export default function MergeRequestListPage() {
           {requests.map((mr) => (
             <Link 
               key={mr.id} 
-              href={`/admin/merge-request/${mr.id}`}
+              href={`/admin/merge-requests/${mr.id}`}
               className="group flex items-center justify-between p-5 bg-white/5 rounded-xl border-2 border-transparent hover:border-white/10 hover:bg-white/[0.07] transition-all duration-300"
             >
               <div className="flex items-center gap-6">

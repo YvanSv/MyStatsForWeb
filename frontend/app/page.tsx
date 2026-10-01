@@ -25,14 +25,14 @@ export default function HomePage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { refreshUserData, getTodayStats } = useApiMyDatas();
-  const [userStats, setUserStats] = useState({nb_streams: '...', nb_minutes: "..."});
+  const [userStats, setUserStats] = useState<{ nb_streams: string | number, nb_minutes: string | number }>({nb_streams: '...', nb_minutes: "..."});
   const [stats, setStats] = useState(INITIALS_STATS);
   const [loading, setLoading] = useState(true);
   const { getHomeData } = useApiAllDatas();
 
   useEffect(() => {
     setLoading(true);
-    const loadData = async () => {try { setStats(await getHomeData())} catch(e) {} finally {setLoading(false)}}
+    const loadData = async () => {try { setStats((await getHomeData()) ?? INITIALS_STATS)} catch(e) {} finally {setLoading(false)}}
     loadData();
   }, [getHomeData]);
 
@@ -43,7 +43,8 @@ export default function HomePage() {
     const loadData = async () => {
       try {
         await refreshUserData();
-        setUserStats(await getTodayStats());
+        const today = await getTodayStats();
+        setUserStats({ nb_streams: today?.nb_streams ?? 0, nb_minutes: today?.nb_minutes ?? 0 });
       } catch(e) {} finally {setLoading(false)}
     }
     loadData();
@@ -132,8 +133,8 @@ export default function HomePage() {
         
         {/* BOUTONS D'ACTION */}
         <div className={ACCUEIL_STYLES.HERO_BUTTON_GROUP}>
-          <PrimaryButton additional="px-10 py-5 text-lg">{t.home.btn1}</PrimaryButton>
-          <SecondaryButton additional="group px-8 py-5 text-lg">
+          <PrimaryButton additional="px-10 py-5 text-lg" onClick={() => router.push(user?.is_logged_in ? FRONT_ROUTES.MY_RANKINGS : FRONT_ROUTES.AUTH)}>{t.home.btn1}</PrimaryButton>
+          <SecondaryButton additional="group px-8 py-5 text-lg" onClick={() => router.push(FRONT_ROUTES.HELP)}>
             {t.home.learnMore} <span className="group-hover:translate-x-1 transition-transform">→</span>
           </SecondaryButton>
         </div>

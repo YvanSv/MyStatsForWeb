@@ -45,9 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
                     <div className="flex-1 overflow-y-auto">
                       <div className="flex flex-col min-h-full">
-                        <main className="flex-1 flex flex-col">
+                        {/* Chaque page fournit son propre <main> : pas de landmark imbriqué */}
+                        <div className="flex-1 flex flex-col">
                           {children}
-                        </main>
+                        </div>
                         <Footer />
                       </div>
                     </div>

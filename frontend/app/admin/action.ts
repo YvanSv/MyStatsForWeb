@@ -70,7 +70,7 @@ export const useApiAdmin = () => {
 
   const getTracksError = useCallback(() => request(`${API_ENDPOINTS.ERRORS}`), [request]);
   const updateTrack = useCallback((data:TrackInfo) => {
-    request(API_ENDPOINTS.ERRORS, {
+    return request(API_ENDPOINTS.ERRORS, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -78,11 +78,11 @@ export const useApiAdmin = () => {
 
   const getMergeRequests = useCallback(() => request(`${API_ENDPOINTS.MERGE_REQUESTS}`), [request]);
   const resolveMergeRequest = useCallback((id: number, approve: boolean) => {
-    request(`${API_ENDPOINTS.MERGE_REQUESTS}/${id}/resolve`, {
+    return request(`${API_ENDPOINTS.MERGE_REQUESTS}/${id}/resolve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ approve }),
-    })
+    });
   }, [request]);
 
   const getCreateRequests = useCallback(() => request(`${API_ENDPOINTS.CREATE_REQUESTS}`), [request]);
@@ -92,7 +92,7 @@ export const useApiAdmin = () => {
     masterIndex: number, 
     isrcs: string[]
   ) => {
-    request(`${API_ENDPOINTS.CREATE_REQUESTS}/${id}/resolve`, {
+    return request(`${API_ENDPOINTS.CREATE_REQUESTS}/${id}/resolve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -100,11 +100,11 @@ export const useApiAdmin = () => {
         master_index: masterIndex, 
         selected_isrcs: isrcs
       }),
-    })
+    });
   }, [request]);
 
   const getCreateRequestById = useCallback((id: number) => request(`${API_ENDPOINTS.CREATE_REQUESTS}/${id}`), [request]);
 
-  return useMemo(() => ({loading, getTracksError, updateTrack, getMergeRequests, getCreateRequests, getCreateRequestById, resolveCreateRequest}),
-  [loading, getTracksError, updateTrack, getMergeRequests, getCreateRequests, getCreateRequestById, resolveCreateRequest]);
+  return useMemo(() => ({loading, getTracksError, updateTrack, getMergeRequests, resolveMergeRequest, getCreateRequests, getCreateRequestById, resolveCreateRequest}),
+  [loading, getTracksError, updateTrack, getMergeRequests, resolveMergeRequest, getCreateRequests, getCreateRequestById, resolveCreateRequest]);
 };

@@ -74,11 +74,12 @@ export default function ConflitsPage() {
               </div>
 
               <div>
-                <label className="block text-xs text-vert uppercase font-bold mb-1">Durée Track (ms)</label>
+                <label htmlFor={`track-duration-${track.id}`} className="block text-xs text-vert uppercase font-bold mb-1">Durée Track (ms)</label>
                 <input 
+                  id={`track-duration-${track.id}`}
                   type="number" 
                   value={track.duration_ms}
-                  onChange={(e) => handleLocalChange(track.id, null, parseInt(e.target.value))}
+                  onChange={(e) => handleLocalChange(track.id, null, parseInt(e.target.value) || 0)}
                   className="bg-black border border-white/20 rounded px-3 py-2 text-sm focus:border-vert outline-none"
                 />
               </div>
@@ -108,11 +109,12 @@ export default function ConflitsPage() {
                     <div key={h.id} className={`flex items-center gap-4 p-2 rounded border ${isError ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/10'}`}>
                       <span className="text-[10px] text-gray-500 font-mono">ID: {h.id}</span>
                       <div className="flex items-center gap-2">
-                        <label className="text-[10px] uppercase font-bold text-gray-400">Played:</label>
+                        <label htmlFor={`history-played-${h.id}`} className="text-[10px] uppercase font-bold text-gray-400">Played:</label>
                         <input 
+                          id={`history-played-${h.id}`}
                           type="number"
                           value={h.ms_played}
-                          onChange={(e) => handleLocalChange(track.id, h.id, parseInt(e.target.value))}
+                          onChange={(e) => handleLocalChange(track.id, h.id, parseInt(e.target.value) || 0)}
                           className="bg-black/50 border border-white/10 rounded px-2 py-1 text-xs w-32 focus:border-red-500 outline-none"
                         />
                       </div>
