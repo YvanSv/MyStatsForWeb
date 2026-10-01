@@ -1,7 +1,15 @@
 @import "tailwindcss";
 
+/* Police du texte d'information (classe font-hias) */
+@font-face {
+  font-family: "Hias Sans";
+  src: url("./fonts/hHiasSans.ttf") format("truetype");
+  font-display: swap;
+}
+
 @theme {
   --font-jost: var(--font-jost);
+  --font-hias: "Hias Sans", var(--font-jost), sans-serif;
   
   --color-vert: #1DD05D;
   --color-jaune: #D3F527;
