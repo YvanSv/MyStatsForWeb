@@ -46,7 +46,7 @@ export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets, e
         <div className="pr-2 space-y-6 animate-in slide-in-from-right-4 duration-300 overflow-y-auto custom-scrollbar max-h-[61vh]">
           <div className="flex items-center gap-3 pb-4 border-b border-white/5">
             <div className="w-8 h-8 rounded-lg bg-vert/20 flex items-center justify-center text-vert text-xs font-bold">
-              {selectedWidget.type[0].toUpperCase()}
+              {selectedWidget.type.charAt(0).toUpperCase()}
             </div>
             <span className="text-[10px] font-black uppercase tracking-widest">{selectedWidget.type}</span>
           </div>

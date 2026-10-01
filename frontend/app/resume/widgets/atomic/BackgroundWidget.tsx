@@ -67,7 +67,7 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
             <span className="flex items-center gap-1.5"><Droplets size={12}/> Intensité du flou</span>
             <span className="font-mono text-vert">{settings?.blur ?? 10}px</span>
           </div>
-          <input type="range" min="0" max="40" step="1"
+          <input type="range" min="0" max="40" step="1" aria-label="Intensité du flou"
             value={settings?.blur ?? 10}
             onChange={(e) => update('blur', parseInt(e.target.value))}
             className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert"
@@ -80,7 +80,7 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
             <span className="flex items-center gap-1.5"><Sun size={12}/> Opacité de l'image</span>
             <span className="font-mono text-vert">{Math.round((settings?.opacity ?? 0.3) * 100)}%</span>
           </div>
-          <input type="range" min="0" max="1" step="0.05"
+          <input type="range" min="0" max="1" step="0.05" aria-label="Opacité de l'image"
             value={settings?.opacity ?? 0.3}
             onChange={(e) => update('opacity', parseFloat(e.target.value))}
             className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert"
@@ -92,7 +92,7 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Finition</label>
         <button 
-          onClick={() => update('gradient', !settings.gradient)}
+          type="button" aria-pressed={settings?.gradient ?? true} onClick={() => update('gradient', !(settings?.gradient ?? true))}
           className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[10px] font-bold"
         >
           Dégradé vers le noir (bas)

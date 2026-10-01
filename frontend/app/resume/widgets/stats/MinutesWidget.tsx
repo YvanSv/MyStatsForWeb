@@ -36,8 +36,8 @@ export function MinutesSettings({ settings, onChange }: { settings: any, onChang
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Couleur accentuée</label>
         <div className="flex gap-2">
           {["#1DB954", "#FFFFFF", "#FBBF24", "#F87171"].map(c => (
-            <button key={c} onClick={() => update('color', c)}
-              className={`w-6 h-6 rounded-full border-2 ${settings.color === c ? 'border-white' : 'border-transparent'}`}
+            <button key={c} type="button" aria-label={c} aria-pressed={settings?.color === c} onClick={() => update('color', c)}
+              className={`w-6 h-6 rounded-full border-2 ${settings?.color === c ? 'border-white' : 'border-transparent'}`}
               style={{ backgroundColor: c }}
             />
           ))}

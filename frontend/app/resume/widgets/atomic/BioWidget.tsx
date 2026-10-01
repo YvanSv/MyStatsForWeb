@@ -66,8 +66,8 @@ export function BioSettings({ settings, onChange }: { settings: any, onChange: (
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Taille de lecture</label>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {fontSizes.map((f) => (
-            <button key={f.id} onClick={() => update('fontSize', f.id)}
-              className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-all ${settings.fontSize === f.id ? 'bg-white/10 text-white' : 'text-gray-500'}`}
+            <button key={f.id} type="button" title={`Taille ${f.label}`} aria-pressed={settings?.fontSize === f.id} onClick={() => update('fontSize', f.id)}
+              className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-all ${settings?.fontSize === f.id ? 'bg-white/10 text-white' : 'text-gray-500'}`}
             >
               {f.label}
             </button>
@@ -80,8 +80,8 @@ export function BioSettings({ settings, onChange }: { settings: any, onChange: (
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Alignement</label>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {['left', 'center', 'right'].map((align) => (
-            <button key={align} onClick={() => update('textAlign', align)}
-              className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings.textAlign === align ? 'bg-white/10 text-white' : 'text-gray-500'}`}
+            <button key={align} type="button" aria-pressed={settings?.textAlign === align} onClick={() => update('textAlign', align)}
+              className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings?.textAlign === align ? 'bg-white/10 text-white' : 'text-gray-500'}`}
             >
               {align === 'left' ? 'Gauche' : align === 'right' ? 'Droite' : 'Centre'}
             </button>
@@ -91,7 +91,7 @@ export function BioSettings({ settings, onChange }: { settings: any, onChange: (
 
       {/* Toggle Guillemets */}
       <button 
-        onClick={() => update('showQuotes', !settings.showQuotes)}
+        type="button" aria-pressed={!!settings?.showQuotes} onClick={() => update('showQuotes', !settings?.showQuotes)}
         className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[10px] font-bold"
       >
         Style "Citation"

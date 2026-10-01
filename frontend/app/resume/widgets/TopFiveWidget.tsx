@@ -10,14 +10,17 @@ interface TopFiveProps {
 
 export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
   const items = data?.slice(0, 5) || [];
+  // Sans élément, rien à afficher (les layouts lisent items[0])
+  if (items.length === 0) return <div className="w-full h-full text1"/>;
 
+  // Clés au format attendu par Widget (`${w}x${h}`)
   const layouts = {
-    small:
+    "1x1":
       <div className="flex flex-col items-center justify-between">
         <p className="truncate max-w-[70px]">{items[0].name}</p>
         <img src={items[0].image} alt={items[0].name}className="w-15 h-15 rounded-full border border-white/20"/>
       </div>,
-    horizontal:
+    "2x1":
       <div className="flex justify-center h-full items-center gap-1">
         <div className="flex flex-col items-center justify-between h-[90%]">
           <p className="truncate max-w-[54px]">{items[0].name}</p>
@@ -25,7 +28,7 @@ export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
         </div>
         <div className="flex flex-col border border-white/10 bg-white/5 rounded-xl w-[60%] justify-between h-full p-1">
           {items.slice(1,4).map((item,i) => (
-            <div key={item.name} className="flex items-center gap-1">
+            <div key={`${item.name}-${i}`} className="flex items-center gap-1">
               <div className="w-3 h-3 text-[5px] rounded-full bg-white/10 flex items-center justify-center text-gray-500 text-xs font-bold">
                 {i + 2}
               </div>
@@ -42,7 +45,7 @@ export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
           ))}
         </div>
       </div>,
-    vertical:
+    "1x3":
       <div className="w-full h-full p-1 flex flex-col px-1">
         {/* Header minimaliste */}
         <div className="mb-0.5 border-b border-white/10 pb-0.5">
@@ -69,7 +72,7 @@ export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
           ))}
         </div>
       </div>,
-    large:
+    "3x3":
       <div className="w-full h-full bg-neutral-950 p-3 rounded-2xl flex flex-col border border-white/10 shadow-2xl relative overflow-hidden group/widget">
       
         {/* EFFET DE FOND : DÉGRADÉ FLOU (Inspiré de Spotify) */}
@@ -104,7 +107,7 @@ export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
               {items[0].name}
             </h3>
             <p className="text-[10px] text-gray-400 font-bold uppercase truncate tracking-widest leading-none">
-              {type === 'tracks' ? items[0].name : `${items[0].streams?.toLocaleString()} streams`}
+              {`${items[0].streams?.toLocaleString()} streams`}
             </p>
           </div>
         </div>

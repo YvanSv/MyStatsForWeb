@@ -31,7 +31,7 @@ export function UsernameWidget({ w, h, data, settings }: UsernameWidgetProps) {
     textAlign: textAlign as any,
   };
 
-  const containerClass = `w-full h-full flex ${vAlignMap[verticalAlign]} ${hAlignMap[textAlign]}`;
+  const containerClass = `w-full h-full flex ${vAlignMap[verticalAlign] ?? ""} ${hAlignMap[textAlign] ?? ""}`;
 
   const layouts = {
     "1x1": (
@@ -100,9 +100,9 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
         <div className="flex gap-2">
           {colors.map(c => (
             <button 
-              key={c}
+              key={c} type="button" aria-label={c} aria-pressed={settings?.color === c}
               onClick={() => update('color', c)}
-              className={`w-6 h-6 rounded-full border-2 ${settings.color === c ? 'border-white' : 'border-transparent'}`}
+              className={`w-6 h-6 rounded-full border-2 ${settings?.color === c ? 'border-white' : 'border-transparent'}`}
               style={{ backgroundColor: c }}
             />
           ))}
@@ -112,14 +112,14 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
       {/* Style de police */}
       <div className="grid grid-cols-2 gap-2">
         <button 
-          onClick={() => update('italic', !settings.italic)}
-          className={`p-2 rounded-lg text-[10px] font-bold border ${settings.italic ? 'bg-white/10 border-vert text-vert' : 'border-white/5 text-gray-400'}`}
+          type="button" aria-pressed={!!settings?.italic} onClick={() => update('italic', !settings?.italic)}
+          className={`p-2 rounded-lg text-[10px] font-bold border ${settings?.italic ? 'bg-white/10 border-vert text-vert' : 'border-white/5 text-gray-400'}`}
         >
           ITALIQUE
         </button>
         <button 
-          onClick={() => update('uppercase', !settings.uppercase)}
-          className={`p-2 rounded-lg text-[10px] font-bold border ${settings.uppercase ? 'bg-white/10 border-vert text-vert' : 'border-white/5 text-gray-400'}`}
+          type="button" aria-pressed={!!settings?.uppercase} onClick={() => update('uppercase', !settings?.uppercase)}
+          className={`p-2 rounded-lg text-[10px] font-bold border ${settings?.uppercase ? 'bg-white/10 border-vert text-vert' : 'border-white/5 text-gray-400'}`}
         >
           MAJUSCULES
         </button>
@@ -130,8 +130,8 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Alignement Horizontal</label>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {['left', 'center', 'right'].map((align) => (
-            <button key={align} onClick={() => update('textAlign', align)}
-              className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings.textAlign === align ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500'}`}
+            <button key={align} type="button" aria-pressed={settings?.textAlign === align} onClick={() => update('textAlign', align)}
+              className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings?.textAlign === align ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500'}`}
             >
               {align === 'left' ? 'Gauche' : align === 'right' ? 'Droite' : 'Centre'}
             </button>
@@ -148,8 +148,8 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
             { id: 'center', label: 'Milieu' },
             { id: 'bottom', label: 'Bas' }
           ].map((v) => (
-            <button key={v.id} onClick={() => update('verticalAlign', v.id)}
-              className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings.verticalAlign === v.id ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500'}`}
+            <button key={v.id} type="button" aria-pressed={settings?.verticalAlign === v.id} onClick={() => update('verticalAlign', v.id)}
+              className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings?.verticalAlign === v.id ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500'}`}
             >
               {v.label}
             </button>

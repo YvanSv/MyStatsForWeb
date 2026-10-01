@@ -22,11 +22,11 @@ export function DesignCard({resumeData,t,sort,range}:{resumeData:DataFormat,t:an
   return (
     <div className="max-w-3xl mx-auto grid grid-cols-3 gap-4">
       {/* ARTISTES */}
-      <RankingItemCell dict={t.resume} top1={resumeData.topArtists[0]} top2_5={resumeData.topArtists.slice(1, 5)} color="blue" sort={sort}/>
+      <RankingItemCell dict={t.resume} top1={resumeData.topArtists[0]} top2_5={resumeData.topArtists.slice(1, 5)} color="blue" sort={sort} label={t.resume.topArtist || "Artiste n°1"}/>
       {/* TRACKS */}
-      <RankingItemCell dict={t.resume} top1={resumeData.topTracks[0]} top2_5={resumeData.topTracks.slice(1, 5)} color="purple" sort={sort}/>
+      <RankingItemCell dict={t.resume} top1={resumeData.topTracks[0]} top2_5={resumeData.topTracks.slice(1, 5)} color="purple" sort={sort} label={t.resume.topTrack || "Titre n°1"}/>
       {/* ALBUMS */}
-      <RankingItemCell dict={t.resume} top1={resumeData.topAlbums[0]} top2_5={resumeData.topAlbums.slice(1, 5)} color="red" sort={sort}/>
+      <RankingItemCell dict={t.resume} top1={resumeData.topAlbums[0]} top2_5={resumeData.topAlbums.slice(1, 5)} color="red" sort={sort} label={t.resume.topAlbum || "Album n°1"}/>
       {/* MINUTES TOTALES */}
       <div className={`${RESUME_STYLES.CARD} flex flex-col justify-between`}>
         <div className={"bg-gradient-to-br from-yellow-500/20 via-transparent to-transparent absolute inset-0"}/>
@@ -56,21 +56,28 @@ export function DesignCard({resumeData,t,sort,range}:{resumeData:DataFormat,t:an
   );
 }
 
-function RankingItemCell({dict,top1,top2_5,color,sort}:any) {
+function RankingItemCell({dict,top1,top2_5,color,sort,label}:any) {
+  // Classement vide : on garde la carte avec son libellé
+  if (!top1) return (
+    <div className={`${RESUME_STYLES.CARD} col-span-3 flex flex-col justify-center min-h-[200px]`}>
+      <p className={RESUME_STYLES.LABEL}>{label}</p>
+      <p className="text-2xl font-black opacity-40">—</p>
+    </div>
+  );
   return (
     <div className={`${RESUME_STYLES.CARD} col-span-3 flex flex-col md:flex-row justify-between min-h-[200px]`}>
       <div className={`bg-gradient-to-br from-${color}-500/20 via-transparent to-transparent absolute inset-0`}/>
 
       {/* Image Centrale (Le Vainqueur) */}
       <div className="hidden lg:block absolute left-2/5 top-4/9 -translate-x-1/2 -translate-y-1/2 z-20">
-        <img src={top1.image} alt={top1.name}className="w-50 h-50 object-cover rounded-full border border-white/20 shadow-2xl"/>
+        <img src={top1.image || "/default-cover.png"} alt={top1.name} className="w-50 h-50 object-cover rounded-full border border-white/20 shadow-2xl"/>
       </div>
 
       {/* Mettre en valeur le N°1 */}
       <div className="relative z-30 flex flex-col justify-between flex-grow">
         <Trophy className={`text-${color}-400 mb-4`} size={32}/>
         <div className='z-10'>
-          <p className={RESUME_STYLES.LABEL}>{dict.topArtist || "Artiste n°1"}</p>
+          <p className={RESUME_STYLES.LABEL}>{label}</p>
           <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none truncate max-w-[475px]">{top1.name}</h2>
           <div className="mt-2 flex items-center gap-2 text-xs text-vert font-medium">
             <Mic2 size={14}/> Avec {sort === "streams" ? top1.streams.toLocaleString() : sort === "minutes" ? top1.minutes.toLocaleString() : (Math.round(top1.rating*100)/100).toLocaleString()}{sort === "rating" ? "★" : " "+sort}

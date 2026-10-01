@@ -17,7 +17,7 @@ export function ProfilePictureWidget({ w, h, user, settings }: ProfileWidgetProp
     "1x1": (
       <img 
         src={user.avatar || undefined} 
-        alt="Avatar" 
+        alt={user.display_name || "Avatar"} 
         style={{ transform: `scale(${zoom})` }} // Gestion du zoom
         className={`w-full h-full object-cover transition-all duration-500 
           ${isRound ? 'rounded-full' : 'rounded-xl'} 
@@ -48,7 +48,7 @@ export function ProfilePictureSettings({ settings, onChange }: { settings: any, 
         
         {/* Toggle Arrondi */}
         <button 
-          onClick={() => update('round', !settings.round)}
+          type="button" aria-pressed={!!settings?.round} onClick={() => update('round', !settings?.round)}
           className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[10px] font-bold"
         >
           Photo Arrondie
@@ -59,7 +59,7 @@ export function ProfilePictureSettings({ settings, onChange }: { settings: any, 
 
         {/* Toggle Bordure */}
         <button 
-          onClick={() => update('border', !settings.border)}
+          type="button" aria-pressed={!!settings?.border} onClick={() => update('border', !settings?.border)}
           className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[10px] font-bold"
         >
           Bordure MyStats
@@ -73,14 +73,14 @@ export function ProfilePictureSettings({ settings, onChange }: { settings: any, 
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Zoom Image</label>
-          <span className="text-[10px] font-mono text-vert">{Math.round((settings?.zoom || 1) * 100)}%</span>
+          <span className="text-[10px] font-mono text-vert">{Math.round((settings?.zoom ?? 1) * 100)}%</span>
         </div>
         <input 
-          type="range" 
+          type="range" aria-label="Zoom Image" 
           min="0.5" 
           max="2" 
           step="0.01"
-          value={settings?.zoom || 1}
+          value={settings?.zoom ?? 1}
           onChange={(e) => update('zoom', parseFloat(e.target.value))}
           className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert"
         />

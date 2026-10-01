@@ -11,6 +11,7 @@ interface HeaderComponentProps {
 }
 
 export function HeaderComponent({range, setRange, offset, setOffset, displayLabel}:HeaderComponentProps) {
+  const { t } = useLanguage();
   // Reset de l'offset quand on change de type de range
   const handleRangeChange = (newRange: RangeOption) => {
     setRange(newRange);
@@ -43,7 +44,7 @@ export function HeaderComponent({range, setRange, offset, setOffset, displayLabe
         {/* Sélecteur de Type (Range) */}
         <div className="flex items-center gap-3 px-2 bg-black/40 rounded-xl p-0.5 border border-white/5">
           {(['day', 'month', 'season', 'year', 'lifetime'] as RangeOption[]).map((opt) => (
-            <button key={opt} onClick={() => handleRangeChange(opt)}
+            <button key={opt} type="button" aria-pressed={range === opt} onClick={() => handleRangeChange(opt)}
               className={`px-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                 range === opt ? "bg-white/10 text-white" : "text-gray-600 hover:text-gray-400"
               }`}
@@ -53,7 +54,7 @@ export function HeaderComponent({range, setRange, offset, setOffset, displayLabe
 
         {/* Contrôleur de Navigation Temporelle */}
         <div className="justify-between flex items-center gap-1 bg-black/40 rounded-xl border border-white/5">
-          <button onClick={() => setOffset(prev => prev + 1)} disabled={range === 'lifetime'}
+          <button type="button" aria-label={t.resume.previousPeriod} onClick={() => setOffset(prev => prev + 1)} disabled={range === 'lifetime'}
             className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
           ><Minus size={16} strokeWidth={3}/></button>
 
@@ -61,7 +62,7 @@ export function HeaderComponent({range, setRange, offset, setOffset, displayLabe
             {displayLabel}
           </p>
 
-          <button onClick={() => setOffset(prev => Math.max(0, prev - 1))} disabled={range === 'lifetime' || offset === 0}
+          <button type="button" aria-label={t.resume.nextPeriod} onClick={() => setOffset(prev => Math.max(0, prev - 1))} disabled={range === 'lifetime' || offset === 0}
             className="px-2 py-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-vert disabled:opacity-20 transition-all active:scale-90"
           ><Plus size={16} strokeWidth={3} /></button>
         </div>

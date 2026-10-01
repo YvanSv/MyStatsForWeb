@@ -139,7 +139,6 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     setIsDragging(false);
     
     const type = e.dataTransfer.getData("widgetType");
-    const data = JSON.parse(e.dataTransfer.getData("widgetData"));
 
     // On ajoute le nouveau widget à notre liste
     const newWidget: PlacedWidget = {
@@ -171,9 +170,9 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
   const getFreshData = (type: string) => {
     switch (type) {
       case 'profile_picture': return resumeData.user;
-      case 'username': return resumeData.user.display_name;
-      case 'background': return resumeData.user.banner;
-      case 'bio': return resumeData.user.bio;
+      case 'username': return resumeData?.user?.display_name;
+      case 'background': return resumeData?.user?.banner;
+      case 'bio': return resumeData?.user?.bio;
       case 'minutes': return resumeData.minutes;
       case 'streams': return resumeData.streams;
       case 'nb_tracks': return resumeData.distinct_tracks;

@@ -1,6 +1,8 @@
+import { useId } from "react";
+
 export function ShortenFilter({update,settings}:{update: (type:string,value:any) => void, settings: any}) {
   return (
-    <button onClick={() => update('shorten', !settings.shorten)}
+    <button type="button" aria-pressed={!!settings?.shorten} onClick={() => update('shorten', !settings?.shorten)}
       className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold"
     >Abréger (1.2M)
       <div className={`w-7 h-4 rounded-full p-0.5 transition-all ${settings?.shorten ? 'bg-vert' : 'bg-white/20'}`}>
@@ -12,7 +14,7 @@ export function ShortenFilter({update,settings}:{update: (type:string,value:any)
 
 export function ShowIconFilter({update,settings}:{update: (type:string,value:any) => void, settings: any}) {
   return (
-    <button onClick={() => update('showIcon', !settings.showIcon)}
+    <button type="button" aria-pressed={!!settings?.showIcon} onClick={() => update('showIcon', !settings?.showIcon)}
       className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold"
     >
       Afficher l'icône
@@ -24,12 +26,14 @@ export function ShowIconFilter({update,settings}:{update: (type:string,value:any
 }
 
 export function CustomLabel({update,settings}:{update: (type:string,value:any) => void, settings: any}) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Titre du widget</label>
+      <label htmlFor={id} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Titre du widget</label>
       <input 
+        id={id}
         type="text" 
-        value={settings.label || ""} 
+        value={settings?.label || ""} 
         onChange={(e) => update('label', e.target.value)}
         className="bg-white/5 border border-white/10 rounded-lg p-2 text-[10px] text-white focus:border-vert outline-none"
       />

@@ -55,14 +55,16 @@ function DraggablePreview({ title, subtitle, icon, type, data }: { title: string
 }
 
 import { ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 function AccordionSection({ title, children, defaultOpen = false }: { title: string, children: React.ReactNode, defaultOpen?: boolean }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const panelId = useId();
 
   return (
     <div className="border-b border-white/5 last:border-none">
       <button 
+        type="button" aria-expanded={isOpen} aria-controls={panelId}
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between py-3 px-1 hover:text-white transition-colors group"
       >
@@ -75,7 +77,7 @@ function AccordionSection({ title, children, defaultOpen = false }: { title: str
         />
       </button>
       
-      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
+      <div id={panelId} inert={!isOpen} className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
         <div className="flex flex-col gap-2.5">
           {children}
         </div>
