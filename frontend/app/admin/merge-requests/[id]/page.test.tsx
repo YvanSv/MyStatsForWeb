@@ -119,3 +119,52 @@ describe("MergeRequestPage (détail)", () => {
     container.querySelectorAll("img").forEach((img) => expect(img).toHaveAttribute("alt"));
   });
 });
+
+describe("MergeRequestPage – classes de mise en page valides", () => {
+  const classes = (container: HTMLElement) =>
+    [...container.querySelectorAll("[class]")].flatMap((el) => (el.getAttribute("class") ?? "").split(/\s+/));
+
+  it("n'utilise aucune classe Tailwind inexistante (lg:grid-cols-15, align-center, col-span-7)", () => {
+    const { container } = render(<MergeRequestPage />);
+    const all = classes(container);
+    expect(all).not.toContain("lg:grid-cols-15");
+    expect(all).not.toContain("align-center");
+    expect(all).not.toContain("col-span-7");
+  });
+
+  it("dispose duplicate, flèche et cible en trois colonnes (deux égales autour d'une centrale) sur grand écran", () => {
+    const { container } = render(<MergeRequestPage />);
+    const grid = container.querySelector(".lg\\:grid-cols-\\[1fr_auto_1fr\\]") as HTMLElement;
+    expect(grid).not.toBeNull();
+    expect(grid.children).toHaveLength(3);
+  });
+
+  it("empile les trois blocs sur petit écran et tourne la flèche vers le bas", () => {
+    const { container } = render(<MergeRequestPage />);
+    const grid = container.querySelector(".lg\\:grid-cols-\\[1fr_auto_1fr\\]") as HTMLElement;
+    expect(grid).toHaveClass("grid-cols-1");
+    const arrowBox = grid.children[1].firstElementChild as HTMLElement;
+    expect(arrowBox).toHaveClass("rotate-90", "lg:rotate-0");
+  });
+
+  it("centre la flèche avec items-center", () => {
+    const { container } = render(<MergeRequestPage />);
+    const grid = container.querySelector(".lg\\:grid-cols-\\[1fr_auto_1fr\\]") as HTMLElement;
+    expect(grid.children[1]).toHaveClass("items-center");
+    expect(grid.children[1].firstElementChild).toHaveClass("items-center");
+  });
+
+  it("les colonnes latérales peuvent rétrécir (min-w-0) au lieu de faire déborder la page", () => {
+    const { container } = render(<MergeRequestPage />);
+    const grid = container.querySelector(".lg\\:grid-cols-\\[1fr_auto_1fr\\]") as HTMLElement;
+    expect(grid.children[0]).toHaveClass("min-w-0");
+    expect(grid.children[2]).toHaveClass("min-w-0");
+  });
+
+  it("chaque group-hover a un parent « group » (l'icône des lignes dépliables change bien au survol)", () => {
+    const { container } = render(<MergeRequestPage />);
+    const hovered = [...container.querySelectorAll("[class*='group-hover:']")];
+    expect(hovered.length).toBeGreaterThan(0);
+    for (const el of hovered) expect(el.closest(".group"), el.className).not.toBeNull();
+  });
+});

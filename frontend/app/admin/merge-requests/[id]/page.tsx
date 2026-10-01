@@ -73,14 +73,14 @@ export default function MergeRequestPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-15 gap-12">
-          <div className='col-span-7'><EntityExplorer title="Duplicate (Source)" entity={data.duplicate} variant="red"/></div>
-          <div className='flex w-full justify-center align-center'>
-            <div className='flex h-min w-min p-4 align-center justify-center bg-bg2 rounded-full'>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-12">
+          <div className='min-w-0'><EntityExplorer title="Duplicate (Source)" entity={data.duplicate} variant="red"/></div>
+          <div className='flex w-full justify-center items-center'>
+            <div className='flex h-min w-min p-4 items-center justify-center bg-bg2 rounded-full rotate-90 lg:rotate-0'>
               <ArrowRight size={32}/>
             </div>
           </div>
-          <div className='col-span-7'><EntityExplorer title="Target (Hôte)" entity={data.target} variant="vert"/></div>
+          <div className='min-w-0'><EntityExplorer title="Target (Hôte)" entity={data.target} variant="vert"/></div>
         </div>
         
         {/* Footer info / Intention */}
@@ -203,7 +203,7 @@ function ExpandableRow({ icon, label, count, children }: { icon: any, label: str
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="bg-bg2/50 rounded-xl border border-white/5 overflow-hidden">
-      <button type="button" aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-all">
+      <button type="button" aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)} className="group w-full flex items-center justify-between p-4 hover:bg-white/5 transition-all">
         <div className="flex items-center gap-3">
           <div className="text-gray-500 group-hover:text-vert">{icon}</div>
           <span className="text-sm font-semibold text-gray-200">{label}</span>
