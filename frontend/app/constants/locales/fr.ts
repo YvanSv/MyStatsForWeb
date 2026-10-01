@@ -125,6 +125,7 @@ export const fr = {
     successToast: "Profil modifié !",
     errorSave: "Impossible d'enregistrer le profil.",
     errorWeight: "L'image est trop lourde (max 2MB)",
+    errorImageType: "Format non pris en charge : utilisez une image PNG, JPEG, WebP ou GIF.",
     // Toggles
     toggleProfile: "Profil public",
     descProfile: "Autoriser les autres à accéder à votre profil",

@@ -518,11 +518,43 @@ describe("EditProfilePage – images", () => {
   };
   const png = (size = 10) => new File([new Uint8Array(size)], "x.png", { type: "image/png" });
 
-  it("expose deux champs fichier cachés acceptant les images", async () => {
+  it("expose deux champs fichier cachés acceptant PNG, JPEG, WebP et GIF (pas de SVG)", async () => {
     const { container } = await renderLoaded();
     const list = inputs(container);
     expect(list).toHaveLength(2);
-    list.forEach((i) => expect(i).toHaveAttribute("accept", "image/*"));
+    list.forEach((i) => {
+      expect(i).toHaveAttribute("accept", "image/png,image/jpeg,image/webp,image/gif");
+      expect(i.getAttribute("accept")).not.toContain("svg");
+    });
+  });
+
+  it.each([
+    ["SVG", "image/svg+xml", "x.svg"],
+    ["PDF", "application/pdf", "x.pdf"],
+    ["type vide", "", "x"],
+  ])("fichier %s refusé pour la bannière et l'avatar : alerte et image inchangée", async (_l, type, name) => {
+    const { container } = await renderLoaded();
+    const file = new File([new Uint8Array(10)], name, { type });
+    await readAs(container, 0, file);
+    await readAs(container, 1, file);
+    expect(window.alert).toHaveBeenCalledTimes(2);
+    expect(window.alert).toHaveBeenCalledWith(dict.errorImageType);
+    expect(screen.getByAltText("Banner")).toHaveAttribute("src", "https://img/b.png");
+    expect(screen.getByAltText("Avatar Preview")).toHaveAttribute("src", "https://img/a.png");
+  });
+
+  it.each(["image/jpeg", "image/webp", "image/gif"])("format %s accepté", async (type) => {
+    const { container } = await renderLoaded();
+    await readAs(container, 1, new File([new Uint8Array(10)], "x", { type }));
+    expect(window.alert).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByAltText("Avatar Preview").getAttribute("src")).toMatch(/^data:image\//));
+  });
+
+  it("vide le champ fichier après un refus pour pouvoir re-choisir le même fichier", async () => {
+    const { container } = await renderLoaded();
+    const input = inputs(container)[1];
+    await readAs(container, 1, new File([new Uint8Array(10)], "x.svg", { type: "image/svg+xml" }));
+    expect(input.value).toBe("");
   });
 
   it("un clic sur l'overlay de la bannière ouvre le sélecteur de fichier", async () => {

@@ -125,6 +125,7 @@ export const en = {
     successToast: "Profile updated!",
     errorSave: "Unable to save your profile.",
     errorWeight: "Image is too heavy (max 2MB)",
+    errorImageType: "Unsupported format: use a PNG, JPEG, WebP or GIF image.",
     // Toggles
     toggleProfile: "Public profile",
     descProfile: "Allow others to access your profile",

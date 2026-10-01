@@ -54,6 +54,9 @@ const PROFILE_EDIT_STYLES = {
   BTN_CANCEL: `text3 px-6 py-3 text-gray-400 hover:text-white transition-colors cursor-pointer`
 };
 
+// Mêmes règles que le serveur : jamais de SVG
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const RESERVED_SLUGS = ["dashboard", "edit", "settings", "admin", "login", "api"];
 
 function EditProfileContent() {
@@ -150,14 +153,25 @@ function EditProfileContent() {
     });
   };
 
+  // Retourne true si l'image est acceptable ; sinon prévient l'utilisateur (le serveur revérifie de toute façon)
+  const checkImage = (file: File) => {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      alert(dict.errorImageType);
+      return false;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      alert(dict.errorWeight);
+      return false;
+    }
+    return true;
+  };
+
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // On vide le champ pour pouvoir re-sélectionner le même fichier après un refus
+    e.target.value = "";
     if (file) {
-      // Vérification de la taille (ex: 2MB max)
-      if (file.size > 2 * 1024 * 1024) {
-        alert(dict.errorWeight);
-        return;
-      }
+      if (!checkImage(file)) return;
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -169,12 +183,9 @@ function EditProfileContent() {
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (file) {
-      // Vérification de la taille (ex: 2MB max)
-      if (file.size > 2 * 1024 * 1024) {
-        alert(dict.errorWeight);
-        return;
-      }
+      if (!checkImage(file)) return;
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -190,7 +201,7 @@ function EditProfileContent() {
     <main className={PROFILE_EDIT_STYLES.MAIN}>
       {/* --- ÉDITION BANNIÈRE --- */}
       <div className={PROFILE_EDIT_STYLES.BANNER_WRAPPER}>
-        <input type="file" ref={bannerInputRef} accept="image/*"
+        <input type="file" ref={bannerInputRef} accept={ALLOWED_IMAGE_TYPES.join(",")}
           onChange={handleBannerChange} className="hidden"
         />
         {formData.banner_url === "/banner_template.jpg"
@@ -209,7 +220,7 @@ function EditProfileContent() {
         {/* --- ÉDITION AVATAR --- */}
         <div className={PROFILE_EDIT_STYLES.HEADER_FLEX}>
           <div className={PROFILE_EDIT_STYLES.AVATAR_WRAPPER}>
-            <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden"/>
+            <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} accept={ALLOWED_IMAGE_TYPES.join(",")} className="hidden"/>
             <img src={formData.avatar_url} className={PROFILE_EDIT_STYLES.AVATAR_IMG} alt="Avatar Preview"/>
             <div className={PROFILE_EDIT_STYLES.OVERLAY_ICON} onClick={() => avatarInputRef.current?.click()} style={{ cursor: 'pointer' }}>
               <CameraIcon size={32} />
