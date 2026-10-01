@@ -57,8 +57,8 @@ export const FILTER_BAR_STYLES = {
     m-0 p-0 w-[90px]`,
 };
 
-function AvatarContainer({url,username,additional = "",title}:{url:string|undefined,username?:string,additional?:string,title?:any}) {
-  const isSpecial = username === "Yvantmtc";
+function AvatarContainer({url,username,additional = "",title,special = false}:{url:string|undefined,username?:string,additional?:string,title?:any,special?:boolean}) {
+  const isSpecial = special;
   const styleImg = `w-full h-full rounded-[26px] lg:rounded-[31px] bg-bg2 object-cover ${isSpecial ? '' : 'border-4 border-bg1'}`;
 
   return (
@@ -292,7 +292,7 @@ export default function DashboardPage() {
       <div className={STYLES.container}>
         {/* --- HEADER --- */}
         <div className={"flex flex-row justify-between items-end lg:mb-3"}>
-          <AvatarContainer url={profile?.avatar} username={profile?.display_name} title={
+          <AvatarContainer url={profile?.avatar} username={profile?.display_name} special={!!profile?.is_special} title={
             <header className="flex flex-col h-full justify-between">
               <div>
                 <h1 className={STYLES.nav.title}>{dict.title}</h1>

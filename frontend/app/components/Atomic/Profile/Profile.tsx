@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
-export function AvatarContainer({children,url,username,additional='',title}:{children?:ReactNode,url:string|undefined,username?:string,additional?:string,title?:ReactNode}) {
-  const isSpecial = username === "Yvantmtc";
+export function AvatarContainer({children,url,username,additional='',title,special=false}:{children?:ReactNode,url:string|undefined,username?:string,additional?:string,title?:ReactNode,special?:boolean}) {
+  // `special` vient du serveur (profil.is_special) : le style ne dépend jamais du pseudo choisi
+  const isSpecial = special;
   const styleImg = `w-full h-full rounded-[31px] bg-bg2 object-cover ${isSpecial ? '' : 'border-4 border-bg1'}`;
 
   return (

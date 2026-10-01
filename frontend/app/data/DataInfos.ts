@@ -28,6 +28,7 @@ export interface UserProfile {
   avatar: string;
   bio: string;
   slug: string;
+  is_special?: boolean;
   banner: string;
   total_minutes: number;
   total_streams: number;

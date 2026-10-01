@@ -113,6 +113,8 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
         # --- 50 DERNIÈRES ÉCOUTES ---
         "recent_tracks": get_historique(target_user,50,session) if target_user.perms.get("history", True) or is_owner else [],
         "perms": target_user.perms,
+        # Style d'avatar réservé : décidé par le serveur (compte administrateur), jamais par le pseudo
+        "is_special": bool(target_user.isadmin),
     }
 
 @router.get(

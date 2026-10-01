@@ -128,7 +128,7 @@ export default function ProfilePage({ id }: { id: string }) {
 
       <div className={PROFILE_STYLES.CONTAINER}>
         {/* HEADER PROFIL */}
-        <AvatarContainer url={profile.avatar} username={profile.display_name} additional="mb-12">
+        <AvatarContainer url={profile.avatar} username={profile.display_name} special={!!profile.is_special} additional="mb-12">
           {/* --- ACTIONS --- */}
           <div className={PROFILE_STYLES.ACTION_GROUP}>
             {isOwner ? (

@@ -161,10 +161,17 @@ describe("DashboardPage [id] : rendu initial", () => {
     expect(screen.getByAltText("Avatar")).not.toHaveAttribute("src");
   });
 
-  it("l'avatar du profil spécial reçoit le dégradé", async () => {
-    h.getProfile.mockResolvedValue({ avatar: "/a.png", display_name: "Yvantmtc" });
+  it("l'avatar d'un profil marqué spécial par le serveur reçoit le dégradé", async () => {
+    h.getProfile.mockResolvedValue({ avatar: "/a.png", display_name: "Yvan", is_special: true });
     const { container } = await renderLoaded();
     await waitFor(() => expect(container.querySelector(".bg-gradient-to-tr")).not.toBeNull());
+  });
+
+  it("un simple pseudo « Yvantmtc » ne reçoit pas le dégradé (le style ne dépend pas du nom)", async () => {
+    h.getProfile.mockResolvedValue({ avatar: "/a.png", display_name: "Yvantmtc" });
+    const { container } = await renderLoaded();
+    await waitFor(() => expect(screen.getByAltText("Avatar")).toBeInTheDocument());
+    expect(container.querySelector(".bg-gradient-to-tr")).toBeNull();
   });
 
   it("n'injecte pas les classes parasites 'false' ou 'undefined' dans le DOM", async () => {
