@@ -11,6 +11,11 @@ import { Download, Share2 } from 'lucide-react';
 import { PrimaryButton, SecondaryButton } from '../components/Atomic/Buttons';
 import ResumeCanvas from './ResumeCanvas';
 import { HeaderComponent } from './HeaderComponent';
+import toast from 'react-hot-toast';
+import { seasonOfMonth, seasonStart } from '../services/seasons';
+import { exportFileName, loadLayout, saveLayout } from './gridLayout';
+
+const SEASON_NAMES = ["Hiver", "Printemps", "Été", "Automne"];
 
 export default function ResumePage() {
   const { t } = useLanguage();
@@ -25,6 +30,21 @@ export default function ResumePage() {
   // Échec du chargement : sans ça, le spinner tournait indéfiniment quand l'API échouait
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  // Vrai pendant chaque chargement : les anciennes données restent affichées mais marquées « occupé »
+  const [loading, setLoading] = useState(true);
+  // Évite d'écrire l'état vide initial avant d'avoir restauré la mise en page enregistrée
+  const [layoutRestored, setLayoutRestored] = useState(false);
+
+  // Restauration côté client uniquement (après l'hydratation)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage n'existe pas au rendu serveur : lecture obligatoirement après l'hydratation
+    setWidgets(loadLayout());
+    setLayoutRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (layoutRestored) saveLayout(widgets);
+  }, [widgets, layoutRestored]);
 
   // Calcul du libellé affiché (ex: "2025" ou "Mars 2026")
   const displayLabel = useMemo(() => {
@@ -41,14 +61,9 @@ export default function ResumePage() {
       return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
     }
     if (range === 'season') {
-      const seasons = ["Hiver", "Printemps", "Été", "Automne"];
-      
-      // Mois actuel (0-11) - offset*3 (car une saison = 3 mois)
-      const targetDate = new Date(now.getFullYear(), now.getMonth() - (offset * 3), 1);
-      const targetSeasonIdx = Math.floor(targetDate.getMonth() / 3);
-      const targetYear = targetDate.getFullYear();
-      
-      return `${seasons[targetSeasonIdx]} ${targetYear}`;
+      // Saisons météo partagées avec le dashboard et le backend ; l'année est celle du début de saison
+      const start = seasonStart(now, -offset);
+      return `${SEASON_NAMES[seasonOfMonth(start.getMonth())]} ${start.getFullYear()}`;
     }
     
     return range;
@@ -58,15 +73,19 @@ export default function ResumePage() {
     // Une réponse arrivée après un changement de filtre (ou un démontage) ne doit pas écraser la plus récente
     let cancelled = false;
     setLoadFailed(false);
+    setLoading(true);
 
     const fetchResume = async () => {
       try {
         const data = await getResumeStats({"range":range,"sort":sortBy,"offset":offset});
-        if (!cancelled) setResumeData(data);
+        if (cancelled) return;
+        setResumeData(data);
+        setLoading(false);
       } catch (error) {
         if (cancelled) return;
         console.error("Erreur lors de la récupération du résumé:", error);
         setLoadFailed(true);
+        setLoading(false);
       }
     };
 
@@ -85,15 +104,18 @@ export default function ResumePage() {
         quality: 1,
         pixelRatio: 2, // Double la résolution pour un rendu net (Retina)
         backgroundColor: '#000000', // Force le fond noir
+        // Ni anneau de sélection, ni grille vide, ni poignées/boutons de suppression dans l'image
+        filter: (n: Node) => !(n instanceof HTMLElement && n.dataset.exportIgnore === "true"),
       });
 
       // 2. Création d'un lien invisible pour déclencher le téléchargement
       const link = document.createElement('a');
-      link.download = `mystats-${range}-${resumeData?.user.display_name}-${Date.now()}.png`;
+      link.download = exportFileName(range, resumeData?.user?.display_name, Date.now());
       link.href = dataUrl;
       link.click();
     } catch (error) {
       console.error("Erreur lors de l'export :", error);
+      toast.error(t.resume.exportError);
     }
   };
 
@@ -110,7 +132,13 @@ export default function ResumePage() {
   }
 
   return (
-    <div className="flex flex-1 h-full min-h-0">
+    <div className="relative flex flex-1 h-full min-h-0" aria-busy={loading}>
+      {loading && (
+        <div data-testid="resume-reloading" className="absolute top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none rounded-full bg-black/70 p-2">
+          <LoadingSpinner size="sm" />
+        </div>
+      )}
+      <div className={`flex flex-1 h-full min-h-0 w-full transition-opacity duration-200 ${loading ? 'opacity-60' : 'opacity-100'}`}>
       <div className="flex flex-col flex-5 border-r border-white/10 min-h-0">
         {/* HEADER FIXE */}
         <p className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic shrink-0">
@@ -153,6 +181,7 @@ export default function ResumePage() {
         <p className="p-4 bg-vert/10 border border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
           Sélectionnez un élément sur la grille pour l'éditer.
         </p>
+      </div>
       </div>
     </div>
     // <div className='flex'>

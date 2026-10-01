@@ -8,9 +8,16 @@ const COLORS = ["#1DB954", "#FFFFFF", "#FBBF24", "#F87171"];
 const PROP = "minutes";
 const ICON = "timer";
 
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("../../../context/languageContext", async () => {
+  const { languages } = await import("../../../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
+
 const onChange = vi.fn();
 
 beforeEach(() => {
+  lang.current = "fr";
   onChange.mockReset();
 });
 
@@ -180,5 +187,39 @@ describe("MinutesSettings", () => {
     expect(screen.getByRole("button", { name: /Abréger/ })).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(onChange).toHaveBeenCalledWith({ shorten: true });
+  });
+});
+
+describe("titre par défaut (Minutes)", () => {
+  it.each([[1, 1], [2, 1], [2, 2], [3, 3]])("affiche le titre français par défaut en %ix%i quand label est absent", (w, h) => {
+    renderWidget(w, h, 5, {});
+    expect(screen.getByText("Minutes")).toBeInTheDocument();
+  });
+
+  it("affiche le titre anglais par défaut quand la langue est l'anglais", () => {
+    lang.current = "en";
+    renderWidget(2, 2, 5, {});
+    expect(screen.getByText("Minutes")).toBeInTheDocument();
+  });
+
+  it("utilise le titre par défaut quand label est une chaîne vide", () => {
+    renderWidget(2, 2, 5, { label: "" });
+    expect(screen.getByText("Minutes")).toBeInTheDocument();
+  });
+
+  it("un titre saisi reste prioritaire sur le titre par défaut", () => {
+    renderWidget(2, 2, 5, { label: "Mon titre" });
+    expect(screen.getByText("Mon titre")).toBeInTheDocument();
+    expect(screen.queryByText("Minutes")).not.toBeInTheDocument();
+  });
+
+  it("le champ « Titre du widget » montre le titre par défaut en placeholder (français puis anglais)", () => {
+    const { unmount } = render(<MinutesSettings settings={{}} onChange={onChange} />);
+    expect(screen.getByRole("textbox", { name: "Titre du widget" })).toHaveAttribute("placeholder", "Minutes");
+    expect(screen.getByRole("textbox")).toHaveValue("");
+    unmount();
+    lang.current = "en";
+    render(<MinutesSettings settings={{}} onChange={onChange} />);
+    expect(screen.getByRole("textbox")).toHaveAttribute("placeholder", "Minutes");
   });
 });

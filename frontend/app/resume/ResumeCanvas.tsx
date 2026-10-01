@@ -14,6 +14,7 @@ import { StreamsWidget } from './widgets/stats/StreamsWidget';
 import { DistinctTracksWidget } from './widgets/stats/DistinctTracksWidget';
 import { DistinctAlbumsWidget } from './widgets/stats/DistinctAlbumsWidget';
 import { DistinctArtistsWidget } from './widgets/stats/DistinctArtistsWidget';
+import { GRID_CELLS, GRID_COLS, GRID_ROWS, collides, fitsInGrid, isWidgetType, nextWidgetId } from './gridLayout';
 
 interface ResumeCanvasProps {
   range: string | number;
@@ -46,9 +47,12 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     setResizingConfig({ id, handle });
   };
 
+  // Toujours la dernière version de deselect (donc du onSelectWidget courant) sans réabonner l'écouteur
+  const deselectRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") deselect();
+      if (e.key === "Escape") deselectRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -64,8 +68,8 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
       if (!widget) return;
 
       const gridRect = gridRef.current.getBoundingClientRect();
-      const cellWidth = gridRect.width / 3;
-      const cellHeight = gridRect.height / 5;
+      const cellWidth = gridRect.width / GRID_COLS;
+      const cellHeight = gridRect.height / GRID_ROWS;
 
       // Position de la souris convertie en index de grille (ex: 1.5, 2.2)
       const mouseCol = (e.clientX - gridRect.left) / cellWidth;
@@ -84,13 +88,13 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
 
       // --- CALCUL SELON LE COIN ---
       if (handle.includes('bottom')) {
-        newRowEnd = Math.max(oldRowStart + 1, Math.min(5, Math.ceil(mouseRow)));
+        newRowEnd = Math.max(oldRowStart + 1, Math.min(GRID_ROWS, Math.ceil(mouseRow)));
       }
       if (handle.includes('top')) {
         newRowStart = Math.max(0, Math.min(oldRowEnd - 1, Math.floor(mouseRow)));
       }
       if (handle.includes('right')) {
-        newColEnd = Math.max(oldColStart + 1, Math.min(3, Math.ceil(mouseCol)));
+        newColEnd = Math.max(oldColStart + 1, Math.min(GRID_COLS, Math.ceil(mouseCol)));
       }
       if (handle.includes('left')) {
         newColStart = Math.max(0, Math.min(oldColEnd - 1, Math.floor(mouseCol)));
@@ -99,11 +103,13 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
       // --- APPLICATION DES NOUVELLES VALEURS ---
       const newW = newColEnd - newColStart;
       const newH = newRowEnd - newRowStart;
-      const newIndex = newColStart + (newRowStart * 3);
+      const newIndex = newColStart + (newRowStart * GRID_COLS);
 
       if (newW !== widget.w || newH !== widget.h || newIndex !== widget.index) {
-        setWidgets(prev => prev.map(w => 
-          w.id === id ? { ...w, w: newW, h: newH, index: newIndex } : w
+        // Un redimensionnement ne doit jamais chevaucher un autre widget : taille refusée
+        const next = { index: newIndex, w: newW, h: newH };
+        setWidgets(prev => (
+          collides(next, prev, id) ? prev : prev.map(w => (w.id === id ? { ...w, ...next } : w))
         ));
       }
     };
@@ -130,7 +136,11 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     e.dataTransfer.dropEffect = "move";
   };
 
-  const onDragLeave = () => {
+  const onDragLeave = (e: React.DragEvent) => {
+    // Passer d'une cellule à l'autre déclenche un dragleave : on ne masque la grille
+    // que si le curseur quitte réellement la zone
+    const next = e.relatedTarget;
+    if (next instanceof Node && e.currentTarget.contains(next)) return;
     setIsDragging(false);
   };
 
@@ -139,18 +149,15 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     setIsDragging(false);
     
     const type = e.dataTransfer.getData("widgetType");
+    if (!isWidgetType(type)) return; // type vide ou inconnu : pas de widget fantôme
 
-    // On ajoute le nouveau widget à notre liste
-    const newWidget: PlacedWidget = {
-      id: Date.now(),
-      type: type,
-      index: targetIndex,
-      w: 1,
-      h: 1,
-      settings: {}
-    };
-
-    setWidgets([...widgets, newWidget]);
+    // Mise à jour fonctionnelle : id calculé et collision vérifiée sur l'état le plus récent
+    setWidgets(prev => {
+      const footprint = { index: targetIndex, w: 1, h: 1 };
+      if (!fitsInGrid(footprint) || collides(footprint, prev)) return prev;
+      const newWidget: PlacedWidget = { id: nextWidgetId(prev), type, ...footprint, settings: {} };
+      return [...prev, newWidget];
+    });
   };
 
   const handleSelect = (w: PlacedWidget) => {
@@ -166,6 +173,8 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     setSelectedId(null);
     onSelectWidget(null as any); // On informe aussi le parent pour vider le panneau "Propriétés"
   };
+
+  useEffect(() => { deselectRef.current = deselect; });
 
   const getFreshData = (type: string) => {
     switch (type) {
@@ -194,10 +203,15 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
       >
         {/* 1. LA GRILLE DE FOND (Fixe, 15 cases) */}
         <div className="grid grid-cols-3 gap-2" style={{ opacity: isDragging || widgets.length === 0 ? 1 : 0 }}>
-          {Array.from({ length: 3 * 5 }).map((_, index) => (
+          {Array.from({ length: GRID_CELLS }).map((_, index) => (
+            // La case garde sa taille dans l'export ; seul son visuel (cadre en pointillés, numéro) est ignoré
             <div key={`cell-${index}`} onDragOver={onDragOver} onDrop={(e) => onDrop(e, index)}
-              className="aspect-square border border-dashed border-white/20 rounded-md flex items-center justify-center text-[8px] text-white/5 hover:bg-white/10 transition-colors"
-            >{index}</div>
+              className="relative aspect-square"
+            >
+              <div data-export-ignore="true"
+                className="absolute inset-0 border border-dashed border-white/20 rounded-md flex items-center justify-center text-[8px] text-white/5 hover:bg-white/10 transition-colors"
+              >{index}</div>
+            </div>
           ))}
         </div>
 
@@ -221,14 +235,21 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
                   e.stopPropagation();
                   handleSelect(w);
                 }}
+                data-selected={isSelected ? "true" : undefined}
                 className={`pointer-events-auto group relative cursor-pointer transition-all duration-200 ${
-                  isSelected ? 'ring-2 ring-vert ring-offset-2 ring-offset-black z-50' : 'hover:z-30'
+                  isSelected ? 'z-50' : 'hover:z-30'
                 }`}
                 style={{
                   gridColumn: `${colStart} / span ${w.w}`,
                   gridRow: `${rowStart} / span ${w.h}`,
                 }}
               >
+                {/* Anneau de sélection : calque séparé pour pouvoir l'exclure de l'export image */}
+                {isSelected && (
+                  <div data-export-ignore="true" aria-hidden="true"
+                    className="absolute inset-0 rounded-md ring-2 ring-vert ring-offset-2 ring-offset-black pointer-events-none"
+                  />
+                )}
                 <div className="w-full h-full rounded-md text-black font-bold text-[10px] flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-white">
                   {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={currentData} settings={w.settings}/>}
                   {w.type === 'username' && <UsernameWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
@@ -245,7 +266,7 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
                   {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>} */}
 
                   {/* --- BOUTON SUPPRIMER (POUBELLE) --- */}
-                  <button onClick={(e) => {e.stopPropagation();deleteWidget(w.id)}} title="Supprimer le widget"
+                  <button data-export-ignore="true" onClick={(e) => {e.stopPropagation();deleteWidget(w.id)}} title="Supprimer le widget"
                     className="absolute top-1 right-1 p-1.5 rounded-lg bg-black/50 text-white/70 hover:bg-black hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 z-40 active:scale-95"
                   ><Trash2 size={14} strokeWidth={2.5} /></button>
                   
@@ -297,7 +318,7 @@ function ResizeHandle({ position, onMouseDown }: { position: string; onMouseDown
   };
 
   return (
-    <div 
+    <div data-export-ignore="true"
       onMouseDown={onMouseDown}
       className={`${baseClass} ${positionClasses[position]}`}
     ><div className={cornerVisuals[position]}/></div>

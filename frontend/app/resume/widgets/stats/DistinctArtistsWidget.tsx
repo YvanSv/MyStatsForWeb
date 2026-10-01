@@ -1,3 +1,4 @@
+import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
 import { MicVocal } from "lucide-react";
 import { CustomLabel, ShortenFilter, ShowIconFilter } from "./common_filters";
@@ -11,12 +12,14 @@ interface DistinctArtistsProps {
 }
 
 export function DistinctArtistsWidget({ w, h, data, settings }: DistinctArtistsProps) {
+  const { t } = useLanguage();
+  const defaultLabel = t.resume.labelArtists;
   const color = settings?.color || "#1DB954";
 
   const layouts = {
-    "1x1": <Layout1x1 icon={<MicVocal size={14} style={{ color }} className="mb-1"/>} data={data} settings={settings}/>,
-    "2x1": <Layout2x1 icon={<MicVocal size={24} className="opacity-20 text-white"/>} data={data} settings={settings}/>,
-    "2x2": <Layout2x2 icon={<MicVocal size={36} className="opacity-20 text-white"/>} data={data} settings={settings}/>
+    "1x1": <Layout1x1 icon={<MicVocal size={14} style={{ color }} className="mb-1"/>} data={data} settings={settings} defaultLabel={defaultLabel}/>,
+    "2x1": <Layout2x1 icon={<MicVocal size={24} className="opacity-20 text-white"/>} data={data} settings={settings} defaultLabel={defaultLabel}/>,
+    "2x2": <Layout2x2 icon={<MicVocal size={36} className="opacity-20 text-white"/>} data={data} settings={settings} defaultLabel={defaultLabel}/>
   };
 
   return (
@@ -28,6 +31,8 @@ export function DistinctArtistsWidget({ w, h, data, settings }: DistinctArtistsP
 
 export function DistinctArtistsSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
   const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
+  const { t } = useLanguage();
+  const defaultLabel = t.resume.labelArtists;
 
   return (
     <div className="space-y-6">
@@ -44,7 +49,7 @@ export function DistinctArtistsSettings({ settings, onChange }: { settings: any,
       </div>
 
       {/* Libellé personnalisé */}
-      <CustomLabel update={update} settings={settings}/>
+      <CustomLabel update={update} settings={settings} defaultLabel={defaultLabel}/>
 
       {/* Options Binaires */}
       <div className="space-y-2">

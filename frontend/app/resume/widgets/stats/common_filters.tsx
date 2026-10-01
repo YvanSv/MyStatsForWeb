@@ -25,7 +25,7 @@ export function ShowIconFilter({update,settings}:{update: (type:string,value:any
   );
 }
 
-export function CustomLabel({update,settings}:{update: (type:string,value:any) => void, settings: any}) {
+export function CustomLabel({update,settings,defaultLabel}:{update: (type:string,value:any) => void, settings: any, defaultLabel?: string}) {
   const id = useId();
   return (
     <div className="flex flex-col gap-2">
@@ -34,6 +34,7 @@ export function CustomLabel({update,settings}:{update: (type:string,value:any) =
         id={id}
         type="text" 
         value={settings?.label || ""} 
+        placeholder={defaultLabel}
         onChange={(e) => update('label', e.target.value)}
         className="bg-white/5 border border-white/10 rounded-lg p-2 text-[10px] text-white focus:border-vert outline-none"
       />

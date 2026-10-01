@@ -60,6 +60,13 @@ const cells = (c: HTMLElement) => c.querySelectorAll(".aspect-square");
 const widgetBox = (c: HTMLElement) => c.querySelector(".pointer-events-auto") as HTMLElement;
 const handle = (c: HTMLElement, pos: string) => c.querySelector(`.cursor-${pos}-resize`) as HTMLElement;
 
+// jsdom n'a pas de DragEvent : on fixe relatedTarget à la main sur un Event générique
+const dragLeaveTo = (from: Element, to: Element | null) => {
+  const ev = new Event("dragleave", { bubbles: true, cancelable: true });
+  Object.defineProperty(ev, "relatedTarget", { value: to });
+  act(() => { from.dispatchEvent(ev); });
+};
+
 const dataTransfer = (type: string, data: string) => ({
   dropEffect: "",
   getData: (k: string) => (k === "widgetType" ? type : data),
@@ -191,12 +198,14 @@ describe("ResumeCanvas – sélection", () => {
     const { container } = renderCanvas([pw({ id: 7, type: "bio", settings: { s: 1 } })]);
     await userEvent.click(widgetBox(container));
     expect(h.onSelect).toHaveBeenCalledWith({ id: 7, type: "bio", settings: { s: 1 } });
-    expect(widgetBox(container).className).toContain("ring-2");
+    expect(widgetBox(container)).toHaveAttribute("data-selected", "true");
+    expect(container.querySelector(".ring-2")).toBeInTheDocument();
   });
 
   it("un widget non sélectionné n'a pas d'anneau", () => {
     const { container } = renderCanvas([pw()]);
-    expect(widgetBox(container).className).not.toContain("ring-2");
+    expect(widgetBox(container)).not.toHaveAttribute("data-selected");
+    expect(container.querySelector(".ring-2")).not.toBeInTheDocument();
   });
 
   it("sélectionner un autre widget déplace la sélection", async () => {
@@ -204,8 +213,8 @@ describe("ResumeCanvas – sélection", () => {
     const boxes = container.querySelectorAll(".pointer-events-auto");
     await userEvent.click(boxes[0]);
     await userEvent.click(boxes[1]);
-    expect(boxes[0].className).not.toContain("ring-2");
-    expect(boxes[1].className).toContain("ring-2");
+    expect(boxes[0]).not.toHaveAttribute("data-selected");
+    expect(boxes[1]).toHaveAttribute("data-selected", "true");
     expect(h.onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 2 }));
   });
 
@@ -215,7 +224,8 @@ describe("ResumeCanvas – sélection", () => {
     h.onSelect.mockClear();
     fireEvent.click(gridEl(container));
     expect(h.onSelect).toHaveBeenCalledWith(null);
-    expect(widgetBox(container).className).not.toContain("ring-2");
+    expect(widgetBox(container)).not.toHaveAttribute("data-selected");
+    expect(container.querySelector(".ring-2")).not.toBeInTheDocument();
   });
 
   it("cliquer sur une case de la grille ne désélectionne pas", async () => {
@@ -231,7 +241,8 @@ describe("ResumeCanvas – sélection", () => {
     await userEvent.click(widgetBox(container));
     await userEvent.keyboard("{Escape}");
     expect(h.onSelect).toHaveBeenLastCalledWith(null);
-    expect(widgetBox(container).className).not.toContain("ring-2");
+    expect(widgetBox(container)).not.toHaveAttribute("data-selected");
+    expect(container.querySelector(".ring-2")).not.toBeInTheDocument();
   });
 
   it("les autres touches ne désélectionnent pas", async () => {
@@ -240,6 +251,23 @@ describe("ResumeCanvas – sélection", () => {
     h.onSelect.mockClear();
     await userEvent.keyboard("a{Enter}");
     expect(h.onSelect).not.toHaveBeenCalled();
+  });
+
+  it("Échap utilise le onSelectWidget le plus récent après un nouveau rendu", async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const { rerender } = render(<ResumeCanvas range="y" resumeData={resumeData} widgets={[pw()]} setWidgets={h.setWidgets} onSelectWidget={first} />);
+    rerender(<ResumeCanvas range="y" resumeData={resumeData} widgets={[pw()]} setWidgets={h.setWidgets} onSelectWidget={second} />);
+    await userEvent.keyboard("{Escape}");
+    expect(second).toHaveBeenCalledWith(null);
+    expect(first).not.toHaveBeenCalled();
+  });
+
+  it("n'ajoute l'écouteur clavier qu'une fois malgré les nouveaux rendus", () => {
+    const add = vi.spyOn(window, "addEventListener");
+    const { rerender } = renderCanvas([pw()]);
+    rerender(<ResumeCanvas range="z" resumeData={resumeData} widgets={[pw()]} setWidgets={h.setWidgets} onSelectWidget={vi.fn()} />);
+    expect(add.mock.calls.filter(([type]) => type === "keydown")).toHaveLength(1);
   });
 
   it("retire l'écouteur clavier au démontage", async () => {
@@ -304,6 +332,22 @@ describe("ResumeCanvas – glisser-déposer", () => {
     expect(layer()).toBe("0");
   });
 
+  it("passer d'une cellule à l'autre (relatedTarget dans la grille) garde la grille visible", () => {
+    const { container } = renderCanvas([pw()]);
+    const layer = () => (container.querySelector(".grid-cols-3") as HTMLElement).style.opacity;
+    fireEvent.dragOver(gridEl(container));
+    dragLeaveTo(cells(container)[3], cells(container)[4]);
+    expect(layer()).toBe("1");
+  });
+
+  it("quitter vers un élément hors de la grille masque la grille", () => {
+    const { container } = renderCanvas([pw()]);
+    const layer = () => (container.querySelector(".grid-cols-3") as HTMLElement).style.opacity;
+    fireEvent.dragOver(gridEl(container));
+    dragLeaveTo(gridEl(container), document.body);
+    expect(layer()).toBe("0");
+  });
+
   it("dragOver sur une case autorise le déplacement (dropEffect = move)", () => {
     const { container } = renderCanvas([]);
     const dt = dataTransfer("bio", "{}");
@@ -312,14 +356,71 @@ describe("ResumeCanvas – glisser-déposer", () => {
     expect(ev).toBe(false); // preventDefault appelé
   });
 
-  it("déposer sur une case ajoute un widget 1x1 à cet index", () => {
-    vi.spyOn(Date, "now").mockReturnValue(4242);
+  it("déposer sur une case ajoute un widget 1x1 à cet index via une mise à jour fonctionnelle", () => {
     const { container } = renderCanvas([pw({ id: 1 })]);
     fireEvent.drop(cells(container)[7], { dataTransfer: dataTransfer("streams", '{"x":1}') });
-    expect(h.setWidgets).toHaveBeenCalledWith([
+    expect(h.setWidgets).toHaveBeenCalledTimes(1);
+    const updater = h.setWidgets.mock.calls[0][0];
+    expect(typeof updater).toBe("function");
+    expect(updater([pw({ id: 1 })])).toEqual([
       pw({ id: 1 }),
-      { id: 4242, type: "streams", index: 7, w: 1, h: 1, settings: {} },
+      { id: 2, type: "streams", index: 7, w: 1, h: 1, settings: {} },
     ]);
+  });
+
+  it("l'id vaut max(ids) + 1 sur l'état le plus récent, sans Date.now()", () => {
+    const { container } = renderCanvas([]);
+    vi.spyOn(Date, "now").mockReturnValue(4242);
+    fireEvent.drop(cells(container)[0], { dataTransfer: dataTransfer("bio", "{}") });
+    const updater = h.setWidgets.mock.calls[0][0];
+    expect(updater([pw({ id: 4, index: 5 }), pw({ id: 9, index: 6 })])[2].id).toBe(10);
+    expect(updater([])[0].id).toBe(1);
+    expect(updater([])[0].id).not.toBe(4242);
+  });
+
+  it("deux dépôts rapides produisent deux widgets aux ids distincts", () => {
+    render(<Stateful initial={[]} />);
+    const grid = document.querySelectorAll(".aspect-square");
+    fireEvent.drop(grid[0], { dataTransfer: dataTransfer("bio", "") });
+    fireEvent.drop(grid[1], { dataTransfer: dataTransfer("bio", "") });
+    expect(latest.map((w) => w.id)).toEqual([1, 2]);
+  });
+
+  it("ne crée pas de widget fantôme pour un type vide", () => {
+    const { container } = renderCanvas([]);
+    fireEvent.drop(cells(container)[0], { dataTransfer: dataTransfer("", "{}") });
+    expect(h.setWidgets).not.toHaveBeenCalled();
+  });
+
+  it.each(["inconnu", "top_tracks", "profile"])("ne crée pas de widget pour le type inconnu %s", (type) => {
+    const { container } = renderCanvas([]);
+    fireEvent.drop(cells(container)[0], { dataTransfer: dataTransfer(type, "{}") });
+    expect(h.setWidgets).not.toHaveBeenCalled();
+  });
+
+  it("ignore un dépôt sur une cellule occupée par un autre widget", () => {
+    render(<Stateful initial={[pw({ id: 1, index: 4 })]} />);
+    fireEvent.drop(document.querySelectorAll(".aspect-square")[4], { dataTransfer: dataTransfer("bio", "") });
+    expect(latest).toEqual([pw({ id: 1, index: 4 })]);
+  });
+
+  it("ignore un dépôt sur une cellule couverte par un widget plus grand", () => {
+    render(<Stateful initial={[pw({ id: 1, index: 0, w: 2, h: 2 })]} />);
+    fireEvent.drop(document.querySelectorAll(".aspect-square")[4], { dataTransfer: dataTransfer("bio", "") });
+    expect(latest).toHaveLength(1);
+  });
+
+  it("accepte un dépôt sur une cellule libre voisine", () => {
+    render(<Stateful initial={[pw({ id: 1, index: 4 })]} />);
+    fireEvent.drop(document.querySelectorAll(".aspect-square")[5], { dataTransfer: dataTransfer("bio", "") });
+    expect(latest.map((w) => w.index)).toEqual([4, 5]);
+  });
+
+  it("rend la prop setWidgets inchangée si l'index visé est hors grille", () => {
+    const { container } = renderCanvas([]);
+    fireEvent.drop(cells(container)[0], { dataTransfer: dataTransfer("bio", "") });
+    const updater = h.setWidgets.mock.calls[0][0];
+    expect(updater([pw({ id: 1, index: 0 })])).toEqual([pw({ id: 1, index: 0 })]);
   });
 
   it("déposer masque la grille", () => {
@@ -333,8 +434,8 @@ describe("ResumeCanvas – glisser-déposer", () => {
     const { container } = renderCanvas([]);
     fireEvent.drop(cells(container)[0], { dataTransfer: dataTransfer("bio", "{}") });
     fireEvent.drop(cells(container)[14], { dataTransfer: dataTransfer("bio", "{}") });
-    expect(h.setWidgets.mock.calls[0][0][0].index).toBe(0);
-    expect(h.setWidgets.mock.calls[1][0][0].index).toBe(14);
+    expect(h.setWidgets.mock.calls[0][0]([])[0].index).toBe(0);
+    expect(h.setWidgets.mock.calls[1][0]([])[0].index).toBe(14);
   });
 
   it("un dépôt avec widgetData vide ne doit pas lever d'exception", () => {
@@ -467,9 +568,71 @@ describe("ResumeCanvas – redimensionnement", () => {
     expect(latest.find((w) => w.id === 1)).toMatchObject({ w: 2, h: 2 });
   });
 
+  it("refuse un agrandissement qui chevaucherait un autre widget", () => {
+    const utils = render(<Stateful initial={[pw({ id: 1, index: 0 }), pw({ id: 2, index: 1 })]} />);
+    fireEvent.mouseDown(utils.container.querySelectorAll(".cursor-se-resize")[0]);
+    move(150, 50); // 2x1 : chevauche le widget 2
+    expect(latest.find((w) => w.id === 1)).toMatchObject({ index: 0, w: 1, h: 1 });
+    move(50, 150); // 1x2 : libre
+    expect(latest.find((w) => w.id === 1)).toMatchObject({ index: 0, w: 1, h: 2 });
+  });
+
+  it("refuse un agrandissement vers le haut/gauche qui chevaucherait un autre widget", () => {
+    const utils = render(<Stateful initial={[pw({ id: 1, index: 4 }), pw({ id: 2, index: 3 })]} />);
+    fireEvent.mouseDown(utils.container.querySelectorAll(".cursor-nw-resize")[0]);
+    move(10, 150); // tenterait de couvrir la cellule 3
+    expect(latest.find((w) => w.id === 1)).toMatchObject({ index: 4, w: 1, h: 1 });
+  });
+
+  it("l'updater de redimensionnement vérifie la collision sur l'état le plus récent", () => {
+    render(<ResumeCanvas range="y" resumeData={resumeData} widgets={[pw({ index: 0 })]} setWidgets={h.setWidgets} onSelectWidget={h.onSelect} />);
+    fireEvent.mouseDown(document.querySelector(".cursor-se-resize")!);
+    move(150, 50);
+    const updater = h.setWidgets.mock.calls[0][0];
+    const prev = [pw({ id: 1, index: 0 }), pw({ id: 2, index: 1 })];
+    expect(updater(prev)).toBe(prev);
+    expect(updater([pw({ id: 1, index: 0 })])[0]).toMatchObject({ w: 2 });
+  });
+
   it("ne plante pas si la grille a une taille nulle", () => {
     (HTMLElement.prototype.getBoundingClientRect as any).mockReturnValue({ left: 0, top: 0, width: 0, height: 0 });
     start("se");
     expect(() => act(() => { move(10, 10); })).not.toThrow();
+  });
+});
+
+describe("ResumeCanvas – éléments exclus de l'export image", () => {
+  const ignored = (c: HTMLElement) => c.querySelectorAll('[data-export-ignore="true"]');
+
+  it("marque le visuel de chaque case de la grille", () => {
+    const { container } = renderCanvas([]);
+    for (const cell of cells(container)) expect(cell.querySelector('[data-export-ignore="true"]')).toBeInTheDocument();
+  });
+
+  it("garde les cases elles-mêmes dans l'export (la mise en page ne s'effondre pas)", () => {
+    const { container } = renderCanvas([]);
+    for (const cell of cells(container)) expect(cell).not.toHaveAttribute("data-export-ignore");
+  });
+
+  it("marque le bouton de suppression et les 4 poignées", () => {
+    renderCanvas([pw()]);
+    expect(screen.getByTitle("Supprimer le widget")).toHaveAttribute("data-export-ignore", "true");
+    for (const p of ["nw", "ne", "sw", "se"]) {
+      expect(document.querySelector(`.cursor-${p}-resize`)).toHaveAttribute("data-export-ignore", "true");
+    }
+  });
+
+  it("marque l'anneau de sélection, qui n'existe que pour le widget sélectionné", async () => {
+    const { container } = renderCanvas([pw()]);
+    expect(container.querySelector(".ring-2")).not.toBeInTheDocument();
+    await userEvent.click(widgetBox(container));
+    expect(container.querySelector(".ring-2")).toHaveAttribute("data-export-ignore", "true");
+  });
+
+  it("ne marque pas le contenu des widgets ni le branding", () => {
+    const { container } = renderCanvas([pw({ type: "bio" })]);
+    expect(screen.getByTestId("w-bio").closest('[data-export-ignore="true"]')).toBeNull();
+    expect(screen.getByText("POWERED BY MyStats").closest('[data-export-ignore="true"]')).toBeNull();
+    expect(ignored(container).length).toBe(15 + 1 + 4);
   });
 });

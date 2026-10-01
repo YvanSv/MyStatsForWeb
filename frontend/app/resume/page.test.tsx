@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { languages } from "../constants/locales/lang";
+import * as htmlToImage from "html-to-image";
+import toast from "react-hot-toast";
 import ResumePage from "./page";
+import { LAYOUT_STORAGE_KEY } from "./gridLayout";
 
 const dict = languages.fr.resume;
 
@@ -16,6 +19,7 @@ vi.mock("../context/languageContext", async () => {
   return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
 });
 vi.mock("html-to-image", () => ({ toPng: vi.fn() }));
+vi.mock("react-hot-toast", () => ({ default: { error: vi.fn(), success: vi.fn() } }));
 // Sous-composants lourds remplacés par des stubs qui exposent ce qu'ils reçoivent
 vi.mock("./WidgetsView", () => ({
   WidgetsView: ({ resumeData }: { resumeData: { user: { display_name: string } } }) => (
@@ -24,13 +28,22 @@ vi.mock("./WidgetsView", () => ({
 }));
 vi.mock("./PropertiesView", () => ({ PropertiesView: () => <div data-testid="properties" /> }));
 vi.mock("./ResumeCanvas", () => ({
-  default: ({ range }: { range: string | number }) => <div data-testid="canvas">{String(range)}</div>,
+  default: ({ range, widgets, setWidgets }: {
+    range: string | number; widgets: { id: number }[];
+    setWidgets: (u: (p: { id: number; type: string; index: number; w: number; h: number; settings: object }[]) => unknown[]) => void;
+  }) => (
+    <div id="capture-canvas" data-testid="canvas" data-widgets={widgets.map((w) => w.id).join(",")}>
+      {String(range)}
+      <button onClick={() => setWidgets((p) => [...p, { id: p.length + 1, type: "bio", index: p.length, w: 1, h: 1, settings: {} }])}>ajouter</button>
+    </div>
+  ),
 }));
 vi.mock("./HeaderComponent", () => ({
   HeaderComponent: ({ setRange, setOffset }: { setRange: (r: string) => void; setOffset: (n: number) => void }) => (
     <div>
       <button onClick={() => setRange("month")}>mois</button>
       <button onClick={() => setOffset(1)}>précédent</button>
+      <button onClick={() => setRange("season")}>saison</button>
     </div>
   ),
 }));
@@ -54,10 +67,16 @@ const spinner = () => document.querySelector(".animate-spin");
 beforeEach(() => {
   vi.clearAllMocks();
   h.getResumeStats.mockReset(); // vide aussi les valeurs « once » non consommées par un test précédent
+  vi.mocked(htmlToImage.toPng).mockReset();
+  vi.mocked(toast.error).mockReset();
+  window.localStorage.clear();
   vi.spyOn(console, "error").mockImplementation(() => {});
   h.getResumeStats.mockResolvedValue(resume("Yvan"));
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
 
 // --- Tests -----------------------------------------------------------------
 
@@ -242,5 +261,229 @@ describe("ResumePage – réponses dans le désordre", () => {
     unmount();
     await act(async () => pending.resolve(resume("Yvan")));
     expect(console.error).not.toHaveBeenCalled();
+  });
+});
+
+describe("ResumePage – libellé de saison", () => {
+  const labelAt = async (date: string, clicks: string[] = []) => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(date));
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await screen.findByTestId("canvas");
+    await user.click(screen.getByRole("button", { name: "saison" }));
+    for (const c of clicks) await user.click(screen.getByRole("button", { name: c }));
+    return () => screen.getByTestId("canvas");
+  };
+
+  it("octobre 2026 : Automne 2026 (et non Été comme avec Math.floor(mois/3))", async () => {
+    const canvas = await labelAt("2026-10-15T12:00:00");
+    await waitFor(() => expect(canvas()).toHaveTextContent("Automne 2026"));
+  });
+
+  it("janvier 2026 : l'hiver a commencé en décembre 2025 -> Hiver 2025", async () => {
+    const canvas = await labelAt("2026-01-10T12:00:00");
+    await waitFor(() => expect(canvas()).toHaveTextContent("Hiver 2025"));
+  });
+
+  it("février 2026 : toujours Hiver 2025", async () => {
+    const canvas = await labelAt("2026-02-20T12:00:00");
+    await waitFor(() => expect(canvas()).toHaveTextContent("Hiver 2025"));
+  });
+
+  it("décembre 2025 : Hiver 2025", async () => {
+    const canvas = await labelAt("2025-12-05T12:00:00");
+    await waitFor(() => expect(canvas()).toHaveTextContent("Hiver 2025"));
+  });
+
+  it("mars 2026 : Printemps 2026", async () => {
+    const canvas = await labelAt("2026-03-01T12:00:00");
+    await waitFor(() => expect(canvas()).toHaveTextContent("Printemps 2026"));
+  });
+
+  it("décalage 1 depuis janvier 2026 : Automne 2025", async () => {
+    const canvas = await labelAt("2026-01-10T12:00:00", ["précédent"]);
+    await waitFor(() => expect(canvas()).toHaveTextContent("Automne 2025"));
+  });
+
+  it("décalage 1 depuis août 2026 : Printemps 2026", async () => {
+    const canvas = await labelAt("2026-08-31T12:00:00", ["précédent"]);
+    await waitFor(() => expect(canvas()).toHaveTextContent("Printemps 2026"));
+  });
+});
+
+describe("ResumePage – rechargement avec anciennes données", () => {
+  const busy = () => document.querySelector("[aria-busy]") as HTMLElement;
+
+  it("n'est pas occupé une fois le premier chargement terminé", async () => {
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    expect(busy()).toHaveAttribute("aria-busy", "false");
+    expect(spinner()).not.toBeInTheDocument();
+  });
+
+  it("garde les données affichées, marque le conteneur occupé et montre un spinner", async () => {
+    const slow = deferred<ReturnType<typeof resume>>();
+    h.getResumeStats.mockResolvedValueOnce(resume("Ancien")).mockReturnValueOnce(slow.promise);
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    await user.click(screen.getByRole("button", { name: "mois" }));
+
+    expect(screen.getByTestId("widgets")).toHaveTextContent("Ancien");
+    expect(busy()).toHaveAttribute("aria-busy", "true");
+    expect(spinner()).toBeInTheDocument();
+
+    await act(async () => slow.resolve(resume("Nouveau")));
+    expect(screen.getByTestId("widgets")).toHaveTextContent("Nouveau");
+    expect(busy()).toHaveAttribute("aria-busy", "false");
+    expect(spinner()).not.toBeInTheDocument();
+  });
+
+  it("ne démonte pas le canvas pendant le rechargement", async () => {
+    h.getResumeStats.mockResolvedValueOnce(resume("Ancien")).mockReturnValueOnce(new Promise(() => {}));
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    const canvas = await screen.findByTestId("canvas");
+    await user.click(screen.getByRole("button", { name: "mois" }));
+    expect(screen.getByTestId("canvas")).toBe(canvas);
+  });
+
+  it("n'est plus occupé après un échec de rechargement", async () => {
+    h.getResumeStats.mockResolvedValueOnce(resume("Ancien")).mockRejectedValueOnce(new Error("x"));
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    await user.click(screen.getByRole("button", { name: "mois" }));
+    await waitFor(() => expect(busy()).toHaveAttribute("aria-busy", "false"));
+    expect(screen.getByTestId("widgets")).toHaveTextContent("Ancien");
+  });
+
+  it("une réponse obsolète ne termine pas l'état de chargement de la requête en cours", async () => {
+    const slow = deferred<ReturnType<typeof resume>>();
+    const latest = deferred<ReturnType<typeof resume>>();
+    h.getResumeStats.mockResolvedValueOnce(resume("Initial")).mockReturnValueOnce(slow.promise).mockReturnValueOnce(latest.promise);
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    await user.click(screen.getByRole("button", { name: "mois" }));
+    await user.click(screen.getByRole("button", { name: "précédent" }));
+    await act(async () => slow.resolve(resume("Obsolète")));
+    expect(busy()).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByTestId("widgets")).toHaveTextContent("Initial");
+    await act(async () => latest.resolve(resume("Récent")));
+    expect(busy()).toHaveAttribute("aria-busy", "false");
+  });
+});
+
+describe("ResumePage – export de l'image", () => {
+  const download = () => screen.getByRole("button", { name: new RegExp(dict.download) });
+
+  it("passe un filtre qui exclut les éléments data-export-ignore", async () => {
+    vi.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,xx");
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    await user.click(download());
+
+    const options = vi.mocked(htmlToImage.toPng).mock.calls[0][1] as { filter: (n: Node) => boolean };
+    const ignored = document.createElement("div");
+    ignored.dataset.exportIgnore = "true";
+    expect(options.filter(ignored)).toBe(false);
+    expect(options.filter(document.createElement("div"))).toBe(true);
+    expect(options.filter(document.createTextNode("texte"))).toBe(true);
+  });
+
+  it("télécharge un fichier au nom assaini (slug du pseudo)", async () => {
+    h.getResumeStats.mockResolvedValue(resume("Élodie Müller"));
+    vi.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,xx");
+    const names: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { names.push(this.download); });
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    await user.click(download());
+    await waitFor(() => expect(names).toHaveLength(1));
+    expect(names[0]).toMatch(/^mystats-year-elodie-muller-\d+\.png$/);
+  });
+
+  it("n'écrit jamais « undefined » quand le pseudo est absent", async () => {
+    h.getResumeStats.mockResolvedValue({ ...resume("x"), user: {} });
+    vi.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,xx");
+    const names: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { names.push(this.download); });
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await waitFor(() => expect(screen.getByTestId("canvas")).toBeInTheDocument());
+    await user.click(download());
+    await waitFor(() => expect(names).toHaveLength(1));
+    expect(names[0]).toMatch(/^mystats-year-profil-\d+\.png$/);
+  });
+
+  it("affiche un toast d'erreur en plus du console.error si l'export échoue", async () => {
+    const failure = new Error("tainted canvas");
+    vi.mocked(htmlToImage.toPng).mockRejectedValue(failure);
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    await user.click(download());
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(dict.exportError));
+    expect(console.error).toHaveBeenCalledWith(expect.any(String), failure);
+  });
+
+  it("ne déclenche aucun toast quand l'export réussit", async () => {
+    vi.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,xx");
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    await user.click(download());
+    await waitFor(() => expect(htmlToImage.toPng).toHaveBeenCalled());
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+});
+
+describe("ResumePage – sauvegarde de la mise en page", () => {
+  const saved = () => JSON.parse(window.localStorage.getItem(LAYOUT_STORAGE_KEY) ?? "null");
+  const stored = { version: 1, widgets: [{ id: 3, type: "streams", index: 4, w: 1, h: 1, settings: { a: 1 } }] };
+
+  it("restaure les widgets enregistrés", async () => {
+    window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(stored));
+    render(<ResumePage />);
+    await waitFor(() => expect(screen.getByTestId("canvas")).toHaveAttribute("data-widgets", "3"));
+  });
+
+  it("n'écrase pas la mise en page enregistrée par l'état vide initial", async () => {
+    window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(stored));
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    render(<ResumePage />);
+    await screen.findByTestId("widgets");
+    for (const [, value] of setItem.mock.calls) expect(JSON.parse(value).widgets).toHaveLength(1);
+    expect(saved()).toEqual(stored);
+  });
+
+  it("enregistre chaque changement de widgets", async () => {
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await user.click(await screen.findByRole("button", { name: "ajouter" }));
+    expect(saved().widgets).toEqual([{ id: 1, type: "bio", index: 0, w: 1, h: 1, settings: {} }]);
+    await user.click(screen.getByRole("button", { name: "ajouter" }));
+    expect(saved().widgets.map((w: { id: number }) => w.id)).toEqual([1, 2]);
+  });
+
+  it("ignore un contenu corrompu sans planter", async () => {
+    window.localStorage.setItem(LAYOUT_STORAGE_KEY, "{corrompu");
+    render(<ResumePage />);
+    expect(await screen.findByTestId("canvas")).toHaveAttribute("data-widgets", "");
+  });
+
+  it("fonctionne même si localStorage lève des exceptions", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("denied"); });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("denied"); });
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    await user.click(await screen.findByRole("button", { name: "ajouter" }));
+    expect(screen.getByTestId("canvas")).toHaveAttribute("data-widgets", "1");
   });
 });

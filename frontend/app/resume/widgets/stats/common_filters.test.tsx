@@ -87,6 +87,12 @@ describe("CustomLabel", () => {
     expect(screen.getByRole("textbox")).toHaveValue("");
   });
 
+  it("affiche defaultLabel en placeholder sans toucher à la valeur", () => {
+    render(<CustomLabel update={update} settings={{}} defaultLabel="Streams" />);
+    expect(screen.getByRole("textbox")).toHaveAttribute("placeholder", "Streams");
+    expect(screen.getByRole("textbox")).toHaveValue("");
+  });
+
   it("appelle update('label', valeur) à chaque frappe", async () => {
     render(<CustomLabel update={update} settings={{ label: "" }} />);
     await userEvent.type(screen.getByRole("textbox"), "ab");

@@ -7,8 +7,13 @@ interface BioWidgetProps {
   settings: any;
 }
 
+const DEFAULT_BIO_COLOR = "#9CA3AF"; // Gris par défaut
+const BIO_COLORS = [DEFAULT_BIO_COLOR, "#FFFFFF", "#1DB954", "#38BDF8", "#F1C40F"];
+
 export function BioWidget({ w, h, bio, settings }: BioWidgetProps) {
-  const color = settings?.color || "#9CA3AF"; // Gris par défaut
+  const color = settings?.color || DEFAULT_BIO_COLOR;
+  // La taille choisie s'applique dans tous les layouts ; sinon chaque layout garde sa taille d'origine
+  const fontSize1x1 = settings?.fontSize || "text-[8px]";
   const fontSize = settings?.fontSize || "text-[10px]";
   const textAlign = settings?.textAlign || "left";
   const showQuotes = settings?.showQuotes ?? false;
@@ -22,7 +27,7 @@ export function BioWidget({ w, h, bio, settings }: BioWidgetProps) {
     // Petit format : on tronque car 500 car. ne rentrent pas
     "1x1": (
       <div className={containerClass}>
-        <p style={{ color }} className="text-[8px] leading-tight line-clamp-4 font-medium italic">
+        <p style={{ color }} className={`${fontSize1x1} leading-tight line-clamp-4 font-medium italic`}>
           {bio || "Aucune bio disponible"}
         </p>
       </div>
@@ -59,8 +64,25 @@ export function BioSettings({ settings, onChange }: { settings: any, onChange: (
     { id: 'text-[16px]', label: 'L' },
   ];
 
+  const currentColor = settings?.color || DEFAULT_BIO_COLOR;
+
   return (
     <div className="space-y-6">
+      {/* Couleur */}
+      <div className="flex flex-col gap-2">
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Couleur du texte</label>
+        <div className="flex gap-2">
+          {BIO_COLORS.map(c => (
+            <button
+              key={c} type="button" aria-label={c} aria-pressed={currentColor === c}
+              onClick={() => update('color', c)}
+              className={`w-6 h-6 rounded-full border-2 ${currentColor === c ? 'border-white' : 'border-transparent'}`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      </div>
+
       {/* Taille du texte */}
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Taille de lecture</label>

@@ -48,6 +48,16 @@ describe.each(Object.entries(layouts))("%s", (_name, Layout) => {
     expect(empties.length).toBeLessThanOrEqual(1);
   });
 
+  it("affiche le titre par défaut quand label est absent ou vide, et le label saisi sinon", () => {
+    const { rerender } = render(<Layout data={5} settings={{}} icon={icon} defaultLabel="Défaut" />);
+    expect(screen.getByText("Défaut")).toBeInTheDocument();
+    rerender(<Layout data={5} settings={{ label: "" }} icon={icon} defaultLabel="Défaut" />);
+    expect(screen.getByText("Défaut")).toBeInTheDocument();
+    rerender(<Layout data={5} settings={{ label: "Saisi" }} icon={icon} defaultLabel="Défaut" />);
+    expect(screen.getByText("Saisi")).toBeInTheDocument();
+    expect(screen.queryByText("Défaut")).not.toBeInTheDocument();
+  });
+
   it("ne plante pas si settings est undefined (settings.shorten accédé sans ?.)", () => {
     expect(() => render(<Layout data={5} settings={undefined} icon={icon} />)).not.toThrow();
   });

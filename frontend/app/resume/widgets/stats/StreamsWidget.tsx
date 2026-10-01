@@ -1,3 +1,4 @@
+import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
 import { Play } from "lucide-react";
 import { CustomLabel, ShortenFilter, ShowIconFilter } from "./common_filters";
@@ -11,12 +12,14 @@ interface StreamsWidgetProps {
 }
 
 export function StreamsWidget({ w, h, streams, settings }: StreamsWidgetProps) {
+  const { t } = useLanguage();
+  const defaultLabel = t.resume.labelStreams;
   const color = settings?.color || "#1DB954";
 
   const layouts = {
-    "1x1": <Layout1x1 data={streams} settings={settings} icon={<Play size={14} style={{ color }} className="mb-1"/>}/>,
-    "2x1": <Layout2x1 data={streams} settings={settings} icon={<Play size={24} className="opacity-20 text-white"/>}/>,
-    "2x2": <Layout2x2 data={streams} settings={settings} icon={<Play size={36} className="opacity-20 text-white"/>}/>
+    "1x1": <Layout1x1 data={streams} settings={settings} defaultLabel={defaultLabel} icon={<Play size={14} style={{ color }} className="mb-1"/>}/>,
+    "2x1": <Layout2x1 data={streams} settings={settings} defaultLabel={defaultLabel} icon={<Play size={24} className="opacity-20 text-white"/>}/>,
+    "2x2": <Layout2x2 data={streams} settings={settings} defaultLabel={defaultLabel} icon={<Play size={36} className="opacity-20 text-white"/>}/>
   };
 
   return (
@@ -28,6 +31,8 @@ export function StreamsWidget({ w, h, streams, settings }: StreamsWidgetProps) {
 
 export function StreamsSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
   const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
+  const { t } = useLanguage();
+  const defaultLabel = t.resume.labelStreams;
 
   return (
     <div className="space-y-6">
@@ -45,7 +50,7 @@ export function StreamsSettings({ settings, onChange }: { settings: any, onChang
       </div>
 
       {/* Libellé personnalisé */}
-      <CustomLabel update={update} settings={settings}/>
+      <CustomLabel update={update} settings={settings} defaultLabel={defaultLabel}/>
 
       {/* Options */}
       <div className="space-y-2">

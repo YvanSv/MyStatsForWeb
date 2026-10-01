@@ -73,9 +73,22 @@ describe("BioWidget", () => {
     expect(screen.getByText("Bio")).toHaveClass(fontSize);
   });
 
-  it("ignore fontSize en 1x1 (taille fixe)", () => {
+  it.each(["text-[8px]", "text-[10px]", "text-[13px]", "text-[16px]"])("applique aussi la taille %s en 1x1", (fontSize) => {
+    renderWidget(1, 1, "Bio", { fontSize });
+    expect(screen.getByText("Bio")).toHaveClass(fontSize, "line-clamp-4", "italic");
+  });
+
+  it("garde la taille d'origine par layout sans fontSize (8px en 1x1, 10px en 2x2)", () => {
+    const { unmount } = renderWidget(1, 1, "Bio");
+    expect(screen.getByText("Bio")).toHaveClass("text-[8px]");
+    unmount();
+    renderWidget(2, 2, "Bio");
+    expect(screen.getByText("Bio")).toHaveClass("text-[10px]");
+  });
+
+  it("n'applique qu'une seule taille en 1x1 quand fontSize est choisi", () => {
     renderWidget(1, 1, "Bio", { fontSize: "text-[16px]" });
-    expect(screen.getByText("Bio")).not.toHaveClass("text-[16px]");
+    expect(screen.getByText("Bio")).not.toHaveClass("text-[8px]");
   });
 
   it.each([
@@ -131,6 +144,7 @@ describe("BioWidget", () => {
 describe("BioSettings", () => {
   it("affiche les sections et tous les boutons", () => {
     render(<BioSettings settings={{}} onChange={onChange} />);
+    expect(screen.getByText("Couleur du texte")).toBeInTheDocument();
     expect(screen.getByText("Taille de lecture")).toBeInTheDocument();
     expect(screen.getByText("Alignement")).toBeInTheDocument();
     for (const n of ["XS", "S", "M", "L", "Gauche", "Centre", "Droite", /Style "Citation"/]) {
@@ -187,7 +201,7 @@ describe("BioSettings", () => {
   it("est utilisable au clavier", async () => {
     const user = userEvent.setup();
     render(<BioSettings settings={{}} onChange={onChange} />);
-    await user.tab();
+    for (let i = 0; i < 6; i++) await user.tab(); // 5 pastilles de couleur, puis XS
     expect(screen.getByRole("button", { name: "XS" })).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(onChange).toHaveBeenCalledWith({ fontSize: "text-[8px]" });
@@ -195,5 +209,42 @@ describe("BioSettings", () => {
 
   it("ne plante pas avec settings undefined", () => {
     expect(() => render(<BioSettings settings={undefined} onChange={onChange} />)).not.toThrow();
+  });
+
+  describe("palette de couleurs", () => {
+    const COLORS = ["#9CA3AF", "#FFFFFF", "#1DB954", "#38BDF8", "#F1C40F"];
+
+    it("propose les couleurs attendues, la première étant le gris par défaut du rendu", () => {
+      render(<BioSettings settings={{}} onChange={onChange} />);
+      for (const c of COLORS) expect(screen.getByRole("button", { name: c })).toBeInTheDocument();
+    });
+
+    it.each(COLORS)("clic sur %s : onChange avec fusion des réglages", async (c) => {
+      render(<BioSettings settings={{ fontSize: "text-[13px]" }} onChange={onChange} />);
+      await userEvent.click(screen.getByRole("button", { name: c }));
+      expect(onChange).toHaveBeenCalledWith({ fontSize: "text-[13px]", color: c });
+    });
+
+    it("marque le gris comme sélectionné quand aucune couleur n'est définie", () => {
+      render(<BioSettings settings={{}} onChange={onChange} />);
+      expect(screen.getByRole("button", { name: "#9CA3AF" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "#FFFFFF" })).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("expose la couleur choisie via aria-pressed et la bordure", () => {
+      render(<BioSettings settings={{ color: "#1DB954" }} onChange={onChange} />);
+      expect(screen.getByRole("button", { name: "#1DB954" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "#1DB954" })).toHaveClass("border-white");
+      expect(screen.getByRole("button", { name: "#9CA3AF" })).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByRole("button", { name: "#9CA3AF" })).toHaveClass("border-transparent");
+    });
+
+    it("la couleur choisie dans les réglages est appliquée par le widget", async () => {
+      render(<BioSettings settings={{}} onChange={onChange} />);
+      await userEvent.click(screen.getByRole("button", { name: "#38BDF8" }));
+      const next = onChange.mock.calls[0][0];
+      render(<BioWidget w={2} h={2} bio="Rendu" settings={next} />);
+      expect(screen.getByText("Rendu")).toHaveStyle({ color: "#38BDF8" });
+    });
   });
 });
