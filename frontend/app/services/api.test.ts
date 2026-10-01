@@ -135,3 +135,101 @@ describe("apiRequest – réponse", () => {
     await expect(apiRequest("http://api/test")).rejects.toThrow("Failed to fetch");
   });
 });
+
+describe("apiRequest – corps de requête non JSON", () => {
+  it("laisse un URLSearchParams intact (pas de « {} »)", async () => {
+    const body = new URLSearchParams({ a: "1" });
+    await apiRequest("http://api/test", { method: "POST", body });
+    expect(sentInit().body).toBe(body);
+    expect(sentInit().headers.has("Content-Type")).toBe(false);
+  });
+
+  it("laisse un Blob et un ArrayBuffer intacts", async () => {
+    const blob = new Blob(["x"]);
+    await apiRequest("http://api/test", { method: "POST", body: blob });
+    expect(sentInit().body).toBe(blob);
+    fetchMock.mockClear();
+    const buffer = new ArrayBuffer(4);
+    await apiRequest("http://api/test", { method: "POST", body: buffer });
+    expect(sentInit().body).toBe(buffer);
+  });
+
+  it("sérialise un tableau en JSON", async () => {
+    await apiRequest("http://api/test", { method: "POST", body: [1, 2] as unknown as BodyInit });
+    expect(sentInit().body).toBe("[1,2]");
+    expect(sentInit().headers.get("Content-Type")).toBe("application/json");
+  });
+
+  it("sérialise un objet sans prototype", async () => {
+    const body = Object.assign(Object.create(null), { a: 1 });
+    await apiRequest("http://api/test", { method: "POST", body });
+    expect(sentInit().body).toBe('{"a":1}');
+  });
+
+  it("garde le Content-Type fourni pour un corps objet", async () => {
+    await apiRequest("http://api/test", {
+      method: "POST",
+      body: { a: 1 } as unknown as BodyInit,
+      headers: { "Content-Type": "application/vnd.api+json" },
+    });
+    expect(sentInit().headers.get("Content-Type")).toBe("application/vnd.api+json");
+  });
+
+  it("accepte des en-têtes fournis sous forme de Headers ou de tableau", async () => {
+    await apiRequest("http://api/test", { headers: new Headers({ "X-A": "1" }) });
+    expect(sentInit().headers.get("X-A")).toBe("1");
+    fetchMock.mockClear();
+    await apiRequest("http://api/test", { headers: [["X-B", "2"]] });
+    expect(sentInit().headers.get("X-B")).toBe("2");
+  });
+
+  it("transmet le signal d'annulation à fetch", async () => {
+    const controller = new AbortController();
+    await apiRequest("http://api/test", { signal: controller.signal });
+    expect(sentInit().signal).toBe(controller.signal);
+  });
+
+  it("impose credentials: include même si l'appelant demande autre chose", async () => {
+    await apiRequest("http://api/test", { credentials: "omit" });
+    expect(sentInit().credentials).toBe("include");
+  });
+});
+
+describe("apiRequest – réponses particulières", () => {
+  it("renvoie null pour une réponse 204 sans contenu (sans lire le JSON)", async () => {
+    const json = vi.fn().mockRejectedValue(new SyntaxError("Unexpected end of JSON input"));
+    fetchMock.mockResolvedValue({ ok: true, status: 204, json } as unknown as Response);
+    await expect(apiRequest("http://api/test", { method: "DELETE" })).resolves.toBeNull();
+    expect(json).not.toHaveBeenCalled();
+  });
+
+  it("propage l'erreur d'analyse quand une réponse 200 n'est pas du JSON", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject(new SyntaxError("pas du json")),
+    } as unknown as Response);
+    await expect(apiRequest("http://api/test")).rejects.toThrow("pas du json");
+  });
+
+  it.each([400, 403, 404, 409, 422, 429, 500, 503])("transforme le statut %i en ApiError", async (status) => {
+    fetchMock.mockResolvedValue(errResponse(status, () => Promise.resolve({ detail: "x" })));
+    const err = await apiRequest("http://api/test").catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(status);
+  });
+
+  it("garde le code générique quand l'erreur est une liste de validation 422", async () => {
+    const detail = [{ loc: ["body", "email"], msg: "invalide" }];
+    fetchMock.mockResolvedValue(errResponse(422, () => Promise.resolve({ detail })));
+    const err = await apiRequest("http://api/test").catch((e) => e);
+    expect(err.message).toBe("API_ERROR");
+    expect(err.detail).toEqual({ detail });
+  });
+
+  it("n'appelle fetch qu'une seule fois (pas de nouvelle tentative)", async () => {
+    fetchMock.mockResolvedValue(errResponse(500, () => Promise.resolve({})));
+    await apiRequest("http://api/test").catch(() => {});
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});

@@ -22,11 +22,19 @@ export class ApiError extends Error {
   }
 }
 
+const isPlainBody = (body: unknown): body is object => {
+  if (!body || typeof body !== 'object') return false;
+  if (Array.isArray(body)) return true;
+  const proto = Object.getPrototypeOf(body);
+  return proto === Object.prototype || proto === null;
+};
+
 export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const headers = new Headers(options.headers);
   let finalBody = options.body;
   
-  if (options.body && !(options.body instanceof FormData) && typeof options.body === 'object') {
+  // Seuls les objets simples et les tableaux sont sérialisés (FormData, URLSearchParams, Blob, ArrayBuffer… partent tels quels)
+  if (isPlainBody(options.body)) {
     finalBody = JSON.stringify(options.body);
     if (!headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
@@ -47,5 +55,7 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     const errorDetail = await response.json().catch(() => response.statusText);
     throw new ApiError(response.status, errorDetail);
   }
+  // Réponse sans contenu : il n'y a pas de JSON à lire
+  if (response.status === 204) return null;
   return response.json();
 };
