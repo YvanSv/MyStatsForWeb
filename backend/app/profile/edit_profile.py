@@ -1,3 +1,5 @@
+import base64
+import binascii
 import re
 from fastapi import APIRouter, Cookie, HTTPException, Depends
 from sqlmodel import Session, select
@@ -9,6 +11,20 @@ from app.response_message import UserSettingsResponse, UserUpdateResponse
 
 RESERVED_SLUGS = ["admin", "settings", "dashboard", "api", "auth", "login"]
 
+# Images acceptées pour l'avatar et la bannière : jamais de SVG (scripts possibles s'il est ouvert hors d'une balise <img>)
+MAX_IMAGE_BYTES = 2 * 1024 * 1024
+_DATA_URL = re.compile(r"^data:image/(png|jpeg|webp|gif);base64,([A-Za-z0-9+/]+={0,2})$")
+
+def validate_image_url(v: Optional[str]) -> Optional[str]:
+    if v is None or v == "": return None
+    if v.startswith("https://") and len(v) <= 2048 and not any(c.isspace() for c in v): return v
+    match = _DATA_URL.match(v)
+    if not match: raise ValueError("Image invalide : formats acceptés PNG, JPEG, WebP et GIF (ou une URL https).")
+    try: raw = base64.b64decode(match.group(2), validate=True)
+    except (binascii.Error, ValueError): raise ValueError("Image invalide : données illisibles.")
+    if len(raw) > MAX_IMAGE_BYTES: raise ValueError("Image trop lourde (2 Mo maximum).")
+    return v
+
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
     bio: Optional[str] = None
@@ -16,6 +32,11 @@ class UserUpdate(BaseModel):
     avatar_url: Optional[str] = None
     banner_url: Optional[str] = None
     perms: Optional[Dict[str, bool]] = None
+
+    @field_validator("avatar_url", "banner_url")
+    @classmethod
+    def validate_images(cls, v: Optional[str]):
+        return validate_image_url(v)
 
     @field_validator("slug")
     @classmethod
@@ -31,12 +52,15 @@ def verify_owner(slug: str, session_id: str, db: Session):
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")
     # On cherche l'utilisateur qui possède ce session_id
     current_user = db.exec(select(User).where(User.session_id == session_id)).first()
+    if not current_user: raise HTTPException(status_code=401, detail="Session invalide")
 
-    if slug.isdigit(): current_user = db.get(User, int(slug))
-    else: current_user = db.exec(select(User).where(User.slug == slug)).first()
-    if not current_user: raise HTTPException(status_code=404, detail="Profil introuvable")
-    if not current_user or current_user.id != current_user.id: raise HTTPException(status_code=403, detail="Action non autorisée sur ce profil")
-    return current_user
+    # Profil visé : par identifiant numérique ou par slug
+    if slug.isdigit(): target = db.get(User, int(slug))
+    else: target = db.exec(select(User).where(User.slug == slug)).first()
+    if not target: raise HTTPException(status_code=404, detail="Profil introuvable")
+    # Seul le propriétaire du profil peut le lire ou le modifier
+    if target.id != current_user.id: raise HTTPException(status_code=403, detail="Action non autorisée sur ce profil")
+    return target
 
 router = APIRouter()
 
