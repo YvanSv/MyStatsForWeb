@@ -104,12 +104,6 @@ export const fr = {
     titleDefault: "Oups !",
     messageDefault: "Une erreur inattendue est survenue.",
     retry: "Réessayer",
-    exportError: "Impossible de générer l'image. Si votre avatar ou votre bannière vient d'un autre site, le navigateur peut bloquer l'export.",
-    labelStreams: "Streams",
-    labelMinutes: "Minutes",
-    labelTracks: "Titres",
-    labelAlbums: "Albums",
-    labelArtists: "Artistes",
     backhome: "Retour à l'accueil",
     backpage: "Page précédente"
   },
@@ -370,6 +364,12 @@ export const fr = {
     totalStreams: "Nombre de streams",
     loadError: "Impossible de charger votre résumé.",
     retry: "Réessayer",
+    exportError: "Impossible de générer l'image. Si votre avatar ou votre bannière vient d'un autre site, le navigateur peut bloquer l'export.",
+    labelStreams: "Streams",
+    labelMinutes: "Minutes",
+    labelTracks: "Titres",
+    labelAlbums: "Albums",
+    labelArtists: "Artistes",
     download: "Télécharger"
   },
   faq: {
