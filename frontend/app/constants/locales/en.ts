@@ -248,6 +248,8 @@ export const en = {
     errorJsonOnly: "Only .json (Spotify) or .csv (Apple Music) files are accepted, without mixing the two.",
     errorNoFile: "Please select at least one file.",
     errorGeneric: "Error during importation.",
+    errorAppleDate: (value: string) => `Invalid date in the file: "${value}". Check that it is the original Apple Music export.`,
+    errorAppleHour: (value: string) => `Invalid hour in the file: "${value}".`,
     errorSession: "Session expired, sign in again to import your data.",
     errorWs: "Connection error to progress tracker.",
     successImport: (count: number) => `${count} streams imported!`,

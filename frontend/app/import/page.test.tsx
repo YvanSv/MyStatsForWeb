@@ -415,7 +415,9 @@ describe("ImportContent (import Apple CSV)", () => {
     ]);
     await waitFor(() => expect(h.uploadAppleJson).toHaveBeenCalled());
     const [a, b] = h.uploadAppleJson.mock.calls[0][0];
-    expect(a).toMatchObject({ artist_name: "Unknown Artist", song_name: "Seul" });
+    // Pas de faux nom d'artiste envoyé au serveur : chaîne vide, le serveur enregistre le titre seul
+    expect(a).toMatchObject({ artist_name: "", song_name: "Seul" });
+    expect(JSON.stringify(a)).not.toContain("Unknown");
     expect(b).toMatchObject({ artist_name: "Artiste", song_name: "Titre - Remix" });
   });
 
@@ -471,12 +473,19 @@ describe("ImportContent (import Apple CSV)", () => {
     expect(plays.every((p: { played_at: string }) => /T01:[0-5]\d:[0-5]\d\.000Z$/.test(p.played_at))).toBe(true);
   });
 
-  it("refuse une date impossible (mois 13) avec une erreur, sans rien envoyer", async () => {
+  it("refuse une date impossible (mois 13) avec un message précis et traduit, sans rien envoyer", async () => {
     render(<ImportContent />);
     await start(['"1","A - B",20241301,1,200000,1']);
-    await waitFor(() => expect(screen.getByText(dict.errorGeneric)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(dict.errorAppleDate("20241301"))).toBeInTheDocument());
     expect(h.uploadAppleJson).not.toHaveBeenCalled();
     await waitFor(() => expect(submitBtn()).toBeEnabled());
+  });
+
+  it("refuse une heure hors de 0 à 23 avec un message précis", async () => {
+    render(<ImportContent />);
+    await start(['"1","A - B",20240101,25,200000,1']);
+    await waitFor(() => expect(screen.getByText(dict.errorAppleHour("25"))).toBeInTheDocument());
+    expect(h.uploadAppleJson).not.toHaveBeenCalled();
   });
 
   it("ne trace rien dans la console pendant l'import", async () => {
@@ -494,7 +503,7 @@ describe("ImportContent (import Apple CSV)", () => {
     const user = await selectFiles([new File([`${HEADER}\n"1","A - B",,1,200000,1`], "bad.csv")]);
     await user.click(submitBtn());
     await openWs();
-    await waitFor(() => expect(screen.getByText(dict.errorGeneric)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Date invalide dans le fichier/)).toBeInTheDocument());
     expect(submitBtn()).toBeEnabled();
   });
 });

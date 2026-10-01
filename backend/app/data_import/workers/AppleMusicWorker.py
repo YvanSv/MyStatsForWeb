@@ -232,7 +232,8 @@ class AppleMusicWorker:
 
     async def _get_spotify_suggestions(self, song_name, artist_name, target_duration_ms):
         sp = get_spotify_client()
-        query = f"track:{song_name} artist:{artist_name}"
+        # Sans artiste connu, on cherche sur le titre seul plutôt que sur « artist: » vide
+        query = f"track:{song_name} artist:{artist_name}" if artist_name else f"track:{song_name}"
         
         try:
             res = await run_spotify_task(sp.search, q=query, limit=1, type='track')

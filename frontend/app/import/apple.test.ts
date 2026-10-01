@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AppleCSVRow } from "../data/DataInfos";
-import { appleRowToPlays, MAX_PLAYS_PER_ROW, MIN_PLAY_MS, toBatches, UPLOAD_BATCH_SIZE } from "./apple";
+import { AppleRowError, appleRowToPlays, MAX_PLAYS_PER_ROW, MIN_PLAY_MS, toBatches, UPLOAD_BATCH_SIZE } from "./apple";
 
 const row = (over: Partial<Record<keyof AppleCSVRow, string>> = {}): AppleCSVRow => ({
   "Track Identifier": "t1",
@@ -28,7 +28,7 @@ describe("appleRowToPlays – transformation", () => {
       artist_name: "Artiste", song_name: "Titre - Remix",
     });
     expect(appleRowToPlays(row({ "Track Description": "Seul" }))[0]).toMatchObject({
-      artist_name: "Unknown Artist", song_name: "Seul",
+      artist_name: "", song_name: "Seul",
     });
   });
 
@@ -105,7 +105,8 @@ describe("appleRowToPlays – dates et heures invalides", () => {
     ["20240230", "30 février"],
     ["20230229", "29 février d'une année non bissextile"],
   ])("rejette la date %j (%s)", (date) => {
-    expect(() => appleRowToPlays(row({ "Date Played": date }))).toThrow(/Date invalide/);
+    expect(() => appleRowToPlays(row({ "Date Played": date }))).toThrow(AppleRowError);
+    try { appleRowToPlays(row({ "Date Played": date })) } catch (e) { expect(e).toMatchObject({ kind: "date", value: date }) }
   });
 
   it("accepte le 29 février d'une année bissextile", () => {
@@ -113,7 +114,8 @@ describe("appleRowToPlays – dates et heures invalides", () => {
   });
 
   it.each(["24", "25", "-1", "99"])("rejette l'heure %j", (hours) => {
-    expect(() => appleRowToPlays(row({ Hours: hours }))).toThrow(/Heure invalide/);
+    expect(() => appleRowToPlays(row({ Hours: hours }))).toThrow(AppleRowError);
+    try { appleRowToPlays(row({ Hours: hours })) } catch (e) { expect(e).toMatchObject({ kind: "hour", value: hours }) }
   });
 
   it.each(["0", "23"])("accepte l'heure limite %j", (hours) => {

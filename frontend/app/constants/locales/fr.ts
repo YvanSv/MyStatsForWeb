@@ -249,6 +249,8 @@ export const fr = {
     errorNoFile: "Veuillez sélectionner au moins un fichier.",
     errorGeneric: "Erreur lors de l'importation.",
     errorWs: "Erreur de connexion au suivi de progression.",
+    errorAppleDate: (value: string) => `Date invalide dans le fichier : « ${value} ». Vérifiez que c'est bien l'export Apple Music d'origine.`,
+    errorAppleHour: (value: string) => `Heure invalide dans le fichier : « ${value} ».`,
     errorSession: "Session expirée, reconnectez-vous pour importer vos données.",
     successImport: (count: number) => `${count} écoutes importées !`,
     appleProgress: (file: string, current: number, total: number, added: number) => `Traitement du fichier "${file}" (${current}/${total}) (${added} écoutes importées)`,

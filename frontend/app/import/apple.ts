@@ -8,6 +8,13 @@ export const UPLOAD_BATCH_SIZE = 5000;
 // En dessous de 30 s par écoute, on considère que le morceau n'a pas été réellement écouté
 export const MIN_PLAY_MS = 30000;
 
+/** Ligne de l'export impossible à lire : la page affiche un message traduit à partir de `kind` et `value`. */
+export class AppleRowError extends Error {
+  constructor(public kind: "date" | "hour", public value: string) {
+    super(`${kind}: ${value}`);
+  }
+}
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /**
@@ -23,19 +30,20 @@ export function appleRowToPlays(row: AppleCSVRow): CleanAppleData[] {
 
   // Reconstruction de la date de base, validée (un mois 13 ou un jour 32 ferait rejeter tout le lot par le serveur)
   const rawDate = row["Date Played"] ?? "";
-  if (!/^\d{8}$/.test(rawDate)) throw new Error(`Date invalide : "${rawDate}"`);
+  if (!/^\d{8}$/.test(rawDate)) throw new AppleRowError("date", rawDate);
   const year = Number(rawDate.substring(0, 4));
   const month = Number(rawDate.substring(4, 6));
   const day = Number(rawDate.substring(6, 8));
   const check = new Date(Date.UTC(year, month - 1, day));
   if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day)
-    throw new Error(`Date invalide : "${rawDate}"`);
+    throw new AppleRowError("date", rawDate);
   const hour = parseInt(row["Hours"]) || 0;
-  if (hour < 0 || hour > 23) throw new Error(`Heure invalide : "${row["Hours"]}"`);
+  if (hour < 0 || hour > 23) throw new AppleRowError("hour", String(row["Hours"]));
 
   const description = row["Track Description"] || "";
   const parts = description.split(" - ");
-  const artist = parts.length > 1 ? parts[0] : "Unknown Artist";
+  // Artiste inconnu : chaîne vide (le serveur enregistre alors le titre seul), pas un faux nom d'artiste
+  const artist = parts.length > 1 ? parts[0] : "";
   const song = parts.length > 1 ? parts.slice(1).join(" - ") : description;
 
   const plays: CleanAppleData[] = [];

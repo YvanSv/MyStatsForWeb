@@ -19,6 +19,11 @@ class AppleImportSchema(BaseModel):
     played_at: str
     ms_played: int
 
+def build_track_title(artist_name: str, song_name: str) -> str:
+    """Titre enregistré pour une piste Apple : « Artiste - Titre », ou le titre seul quand l'artiste est inconnu."""
+    artist, song = (artist_name or "").strip(), (song_name or "").strip()
+    return f"{artist} - {song}" if artist else song
+
 router = APIRouter()
 
 @router.post("", response_model=UploadSuccessResponse)
@@ -62,7 +67,7 @@ async def upload_apple_json(
         if track_info and (dt_obj, track_info["id"]) in existing_history: continue
 
         if not track_info:
-            new_track = Track(title=f"{item.artist_name} - {item.song_name}")
+            new_track = Track(title=build_track_title(item.artist_name, item.song_name))
             db.add(new_track)
             db.flush()
             

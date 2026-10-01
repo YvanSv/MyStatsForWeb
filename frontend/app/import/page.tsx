@@ -12,7 +12,7 @@ import { API_ENDPOINTS } from "../constants/routes";
 import { useLanguage } from "../context/languageContext";
 import Papa from 'papaparse';
 import { AppleCSVRow, CleanAppleData } from "../data/DataInfos";
-import { appleRowToPlays, toBatches } from "./apple";
+import { AppleRowError, appleRowToPlays, toBatches } from "./apple";
 
 export default function ImportPage() {
   return (
@@ -166,7 +166,9 @@ export function ImportContent() {
       setSuccess(res.message || dict.successImport(res.added ?? res.count ?? 0));
       setFiles([]);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : (err as Error)?.message === dict.errorWs ? dict.errorWs : dict.errorGeneric);
+      if (err instanceof ApiError) setError(err.message);
+      else if (err instanceof AppleRowError) setError(err.kind === "date" ? dict.errorAppleDate(err.value) : dict.errorAppleHour(err.value));
+      else setError((err as Error)?.message === dict.errorWs ? dict.errorWs : dict.errorGeneric);
       if (ws.readyState === WebSocket.OPEN) ws.close();
     }
   };

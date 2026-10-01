@@ -100,6 +100,8 @@ describe.each(dictionaries)("dictionnaire %s – qualité des textes", (_lang, d
       "importData.appleProgress",
       "importData.appleSent",
       "importData.dropzoneActive",
+      "importData.errorAppleDate",
+      "importData.errorAppleHour",
       "importData.successImport",
       "profilePage.unitDays",
     ]);
