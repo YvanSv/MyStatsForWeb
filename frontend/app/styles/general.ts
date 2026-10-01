@@ -22,6 +22,7 @@ export const BASE_UI = {
 };
 
 export const GENERAL_STYLES = {
-  TRANSITION_TEXT_VERT: `transition-colors duration-300 hover:${BASE_UI.text.vert}`,
+  TRANSITION_TEXT_VERT: // Classe écrite en entier : Tailwind ne détecte pas `hover:${…}` construit dynamiquement
+  "transition-colors duration-300 hover:text-vert",
   TRANSITION_ZOOM: BASE_UI.anim.hoverZoom,
 };
