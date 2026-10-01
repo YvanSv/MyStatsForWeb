@@ -1,7 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminLayout from "./page";
+
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("../context/languageContext", async () => {
+  const { languages } = await import("../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
+
 
 const h = vi.hoisted(() => ({
   user: { id: 1, role: "admin" } as { id: number; role: string } | null,
@@ -82,5 +89,21 @@ describe("Page d'accueil admin", () => {
     expect(links[1]).toHaveFocus();
     await user.tab();
     expect(links[2]).toHaveFocus();
+  });
+});
+
+const FRENCH = /[àâçéèêëîïôùûœÉ]|Chargement|Aucun|Erreur|Retour|Historique|Rejeter|Approuver|Annuler|Confirmer|Sauvegard|Brider|Dépasse|Requête|Validation|Arbitrage|Raison|Créée|introuvable|demande|écoute|suggér|fusion|modification|Priorité|Accéder|Bienvenue|Gérer|Résoudre|Impact de/;
+
+describe("Page d'accueil admin (anglais)", () => {
+beforeEach(() => { lang.current = "en"; });
+afterEach(() => { lang.current = "fr"; });
+
+  it("n'affiche aucun texte français", () => {
+    render(<AdminLayout />);
+    expect(screen.getByRole("heading", { level: 1, name: "Administration" })).toBeInTheDocument();
+    expect(screen.getByText(/Select a module to get started/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Conflicts/ })).toBeInTheDocument();
+    expect(screen.getAllByText(/Open module/)).toHaveLength(3);
+    expect(document.body.textContent).not.toMatch(FRENCH);
   });
 });

@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { act, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CreateRequestListPage from "./page";
+
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("../../context/languageContext", async () => {
+  const { languages } = await import("../../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
+
 
 const h = vi.hoisted(() => ({ getCreateRequests: vi.fn() }));
 
@@ -43,7 +50,7 @@ describe("CreateRequestListPage", () => {
     h.getCreateRequests.mockResolvedValue([makeReq({ id: 1 }), makeReq({ id: 2 })]);
     render(<CreateRequestListPage />);
     expect(await screen.findByRole("heading", { level: 1, name: "Validations en attente" })).toBeInTheDocument();
-    expect(screen.getByText(/2 modification\(s\) suggérée\(s\) via MusicBrainz/)).toBeInTheDocument();
+    expect(screen.getByText(/2 modifications suggérées via MusicBrainz/)).toBeInTheDocument();
   });
 
   it("affiche une carte par requête avec titre, artiste et écoutes", async () => {
@@ -85,7 +92,7 @@ describe("CreateRequestListPage", () => {
     h.getCreateRequests.mockResolvedValue([]);
     render(<CreateRequestListPage />);
     expect(await screen.findByText("Tout est propre ! Aucune requête en attente.")).toBeInTheDocument();
-    expect(screen.getByText(/0 modification\(s\)/)).toBeInTheDocument();
+    expect(screen.getByText(/0 modification suggérée/)).toBeInTheDocument();
     expect(screen.queryByRole("link")).toBeNull();
   });
 
@@ -148,7 +155,7 @@ describe("CreateRequestListPage", () => {
         makeReq({ id: 3, history_count: 0 }),
       ]);
       render(<CreateRequestListPage />);
-      expect(await screen.findAllByText(/0 écoutes/)).toHaveLength(3);
+      expect(await screen.findAllByText(/0 écoute(?!s)/)).toHaveLength(3);
     });
 
     it("affiche un grand nombre d'écoutes sans le tronquer", async () => {
@@ -186,5 +193,46 @@ describe("CreateRequestListPage", () => {
     unmount();
     await act(async () => { resolve([makeReq()]); });
     await waitFor(() => expect(h.getCreateRequests).toHaveBeenCalledTimes(1));
+  });
+});
+
+const FRENCH = /[àâçéèêëîïôùûœÉ]|Chargement|Aucun|Erreur|Retour|Historique|Rejeter|Approuver|Annuler|Confirmer|Sauvegard|Brider|Dépasse|Requête|Validation|Arbitrage|Raison|Créée|introuvable|demande|écoute|suggér|fusion|modification|Priorité|Accéder|Bienvenue|Gérer|Résoudre|Impact de/;
+
+describe("CreateRequestListPage (anglais)", () => {
+beforeEach(() => { lang.current = "en"; });
+afterEach(() => { lang.current = "fr"; });
+
+  it("liste en anglais, dates en en-US, pluriels", async () => {
+    h.getCreateRequests.mockResolvedValue([makeReq({ id: 1, history_count: 1 }), makeReq({ id: 2, track: null, history_count: 0 })]);
+    render(<CreateRequestListPage />);
+    expect(await screen.findByRole("heading", { level: 1, name: "Pending validations" })).toBeInTheDocument();
+    expect(screen.getByText("2 changes suggested via MusicBrainz.")).toBeInTheDocument();
+    expect(screen.getByText("1 play")).toBeInTheDocument();
+    expect(screen.getByText("0 plays")).toBeInTheDocument();
+    expect(screen.getAllByText("Unknown track")).toHaveLength(1);
+    expect(screen.getAllByText("Unknown artist")).toHaveLength(1);
+    expect(screen.getAllByText("Jan 15").length).toBe(2);
+    expect(document.body.textContent).not.toMatch(FRENCH);
+  });
+
+  it("singulier, chargement, erreur et état vide en anglais", async () => {
+    h.getCreateRequests.mockReturnValue(new Promise(() => {}));
+    const first = render(<CreateRequestListPage />);
+    expect(screen.getByText("Loading requests...")).toBeInTheDocument();
+    first.unmount();
+    h.getCreateRequests.mockResolvedValue(null);
+    const second = render(<CreateRequestListPage />);
+    expect(await screen.findByText("Error while fetching data")).toBeInTheDocument();
+    second.unmount();
+    h.getCreateRequests.mockResolvedValue([]);
+    render(<CreateRequestListPage />);
+    expect(await screen.findByText("All clean! No pending requests.")).toBeInTheDocument();
+    expect(screen.getByText("0 changes suggested via MusicBrainz.")).toBeInTheDocument();
+  });
+
+  it("1 modification au singulier", async () => {
+    h.getCreateRequests.mockResolvedValue([makeReq()]);
+    render(<CreateRequestListPage />);
+    expect(await screen.findByText("1 change suggested via MusicBrainz.")).toBeInTheDocument();
   });
 });

@@ -1,8 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CreateRequestDetailPage from "./page";
+
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("../../../context/languageContext", async () => {
+  const { languages } = await import("../../../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
+
 
 const h = vi.hoisted(() => ({
   push: vi.fn(),
@@ -446,5 +453,47 @@ describe("CreateRequestDetailPage - résolution", () => {
     await renderLoaded();
     expect(screen.getByRole("heading", { level: 4, name: "Arbitrage Final" })).toBeInTheDocument();
     expect(screen.getByText(/écraseront ou compléteront/)).toBeInTheDocument();
+  });
+});
+
+const FRENCH = /[àâçéèêëîïôùûœÉ]|Chargement|Aucun|Erreur|Retour|Historique|Rejeter|Approuver|Annuler|Confirmer|Sauvegard|Brider|Dépasse|Requête|Validation|Arbitrage|Raison|Créée|introuvable|demande|écoute|suggér|fusion|modification|Priorité|Accéder|Bienvenue|Gérer|Résoudre|Impact de/;
+
+describe("CreateRequestDetailPage (anglais)", () => {
+beforeEach(() => { lang.current = "en"; });
+afterEach(() => { lang.current = "fr"; });
+
+  it("n'affiche aucun texte français et formate dates et heures en en-US", async () => {
+    await renderLoaded(makeReq({ reason: "Probable duplicate" }));
+    expect(screen.getByRole("heading", { level: 1, name: "Metadata validation" })).toBeInTheDocument();
+    expect(screen.getByText(/Created on January 15, 2025/)).toBeInTheDocument();
+    expect(screen.getByText("Existing Mappings")).toBeInTheDocument();
+    expect(screen.getByText("Listening history")).toBeInTheDocument();
+    expect(screen.getByText("Choose the Master & ISRCs")).toBeInTheDocument();
+    expect(screen.getByText("MASTER SELECTED")).toBeInTheDocument();
+    expect(screen.getByText("SET AS MASTER")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reject/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Approve/ })).toBeInTheDocument();
+    expect(screen.getByText(/1\/10\/2025/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(FRENCH);
+  });
+
+  it("états vides, chargement, introuvable et erreur de résolution en anglais", async () => {
+    await renderLoaded(makeReq({ track: { id: 10, title: "A - B", mappings: [], history: [] } }));
+    expect(screen.getByText("No mappings yet.")).toBeInTheDocument();
+    expect(screen.getByText("No listening history.")).toBeInTheDocument();
+    const user = userEvent.setup();
+    h.resolveCreateRequest.mockRejectedValue(new Error("x"));
+    await user.click(screen.getByRole("button", { name: /Approve/ }));
+    await waitFor(() => expect(window.alert).toHaveBeenCalledWith("Error while resolving the request."));
+  });
+
+  it("chargement et requête introuvable en anglais", async () => {
+    h.getCreateRequestById.mockReturnValue(new Promise(() => {}));
+    const first = render(<CreateRequestDetailPage />);
+    expect(screen.getByText("Loading request...")).toBeInTheDocument();
+    first.unmount();
+    h.getCreateRequestById.mockResolvedValue(null);
+    render(<CreateRequestDetailPage />);
+    expect(await screen.findByText(/Request not found \(ID: 5\)/)).toBeInTheDocument();
   });
 });

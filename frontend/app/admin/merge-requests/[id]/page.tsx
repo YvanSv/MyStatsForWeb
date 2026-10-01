@@ -8,8 +8,10 @@ import {
   GitPullRequestClosed,
   GitPullRequestArrow
 } from 'lucide-react';
+import { useLanguage } from "../../../context/languageContext";
 
 export default function MergeRequestPage() {
+  const { t } = useLanguage();
   const [data] = useState({
     type: 'artist',
     duplicate: {
@@ -59,28 +61,28 @@ export default function MergeRequestPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <GitPullRequest className="w-8 h-8 text-gray-700" />
-              <h1 className="text-3xl font-bold text-white tracking-tight">Merge Request</h1>
+              <h1 className="text-3xl font-bold text-white tracking-tight">{t.admin.mergeDetail.title}</h1>
             </div>
-            <p className="text3">Analyse multi-niveaux des ressources et mappings.</p>
+            <p className="text3">{t.admin.mergeDetail.subtitle}</p>
           </div>
           <div className='flex gap-3'>
             <button className="bg-rouge hover:bg-opacity-80 text-black font-bold px-8 py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.2)] flex items-center gap-2">
-                Annuler la fusion <GitPullRequestClosed size={20} />
+                {t.admin.mergeDetail.cancel} <GitPullRequestClosed size={20} />
             </button>
             <button className="bg-vert hover:bg-opacity-80 text-black font-bold px-8 py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.2)] flex items-center gap-2">
-                Confirmer la fusion <GitPullRequestArrow size={20} />
+                {t.admin.mergeDetail.confirm} <GitPullRequestArrow size={20} />
             </button>
           </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-12">
-          <div className='min-w-0'><EntityExplorer title="Duplicate (Source)" entity={data.duplicate} variant="red"/></div>
+          <div className='min-w-0'><EntityExplorer title={t.admin.mergeDetail.duplicate} entity={data.duplicate} variant="red"/></div>
           <div className='flex w-full justify-center items-center'>
             <div className='flex h-min w-min p-4 items-center justify-center bg-bg2 rounded-full rotate-90 lg:rotate-0'>
               <ArrowRight size={32}/>
             </div>
           </div>
-          <div className='min-w-0'><EntityExplorer title="Target (Hôte)" entity={data.target} variant="vert"/></div>
+          <div className='min-w-0'><EntityExplorer title={t.admin.mergeDetail.target} entity={data.target} variant="vert"/></div>
         </div>
         
         {/* Footer info / Intention */}
@@ -90,9 +92,9 @@ export default function MergeRequestPage() {
               <Merge size={24} />
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-1">Impact de la fusion</h3>
+              <h3 className="text-white font-semibold mb-1">{t.admin.mergeDetail.impactTitle}</h3>
               <p className="text3 text-sm leading-relaxed">
-                Le contenu du duplicate sera injecté dans l'hôte. Les entrées <code className="text-white">trackhistory</code> du provider Spotify/Deezer seront ré-indexées sur le nouvel ID. Cette action est irréversible.
+                {t.admin.mergeDetail.impactBefore}<code className="text-white">trackhistory</code>{t.admin.mergeDetail.impactAfter}
               </p>
             </div>
           </div>
@@ -103,11 +105,12 @@ export default function MergeRequestPage() {
 }
 
 function EntityExplorer({ title, entity, variant }: { title: string, entity: any, variant: 'red' | 'vert' }) {
+  const { t } = useLanguage();
   if (!entity) return null;
 
   // Calcul des listes "à plat" pour l'artiste
   const allTracks = entity.albums?.flatMap((a: any) => a.tracks) || [];
-  const allHistory = allTracks.flatMap((t: any) => t.history) || [];
+  const allHistory = allTracks.flatMap((tr: any) => tr.history) || [];
 
   return (
     <section className={`p-6 bg-white/5 rounded-2xl border-2 border-transparent transition-all ${variant === 'red' ? 'hover:border-red-500/20' : 'hover:border-vert/20'}`}>
@@ -125,21 +128,21 @@ function EntityExplorer({ title, entity, variant }: { title: string, entity: any
 
       <div className="space-y-2">
         {/* AXE 1 : ALBUMS (Hiérarchique) */}
-        <ExpandableRow icon={<Disc size={16}/>} label="Albums" count={entity.albums?.length}>
+        <ExpandableRow icon={<Disc size={16}/>} label={t.admin.mergeDetail.albums} count={entity.albums?.length}>
           {entity.albums?.map((album: any) => (
             <AlbumNode key={album.id} album={album} />
           ))}
         </ExpandableRow>
 
         {/* AXE 2 : TRACKS (Vue à plat) */}
-        <ExpandableRow icon={<Music size={16}/>} label="Tous les Tracks" count={allTracks.length}>
+        <ExpandableRow icon={<Music size={16}/>} label={t.admin.mergeDetail.allTracks} count={allTracks.length}>
           {allTracks.map((track: any) => (
             <TrackNode key={track.id} track={track} />
           ))}
         </ExpandableRow>
 
         {/* AXE 3 : HISTORY (Vue à plat) */}
-        <ExpandableRow icon={<History size={16}/>} label="Tout l'Historique" count={allHistory.length}>
+        <ExpandableRow icon={<History size={16}/>} label={t.admin.mergeDetail.allHistory} count={allHistory.length}>
           <div className="grid grid-cols-1 gap-1 py-2">
             {allHistory.map((h: any) => (
               <div key={h.id} className="flex justify-between items-center p-2 bg-white/[0.02] rounded border border-white/5">
@@ -173,6 +176,7 @@ function AlbumNode({ album }: { album: any }) {
 }
 
 function TrackNode({ track }: { track: any }) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="ml-4 border-l border-white/10 pl-4 py-1">
@@ -187,8 +191,8 @@ function TrackNode({ track }: { track: any }) {
         <div className="mt-2 space-y-1">
           {track.history?.map((h: any) => (
             <div key={h.id} className="text-[9px] text-gray-500 pl-6 flex justify-between italic">
-              <span>Écoute le {h.date}</span>
-              <span>via {h.provider}</span>
+              <span>{t.admin.mergeDetail.playedOn(h.date)}</span>
+              <span>{t.admin.mergeDetail.via(h.provider)}</span>
             </div>
           ))}
         </div>
@@ -217,7 +221,8 @@ function ExpandableRow({ icon, label, count, children }: { icon: any, label: str
 }
 
 function MappingBadge({ mapping }: { mapping: any }) {
-  if (!mapping) return <span className="text-[9px] text-gray-600 italic">No mapping</span>;
+  const { t } = useLanguage();
+  if (!mapping) return <span className="text-[9px] text-gray-600 italic">{t.admin.mergeDetail.noMapping}</span>;
   return (
     <div className="flex items-center gap-1.5 px-2 py-0.5 bg-bg2 border border-white/10 rounded text-[9px] text-gray-400 opacity-60 hover:opacity-100 transition-opacity">
       <LinkIcon size={10} className="text-vert" />

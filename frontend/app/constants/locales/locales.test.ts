@@ -98,13 +98,26 @@ describe.each(dictionaries)("dictionnaire %s – qualité des textes", (_lang, d
   it("expose les fonctions de dictionnaire attendues", () => {
     expect(functions.map((f) => f.path).sort()).toEqual([
       "account.confirmMismatch",
+      "admin.createDetail.createdOn",
+      "admin.createDetail.notFound",
+      "admin.createList.plays",
+      "admin.createList.suggested",
+      "admin.mergeDetail.playedOn",
+      "admin.mergeDetail.via",
+      "admin.mergeList.pending",
+      "admin.mergeList.priority",
       "importData.appleProgress",
       "importData.appleSent",
       "importData.dropzoneActive",
       "importData.errorAppleDate",
       "importData.errorAppleHour",
       "importData.successImport",
+      "meta.bannerAlt",
+      "meta.profileDescription",
+      "meta.profileTitle",
       "profilePage.unitDays",
+      "resume.wSizeTitle",
+      "resume.wUnchallenged",
     ]);
   });
 });
@@ -174,7 +187,7 @@ describe.each(dictionaries)("dictionnaire %s – sections utilisées par les éc
 
   it("a une section « resume » complète, sans texte vide (libellés du partage)", () => {
     for (const key of ["title", "share", "download", "topArtist", "topTrack", "totalTime", "totalStreams"]) {
-      expect((dict.resume as Record<string, string>)[key]?.trim().length).toBeGreaterThan(0);
+      expect((dict.resume as unknown as Record<string, string>)[key]?.trim().length).toBeGreaterThan(0);
     }
   });
 

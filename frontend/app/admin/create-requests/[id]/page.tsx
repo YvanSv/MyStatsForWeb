@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useApiAdmin } from '../../action';
 import { CreateRequest } from '@/app/data/admin-interfaces';
 import { TrackHistory, TrackMapping } from '@/app/data/interfaces';
+import { useLanguage } from '@/app/context/languageContext';
 
 // --- COMPOSANTS UI UTILITAIRES ---
 
@@ -44,6 +45,7 @@ const splitTrackTitle = (title: string | null | undefined): { artist: string | u
 // --- PAGE PRINCIPALE ---
 
 export default function CreateRequestDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const cr_id = Number(params.id);
@@ -84,7 +86,7 @@ export default function CreateRequestDetailPage() {
       router.push('/admin/create-requests'); 
       router.refresh();
     } catch (err) {
-      alert("Erreur lors de la résolution.");
+      alert(t.admin.createDetail.resolveError);
       console.error(err);
     } finally {
       setResolving(false);
@@ -99,13 +101,13 @@ export default function CreateRequestDetailPage() {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center text3 animate-pulse bg-[#0a0a0a]">
-      Chargement de la requête...
+      {t.admin.createDetail.loading}
     </div>
   );
 
   if (!request) return (
     <div className="min-h-screen flex items-center justify-center text-red-400 bg-[#0a0a0a]">
-      <AlertTriangle className="mr-2" /> Requête introuvable (ID: {cr_id})
+      <AlertTriangle className="mr-2" /> {t.admin.createDetail.notFound(cr_id)}
     </div>
   );
 
@@ -117,10 +119,10 @@ export default function CreateRequestDetailPage() {
         <div className="flex items-center justify-between mb-8">
           <Link href="/admin/create-requests" className="flex items-center gap-2 text-sm text3 hover:text-white transition-colors group">
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-            Retour à la liste
+            {t.admin.createDetail.back}
           </Link>
           <div className="text-xs text3 font-mono bg-white/5 px-3 py-1 rounded">
-            ID Requête: {request.id}
+            {t.admin.createDetail.requestId} {request.id}
           </div>
         </div>
 
@@ -131,9 +133,9 @@ export default function CreateRequestDetailPage() {
               <GitPullRequest className="w-8 h-8 text-vert" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Validation des métadonnées</h1>
+              <h1 className="text-3xl font-bold text-white tracking-tight">{t.admin.createDetail.title}</h1>
               <p className="text3 mt-1">
-                Créée le {new Date(request.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                {t.admin.createDetail.createdOn(new Date(request.created_at).toLocaleDateString(t.common.locale, { day: '2-digit', month: 'long', year: 'numeric' }))}
               </p>
             </div>
           </div>
@@ -141,7 +143,7 @@ export default function CreateRequestDetailPage() {
             <div className="bg-amber-950/30 border border-amber-900 text-amber-300 p-4 rounded-xl text-sm flex items-start gap-3 mt-4">
               <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
               <div>
-                <strong className="block mb-0.5">Raison de la requête :</strong>
+                <strong className="block mb-0.5">{t.admin.createDetail.reason}</strong>
                 {request.reason}
               </div>
             </div>
@@ -155,21 +157,21 @@ export default function CreateRequestDetailPage() {
           <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
             <div className="flex items-center gap-3 mb-6">
                 <Music className="w-7 h-7 text-gray-500" />
-                <h2 className="text-xl font-bold text-gray-300">Track Actuelle (en Base)</h2>
+                <h2 className="text-xl font-bold text-gray-300">{t.admin.createDetail.currentTrack}</h2>
             </div>
 
             <div className="space-y-6">
               {/* Infos Clés */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoBubble label="Artiste" value={trackArtist} />
-                <InfoBubble label="Titre" value={trackTitle}/>
-                <InfoBubble label="ID Interne" value={request.track?.id}/>
-                <InfoBubble label="Durée max écoute" value={formatDuration(maxMsPlayed)}/>
+                <InfoBubble label={t.admin.createDetail.artist} value={trackArtist} />
+                <InfoBubble label={t.admin.createDetail.trackTitle} value={trackTitle}/>
+                <InfoBubble label={t.admin.createDetail.internalId} value={request.track?.id}/>
+                <InfoBubble label={t.admin.createDetail.maxPlayed} value={formatDuration(maxMsPlayed)}/>
               </div>
 
               {/* Mappings Actuels */}
               <div>
-                <SectionTitle icon={LinkIcon} title="Mappings Existants" />
+                <SectionTitle icon={LinkIcon} title={t.admin.createDetail.existingMappings} />
                 {request.track?.mappings && request.track.mappings.length > 0 ? (
                   <div className="grid grid-cols-1 gap-2">
                     {request.track.mappings.map((m: TrackMapping) => (
@@ -180,27 +182,27 @@ export default function CreateRequestDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text3 italic">Aucun mapping pour le moment.</p>
+                  <p className="text-xs text3 italic">{t.admin.createDetail.noMappings}</p>
                 )}
               </div>
 
               {/* Historique d'écoutes */}
               <div>
-                <SectionTitle icon={History} title="Historique d'écoutes" />
+                <SectionTitle icon={History} title={t.admin.createDetail.history} />
                 {request.track?.history && request.track.history.length > 0 ? (
                   <div className="space-y-1.5">
                     {request.track.history.map((h: TrackHistory) => (
                       <div key={h.id} className="text-xs bg-bg2 p-2.5 rounded flex items-center gap-3 justify-between">
                         <span className="text-white font-medium">{h.provider}</span>
                         <span className="text-gray-400 italic">
-                          {new Date(h.played_at).toLocaleDateString('fr-FR')} {new Date(h.played_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(h.played_at).toLocaleDateString(t.common.locale)} {new Date(h.played_at).toLocaleTimeString(t.common.locale, { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <span className="text-gray-500 font-mono">{formatDuration(h.ms_played)}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text3 italic">Aucun historique d'écoute.</p>
+                  <p className="text-xs text3 italic">{t.admin.createDetail.noHistory}</p>
                 )}
               </div>
             </div>
@@ -208,7 +210,7 @@ export default function CreateRequestDetailPage() {
 
           {/* --- COLONNE DROITE : TRACK TROUVÉE (MUSICBRAINZ) --- */}
           <div className="space-y-4">
-            <SectionTitle icon={CheckCircle} title="Choisir le Master & ISRCs" />
+            <SectionTitle icon={CheckCircle} title={t.admin.createDetail.chooseMaster} />
             
             {request.match_data?.suggestions?.map((s:any, idx:number) => (
               <div key={idx} className={`p-4 rounded-xl border-2 transition-all ${
@@ -220,7 +222,7 @@ export default function CreateRequestDetailPage() {
                       selectedMasterIndex === idx ? 'bg-vert text-black' : 'bg-white/10 text-white'
                     }`}
                   >
-                    {selectedMasterIndex === idx ? "MASTER SÉLECTIONNÉ" : "DÉFINIR COMME MASTER"}
+                    {selectedMasterIndex === idx ? t.admin.createDetail.masterSelected : t.admin.createDetail.setMaster}
                   </button>
                 </div>
 
@@ -325,8 +327,8 @@ export default function CreateRequestDetailPage() {
         {/* ZONE D'ACTION (FIXE EN BAS) */}
         <div className="sticky bottom-8 bg-bg2 p-6 rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col sm:flex-row items-center gap-4 justify-between mt-12">
             <div className="text-center sm:text-left">
-                <h4 className="text-lg font-bold text-white">Arbitrage Final</h4>
-                <p className="text-sm text3">Les métadonnées de MusicBrainz écraseront ou compléteront celles en base.</p>
+                <h4 className="text-lg font-bold text-white">{t.admin.createDetail.finalTitle}</h4>
+                <p className="text-sm text3">{t.admin.createDetail.finalDescription}</p>
             </div>
             
             <div className="flex items-center gap-4 w-full sm:w-auto">
@@ -337,7 +339,7 @@ export default function CreateRequestDetailPage() {
                     className="flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-8 py-3.5 bg-red-950/50 hover:bg-red-900 border border-red-900 text-red-200 font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                     {resolving ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-                    Rejeter
+                    {t.admin.createDetail.reject}
                 </button>
 
                 {/* Bouton APPROUVER */}
@@ -347,7 +349,7 @@ export default function CreateRequestDetailPage() {
                     className="flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-8 py-3.5 bg-vert hover:bg-vert/80 text-black font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group shadow-[0_0_20px_rgba(34,197,94,0.2)]"
                 >
                     {resolving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-                    Approuver
+                    {t.admin.createDetail.approve}
                 </button>
             </div>
         </div>

@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { GitPullRequest, ArrowRight, Disc, Mic2, Music, Calendar, ChevronRight } from 'lucide-react';
 import { MergeEntityType, MergeRequest, useApiAdmin } from '../action';
 import { useEffect, useState } from 'react';
+import { useLanguage } from "../../context/languageContext";
 
 export default function MergeRequestListPage() {
+  const { t } = useLanguage();
   const { getMergeRequests } = useApiAdmin();
   const [requests,setRequests] = useState<MergeRequest[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -23,7 +25,7 @@ export default function MergeRequestListPage() {
   }, [getMergeRequests]);
 
   if (!requests) return (
-    <div className="p-8 text3">{failed ? "Erreur" : "Chargement..."}</div>
+    <div className="p-8 text3">{failed ? t.admin.mergeList.error : t.admin.mergeList.loading}</div>
   );
 
   return (
@@ -34,10 +36,10 @@ export default function MergeRequestListPage() {
         <header className="mb-10">
           <div className="flex items-center gap-3 mb-2">
             <GitPullRequest className="w-8 h-8 text-gray-700" />
-            <h1 className="text-3xl font-bold text-white">Merge Requests en cours</h1>
+            <h1 className="text-3xl font-bold text-white">{t.admin.mergeList.title}</h1>
           </div>
           <p className="text3">
-            {requests.length} demande(s) de fusion en attente de validation.
+            {t.admin.mergeList.pending(requests.length)}
           </p>
         </header>
 
@@ -66,7 +68,7 @@ export default function MergeRequestListPage() {
                   </div>
                   <div className="flex items-center gap-4 text-xs text3 uppercase tracking-widest">
                     <span className="bg-white/10 px-2 py-0.5 rounded text-[10px] text-white">
-                      {mr.entity_type}
+                      {t.admin.entityTypes[mr.entity_type] ?? mr.entity_type}
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar size={12} /> {mr.created_at}
@@ -82,7 +84,7 @@ export default function MergeRequestListPage() {
                   mr.priority === 'medium' ? 'border-amber-500/50 text-amber-400 bg-amber-500/5' : 
                   'border-gray-500/50 text3 bg-white/5'
                 }`}>
-                  Priorité {mr.priority}
+                  {t.admin.mergeList.priority(t.admin.priorities[mr.priority] ?? mr.priority)}
                 </div>
                 <div className="text-gray-600 group-hover:text-vert transition-colors">
                   <ChevronRight size={24} />
@@ -95,7 +97,7 @@ export default function MergeRequestListPage() {
         {/* État vide (si pas de MR) */}
         {requests.length === 0 && (
           <div className="text-center py-20 bg-white/5 rounded-2xl border border-dashed border-white/10">
-            <p className="text3">Aucune merge request à traiter pour le moment. Beau boulot !</p>
+            <p className="text3">{t.admin.mergeList.empty}</p>
           </div>
         )}
       </div>

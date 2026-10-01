@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MergeRequestPage from "./page";
+
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("../../../context/languageContext", async () => {
+  const { languages } = await import("../../../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
+
 
 describe("MergeRequestPage (détail)", () => {
   it("affiche le titre et le sous-titre", () => {
@@ -166,5 +173,28 @@ describe("MergeRequestPage – classes de mise en page valides", () => {
     const hovered = [...container.querySelectorAll("[class*='group-hover:']")];
     expect(hovered.length).toBeGreaterThan(0);
     for (const el of hovered) expect(el.closest(".group"), el.className).not.toBeNull();
+  });
+});
+
+const FRENCH = /[àâçéèêëîïôùûœÉ]|Chargement|Aucun|Erreur|Retour|Historique|Rejeter|Approuver|Annuler|Confirmer|Sauvegard|Brider|Dépasse|Requête|Validation|Arbitrage|Raison|Créée|introuvable|demande|écoute|suggér|fusion|modification|Priorité|Accéder|Bienvenue|Gérer|Résoudre|Impact de/;
+
+describe("MergeRequestPage détail (anglais)", () => {
+beforeEach(() => { lang.current = "en"; });
+afterEach(() => { lang.current = "fr"; });
+
+  it("n'affiche aucun texte français, y compris une fois les sections dépliées", async () => {
+    const user = userEvent.setup();
+    render(<MergeRequestPage />);
+    expect(screen.getByRole("heading", { level: 1, name: "Merge Request" })).toBeInTheDocument();
+    expect(screen.getByText(/Multi-level analysis/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cancel merge/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Confirm merge/ })).toBeInTheDocument();
+    expect(screen.getByText(/This action cannot be undone/)).toBeInTheDocument();
+    for (const label of ["Albums", "All Tracks", "Full History"]) {
+      for (const b of screen.getAllByRole("button", { name: new RegExp(label) })) await user.click(b);
+    }
+    for (const b of screen.getAllByRole("button", { name: /One More Time/ })) await user.click(b);
+    expect(screen.getAllByText(/Played on 2023-10-01/).length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(FRENCH);
   });
 });

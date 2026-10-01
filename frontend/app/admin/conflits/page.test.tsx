@@ -1,7 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ConflitsPage from "./page";
+
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("../../context/languageContext", async () => {
+  const { languages } = await import("../../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
+
 
 const h = vi.hoisted(() => ({
   getTracksError: vi.fn(),
@@ -266,5 +273,44 @@ describe("ConflitsPage", () => {
     await renderPage([makeTrack()]);
     const section = screen.getByText(/Historiques à corriger/).parentElement as HTMLElement;
     expect(within(section).getAllByRole("spinbutton")).toHaveLength(2);
+  });
+});
+
+const FRENCH = /[àâçéèêëîïôùûœÉ]|Chargement|Aucun|Erreur|Retour|Historique|Rejeter|Approuver|Annuler|Confirmer|Sauvegard|Brider|Dépasse|Requête|Validation|Arbitrage|Raison|Créée|introuvable|demande|écoute|suggér|fusion|modification|Priorité|Accéder|Bienvenue|Gérer|Résoudre|Impact de/;
+
+describe("ConflitsPage (anglais)", () => {
+beforeEach(() => { lang.current = "en"; });
+afterEach(() => { lang.current = "fr"; });
+
+  it("n'affiche aucun texte français (liste, libellés, infobulle, état vide)", async () => {
+    await renderPage([makeTrack()]);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/inconsistent listening time/);
+    expect(screen.getByRole("button", { name: "Save all" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cap history" })).toHaveAttribute("title", expect.stringContaining("Force ms_played"));
+    expect(screen.getByText(/EXCEEDS/)).toBeInTheDocument();
+    expect(document.body.innerHTML).not.toMatch(FRENCH);
+  });
+
+  it("état vide, chargement et toasts en anglais", async () => {
+    await renderPage([]);
+    expect(screen.getByText(/No inconsistent data detected/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(FRENCH);
+  });
+
+  it("toast de succès et d'erreur en anglais", async () => {
+    const user = userEvent.setup();
+    await renderPage([makeTrack()]);
+    await user.click(screen.getByRole("button", { name: "Save all" }));
+    expect(h.toast.success).toHaveBeenCalledWith("Saved!", expect.anything());
+    h.updateTrack.mockRejectedValueOnce(new Error("x"));
+    await user.click(screen.getByRole("button", { name: "Save all" }));
+    expect(h.toast.error).toHaveBeenCalledWith("Error while saving");
+  });
+
+  it("chargement en anglais", () => {
+    h.loading = true;
+    h.getTracksError.mockReturnValue(new Promise(() => {}));
+    render(<ConflitsPage />);
+    expect(screen.getByText("Loading errors...")).toBeInTheDocument();
   });
 });

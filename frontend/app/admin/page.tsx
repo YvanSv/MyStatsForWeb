@@ -2,6 +2,7 @@
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { AlertTriangle, GitBranchPlus, GitPullRequest, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "../context/languageContext";
 
 export default function AdminLayout() {
   return (
@@ -12,24 +13,25 @@ export default function AdminLayout() {
 }
 
 function AdminHomePage() {
+  const { t } = useLanguage();
   const adminModules = [
     {
-      title: "Create Requests",
-      description: "Gérer et valider les demandes de création de track.",
+      title: t.admin.home.createRequests.title,
+      description: t.admin.home.createRequests.description,
       href: "/admin/create-requests",
       icon: <GitBranchPlus className="w-6 h-6 text2" />,
       color: "hover:border-vert"
     },
     {
-      title: "Merge Requests",
-      description: "Gérer et valider les demandes de fusion de données.",
+      title: t.admin.home.mergeRequests.title,
+      description: t.admin.home.mergeRequests.description,
       href: "/admin/merge-requests",
       icon: <GitPullRequest className="w-6 h-6 text-blue-500" />,
       color: "hover:border-blue-500"
     },
     {
-      title: "Conflits",
-      description: "Résoudre les doublons et les incohérences détectés.",
+      title: t.admin.home.conflicts.title,
+      description: t.admin.home.conflicts.description,
       href: "/admin/conflits",
       icon: <AlertTriangle className="w-6 h-6 text-amber-500" />,
       color: "hover:border-amber-500"
@@ -43,10 +45,10 @@ function AdminHomePage() {
         <header className="mb-10">
           <div className="flex items-center gap-3 mb-2">
             <LayoutDashboard className="w-8 h-8 text-gray-700"/>
-            <h1 className="text-3xl font-bold">Administration</h1>
+            <h1 className="text-3xl font-bold">{t.admin.home.title}</h1>
           </div>
           <p className="text3">
-            Bienvenue dans votre interface de gestion. Sélectionnez un module pour commencer.
+            {t.admin.home.welcome}
           </p>
         </header>
 
@@ -70,7 +72,7 @@ function AdminHomePage() {
                 {module.description}
               </p>
               <div className="mt-4 text-sm font-medium text3 group-hover:text-vert flex items-center gap-1 transition-colors duration-300">
-                Accéder au module <span>→</span>
+                {t.admin.home.access} <span>→</span>
               </div>
             </Link>
           ))}

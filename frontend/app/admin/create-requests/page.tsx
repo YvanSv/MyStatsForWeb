@@ -5,8 +5,10 @@ import { GitPullRequest, Music, Calendar, User, Info, ChevronRight, History } fr
 import { useApiAdmin } from '../action';
 import { useEffect, useState } from 'react';
 import { CreateRequest } from '@/app/data/admin-interfaces';
+import { useLanguage } from '@/app/context/languageContext';
 
 export default function CreateRequestListPage() {
+  const { t } = useLanguage();
   const { getCreateRequests } = useApiAdmin();
   const [requests, setRequests] = useState<CreateRequest[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,13 +29,13 @@ export default function CreateRequestListPage() {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center text3 animate-pulse">
-      Chargement des requêtes...
+      {t.admin.createList.loading}
     </div>
   );
 
   if (!requests) return (
     <div className="min-h-screen flex items-center justify-center text-red-400">
-      <Info className="mr-2" /> Erreur lors de la récupération des données
+      <Info className="mr-2" /> {t.admin.createList.error}
     </div>
   );
 
@@ -47,10 +49,10 @@ export default function CreateRequestListPage() {
             <div className="p-2 bg-vert/10 rounded-lg">
               <GitPullRequest className="w-8 h-8 text-vert" />
             </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Validations en attente</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight">{t.admin.createList.title}</h1>
           </div>
           <p className="text3">
-            {requests.length} modification(s) suggérée(s) via MusicBrainz.
+            {t.admin.createList.suggested(requests.length)}
           </p>
         </header>
 
@@ -72,23 +74,23 @@ export default function CreateRequestListPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className="text-gray-400 font-medium px-2 py-0.5 bg-white/5 rounded text-sm">
-                       {mr.track?.title || "Track inconnu"}
+                       {mr.track?.title || t.admin.createList.unknownTrack}
                     </span>
                     <span className="flex items-center gap-1 px-2 py-0.5 bg-vert/10 text-vert text-[10px] font-bold rounded-full border border-vert/20">
                       <History size={10}/>
-                      {mr.history_count || 0} écoutes
+                      {t.admin.createList.plays(mr.history_count || 0)}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-4 text-[10px] text3 uppercase tracking-widest font-semibold">
                     <span className="flex items-center gap-1.5">
                       <Calendar size={12} className="text-vert" /> 
-                      {new Date(mr.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                      {new Date(mr.created_at).toLocaleDateString(t.common.locale, { day: '2-digit', month: 'short' })}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <User size={12} className="text-vert" />
                       {/* Extraction sécurisée de l'artiste MB */}
-                      {mr.track?.artist?.name || "Artiste inconnu"}
+                      {mr.track?.artist?.name || t.admin.createList.unknownArtist}
                     </span>
                   </div>
                 </div>
@@ -108,7 +110,7 @@ export default function CreateRequestListPage() {
             <div className="mb-4 inline-block p-4 bg-white/5 rounded-full text-gray-600">
                 <GitPullRequest size={32} />
             </div>
-            <p className="text-gray-500 font-medium">Tout est propre ! Aucune requête en attente.</p>
+            <p className="text-gray-500 font-medium">{t.admin.createList.empty}</p>
           </div>
         )}
       </div>
