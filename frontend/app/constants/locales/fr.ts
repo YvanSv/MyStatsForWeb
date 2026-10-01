@@ -19,6 +19,7 @@ export const fr = {
   },
   account: {
     successToast: "Compte mis à jour avec succès !",
+    noChanges: "Aucune modification à enregistrer.",
     confirmDelete: "Pour confirmer la suppression de votre compte et de toutes vos statistiques, tapez 'SUPPRIMER' ci-dessous :",
     deleteValidation: "SUPPRIMER",
     successDeleteToast: "Votre compte a été supprimé avec succès.",

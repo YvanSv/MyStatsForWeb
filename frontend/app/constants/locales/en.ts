@@ -19,6 +19,7 @@ export const en = {
   },
   account: {
     successToast: "Account successfully updated!",
+    noChanges: "No changes to save.",
     confirmDelete: "To confirm the deletion of your account and all your statistics, type 'DELETE' below :",
     deleteValidation: "DELETE",
     successDeleteToast: "Your account has been successfully deleted.",

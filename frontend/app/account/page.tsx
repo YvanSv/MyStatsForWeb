@@ -67,6 +67,11 @@ function AccountContent() {
       if (username !== user?.user_name) updateData.username = username;
       if (email !== user?.email) updateData.email = email;
       if (password) updateData.password = password;
+      // Rien n'a changé : pas de requête inutile ni de faux message de succès
+      if (Object.keys(updateData).length === 0) {
+        toast(dict.noChanges);
+        return;
+      }
       await updateUserProfile(updateData);
       toast.success(dict.successToast, {
         style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },

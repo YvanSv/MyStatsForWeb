@@ -11,7 +11,8 @@ const dict = languages.fr.account;
 const { mockAuth, toast } = vi.hoisted(() => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mockAuth: {} as Record<string, any>,
-  toast: { success: vi.fn(), error: vi.fn() },
+  // toast est à la fois une fonction (message neutre) et un objet avec success / error
+  toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
 }));
 
 vi.mock("../context/authContext", () => ({ useAuth: () => mockAuth }));
@@ -360,16 +361,50 @@ describe("AccountPage – enregistrement du profil", () => {
     });
   });
 
-  it("envoie un objet vide quand rien n'a changé", async () => {
+  it("n'envoie aucune requête quand rien n'a changé, et n'affiche pas de succès", async () => {
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(saveButton());
-    expect(mockAuth.updateUserProfile).toHaveBeenCalledWith({});
+    expect(mockAuth.updateUserProfile).not.toHaveBeenCalled();
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it("prévient avec un message neutre qu'il n'y a rien à enregistrer", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(saveButton());
+    expect(toast).toHaveBeenCalledWith(languages.fr.account.noChanges);
+  });
+
+  it("rend la main au bouton après un enregistrement sans changement (pas de blocage)", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(saveButton());
+    expect(saveButton()).toBeEnabled();
+    await user.click(saveButton());
+    expect(toast).toHaveBeenCalledTimes(2);
+  });
+
+  it("n'affiche pas d'erreur d'API après un enregistrement sans changement", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(saveButton());
+    expect(screen.queryByText(languages.fr.account.errorDeleteMessage)).toBeNull();
+  });
+
+  it("enregistre quand un champ a vraiment changé, après un enregistrement sans changement", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(saveButton());
+    await user.type(screen.getByPlaceholderText(languages.fr.account.placeholderName), "x");
+    await user.click(saveButton());
+    expect(mockAuth.updateUserProfile).toHaveBeenCalledTimes(1);
   });
 
   it("affiche le toast de succès après l'enregistrement", async () => {
     const user = userEvent.setup();
     render(<AccountPage />);
+    await user.type(nameInput(), "x"); // un changement réel est nécessaire pour enregistrer
     await user.click(saveButton());
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith(dict.successToast, expect.anything()));
   });
@@ -387,6 +422,7 @@ describe("AccountPage – enregistrement du profil", () => {
     mockAuth.updateUserProfile = vi.fn(() => new Promise<void>((r) => (resolve = r)));
     const user = userEvent.setup();
     render(<AccountPage />);
+    await user.type(nameInput(), "x"); // un changement réel est nécessaire pour enregistrer
     await user.click(saveButton());
     expect(screen.getByRole("button", { name: dict.saving })).toBeDisabled();
     resolve();
@@ -398,6 +434,7 @@ describe("AccountPage – enregistrement du profil", () => {
     mockAuth.updateUserProfile = vi.fn(() => new Promise<void>((r) => (resolve = r)));
     const user = userEvent.setup();
     render(<AccountPage />);
+    await user.type(nameInput(), "x"); // un changement réel est nécessaire pour enregistrer
     await user.click(saveButton());
     await user.click(saveButton());
     expect(mockAuth.updateUserProfile).toHaveBeenCalledTimes(1);
@@ -409,6 +446,7 @@ describe("AccountPage – enregistrement du profil", () => {
     mockAuth.updateUserProfile = vi.fn().mockRejectedValue(new Error("Email déjà utilisé"));
     const user = userEvent.setup();
     render(<AccountPage />);
+    await user.type(nameInput(), "x"); // un changement réel est nécessaire pour enregistrer
     await user.click(saveButton());
     await waitFor(() => expect(screen.getByRole("button", { name: dict.save })).toBeEnabled());
     expect(toast.success).not.toHaveBeenCalled();
@@ -418,6 +456,7 @@ describe("AccountPage – enregistrement du profil", () => {
     mockAuth.updateUserProfile = vi.fn().mockRejectedValue(new Error("Email déjà utilisé"));
     const user = userEvent.setup();
     render(<AccountPage />);
+    await user.type(nameInput(), "x"); // un changement réel est nécessaire pour enregistrer
     await user.click(saveButton());
     expect(await screen.findByRole("alert")).toHaveTextContent("Email déjà utilisé");
   });
@@ -426,6 +465,7 @@ describe("AccountPage – enregistrement du profil", () => {
     mockAuth.updateUserProfile = vi.fn().mockRejectedValue("échec");
     const user = userEvent.setup();
     render(<AccountPage />);
+    await user.type(nameInput(), "x"); // un changement réel est nécessaire pour enregistrer
     await user.click(saveButton());
     expect(await screen.findByRole("alert")).toHaveTextContent(dict.errorDeleteMessage);
   });
@@ -436,6 +476,7 @@ describe("AccountPage – enregistrement du profil", () => {
       .mockResolvedValueOnce(undefined);
     const user = userEvent.setup();
     render(<AccountPage />);
+    await user.type(nameInput(), "x"); // un changement réel est nécessaire pour enregistrer
     await user.click(saveButton());
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     await user.click(saveButton());
@@ -446,6 +487,7 @@ describe("AccountPage – enregistrement du profil", () => {
   it("n'affiche aucune alerte quand l'enregistrement réussit", async () => {
     const user = userEvent.setup();
     render(<AccountPage />);
+    await user.type(nameInput(), "x"); // un changement réel est nécessaire pour enregistrer
     await user.click(saveButton());
     await waitFor(() => expect(toast.success).toHaveBeenCalled());
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
