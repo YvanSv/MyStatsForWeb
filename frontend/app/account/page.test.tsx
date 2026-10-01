@@ -632,3 +632,113 @@ describe("AccountPage – suppression du compte", () => {
     expect(toast.success).not.toHaveBeenCalled();
   });
 });
+
+describe("AccountPage – erreurs toujours cohérentes avec les valeurs saisies", () => {
+  const isBlocked = () => (saveButton() as HTMLButtonElement).disabled;
+
+  it("une erreur de nom disparaît quand le compte est rafraîchi et que le nom revient à la valeur enregistrée", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccountPage />);
+    await typeInto(user, nameInput(), "ab");
+    expect(screen.getByText(dict.errorName1)).toBeInTheDocument();
+    expect(isBlocked()).toBe(true);
+    // refreshUser renvoie un nouvel objet : le champ reprend le nom enregistré
+    mockAuth.user = makeUser({ user_name: "Yvan2" });
+    rerender(<AccountPage />);
+    expect(nameInput()).toHaveValue("Yvan2");
+    expect(screen.queryByText(dict.errorName1)).not.toBeInTheDocument();
+    expect(isBlocked()).toBe(false);
+  });
+
+  it("pas d'erreur de nom tant que le nom n'a pas été modifié", () => {
+    render(<AccountPage />);
+    expect(screen.queryByText(dict.errorName1)).not.toBeInTheDocument();
+    expect(isBlocked()).toBe(false);
+  });
+
+  it("erreur de nom trop court puis trop long, puis valide : le message suit la valeur", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await typeInto(user, nameInput(), "ab");
+    expect(screen.getByText(dict.errorName1)).toBeInTheDocument();
+    await typeInto(user, nameInput(), "a".repeat(21));
+    expect(screen.queryByText(dict.errorName1)).not.toBeInTheDocument();
+    expect(screen.getByText(dict.errorName2)).toBeInTheDocument();
+    await typeInto(user, nameInput(), "Valide");
+    expect(screen.queryByText(dict.errorName2)).not.toBeInTheDocument();
+    expect(isBlocked()).toBe(false);
+  });
+
+  it("la confirmation en désaccord bloque, puis s'efface dès que le mot de passe est corrigé pour correspondre", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await typeInto(user, pwInput(), "motdepasse1");
+    await typeInto(user, confirmInput(), "motdepasse2");
+    expect(screen.getByText(dict.errorPw3)).toBeInTheDocument();
+    expect(isBlocked()).toBe(true);
+    await typeInto(user, pwInput(), "motdepasse2");
+    expect(screen.queryByText(dict.errorPw3)).not.toBeInTheDocument();
+    expect(isBlocked()).toBe(false);
+  });
+
+  it("la confirmation saisie avant le mot de passe est comparée à sa valeur actuelle", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await typeInto(user, confirmInput(), "motdepasse1");
+    expect(screen.getByText(dict.errorPw3)).toBeInTheDocument();
+    await typeInto(user, pwInput(), "motdepasse1");
+    expect(screen.queryByText(dict.errorPw3)).not.toBeInTheDocument();
+    expect(isBlocked()).toBe(false);
+  });
+
+  it("effacer le mot de passe alors que la confirmation est remplie signale le désaccord, effacer les deux le retire", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await typeInto(user, pwInput(), "motdepasse1");
+    await typeInto(user, confirmInput(), "motdepasse1");
+    expect(isBlocked()).toBe(false);
+    await typeInto(user, pwInput(), "");
+    expect(screen.getByText(dict.errorPw3)).toBeInTheDocument();
+    expect(isBlocked()).toBe(true);
+    await typeInto(user, confirmInput(), "");
+    expect(screen.queryByText(dict.errorPw3)).not.toBeInTheDocument();
+    expect(isBlocked()).toBe(false);
+  });
+
+  it("une erreur de mot de passe trop court et un désaccord de confirmation s'affichent chacun selon leur valeur", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await typeInto(user, pwInput(), "court");
+    expect(screen.getByText(dict.errorPw1)).toBeInTheDocument();
+    expect(screen.getByText(dict.errorPw3)).toBeInTheDocument();
+    await typeInto(user, confirmInput(), "court");
+    expect(screen.getByText(dict.errorPw1)).toBeInTheDocument();
+    expect(screen.queryByText(dict.errorPw3)).not.toBeInTheDocument();
+    await typeInto(user, pwInput(), "assezlong");
+    await typeInto(user, confirmInput(), "assezlong");
+    expect(screen.queryByText(dict.errorPw1)).not.toBeInTheDocument();
+    expect(isBlocked()).toBe(false);
+  });
+
+  it("modifier le nom n'efface pas une erreur de mot de passe déjà affichée (états indépendants)", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await typeInto(user, pwInput(), "court");
+    expect(screen.getByText(dict.errorPw1)).toBeInTheDocument();
+    await typeInto(user, nameInput(), "Autre");
+    expect(screen.getByText(dict.errorPw1)).toBeInTheDocument();
+    expect(isBlocked()).toBe(true);
+  });
+
+  it("n'enregistre pas tant qu'une erreur existe, puis enregistre une fois les champs cohérents", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await typeInto(user, pwInput(), "motdepasse1");
+    await typeInto(user, confirmInput(), "different");
+    await user.click(saveButton());
+    expect(mockAuth.updateUserProfile).not.toHaveBeenCalled();
+    await typeInto(user, confirmInput(), "motdepasse1");
+    await user.click(saveButton());
+    expect(mockAuth.updateUserProfile).toHaveBeenCalledWith({ password: "motdepasse1" });
+  });
+});

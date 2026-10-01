@@ -40,12 +40,14 @@ function AccountContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [errors, setErrors] = useState({
-    errorName: '',
-    errorEmail: '',
-    errorPw: '',
-    errorConfirmPw: '',
-  });
+  // Erreurs calculées à chaque rendu à partir des valeurs saisies (jamais stockées) : elles ne peuvent pas être périmées,
+  // quel que soit le champ modifié en dernier ou l'ordre des mises à jour.
+  const nameChanged = username !== (user?.user_name ?? "");
+  const errors = {
+    errorName: !nameChanged ? "" : username.length < 3 ? dict.errorName1 : username.length > 20 ? dict.errorName2 : "",
+    errorPw: password !== "" && password.length < 8 ? dict.errorPw1 : password.length > 128 ? dict.errorPw2 : "",
+    errorConfirmPw: password !== confirmPassword ? dict.errorPw3 : "",
+  };
   // Erreur renvoyée par l'API lors de l'enregistrement (ex : email déjà utilisé)
   const [errorApi, setErrorApi] = useState('');
 
@@ -127,12 +129,7 @@ function AccountContent() {
               >{(username?.length || 0)}/20</p>
             </div>
             <input className={PROFILE_STYLES.INPUT_FIELD} value={username ?? ""} 
-              onChange={(e) => {
-                if (e.target.value.length < 3) setErrors({...errors, errorName: dict.errorName1});
-                else if (e.target.value.length > 20) setErrors({...errors, errorName: dict.errorName2});
-                else setErrors({...errors, errorName: ""});
-                setUsername(e.target.value)
-              }}
+              onChange={(e) => setUsername(e.target.value)}
               type="text"
               placeholder={dict.placeholderName}
             />
@@ -158,15 +155,7 @@ function AccountContent() {
             
             <div className="relative">
               <input className={`${PROFILE_STYLES.INPUT_FIELD} pr-10`} value={password} type={showPassword ? "text" : "password"}
-                onChange={(e) => {
-                  let errorPw = "", errorConfirmPw = "";
-                  const val = e.target.value;
-                  if (val !== "" && val.length < 8) errorPw = dict.errorPw1;
-                  else if (val.length > 128) errorPw = dict.errorPw2;
-                  if (val !== confirmPassword) errorConfirmPw = dict.errorPw3;
-                  setErrors(prev => ({...prev, errorPw, errorConfirmPw}));
-                  setPassword(val);
-                }}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder={dict.placeholderPw}
               />
               
@@ -189,12 +178,7 @@ function AccountContent() {
             <div className="relative">
               <input value={confirmPassword} placeholder={dict.placeholderpwc} type={showConfirmPassword ? "text" : "password"}
                 className={`${PROFILE_STYLES.INPUT_FIELD} pr-10 ${password && confirmPassword && password !== confirmPassword ? 'border-red-500/50' : ''}`}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val !== password) setErrors(prev => ({...prev, errorConfirmPw: dict.errorPw3}));
-                  else setErrors(prev => ({...prev, errorConfirmPw: ""}));
-                  setConfirmPassword(val);
-                }}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
               
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
