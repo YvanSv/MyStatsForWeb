@@ -8,6 +8,16 @@ interface BackgroundWidgetProps {
   settings: any;
 }
 
+// Valeur CSS `url(...)` sûre : seules les URL https, les chemins du site et les images data: usuelles sont acceptées,
+// et l'URL est mise entre guillemets avec ses caractères spéciaux échappés (aucune injection de second url() ou de déclaration).
+// Sans image valide : « none » (et non url(null) / url(undefined)).
+const SAFE_IMAGE_URL = /^(https:\/\/|\/(?!\/)|data:image\/(png|jpeg|webp|gif);base64,)/i;
+export function toCssUrl(value: unknown): string {
+  if (typeof value !== "string" || !SAFE_IMAGE_URL.test(value.trim())) return "none";
+  const escaped = value.trim().replace(/[\\"\n\r\f]/g, (c) => (c === "\\" || c === '"' ? "\\" + c : "\\" + c.charCodeAt(0).toString(16) + " "));
+  return `url("${escaped}")`;
+}
+
 export function BackgroundWidget({ w, h, data, settings }: BackgroundWidgetProps) {
   // Récupération des réglages (avec valeurs par défaut sécurisées)
   const blur = settings?.blur ?? 10; // Flou en pixels
@@ -16,7 +26,7 @@ export function BackgroundWidget({ w, h, data, settings }: BackgroundWidgetProps
 
   // Style pour l'image de fond
   const backgroundStyle = {
-    backgroundImage: `url(${data})`,
+    backgroundImage: toCssUrl(data),
     filter: `blur(${blur}px)`,
     opacity: opacity,
   };

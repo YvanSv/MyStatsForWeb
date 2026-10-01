@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BackgroundSettings, BackgroundWidget } from "./BackgroundWidget";
+import { BackgroundSettings, BackgroundWidget, toCssUrl } from "./BackgroundWidget";
 
 const onChange = vi.fn();
 
@@ -178,5 +178,68 @@ describe("BackgroundSettings", () => {
     await userEvent.click(screen.getByRole("button", { name: /Dégradé/ }));
     window.removeEventListener("error", swallow);
     expect(onChange).toHaveBeenCalled();
+  });
+});
+
+describe("toCssUrl", () => {
+  it("met une URL https entre guillemets", () => {
+    expect(toCssUrl("https://img/bg.jpg")).toBe('url("https://img/bg.jpg")');
+  });
+
+  it("accepte un chemin du site et une image data: usuelle", () => {
+    expect(toCssUrl("/banner_template.jpg")).toBe('url("/banner_template.jpg")');
+    expect(toCssUrl("data:image/png;base64,AAAA")).toBe('url("data:image/png;base64,AAAA")');
+  });
+
+  it.each([null, undefined, "", "   ", 42, {}, "null", "undefined"])("renvoie « none » (et jamais url(null)) pour %j", (v) => {
+    expect(toCssUrl(v)).toBe("none");
+  });
+
+  it.each([
+    "javascript:alert(1)",
+    "http://tracker.example/a.png",
+    "//evil.example/a.png",
+    "data:image/svg+xml;base64,PHN2Zz4=",
+    "data:text/html;base64,PGgxPg==",
+    "ftp://x/a.png",
+  ])("refuse le schéma non autorisé %s", (v) => {
+    expect(toCssUrl(v)).toBe("none");
+  });
+
+  it("échappe les guillemets : impossible de sortir de url() pour injecter un second fond ou une déclaration", () => {
+    const out = toCssUrl('https://img/a.png") , url("https://tracker.example/pixel.png');
+    expect(out.startsWith('url("')).toBe(true);
+    expect(out.endsWith('")')).toBe(true);
+    // Aucun guillemet non échappé à l'intérieur : la valeur reste une seule chaîne
+    const inner = out.slice(5, -2);
+    expect(inner).not.toMatch(/(^|[^\\])"/);
+  });
+
+  it("échappe les antislashs et neutralise les retours à la ligne", () => {
+    const out = toCssUrl("https://img/a\\b.png\n;color:red");
+    expect(out).not.toMatch(/\n|\r/);
+    expect(out).toContain("\\\\");
+  });
+});
+
+describe("BackgroundWidget – URL de fond", () => {
+  it("sans image (null), n'écrit pas url(null) mais aucun fond", () => {
+    const { container } = renderWidget({}, null as any);
+    expect(bgDiv(container).style.backgroundImage).not.toContain("null");
+    expect(["none", ""]).toContain(bgDiv(container).style.backgroundImage);
+  });
+
+  it("une URL malveillante n'ajoute pas de seconde image de fond", () => {
+    const { container } = renderWidget({}, 'https://img/a.png"), url("https://tracker.example/pixel.png');
+    const bg = bgDiv(container).style.backgroundImage;
+    // Une seule valeur url("…") : tous les guillemets intérieurs sont échappés, le texte « url( » reste dans la chaîne
+    expect(bg.startsWith('url("')).toBe(true);
+    expect(bg.endsWith('")')).toBe(true);
+    expect(bg.slice(5, -2)).not.toMatch(/(^|[^\\])"/);
+  });
+
+  it("un schéma dangereux (javascript:) est ignoré", () => {
+    const { container } = renderWidget({}, "javascript:alert(1)");
+    expect(bgDiv(container).style.backgroundImage).not.toContain("javascript");
   });
 });
