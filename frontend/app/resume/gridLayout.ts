@@ -1,10 +1,11 @@
 import type { PlacedWidget } from "./interfaces";
+import { STORAGE_KEYS } from "../constants/storage";
 
 export const GRID_COLS = 3;
 export const GRID_ROWS = 5;
 export const GRID_CELLS = GRID_COLS * GRID_ROWS;
 
-export const LAYOUT_STORAGE_KEY = "mystats-resume-layout-v1";
+export const LAYOUT_STORAGE_KEY = STORAGE_KEYS.RESUME_LAYOUT;
 export const LAYOUT_VERSION = 1;
 
 /** Types de widgets que le canvas sait afficher (ceux proposés par WidgetsView / traités par getFreshData). */

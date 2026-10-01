@@ -1,5 +1,6 @@
 "use client";
 
+import { PLACEHOLDER_IMAGE } from "@/app/constants/images";
 import React, { useState } from 'react';
 import { 
   GitPullRequest, ArrowRight, Merge, Disc, Music, 
@@ -17,7 +18,7 @@ export default function MergeRequestPage() {
     duplicate: {
       id: "dup_123",
       name: "Daft Punk (Old)",
-      image: "https://via.placeholder.com/150",
+      image: PLACEHOLDER_IMAGE,
       mapping: { provider: "Spotify", id: "5p9...12" },
       albums: [
         { 
@@ -36,7 +37,7 @@ export default function MergeRequestPage() {
     target: {
       id: "dup_123",
       name: "Daft Punk (Old)",
-      image: "https://via.placeholder.com/150",
+      image: PLACEHOLDER_IMAGE,
       mapping: { provider: "Spotify", id: "5p9...12" },
       albums: [
         { 

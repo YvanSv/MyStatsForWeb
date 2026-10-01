@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Lock, UserX, Home, RefreshCcw } from 'lucide-react';
+import { FRONT_ROUTES } from '@/app/constants/routes';
 import { PrimaryButton } from '../Buttons';
 import { useLanguage } from '@/app/context/languageContext';
 
@@ -62,7 +63,7 @@ export function ErrorState({ title, message, status, onRetry }: ErrorStateProps)
               <RefreshCcw size={18}/> {dict.retry}
             </PrimaryButton>
           ) : (
-            <PrimaryButton onClick={() => router.push('/')} additional="w-full py-4 gap-2">
+            <PrimaryButton onClick={() => router.push(FRONT_ROUTES.ACCUEIL)} additional="w-full py-4 gap-2">
               <Home size={18}/> {dict.backhome}
             </PrimaryButton>
           )}

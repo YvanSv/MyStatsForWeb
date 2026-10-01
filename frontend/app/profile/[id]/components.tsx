@@ -1,3 +1,4 @@
+import { RATING_GOOD, RATING_AVERAGE } from "@/app/constants/ui";
 import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { useLanguage } from "@/app/context/languageContext";
 import { TopStatCardProps } from "@/app/data/DataInfos";
@@ -16,7 +17,7 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [selectedItem]);
   const RATING = (rating: number) => {
-    const color = rating >= 1.35 ? `text2` : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
+    const color = rating >= RATING_GOOD ? `text2` : rating >= RATING_AVERAGE ? 'text-jaune' : 'text-rouge';
     return `text-3xl font-mono font-bold text-center ${color}`;
   }
   return (

@@ -1,5 +1,6 @@
 "use client";
 
+import { FRONT_ROUTES } from "@/app/constants/routes";
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { GitPullRequest, Music, Link as LinkIcon, History, CheckCircle, XCircle, ArrowLeft, Loader2, AlertTriangle, Info } from 'lucide-react';
@@ -83,7 +84,7 @@ export default function CreateRequestDetailPage() {
     setResolving(true);
     try {
       await resolveCreateRequest(cr_id, approve,selectedMasterIndex,selectedIsrcs);
-      router.push('/admin/create-requests'); 
+      router.push(FRONT_ROUTES.ADMIN_CREATE_REQUESTS); 
       router.refresh();
     } catch (err) {
       alert(t.admin.createDetail.resolveError);
@@ -117,7 +118,7 @@ export default function CreateRequestDetailPage() {
         
         {/* Barre d'outils supérieure */}
         <div className="flex items-center justify-between mb-8">
-          <Link href="/admin/create-requests" className="flex items-center gap-2 text-sm text3 hover:text-white transition-colors group">
+          <Link href={FRONT_ROUTES.ADMIN_CREATE_REQUESTS} className="flex items-center gap-2 text-sm text3 hover:text-white transition-colors group">
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
             {t.admin.createDetail.back}
           </Link>

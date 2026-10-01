@@ -1,3 +1,4 @@
+import { SITE_URL } from "./constants/app";
 import type { Metadata } from "next";
 import { languages } from "./constants/locales/lang";
 import { getServerLanguage } from "./services/serverLanguage";
@@ -28,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: m.siteTitle,
       description: m.siteDescription,
-      url: "https://mystatsfy.vercel.app/",
+      url: `${SITE_URL}/`,
       siteName: "MyStats",
       type: "website",
     },

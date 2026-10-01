@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLanguage } from './languageContext';
 import { readStorage, writeStorage } from './storage';
+import { STORAGE_KEYS } from '../constants/storage';
 
 const VIEW_MODES = ['grid_sm', 'grid', 'list'] as const;
 type ViewMode = (typeof VIEW_MODES)[number];
@@ -20,13 +21,13 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   useEffect(() => {
-    const saved = readStorage('globalViewMode');
+    const saved = readStorage(STORAGE_KEYS.VIEW_MODE);
     if (isViewMode(saved)) setViewMode(saved);
   }, []);
 
   const toggleViewMode = (mode: ViewMode) => {
     setViewMode(mode);
-    writeStorage('globalViewMode', mode);
+    writeStorage(STORAGE_KEYS.VIEW_MODE, mode);
   };
 
   return (

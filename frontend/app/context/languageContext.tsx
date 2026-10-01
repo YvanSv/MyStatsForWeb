@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { languages } from '../constants/locales/lang';
 import { readStorage, writeStorage } from './storage';
+import { STORAGE_KEYS } from '../constants/storage';
 
 type LanguageType = keyof typeof languages;
 
@@ -20,7 +21,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<LanguageType>("fr");
 
   useEffect(() => {
-    const saved = readStorage('language');
+    const saved = readStorage(STORAGE_KEYS.LANGUAGE);
     if (isLanguage(saved)) setLanguage(saved);
   }, []);
 
@@ -32,7 +33,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const changeLanguage = (newLanguage:string) => {
     if (!isLanguage(newLanguage)) return;
     setLanguage(newLanguage);
-    writeStorage('language', newLanguage);
+    writeStorage(STORAGE_KEYS.LANGUAGE, newLanguage);
   };
 
   const t = languages[language];

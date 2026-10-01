@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { defaultAvatar } from "@/app/constants/images";
+import { SITE_HOST } from "@/app/constants/app";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -126,12 +128,12 @@ describe("EditProfilePage – chargement", () => {
     }
   });
 
-  it("données nulles : champs vides, avatar dicebear et bannière par défaut", async () => {
+  it("données nulles : champs vides, avatar par défaut et bannière par défaut", async () => {
     await renderLoaded({ display_name: null, bio: null, slug: null, avatar_url: null, banner_url: null, perms: null });
     expect(nameInput()).toHaveValue("");
     expect(bioInput()).toHaveValue("");
     expect(slugInput()).toHaveValue("");
-    expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://api.dicebear.com/7.x/avataaars/svg?seed=1");
+    expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", defaultAvatar(1));
     expect(screen.getByAltText("Bannière").getAttribute("src")).toContain("banner_template_1100x390");
   });
 
@@ -421,7 +423,7 @@ describe("EditProfilePage – slug", () => {
 
   it("affiche le préfixe d'URL", async () => {
     await renderLoaded();
-    expect(screen.getByText("mystatsfy.com/profile/")).toBeInTheDocument();
+    expect(screen.getByText(`${SITE_HOST}/profile/`)).toBeInTheDocument();
   });
 });
 
@@ -572,7 +574,7 @@ describe("EditProfilePage – sauvegarde", () => {
     expect(payload).not.toHaveProperty("banner_url");
   });
 
-  it("avatar dicebear et bannière par défaut non modifiés ne sont pas enregistrés", async () => {
+  it("avatar par défaut et bannière par défaut non modifiés ne sont pas enregistrés", async () => {
     await renderLoaded(profile({ avatar_url: null, banner_url: null }));
     await userEvent.setup().click(saveBtn());
     await waitFor(() => expect(h.patchProfile).toHaveBeenCalled());

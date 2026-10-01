@@ -1,5 +1,6 @@
 "use client";
 
+import { TOAST_STYLE } from "@/app/constants/ui";
 import { useEffect, useState } from "react";
 import { TrackInfo, useApiAdmin } from "../action";
 import toast from "react-hot-toast";
@@ -39,7 +40,7 @@ export default function ConflitsPage() {
     try {
       await updateTrack(track);
       toast.success(dict.admin.conflicts.saved, {
-        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        style: TOAST_STYLE,
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
     } catch (e) {toast.error(dict.admin.conflicts.saveError)}

@@ -1,5 +1,10 @@
 "use client";
 
+import { TOAST_STYLE } from "@/app/constants/ui";
+import { SITE_HOST } from "@/app/constants/app";
+import { defaultAvatar } from "@/app/constants/images";
+import { FRONT_ROUTES } from "@/app/constants/routes";
+import { NAME_MIN, NAME_MAX, NAME_WARN, NAME_DANGER, BIO_MAX, BIO_WARN, BIO_DANGER, MAX_IMAGE_BYTES } from "@/app/constants/validation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
@@ -21,6 +26,13 @@ export default function EditProfilePage() {
     </ProtectedRoute>
   );
 }
+
+// Seuils propres au slug (compteur : jaune, orange, rouge)
+const SLUG_WARN = 20;
+const SLUG_DANGER = 25;
+const SLUG_MAX = 30;
+// Marge gauche du champ : laisse la place au préfixe « hôte/profile/ » affiché devant
+const SLUG_PREFIX_PADDING = `calc(${SITE_HOST.length + "/profile/".length}ch + 2rem)`;
 
 const PROFILE_EDIT_STYLES = {
   MAIN: "min-h-screen pb-20 bg-bg1",
@@ -58,7 +70,6 @@ const PROFILE_EDIT_STYLES = {
 
 // Mêmes règles que le serveur : jamais de SVG
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const RESERVED_SLUGS = ["dashboard", "edit", "settings", "admin", "login", "api"];
 
 const ALL_PERMS = { profile: true, stats: true, favorites: true, history: true, dashboard: true };
@@ -103,11 +114,11 @@ function EditProfileContent() {
   const bio = formData.bio || "";
   const slug = (formData.slug || "").trim();
   const errors = {
-    errorName: name.length < 3 ? errDict.errorName1 : name.length > 20 ? errDict.errorName2 : "",
-    errorBio: bio.length > 500 ? dict.errorBio : "",
+    errorName: name.length < NAME_MIN ? errDict.errorName1 : name.length > NAME_MAX ? errDict.errorName2 : "",
+    errorBio: bio.length > BIO_MAX ? dict.errorBio : "",
     errorSlug: /^\d+$/.test(slug) ? dict.errorSlugNumeric
       : RESERVED_SLUGS.includes(slug) ? dict.errorSlugReserved
-      : slug.length > 30 ? dict.errorSlugLength : "",
+      : slug.length > SLUG_MAX ? dict.errorSlugLength : "",
   };
   const hasError = errors.errorName !== "" || errors.errorBio !== "" || errors.errorSlug !== "";
 
@@ -122,7 +133,7 @@ function EditProfileContent() {
       try {
         const data = await getEditableProfile(''+userId);
         if (cancelled) return;
-        const avatar = data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
+        const avatar = data.avatar_url || defaultAvatar(userId);
         const banner = data.banner_url || DEFAULT_BANNER;
         const perms = data.perms ? { ...ALL_PERMS, ...data.perms } : { ...ALL_PERMS };
         setFormData({
@@ -169,11 +180,11 @@ function EditProfileContent() {
     try {
       await patchProfile('' + user.id, payload);
       toast.success(dict.successToast, {
-        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        style: TOAST_STYLE,
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
       await refreshUser();
-      router.push(`/profile/${finalSlug === "" ? user.id : finalSlug}`);
+      router.push(`${FRONT_ROUTES.PROFILE}/${finalSlug === "" ? user.id : finalSlug}`);
     } catch (e) {
       const err = e as { status?: number; message?: string };
       // Les erreurs de validation (422) n'ont pas de message lisible : on affiche le texte générique
@@ -290,8 +301,8 @@ function EditProfileContent() {
             <div className="flex justify-between">
               <label htmlFor="profile-name" className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelName}</label>
               <p className={`block text-xs mb-2 ml-1
-                ${(formData.display_name || "").length < 3 ? 'text-rouge' : (formData.display_name || "").length > 14 ? (formData.display_name.length > 17 ? (formData.display_name.length >= 20 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
-              >{(formData.display_name?.length || 0)}/20</p>
+                ${(formData.display_name || "").length < NAME_MIN ? 'text-rouge' : (formData.display_name || "").length > NAME_WARN ? (formData.display_name.length > NAME_DANGER ? (formData.display_name.length >= NAME_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{(formData.display_name?.length || 0)}/{NAME_MAX}</p>
             </div>
             <input id="profile-name" type="text" className={PROFILE_EDIT_STYLES.INPUT} value={formData.display_name}
               onChange={(e) => {
@@ -307,8 +318,8 @@ function EditProfileContent() {
             <div className="flex justify-between">
               <label htmlFor="profile-bio" className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelBio}</label>
               <p className={`block text-xs mb-2 ml-1
-                ${(formData.bio || "").length > 400 ? (formData.bio.length > 450 ? (formData.bio.length >= 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
-              >{(formData.bio?.length || 0)}/500</p>
+                ${(formData.bio || "").length > BIO_WARN ? (formData.bio.length > BIO_DANGER ? (formData.bio.length >= BIO_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{(formData.bio?.length || 0)}/{BIO_MAX}</p>
             </div>
             <textarea id="profile-bio" rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
               value={formData.bio} placeholder={dict.placeholderBio}
@@ -324,16 +335,16 @@ function EditProfileContent() {
             <div className="flex justify-between">
               <label htmlFor="profile-slug" className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelUrl}</label>
               <p className={`block text-xs mb-2 ml-1
-                ${(formData.slug || "").length > 20 ? (formData.slug.length > 25 ? (formData.slug.length === 30 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
-              >{(formData.slug?.length || 0)}/30</p>
+                ${(formData.slug || "").length > SLUG_WARN ? (formData.slug.length > SLUG_DANGER ? (formData.slug.length === SLUG_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{(formData.slug?.length || 0)}/{SLUG_MAX}</p>
             </div>
             <div className="relative flex items-center">
               {/* Préfixe de l'URL */}
               <span className="absolute left-4 text-white/30 text-sm font-medium pointer-events-none">
-                mystatsfy.com/profile/
+                {SITE_HOST}/profile/
               </span>
               
-              <input id="profile-slug" type="text" className={`${PROFILE_EDIT_STYLES.INPUT} pl-[145px] text-md tracking-wider`}
+              <input id="profile-slug" type="text" className={`${PROFILE_EDIT_STYLES.INPUT} text-md tracking-wider`} style={{ paddingLeft: SLUG_PREFIX_PADDING }}
                 value={formData.slug || ""} placeholder={dict.placeholderUrl}
                 onChange={(e) => {
                   // Normalisation seulement : les valeurs invalides sont signalées par une erreur, pas ignorées

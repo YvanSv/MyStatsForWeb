@@ -3,14 +3,15 @@
 import { useCallback, useMemo } from "react";
 import { API_ENDPOINTS } from "../constants/routes";
 import { useApi } from "./useApi";
+import { DEFAULT_DIRECTION, DEFAULT_PAGE_OFFSET, DEFAULT_PAGE_SIZE, DEFAULT_SORT } from "../constants/ui";
 
 export const useApiAllDatas = () => {
   const { loading, request } = useApi();
   
   const buildParams = (filters?: Record<string, any>) => {
     const params = new URLSearchParams();
-    params.set('offset', '0');
-    params.set('limit', '50');
+    params.set('offset', String(DEFAULT_PAGE_OFFSET));
+    params.set('limit', String(DEFAULT_PAGE_SIZE));
     
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -20,8 +21,8 @@ export const useApiAllDatas = () => {
       });
     }
     
-    if (!params.has('sort')) params.set('sort', 'play_count');
-    if (!params.has('direction')) params.set('direction', 'desc');
+    if (!params.has('sort')) params.set('sort', DEFAULT_SORT);
+    if (!params.has('direction')) params.set('direction', DEFAULT_DIRECTION);
     
     return params.toString();
   };

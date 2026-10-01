@@ -1,4 +1,6 @@
 "use client";
+import { TOAST_STYLE } from "@/app/constants/ui";
+import { NAME_MIN, NAME_MAX, NAME_WARN, NAME_DANGER, PASSWORD_MIN, PASSWORD_MAX, PASSWORD_WARN, PASSWORD_DANGER } from "@/app/constants/validation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/authContext";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -48,8 +50,8 @@ function AccountContent() {
   // quel que soit le champ modifié en dernier ou l'ordre des mises à jour.
   const nameChanged = username !== (user?.user_name ?? "");
   const errors = {
-    errorName: !nameChanged ? "" : username.length < 3 ? dict.errorName1 : username.length > 20 ? dict.errorName2 : "",
-    errorPw: password !== "" && password.length < 8 ? dict.errorPw1 : password.length > 128 ? dict.errorPw2 : "",
+    errorName: !nameChanged ? "" : username.length < NAME_MIN ? dict.errorName1 : username.length > NAME_MAX ? dict.errorName2 : "",
+    errorPw: password !== "" && password.length < PASSWORD_MIN ? dict.errorPw1 : password.length > PASSWORD_MAX ? dict.errorPw2 : "",
     errorConfirmPw: password !== confirmPassword ? dict.errorPw3 : "",
   };
   // Erreur renvoyée par l'API lors de l'enregistrement (ex : email déjà utilisé)
@@ -89,7 +91,7 @@ function AccountContent() {
       }
       await updateUserProfile(updateData);
       toast.success(dict.successToast, {
-        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        style: TOAST_STYLE,
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
     } catch (err) {
@@ -98,7 +100,7 @@ function AccountContent() {
   };
 
   const toastStyle = {
-    style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+    style: TOAST_STYLE,
     iconTheme: { primary: '#1DD05D', secondary: '#fff' },
   };
 
@@ -129,8 +131,8 @@ function AccountContent() {
             <div className="flex justify-between">
               <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.titleDisplayname}</label>
               <p className={`${PROFILE_STYLES.INPUT_LABEL}
-                ${(username || "").length < 3 ? 'text-rouge' : (username || "").length > 14 ? (username.length > 17 ? (username.length >= 20 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
-              >{(username?.length || 0)}/20</p>
+                ${(username || "").length < NAME_MIN ? 'text-rouge' : (username || "").length > NAME_WARN ? (username.length > NAME_DANGER ? (username.length >= NAME_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{(username?.length || 0)}/{NAME_MAX}</p>
             </div>
             <input className={PROFILE_STYLES.INPUT_FIELD} value={username ?? ""} 
               onChange={(e) => setUsername(e.target.value)}
@@ -153,8 +155,8 @@ function AccountContent() {
             <div className="flex justify-between">
               <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.passwordtitle}</label>
               <p className={`${PROFILE_STYLES.INPUT_LABEL}
-                ${(password || "").length < 8 ? 'text-rouge' : (password || "").length > 100 ? (password.length > 114 ? (password.length >= 128 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
-              >{(password?.length || 0)}/128</p>
+                ${(password || "").length < PASSWORD_MIN ? 'text-rouge' : (password || "").length > PASSWORD_WARN ? (password.length > PASSWORD_DANGER ? (password.length >= PASSWORD_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
+              >{(password?.length || 0)}/{PASSWORD_MAX}</p>
             </div>
             
             <div className="relative">

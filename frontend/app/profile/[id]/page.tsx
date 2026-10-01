@@ -1,4 +1,5 @@
-import { API_ENDPOINTS } from "@/app/constants/routes";
+import { SITE_URL } from "@/app/constants/app";
+import { API_ENDPOINTS, FRONT_ROUTES } from "@/app/constants/routes";
 import { Metadata } from 'next';
 import ProfilePage from "./client";
 import { pathSegment } from "@/app/services/url";
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: title,
       description: description,
-      url: `https://mystatsfy.vercel.app/profile/${pathSegment(id)}`,
+      url: `${SITE_URL}${FRONT_ROUTES.PROFILE}/${pathSegment(id)}`,
       siteName: 'MyStats',
       ...(imageUrl && {
         images: [

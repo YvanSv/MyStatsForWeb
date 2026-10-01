@@ -73,4 +73,8 @@ export const FRONT_ROUTES = {
   HELP: '/faq',
   SETTINGS: '/settings',
   RESUME: '/resume',
+  ADMIN: '/admin',
+  ADMIN_CREATE_REQUESTS: '/admin/create-requests',
+  ADMIN_MERGE_REQUESTS: '/admin/merge-requests',
+  ADMIN_CONFLICTS: '/admin/conflits',
 }

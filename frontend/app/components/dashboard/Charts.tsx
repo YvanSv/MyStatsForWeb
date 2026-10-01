@@ -1,4 +1,5 @@
 import { useLanguage } from '@/app/context/languageContext';
+import { CHART_HEIGHT_DESKTOP, CHART_HEIGHT_MOBILE, COLORS, DESKTOP_BREAKPOINT } from '@/app/constants/ui';
 import { useId, useLayoutEffect, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarAngleAxis, PolarGrid, Radar, PolarRadiusAxis } from 'recharts';
 import { LineChart, Line, Legend } from 'recharts';
@@ -37,7 +38,7 @@ const CustomBar = (props: any) => {
     return (<rect x={x} y={(y ?? 0) - MIN_BAR_HEIGHT} width={width} height={MIN_BAR_HEIGHT} fill="#ffffff10" rx={1.5} ry={1.5}/>);
   }
   if (!height || height < 0) return null;
-  return (<rect x={x} y={y} width={width} height={height} fill={value > 0 ? '#c084fc' : '#ffffff10'} rx={6} ry={6}/>);
+  return (<rect x={x} y={y} width={width} height={height} fill={value > 0 ? COLORS.PURPLE : '#ffffff10'} rx={6} ry={6}/>);
 };
 
 const ChartToolTip = ({ active, payload }: any) => {
@@ -89,7 +90,7 @@ function CustomBarChart({data, type, metric}:{data:any[], type:string, metric: '
   const title = type === "day" ? t.charts.weekly : type === "month" ? t.charts.monthly : t.charts.annual;
   
   return (
-    <GraphContainer height={screenWidth < 1024 ? 200 : 250} title={title} additional={"flex flex-col"} empty={hasNoData(data, [metric === 'streams' ? 'streams' : 'value'])}>
+    <GraphContainer height={screenWidth < DESKTOP_BREAKPOINT ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP} title={title} additional={"flex flex-col"} empty={hasNoData(data, [metric === 'streams' ? 'streams' : 'value'])}>
       <BarChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }} barGap={0}>
           <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#ffffff05" />
           <XAxis dataKey={type} axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }} dy={10}/>
@@ -97,8 +98,8 @@ function CustomBarChart({data, type, metric}:{data:any[], type:string, metric: '
             const formatter = new Intl.NumberFormat(t.common.locale, {maximumFractionDigits: 0});
             return formatter.format(str);
           }} width={65}/>
-          <Tooltip content={<ChartToolTip/>} cursor={{ fill: '#c084fc', fillOpacity: 0.05 }}/>
-          <Bar dataKey={metric === 'streams' ? 'streams' : 'value'} fill={"#c084fc"} shape={<CustomBar />} barSize={24} animationDuration={1500} animationEasing="ease-out"/>
+          <Tooltip content={<ChartToolTip/>} cursor={{ fill: COLORS.PURPLE, fillOpacity: 0.05 }}/>
+          <Bar dataKey={metric === 'streams' ? 'streams' : 'value'} fill={COLORS.PURPLE} shape={<CustomBar />} barSize={24} animationDuration={1500} animationEasing="ease-out"/>
         </BarChart>
     </GraphContainer>
   );
@@ -127,16 +128,16 @@ export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: 
 
   const maxRange = metric === 'minutes' && daysCount !== 0 ? 60 * daysCount : undefined;
   return (
-    <GraphContainer height={screenWidth < 1024 ? 200 : 250} title={t.charts.hourly} empty={hasNoData(data, [metric === 'streams' ? 'streams' : 'value'])}>
+    <GraphContainer height={screenWidth < DESKTOP_BREAKPOINT ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP} title={t.charts.hourly} empty={hasNoData(data, [metric === 'streams' ? 'streams' : 'value'])}>
       <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data} startAngle={90} endAngle={-270}>
         <PolarGrid stroke="#374151"/>
         <PolarAngleAxis dataKey="hour" tickFormatter={formatTicks} tick={{ fill: '#9CA3AF', fontSize: 10 }}/>
         <PolarRadiusAxis domain={[0, maxRange || 'auto']} tick={false} axisLine={false}/>
-        <Tooltip content={<ChartToolTip/>} cursor={{ stroke: '#c084fc', strokeWidth: 1 }}/>
+        <Tooltip content={<ChartToolTip/>} cursor={{ stroke: COLORS.PURPLE, strokeWidth: 1 }}/>
         <Radar 
           name={metric === 'streams' ? t.common.streams : t.common.minutes} 
           dataKey={metric === 'streams' ? 'streams' : 'value'} 
-          stroke="#c084fc"
+          stroke={COLORS.PURPLE}
           fill="#5e4d6c" fillOpacity={0.5} animationDuration={1000}
         />
       </RadarChart>
@@ -146,12 +147,12 @@ export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: 
 
 export function CumulativeChart({ data }:{ data: any[] }) {
   const { t } = useLanguage();
-  const color1 = '#1DD05D', color2 = '#065e25';
+  const color1 = COLORS.SPOTIFY_GREEN_LIGHT, color2 = COLORS.SPOTIFY_GREEN_DARK;
   // Ids de dégradé uniques par instance (les « : » de useId sont inutilisables dans url(#...))
   const gradientId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const id1 = `colorArea1-${gradientId}`, id2 = `colorArea2-${gradientId}`;
   return (
-    <GraphContainer height={250} title={t.charts.cumulative} empty={hasNoData(data, ['minutes', 'streams'])}>
+    <GraphContainer height={CHART_HEIGHT_DESKTOP} title={t.charts.cumulative} empty={hasNoData(data, ['minutes', 'streams'])}>
       <AreaChart data={data} margin={{ top: 0, right: 0, left: -15, bottom: 0 }}>
         <defs>
           <linearGradient id={id1} x1="0" y1="0" x2="0" y2="1">
@@ -178,7 +179,7 @@ export function CumulativeChart({ data }:{ data: any[] }) {
 
 export const EvolutionChart = ({ data }:{data: any[]}) => {
   const { t } = useLanguage();
-  const color1 = "#1DB954", color2 = "#60a5fa", color3 = "#a78bfa";
+  const color1 = COLORS.SPOTIFY_GREEN, color2 = "#60a5fa", color3 = "#a78bfa";
   return (
     <GraphContainer height={300} title={t.charts.discoveries} empty={hasNoData(data, ['tracks', 'albums', 'artists'])}>
       <LineChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
@@ -197,7 +198,7 @@ export const EvolutionChart = ({ data }:{data: any[]}) => {
 
 export const EvolutionStreamsChart = ({ data }:{data: any[]}) => {
   const { t } = useLanguage();
-  const color1 = '#1DD05D', color2 = '#065e25';
+  const color1 = COLORS.SPOTIFY_GREEN_LIGHT, color2 = COLORS.SPOTIFY_GREEN_DARK;
   return (
     <GraphContainer height={280} title={t.charts.streamsEvolution} empty={hasNoData(data, ['minutes', 'streams'])}>
       <LineChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>

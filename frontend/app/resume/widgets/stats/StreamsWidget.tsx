@@ -3,6 +3,7 @@ import Widget from "../Widget";
 import { Play } from "lucide-react";
 import { CustomLabel, ShortenFilter, ShowIconFilter } from "./common_filters";
 import { Layout1x1, Layout2x1, Layout2x2 } from "./common_layouts";
+import { COLORS } from "../../../constants/ui";
 
 interface StreamsWidgetProps {
   w: number;
@@ -14,7 +15,7 @@ interface StreamsWidgetProps {
 export function StreamsWidget({ w, h, streams, settings }: StreamsWidgetProps) {
   const { t } = useLanguage();
   const defaultLabel = t.resume.labelStreams;
-  const color = settings?.color || "#1DB954";
+  const color = settings?.color || COLORS.SPOTIFY_GREEN;
 
   const layouts = {
     "1x1": <Layout1x1 data={streams} settings={settings} defaultLabel={defaultLabel} icon={<Play size={14} style={{ color }} className="mb-1"/>}/>,
@@ -40,7 +41,7 @@ export function StreamsSettings({ settings, onChange }: { settings: any, onChang
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAccentColor}</label>
         <div className="flex gap-2">
-          {["#1DB954", "#FFFFFF", "#38BDF8", "#A855F7"].map(c => (
+          {[COLORS.SPOTIFY_GREEN, COLORS.WHITE, "#38BDF8", "#A855F7"].map(c => (
             <button key={c} type="button" aria-label={c} aria-pressed={settings?.color === c} onClick={() => update('color', c)}
               className={`w-6 h-6 rounded-full border-2 ${settings?.color === c ? 'border-white' : 'border-transparent'}`}
               style={{ backgroundColor: c }}

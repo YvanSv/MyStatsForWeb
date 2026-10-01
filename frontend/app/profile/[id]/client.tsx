@@ -1,4 +1,5 @@
 "use client";
+import { TOAST_STYLE } from "@/app/constants/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/context/authContext";
@@ -118,7 +119,7 @@ export default function ProfilePage({ id }: { id: string }) {
     try {
       await navigator.clipboard.writeText(window.location.href);
       toast.success(dict.copySuccess, {
-        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        style: TOAST_STYLE,
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
     } catch (err) {toast.error(dict.copyError)}
@@ -187,7 +188,7 @@ export default function ProfilePage({ id }: { id: string }) {
           <div className="flex justify-end mb-8">
             <button
               type="button"
-              onClick={() => router.push(`/profile/dashboard/${id}`)}
+              onClick={() => router.push(`${FRONT_ROUTES.DASHBOARD}/${id}`)}
               className={`text3 ${GENERAL_STYLES.TRANSITION_TEXT_VERT} ${GENERAL_STYLES.TRANSITION_ZOOM} flex gap-2 px-2 text-sm font-medium cursor-pointer`}
             ><BarChart3 size={18}/> {dict.detailedStats}</button>
           </div>

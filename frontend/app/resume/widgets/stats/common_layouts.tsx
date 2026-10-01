@@ -1,5 +1,6 @@
 import { useLanguage } from "../../../context/languageContext";
 import { formatNumber } from "./utils";
+import { COLORS } from "../../../constants/ui";
 
 export function Layout1x1({data,settings,icon,defaultLabel}:{data:any,settings:any,icon:any,defaultLabel?:string}) {
   const { t } = useLanguage();
@@ -16,7 +17,7 @@ export function Layout1x1({data,settings,icon,defaultLabel}:{data:any,settings:a
 
 export function Layout2x1({data,settings,icon,defaultLabel}:{data:any,settings:any,icon:any,defaultLabel?:string}) {
   const { t } = useLanguage();
-  const color = settings?.color || "#1DB954";
+  const color = settings?.color || COLORS.SPOTIFY_GREEN;
   return (
     <div className="w-full h-full flex items-center justify-between px-3 rounded-xl">
       <div className="flex flex-col">
@@ -30,7 +31,7 @@ export function Layout2x1({data,settings,icon,defaultLabel}:{data:any,settings:a
 
 export function Layout2x2({data,settings,icon,defaultLabel}:{data:any,settings:any,icon:any,defaultLabel?:string}) {
   const { t } = useLanguage();
-  const color = settings?.color || "#1DB954";
+  const color = settings?.color || COLORS.SPOTIFY_GREEN;
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 relative">
       {settings?.showIcon && icon}

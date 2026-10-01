@@ -5,7 +5,7 @@ import { AppleCSVRow, CleanAppleData } from "../data/DataInfos";
 export const MAX_PLAYS_PER_ROW = 3600;
 // Taille maximale d'un envoi au serveur : borne le corps de chaque requête
 export const UPLOAD_BATCH_SIZE = 5000;
-// En dessous de 30 s par écoute, on considère que le morceau n'a pas été réellement écouté
+// Seuil de Spotify lui-même : un titre n'est compté comme écouté qu'à partir de 30 s. Valeur du format de l'export Apple, indépendante des réglages de l'interface, donc volontairement hors de constants/ (en dessous, l'écoute est ignorée).
 export const MIN_PLAY_MS = 30000;
 
 /** Ligne de l'export impossible à lire : la page affiche un message traduit à partir de `kind` et `value`. */

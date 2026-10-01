@@ -1,5 +1,6 @@
 import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
+import { COLORS } from "../../../constants/ui";
 
 interface BioWidgetProps {
   w: number;
@@ -9,7 +10,7 @@ interface BioWidgetProps {
 }
 
 const DEFAULT_BIO_COLOR = "#9CA3AF"; // Gris par défaut
-const BIO_COLORS = [DEFAULT_BIO_COLOR, "#FFFFFF", "#1DB954", "#38BDF8", "#F1C40F"];
+const BIO_COLORS = [DEFAULT_BIO_COLOR, COLORS.WHITE, COLORS.SPOTIFY_GREEN, "#38BDF8", "#F1C40F"];
 
 export function BioWidget({ w, h, bio, settings }: BioWidgetProps) {
   const { t } = useLanguage();

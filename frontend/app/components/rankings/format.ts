@@ -1,3 +1,5 @@
+import { RATING_AVERAGE, RATING_GOOD } from "../../constants/ui";
+
 /** Un nombre valide (ni undefined, ni null, ni NaN, ni Infinity). */
 export const isValidNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
@@ -9,9 +11,8 @@ export const formatStat = (value: number | null | undefined, locale: string): st
 /** Valeur numérique sûre pour un calcul ou une largeur de barre (0 si absente ou invalide). */
 export const safeNumber = (value: number | null | undefined): number => (isValidNumber(value) ? value : 0);
 
-/** Seuils de note : à partir de RATING_GOOD la note est bonne (vert), à partir de RATING_AVERAGE elle est moyenne (jaune), sinon mauvaise (rouge). */
-export const RATING_GOOD = 1.35;
-export const RATING_AVERAGE = 0.8;
+// Seuils de note définis dans constants/ui.ts, réexportés ici pour les composants de classement
+export { RATING_GOOD, RATING_AVERAGE };
 
 /** Classe de couleur d'une note selon les seuils partagés (la note absente ou invalide compte comme 0). */
 export const ratingColorClass = (rating: number | null | undefined): string => {

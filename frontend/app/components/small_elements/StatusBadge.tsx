@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useApi } from "../../hooks/useApi";
+import { STATUS_POLL_MS, STATUS_TICK_MS } from "../../constants/timing";
 import { useLanguage } from "@/app/context/languageContext";
 
 const BADGE_STYLES = {
@@ -46,7 +47,7 @@ export const ApiStatusBadge = () => {
 
   useEffect(() => {
     checkStatus();
-    const interval = setInterval(checkStatus, 60000);
+    const interval = setInterval(checkStatus, STATUS_POLL_MS);
     return () => clearInterval(interval);
   }, [checkStatus]);
 
@@ -55,7 +56,7 @@ export const ApiStatusBadge = () => {
   // Tic d'une seconde uniquement tant que l'API est limitée
   useEffect(() => {
     if (!isLimited) return;
-    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const tick = setInterval(() => setNow(Date.now()), STATUS_TICK_MS);
     return () => clearInterval(tick);
   }, [isLimited]);
 

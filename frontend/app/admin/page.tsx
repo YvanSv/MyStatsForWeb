@@ -1,4 +1,5 @@
 "use client";
+import { FRONT_ROUTES } from "@/app/constants/routes";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { AlertTriangle, GitBranchPlus, GitPullRequest, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
@@ -18,21 +19,21 @@ function AdminHomePage() {
     {
       title: t.admin.home.createRequests.title,
       description: t.admin.home.createRequests.description,
-      href: "/admin/create-requests",
+      href: FRONT_ROUTES.ADMIN_CREATE_REQUESTS,
       icon: <GitBranchPlus className="w-6 h-6 text2" />,
       color: "hover:border-vert"
     },
     {
       title: t.admin.home.mergeRequests.title,
       description: t.admin.home.mergeRequests.description,
-      href: "/admin/merge-requests",
+      href: FRONT_ROUTES.ADMIN_MERGE_REQUESTS,
       icon: <GitPullRequest className="w-6 h-6 text-blue-500" />,
       color: "hover:border-blue-500"
     },
     {
       title: t.admin.home.conflicts.title,
       description: t.admin.home.conflicts.description,
-      href: "/admin/conflits",
+      href: FRONT_ROUTES.ADMIN_CONFLICTS,
       icon: <AlertTriangle className="w-6 h-6 text-amber-500" />,
       color: "hover:border-amber-500"
     },

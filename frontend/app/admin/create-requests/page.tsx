@@ -1,5 +1,6 @@
 "use client";
 
+import { FRONT_ROUTES } from "@/app/constants/routes";
 import Link from 'next/link';
 import { GitPullRequest, Music, Calendar, User, Info, ChevronRight, History } from 'lucide-react';
 import { useApiAdmin } from '../action';
@@ -61,7 +62,7 @@ export default function CreateRequestListPage() {
           {requests.map((mr) => (
             <Link 
               key={mr.id} 
-              href={`/admin/create-requests/${mr.id}`}
+              href={`${FRONT_ROUTES.ADMIN_CREATE_REQUESTS}/${mr.id}`}
               className="group flex items-center justify-between p-5 bg-white/5 rounded-xl border border-white/5 hover:border-vert/30 hover:bg-white/[0.08] transition-all duration-300 shadow-sm"
             >
               <div className="flex items-center gap-6">

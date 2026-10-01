@@ -3,7 +3,7 @@ import React, { createContext, useState, useEffect, useCallback, useContext, use
 import toast from 'react-hot-toast';
 import { setUnauthorizedHandler } from '@/app/services/api';
 import { useApi } from '@/app/hooks/useApi';
-import { API_ENDPOINTS } from '@/app/constants/routes';
+import { API_ENDPOINTS, FRONT_ROUTES } from '@/app/constants/routes';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from './languageContext';
 
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {await request(API_ENDPOINTS.LOGOUT, {method: 'POST'})}
     catch (error) {console.error("Logout error:", error)}
-    finally {setUser(null); router.push('/');}
+    finally {setUser(null); router.push(FRONT_ROUTES.ACCUEIL);}
   };
 
   const updateUserProfile = async (data: {}) => {
@@ -123,12 +123,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await request(API_ENDPOINTS.DELETE_ACCOUNT, {method: 'DELETE'});
       setUser(null);
-      router.push('/');
+      router.push(FRONT_ROUTES.ACCUEIL);
     } catch (err: any) {
       // Si l'erreur est une 401, le compte est probablement déjà supprimé ou la session expirée
       if (err.status === 401) {
         setUser(null);
-        router.push('/');
+        router.push(FRONT_ROUTES.ACCUEIL);
       }
       console.error("Erreur suppression compte:", err);
       throw err;

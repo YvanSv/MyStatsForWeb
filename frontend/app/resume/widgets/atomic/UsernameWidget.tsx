@@ -1,5 +1,6 @@
 import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
+import { COLORS } from "../../../constants/ui";
 
 interface UsernameWidgetProps {
   w: number;
@@ -9,7 +10,7 @@ interface UsernameWidgetProps {
 }
 
 export function UsernameWidget({ w, h, data, settings }: UsernameWidgetProps) {
-  const color = settings?.color || "#fff";
+  const color = settings?.color || COLORS.WHITE;
   const italic = settings?.italic ?? false;
   const uppercase = settings?.uppercase ?? false;
   const textAlign = settings?.textAlign || "center";
@@ -92,7 +93,7 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
   const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
   const { t } = useLanguage();
 
-  const colors = ["#1DB954", "#FFFFFF", "#FF5733", "#3357FF", "#F1C40F"];
+  const colors = [COLORS.SPOTIFY_GREEN, COLORS.WHITE, "#FF5733", "#3357FF", "#F1C40F"];
 
   return (
     <div className="space-y-6">

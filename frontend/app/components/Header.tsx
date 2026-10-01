@@ -47,31 +47,31 @@ export default function Header() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const navigation_menu = [
-    { id: 'Rankings', label: dict.rankings, path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal className="w-4 h-4 lg:w-6 lg:h-6"/> },
-    { id: 'Dashboard', label: dict.dashboard, path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar className="w-4 h-4 lg:w-6 lg:h-6"/> },
-    { id: 'Profil public', label: dict.publicProfile, path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye className="w-4 h-4 lg:w-6 lg:h-6"/> },
-    { id: 'Aide', label: dict.help, path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark className="w-4 h-4 lg:w-6 lg:h-6"/> },
+    { id: 'rankings', label: dict.rankings, path: `${FRONT_ROUTES.MY_RANKINGS}`, icon: <Medal className="w-4 h-4 lg:w-6 lg:h-6"/> },
+    { id: 'dashboard', label: dict.dashboard, path: `${FRONT_ROUTES.DASHBOARD}`, icon: <ChartBar className="w-4 h-4 lg:w-6 lg:h-6"/> },
+    { id: 'public-profile', label: dict.publicProfile, path: `${FRONT_ROUTES.PROFILE}`, icon: <Eye className="w-4 h-4 lg:w-6 lg:h-6"/> },
+    { id: 'help', label: dict.help, path: `${FRONT_ROUTES.HELP}`, icon: <BadgeQuestionMark className="w-4 h-4 lg:w-6 lg:h-6"/> },
   ];
 
   const sous_menu_ranking = [
-    { id: 'Tracks', label: dict.tracks, path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18} /> },
-    { id: 'Albums', label: dict.albums, path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18} /> },
-    { id: 'Artists', label: dict.artists, path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18} /> },
+    { id: 'tracks', label: dict.tracks, path: `${FRONT_ROUTES.MY_RANKINGS}/tracks`, icon: <Music2 size={18} /> },
+    { id: 'albums', label: dict.albums, path: `${FRONT_ROUTES.MY_RANKINGS}/albums`, icon: <Disc size={18} /> },
+    { id: 'artists', label: dict.artists, path: `${FRONT_ROUTES.MY_RANKINGS}/artists`, icon: <Mic2 size={18} /> },
   ];
 
   const sous_menu_compte = [
-    { id: 'Profil public', label: dict.publicProfile, path: `${FRONT_ROUTES.PROFILE}`, icon: <EyeIcon /> },
-    { id: 'Import de données', label: dict.import, path: `${FRONT_ROUTES.IMPORT}`, icon: <UploadIcon /> },
-    { id: 'Mon compte', label: dict.myAccount, path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={18} /> },
+    { id: 'public-profile', label: dict.publicProfile, path: `${FRONT_ROUTES.PROFILE}`, icon: <EyeIcon /> },
+    { id: 'import', label: dict.import, path: `${FRONT_ROUTES.IMPORT}`, icon: <UploadIcon /> },
+    { id: 'account', label: dict.myAccount, path: `${FRONT_ROUTES.ACCOUNT}`, icon: <User size={18} /> },
   ];
 
   const dropdown_menu = [
-    { id: 'Profil public', label: dict.publicProfile, icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}` },
-    { id: 'Mon dashboard', label: dict.dashboard, icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}` },
-    { id: 'Import de données', label: dict.import, icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
-    { id: 'Mon compte', label: dict.myAccount, icon: <User size={18}/>, path: FRONT_ROUTES.ACCOUNT },
-    { id: 'Paramètres', label: dict.settings, icon:<Settings size={18}/>, path: FRONT_ROUTES.SETTINGS},
-    { id: 'Aide', label: dict.help, icon: <BadgeQuestionMark size={18}/>, path: FRONT_ROUTES.HELP},
+    { id: 'public-profile', label: dict.publicProfile, icon: <EyeIcon/>, path: `${FRONT_ROUTES.PROFILE}` },
+    { id: 'dashboard', label: dict.dashboard, icon: <ChartBar size={18}/>, path: `${FRONT_ROUTES.DASHBOARD}` },
+    { id: 'import', label: dict.import, icon: <UploadIcon/>, path: FRONT_ROUTES.IMPORT },
+    { id: 'account', label: dict.myAccount, icon: <User size={18}/>, path: FRONT_ROUTES.ACCOUNT },
+    { id: 'settings', label: dict.settings, icon:<Settings size={18}/>, path: FRONT_ROUTES.SETTINGS},
+    { id: 'help', label: dict.help, icon: <BadgeQuestionMark size={18}/>, path: FRONT_ROUTES.HELP},
   ];
 
   const navigate = (path: string) => {
@@ -82,12 +82,12 @@ export default function Header() {
 
   return (
     <header className={HEADER_STYLES.CONTAINER}>
-      <HeaderLogo onClick={() => navigate("/")}/>
+      <HeaderLogo onClick={() => navigate(FRONT_ROUTES.ACCUEIL)}/>
       {/* Navigation PC */}
       <nav className={HEADER_STYLES.NAV_PC}>
         {navigation_menu.map((item) => {
-          const isRankings = item.id === "Rankings";
-          const isProfile = item.id === "Profil public";
+          const isRankings = item.id === "rankings";
+          const isProfile = item.id === "public-profile";
 
           if (isRankings || isProfile) {
             const subMenu = isRankings ? sous_menu_ranking : sous_menu_compte;

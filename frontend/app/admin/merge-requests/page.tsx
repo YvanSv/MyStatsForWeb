@@ -1,5 +1,6 @@
 "use client";
 
+import { FRONT_ROUTES } from "@/app/constants/routes";
 import Link from 'next/link';
 import { GitPullRequest, ArrowRight, Disc, Mic2, Music, Calendar, ChevronRight } from 'lucide-react';
 import { MergeEntityType, MergeRequest, useApiAdmin } from '../action';
@@ -48,7 +49,7 @@ export default function MergeRequestListPage() {
           {requests.map((mr) => (
             <Link 
               key={mr.id} 
-              href={`/admin/merge-requests/${mr.id}`}
+              href={`${FRONT_ROUTES.ADMIN_MERGE_REQUESTS}/${mr.id}`}
               className="group flex items-center justify-between p-5 bg-white/5 rounded-xl border-2 border-transparent hover:border-white/10 hover:bg-white/[0.07] transition-all duration-300"
             >
               <div className="flex items-center gap-6">

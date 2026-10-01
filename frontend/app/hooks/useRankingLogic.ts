@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { DEFAULT_DIRECTION, DEFAULT_PAGE_SIZE, DEFAULT_SORT } from "../constants/ui";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | 'album' | 'artist') {
@@ -31,8 +32,8 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
     const getParamOrUndefined = (val: string | undefined) => val || undefined;
 
     return {
-      sort: params.sort || "play_count",
-      direction: (params.direction as "asc" | "desc") || "desc",
+      sort: params.sort || DEFAULT_SORT,
+      direction: (params.direction as "asc" | "desc") || DEFAULT_DIRECTION,
       track: params.track || "",
       artist: params.artist || "",
       album: params.album || "",
@@ -69,7 +70,7 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
       const dataToFetch = {
         ...currentSort,
         offset: newOffset,
-        limit: 50
+        limit: DEFAULT_PAGE_SIZE
       };
       
       const newData = await fetchFn(dataToFetch);

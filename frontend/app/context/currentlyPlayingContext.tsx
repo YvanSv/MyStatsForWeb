@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { API_ENDPOINTS } from '../constants/routes';
+import { CURRENTLY_PLAYING_POLL_MS, PLAYBACK_TICK_MS, REFRESH_AFTER_ACTION_MS, SPOTIFY_ERROR_TOAST_MS } from '../constants/timing';
 import toast from 'react-hot-toast';
 import { useLanguage } from './languageContext';
 import { useAuth } from './authContext';
@@ -61,7 +62,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Polling API toutes les 15 secondes
     useEffect(() => {
         fetchCurrent();
-        const apiInterval = setInterval(fetchCurrent, 15000);
+        const apiInterval = setInterval(fetchCurrent, CURRENTLY_PLAYING_POLL_MS);
         return () => clearInterval(apiInterval);
     }, [fetchCurrent]);
 
@@ -71,7 +72,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         const timer = setInterval(() => {
             setLocalProgress(prev => {
-                const next = prev + 1000;
+                const next = prev + PLAYBACK_TICK_MS;
                 // Si on dépasse la durée, on force un refresh API
                 if (!paused && next >= (listening.data?.duration_ms || 0)) {
                     fetchCurrent();
@@ -79,19 +80,19 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 }
                 return next;
             });
-        }, 1000);
+        }, PLAYBACK_TICK_MS);
 
         return () => clearInterval(timer);
     }, [listening.is_listening, listening.data, fetchCurrent]);
 
     // Fonction utilitaire pour rafraîchir après une action
     const refreshAfterAction = useCallback(() => {
-        setTimeout(fetchCurrent, 500);
+        setTimeout(fetchCurrent, REFRESH_AFTER_ACTION_MS);
     }, [fetchCurrent]);
 
     const handleSpotifyError = useCallback((error: any) => {
         const status = error.status || error.response?.status;
-        if (status === 403) toast.error(t.api.spotifyPremiumRequired, {duration: 5000});
+        if (status === 403) toast.error(t.api.spotifyPremiumRequired, {duration: SPOTIFY_ERROR_TOAST_MS});
         else if (status === 404) toast.error(t.api.spotifyNoDevice);
         else toast.error(t.api.spotifyError);
     }, [t]);

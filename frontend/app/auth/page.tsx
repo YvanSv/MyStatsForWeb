@@ -1,4 +1,5 @@
 "use client";
+import { TOAST_STYLE } from "@/app/constants/ui";
 import { useEffect, useId, useState } from "react";
 import { useAuth } from "../context/authContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -108,7 +109,7 @@ function AuthContent() {
     try {
       await register(regData.username, regData.email, regData.password);
       toast.success(dict.welcome, {
-        style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+        style: TOAST_STYLE,
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
     } catch (err) {

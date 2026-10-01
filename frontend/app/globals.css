@@ -83,7 +83,7 @@
 
 body {
   background-color: var(--background);
-  background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+  background-image: url('/noise.svg');
   background-repeat: repeat;
 }
 
