@@ -252,7 +252,11 @@ export const fr = {
     tracks: "titres",
     albums: "albums",
     artists: "artistes",
-    engagement: "engagement"
+    engagement: "engagement",
+    seasonWinter: "Hiver",
+    seasonSpring: "Printemps",
+    seasonSummer: "Été",
+    seasonAutumn: "Automne"
   },
   importData: {
     title: "Importer vos données",
