@@ -12,6 +12,10 @@ interface HeaderComponentProps {
 
 export function HeaderComponent({range, setRange, offset, setOffset, displayLabel}:HeaderComponentProps) {
   const { t } = useLanguage();
+  const periodLabels: Record<RangeOption, string> = {
+    day: t.resume.periodDay, month: t.resume.periodMonth, season: t.resume.periodSeason,
+    year: t.resume.periodYear, lifetime: t.resume.periodLifetime,
+  };
   // Reset de l'offset quand on change de type de range
   const handleRangeChange = (newRange: RangeOption) => {
     setRange(newRange);
@@ -48,7 +52,7 @@ export function HeaderComponent({range, setRange, offset, setOffset, displayLabe
               className={`px-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                 range === opt ? "bg-white/10 text-white" : "text-gray-600 hover:text-gray-400"
               }`}
-            >{opt}</button>
+            >{periodLabels[opt]}</button>
           ))}
         </div>
 

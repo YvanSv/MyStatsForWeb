@@ -1,3 +1,4 @@
+import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
 
 interface UsernameWidgetProps {
@@ -89,6 +90,7 @@ export function UsernameWidget({ w, h, data, settings }: UsernameWidgetProps) {
 
 export function UsernameSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
   const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
+  const { t } = useLanguage();
 
   const colors = ["#1DB954", "#FFFFFF", "#FF5733", "#3357FF", "#F1C40F"];
 
@@ -96,7 +98,7 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
     <div className="space-y-6">
       {/* Couleur */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Couleur du texte</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wTextColor}</label>
         <div className="flex gap-2">
           {colors.map(c => (
             <button 
@@ -115,25 +117,25 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
           type="button" aria-pressed={!!settings?.italic} onClick={() => update('italic', !settings?.italic)}
           className={`p-2 rounded-lg text-[10px] font-bold border ${settings?.italic ? 'bg-white/10 border-vert text-vert' : 'border-white/5 text-gray-400'}`}
         >
-          ITALIQUE
+          {t.resume.wItalic}
         </button>
         <button 
           type="button" aria-pressed={!!settings?.uppercase} onClick={() => update('uppercase', !settings?.uppercase)}
           className={`p-2 rounded-lg text-[10px] font-bold border ${settings?.uppercase ? 'bg-white/10 border-vert text-vert' : 'border-white/5 text-gray-400'}`}
         >
-          MAJUSCULES
+          {t.resume.wUppercase}
         </button>
       </div>
 
       {/* Alignement Horizontal */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Alignement Horizontal</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAlignH}</label>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {['left', 'center', 'right'].map((align) => (
             <button key={align} type="button" aria-pressed={settings?.textAlign === align} onClick={() => update('textAlign', align)}
               className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings?.textAlign === align ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500'}`}
             >
-              {align === 'left' ? 'Gauche' : align === 'right' ? 'Droite' : 'Centre'}
+              {align === 'left' ? t.resume.wLeft : align === 'right' ? t.resume.wRight : t.resume.wCenter}
             </button>
           ))}
         </div>
@@ -141,12 +143,12 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
 
       {/* Alignement Vertical */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Alignement Vertical</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAlignV}</label>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {[
-            { id: 'top', label: 'Haut' },
-            { id: 'center', label: 'Milieu' },
-            { id: 'bottom', label: 'Bas' }
+            { id: 'top', label: t.resume.wTop },
+            { id: 'center', label: t.resume.wMiddle },
+            { id: 'bottom', label: t.resume.wBottom }
           ].map((v) => (
             <button key={v.id} type="button" aria-pressed={settings?.verticalAlign === v.id} onClick={() => update('verticalAlign', v.id)}
               className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings?.verticalAlign === v.id ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500'}`}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from 'lucide-react';
+import { useLanguage } from '../context/languageContext';
 import React, { useEffect, useRef, useState } from 'react';
 import { ProfileWidget } from './widgets/ProfileWidgets';
 import { TopFiveWidget } from './widgets/TopFiveWidget';
@@ -25,6 +26,7 @@ interface ResumeCanvasProps {
 }
 
 export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSelectWidget}:ResumeCanvasProps) {
+  const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [resizingConfig, setResizingConfig] = useState<{id: number, handle: string} | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -266,7 +268,7 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
                   {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>} */}
 
                   {/* --- BOUTON SUPPRIMER (POUBELLE) --- */}
-                  <button data-export-ignore="true" onClick={(e) => {e.stopPropagation();deleteWidget(w.id)}} title="Supprimer le widget"
+                  <button data-export-ignore="true" onClick={(e) => {e.stopPropagation();deleteWidget(w.id)}} title={t.resume.deleteWidget} aria-label={t.resume.deleteWidget}
                     className="absolute top-1 right-1 p-1.5 rounded-lg bg-black/50 text-white/70 hover:bg-black hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 z-40 active:scale-95"
                   ><Trash2 size={14} strokeWidth={2.5} /></button>
                   
@@ -289,7 +291,7 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
       {/* BRANDING */}
       <div className={`px-2 py-1 flex items-center justify-center`}>
         <div className="text-[10px] uppercase text-center opacity-40 space-y-1">
-          <p className="font-black tracking-[0.3em]">POWERED BY MyStats</p>
+          <p className="font-black tracking-[0.3em]">{t.resume.poweredBy} MyStats</p>
           <p className="font-medium">{range}</p>
         </div>
       </div>

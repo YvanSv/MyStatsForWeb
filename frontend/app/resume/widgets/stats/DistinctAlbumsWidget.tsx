@@ -37,7 +37,7 @@ export function DistinctAlbumsSettings({ settings, onChange }: { settings: any, 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Couleur</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wColor}</label>
         <div className="flex gap-2">
           {["#1DB954", "#FFFFFF", "#60A5FA", "#F472B6"].map(c => (
             <button key={c} type="button" aria-label={c} aria-pressed={settings?.color === c} onClick={() => update('color', c)}

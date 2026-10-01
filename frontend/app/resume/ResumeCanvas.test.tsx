@@ -6,6 +6,12 @@ import userEvent from "@testing-library/user-event";
 import ResumeCanvas from "./ResumeCanvas";
 import type { PlacedWidget } from "./interfaces";
 
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("../context/languageContext", async () => {
+  const { languages } = await import("../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
+
 // --- Mocks : chaque widget expose ses props -----------------------------------
 const stub = vi.hoisted(() => async (name: string, key: string) => {
   const { createElement } = await import("react");
@@ -93,7 +99,7 @@ describe("ResumeCanvas – rendu", () => {
 
   it("affiche le branding et la période", () => {
     renderCanvas([], resumeData, "Année 2025");
-    expect(screen.getByText("POWERED BY MyStats")).toBeInTheDocument();
+    expect(screen.getByText("Propulsé par MyStats")).toBeInTheDocument();
     expect(screen.getByText("Année 2025")).toBeInTheDocument();
   });
 
@@ -632,7 +638,21 @@ describe("ResumeCanvas – éléments exclus de l'export image", () => {
   it("ne marque pas le contenu des widgets ni le branding", () => {
     const { container } = renderCanvas([pw({ type: "bio" })]);
     expect(screen.getByTestId("w-bio").closest('[data-export-ignore="true"]')).toBeNull();
-    expect(screen.getByText("POWERED BY MyStats").closest('[data-export-ignore="true"]')).toBeNull();
+    expect(screen.getByText("Propulsé par MyStats").closest('[data-export-ignore="true"]')).toBeNull();
     expect(ignored(container).length).toBe(15 + 1 + 4);
+  });
+});
+
+
+describe("ResumeCanvas – anglais", () => {
+  it("traduit le branding et le bouton de suppression (la marque reste littérale)", () => {
+    lang.current = "en";
+    try {
+      renderCanvas([{ id: 1, type: "minutes", index: 0, w: 1, h: 1, settings: {} } as PlacedWidget]);
+      expect(screen.getByText("Powered by MyStats")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Delete widget" })).toBeInTheDocument();
+    } finally {
+      lang.current = "fr";
+    }
   });
 });

@@ -4,6 +4,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UsernameSettings, UsernameWidget } from "./UsernameWidget";
 
+vi.mock("../../../context/languageContext", async () => {
+  const { languages } = await import("../../../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
+});
+
 const onChange = vi.fn();
 
 beforeEach(() => {

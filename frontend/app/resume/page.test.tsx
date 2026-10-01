@@ -14,9 +14,10 @@ const dict = languages.fr.resume;
 const h = vi.hoisted(() => ({ getResumeStats: vi.fn() }));
 
 vi.mock("../hooks/useApiMyDatas", () => ({ useApiMyDatas: () => ({ getResumeStats: h.getResumeStats }) }));
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
 vi.mock("../context/languageContext", async () => {
   const { languages } = await import("../constants/locales/lang");
-  return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
 });
 vi.mock("html-to-image", () => ({ toPng: vi.fn() }));
 vi.mock("react-hot-toast", () => ({ default: { error: vi.fn(), success: vi.fn() } }));
@@ -44,6 +45,7 @@ vi.mock("./HeaderComponent", () => ({
       <button onClick={() => setRange("month")}>mois</button>
       <button onClick={() => setOffset(1)}>précédent</button>
       <button onClick={() => setRange("season")}>saison</button>
+      <button onClick={() => setRange("lifetime")}>tout</button>
     </div>
   ),
 }));
@@ -485,5 +487,28 @@ describe("ResumePage – sauvegarde de la mise en page", () => {
     render(<ResumePage />);
     await user.click(await screen.findByRole("button", { name: "ajouter" }));
     expect(screen.getByTestId("canvas")).toHaveAttribute("data-widgets", "1");
+  });
+});
+
+
+describe("ResumePage – anglais", () => {
+  afterEach(() => { lang.current = "fr"; });
+
+  it("libellés de période, saison et mois dans la langue et la locale courantes", async () => {
+    lang.current = "en";
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T12:00:00"));
+    const user = userEvent.setup();
+    render(<ResumePage />);
+    const canvas = await screen.findByTestId("canvas");
+    await user.click(screen.getByRole("button", { name: "saison" }));
+    await waitFor(() => expect(canvas).toHaveTextContent("Autumn 2026"));
+    await user.click(screen.getByRole("button", { name: "mois" }));
+    await waitFor(() => expect(canvas).toHaveTextContent("October 2026"));
+    await user.click(screen.getByRole("button", { name: "tout" }));
+    await waitFor(() => expect(canvas).toHaveTextContent("All time"));
+    expect(screen.getByText("Your universe")).toBeInTheDocument();
+    expect(screen.getByText("Drag a widget onto the grid.")).toBeInTheDocument();
+    expect(screen.getByText("Select an item on the grid to edit it.")).toBeInTheDocument();
   });
 });

@@ -4,14 +4,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HeaderComponent } from "./HeaderComponent";
 
-const h = vi.hoisted(() => ({ setRange: vi.fn(), setOffset: vi.fn() }));
+const h = vi.hoisted(() => ({ setRange: vi.fn(), setOffset: vi.fn(), lang: "fr" as "fr" | "en" }));
 
 vi.mock("../context/languageContext", async () => {
   const { languages } = await import("../constants/locales/lang");
-  return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
+  return { useLanguage: () => ({ t: languages[h.lang], language: h.lang, changeLanguage: vi.fn() }) };
 });
 
 const RANGES = ["day", "month", "season", "year", "lifetime"];
+const LABELS: Record<string, string> = { day: "Jour", month: "Mois", season: "Saison", year: "Année", lifetime: "Tout" };
 
 const setup = (over: Record<string, any> = {}) =>
   render(
@@ -33,7 +34,7 @@ describe("HeaderComponent – rendu", () => {
   it("affiche un bouton par type de période, dans l'ordre", () => {
     setup();
     const names = screen.getAllByRole("button").slice(0, 5).map((b) => b.textContent);
-    expect(names).toEqual(RANGES);
+    expect(names).toEqual(RANGES.map((r) => LABELS[r]));
   });
 
   it("affiche le libellé fourni (chaîne)", () => {
@@ -54,7 +55,7 @@ describe("HeaderComponent – rendu", () => {
   it("met en évidence uniquement la période active", () => {
     setup({ range: "month" });
     RANGES.forEach((r) => {
-      const btn = screen.getByRole("button", { name: r });
+      const btn = screen.getByRole("button", { name: LABELS[r] });
       if (r === "month") expect(btn.className).toContain("bg-white/10");
       else expect(btn.className).not.toContain("bg-white/10");
     });
@@ -70,7 +71,7 @@ describe("HeaderComponent – rendu", () => {
 describe("HeaderComponent – changement de période", () => {
   it.each(RANGES)("cliquer sur « %s » appelle setRange puis remet l'offset à 0", async (r) => {
     setup({ range: r === "day" ? "year" : "day", offset: 3 });
-    await userEvent.click(screen.getByRole("button", { name: r }));
+    await userEvent.click(screen.getByRole("button", { name: LABELS[r] }));
     expect(h.setRange).toHaveBeenCalledWith(r);
     expect(h.setOffset).toHaveBeenCalledWith(0);
     expect(h.setRange.mock.invocationCallOrder[0]).toBeLessThan(h.setOffset.mock.invocationCallOrder[0]);
@@ -78,7 +79,7 @@ describe("HeaderComponent – changement de période", () => {
 
   it("recliquer sur la période déjà active réinitialise quand même l'offset", async () => {
     setup({ range: "year", offset: 2 });
-    await userEvent.click(screen.getByRole("button", { name: "year" }));
+    await userEvent.click(screen.getByRole("button", { name: LABELS.year }));
     expect(h.setRange).toHaveBeenCalledWith("year");
     expect(h.setOffset).toHaveBeenCalledWith(0);
   });
@@ -86,7 +87,7 @@ describe("HeaderComponent – changement de période", () => {
   it("est activable au clavier (Entrée et Espace)", async () => {
     const user = userEvent.setup();
     setup();
-    screen.getByRole("button", { name: "month" }).focus();
+    screen.getByRole("button", { name: LABELS.month }).focus();
     await user.keyboard("{Enter}");
     await user.keyboard(" ");
     expect(h.setRange).toHaveBeenCalledTimes(2);
@@ -137,7 +138,7 @@ describe("HeaderComponent – navigation temporelle", () => {
 
   it("les boutons de période restent actifs en lifetime", () => {
     setup({ range: "lifetime" });
-    RANGES.forEach((r) => expect(screen.getByRole("button", { name: r })).toBeEnabled());
+    RANGES.forEach((r) => expect(screen.getByRole("button", { name: LABELS[r] })).toBeEnabled());
   });
 
   it("les boutons désactivés ne sont pas atteignables au clavier", async () => {
@@ -164,7 +165,21 @@ describe("HeaderComponent – accessibilité", () => {
 
   it("le bouton de la période active expose son état (aria-pressed)", () => {
     setup({ range: "month" });
-    expect(screen.getByRole("button", { name: "month" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "year" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: LABELS.month })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: LABELS.year })).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
+
+describe("HeaderComponent – anglais", () => {
+  it("affiche les périodes et les aria-labels en anglais", () => {
+    h.lang = "en";
+    try {
+      setup();
+      expect(screen.getAllByRole("button").slice(0, 5).map((b) => b.textContent)).toEqual(["Day", "Month", "Season", "Year", "All"]);
+      expect(screen.getByRole("button", { name: "Previous period" })).toBeInTheDocument();
+    } finally {
+      h.lang = "fr";
+    }
   });
 });

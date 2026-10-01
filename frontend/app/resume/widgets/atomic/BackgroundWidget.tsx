@@ -1,3 +1,4 @@
+import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
 import { Sun, Droplets, Palette, Square } from "lucide-react";
 
@@ -64,20 +65,21 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
   const update = (key: string, value: any) => {
     onChange({ ...settings, [key]: value });
   };
+  const { t } = useLanguage();
 
   return (
     <div className="space-y-6">
       {/* SECTION EFFETS VISUELS */}
       <div className="flex flex-col gap-4">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Effets d'ambiance</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAmbiance}</label>
         
         {/* Slider Flou */}
         <div className="space-y-2">
           <div className="flex justify-between items-center text-[10px] text-gray-400 font-medium">
-            <span className="flex items-center gap-1.5"><Droplets size={12}/> Intensité du flou</span>
+            <span className="flex items-center gap-1.5"><Droplets size={12}/> {t.resume.wBlur}</span>
             <span className="font-mono text-vert">{settings?.blur ?? 10}px</span>
           </div>
-          <input type="range" min="0" max="40" step="1" aria-label="Intensité du flou"
+          <input type="range" min="0" max="40" step="1" aria-label={t.resume.wBlur}
             value={settings?.blur ?? 10}
             onChange={(e) => update('blur', parseInt(e.target.value))}
             className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert"
@@ -87,10 +89,10 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
         {/* Slider Opacité */}
         <div className="space-y-2">
           <div className="flex justify-between items-center text-[10px] text-gray-400 font-medium">
-            <span className="flex items-center gap-1.5"><Sun size={12}/> Opacité de l'image</span>
+            <span className="flex items-center gap-1.5"><Sun size={12}/> {t.resume.wOpacity}</span>
             <span className="font-mono text-vert">{Math.round((settings?.opacity ?? 0.3) * 100)}%</span>
           </div>
-          <input type="range" min="0" max="1" step="0.05" aria-label="Opacité de l'image"
+          <input type="range" min="0" max="1" step="0.05" aria-label={t.resume.wOpacity}
             value={settings?.opacity ?? 0.3}
             onChange={(e) => update('opacity', parseFloat(e.target.value))}
             className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-vert"
@@ -100,12 +102,12 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
 
       {/* SECTION DÉGRADÉ */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Finition</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wFinish}</label>
         <button 
           type="button" aria-pressed={settings?.gradient ?? true} onClick={() => update('gradient', !(settings?.gradient ?? true))}
           className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[10px] font-bold"
         >
-          Dégradé vers le noir (bas)
+          {t.resume.wGradient}
           <div className={`w-8 h-4 rounded-full p-0.5 transition-all ${settings?.gradient ?? true ? 'bg-vert' : 'bg-white/20'}`}>
             <div className={`w-3 h-3 bg-white rounded-full transition-all ${settings?.gradient ?? true ? 'translate-x-3.5' : 'translate-x-0'}`} />
           </div>

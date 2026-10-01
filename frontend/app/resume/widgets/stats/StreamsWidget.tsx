@@ -38,7 +38,7 @@ export function StreamsSettings({ settings, onChange }: { settings: any, onChang
     <div className="space-y-6">
       {/* Couleur */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Couleur accentuée</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAccentColor}</label>
         <div className="flex gap-2">
           {["#1DB954", "#FFFFFF", "#38BDF8", "#A855F7"].map(c => (
             <button key={c} type="button" aria-label={c} aria-pressed={settings?.color === c} onClick={() => update('color', c)}

@@ -22,6 +22,14 @@ interface PropertiesViewProps {
 export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets, exportImage}:PropertiesViewProps) {
   const { t } = useLanguage();
 
+  const labels: Record<string, string> = {
+    profile_picture: t.resume.widgetProfilePicture, username: t.resume.widgetUsername,
+    background: t.resume.widgetBackground, bio: t.resume.widgetBio,
+    minutes: t.resume.totalTime, streams: t.resume.totalStreams,
+    nb_tracks: t.resume.widgetTracks, nb_albums: t.resume.widgetAlbums, nb_artists: t.resume.widgetArtists,
+  };
+  const widgetLabel = (type: string) => labels[type] ?? type;
+
   // Fonction pour mettre à jour les réglages d'un widget depuis le panneau de droite
   const updateWidgetSettings = (newSettings: any) => {
     if (!selectedWidget) return;
@@ -39,16 +47,16 @@ export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets, e
   return (
     <div className="flex-1 pl-2 pt-3 border-t border-l border-white/10">
       <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 italic">
-        Propriétés
+        {t.resume.properties}
       </h2>
       
       {selectedWidget && (
         <div className="pr-2 space-y-6 animate-in slide-in-from-right-4 duration-300 overflow-y-auto custom-scrollbar max-h-[61vh]">
           <div className="flex items-center gap-3 pb-4 border-b border-white/5">
             <div className="w-8 h-8 rounded-lg bg-vert/20 flex items-center justify-center text-vert text-xs font-bold">
-              {selectedWidget.type.charAt(0).toUpperCase()}
+              {widgetLabel(selectedWidget.type).charAt(0).toUpperCase()}
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest">{selectedWidget.type}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{widgetLabel(selectedWidget.type)}</span>
           </div>
 
           {/* RENDER DES PARAMÈTRES SELON LE TYPE */}

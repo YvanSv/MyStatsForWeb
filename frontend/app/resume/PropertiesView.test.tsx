@@ -5,9 +5,10 @@ import userEvent from "@testing-library/user-event";
 import { PropertiesView } from "./PropertiesView";
 import type { PlacedWidget, SelectedWidget } from "./interfaces";
 
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
 vi.mock("../context/languageContext", async () => {
   const { languages } = await import("../constants/locales/lang");
-  return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
 });
 
 // Panneaux de réglages stubés : ils exposent les settings reçus et permettent de déclencher onChange
@@ -68,8 +69,8 @@ describe("PropertiesView – rendu", () => {
 
   it("affiche l'initiale en majuscule et le nom du type", () => {
     setup(sel("minutes"));
-    expect(screen.getByText("M")).toBeInTheDocument();
-    expect(screen.getByText("minutes")).toBeInTheDocument();
+    expect(screen.getByText("T")).toBeInTheDocument();
+    expect(screen.getByText("Temps d'écoute")).toBeInTheDocument();
   });
 
   it("n'affiche aucun panneau pour un type inconnu mais garde l'en-tête", () => {
@@ -157,5 +158,20 @@ describe("PropertiesView – modification des réglages", () => {
     setup(sel("bio", {}, 0));
     await userEvent.click(screen.getByRole("button", { name: "modifier-bio" }));
     expect(hh.setSelectedWidget).toHaveBeenCalledWith({ id: 0, type: "bio", settings: { changed: "bio" } });
+  });
+});
+
+
+describe("PropertiesView – anglais", () => {
+  it("affiche le titre et le libellé traduit du type (pas l'identifiant brut)", () => {
+    lang.current = "en";
+    try {
+      setup(sel("nb_tracks"));
+      expect(screen.getByRole("heading", { level: 2, name: "Properties" })).toBeInTheDocument();
+      expect(screen.getByText("Distinct tracks")).toBeInTheDocument();
+      expect(screen.queryByText("nb_tracks")).not.toBeInTheDocument();
+    } finally {
+      lang.current = "fr";
+    }
   });
 });

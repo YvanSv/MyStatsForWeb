@@ -3,6 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { TopFiveWidget } from "./TopFiveWidget";
 
+vi.mock("../../context/languageContext", async () => {
+  const { languages } = await import("../../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
+});
+
 const h = vi.hoisted(() => ({ real: false }));
 
 // Par défaut, Widget est remplacé : on expose chaque layout par sa clé.
@@ -142,14 +147,14 @@ describe("TopFiveWidget – layout large", () => {
   it("met en avant le n°1 avec son titre et l'image alternative", () => {
     render(<TopFiveWidget w={3} h={3} type="artists" data={five} />);
     const l = within(layout("3x3"));
-    expect(l.getByText(/N°1 Incontesté artists/)).toBeInTheDocument();
+    expect(l.getByText(/N°1 Incontesté artistes/)).toBeInTheDocument();
     expect(l.getByRole("heading", { name: "Item 1" })).toBeInTheDocument();
     expect(l.getByAltText("Item 1")).toHaveAttribute("src", "img1.png");
   });
 
   it("affiche le nombre de streams formaté du n°1 pour un artiste", () => {
     render(<TopFiveWidget w={3} h={3} type="artists" data={[item(1, { streams: 1234567 })]} />);
-    expect(within(layout("3x3")).getByText(`${(1234567).toLocaleString()} streams`)).toBeInTheDocument();
+    expect(within(layout("3x3")).getByText(`${(1234567).toLocaleString("fr-FR").replace(/\s/g, " ")} streams`)).toBeInTheDocument();
   });
 
   it("affiche les rangs 2 à 5 avec leurs streams", () => {
@@ -157,7 +162,7 @@ describe("TopFiveWidget – layout large", () => {
     const l = within(layout("3x3"));
     for (let n = 2; n <= 5; n++) {
       expect(l.getByText(`Item ${n}`)).toBeInTheDocument();
-      expect(l.getByText(`${(n * 1000).toLocaleString()} streams`)).toBeInTheDocument();
+      expect(l.getByText(`${(n * 1000).toLocaleString("fr-FR").replace(/\s/g, " ")} streams`)).toBeInTheDocument();
     }
   });
 

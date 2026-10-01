@@ -1,9 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createEvent, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WidgetsView } from "./WidgetsView";
 import type { DataFormat } from "./interfaces";
+
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("../context/languageContext", async () => {
+  const { languages } = await import("../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
 
 const data = (over: Record<string, any> = {}): DataFormat => ({
   user: { display_name: "Yvan", bio: "Ma bio", avatar: "a.png", banner: "b.png", perms: [] },
@@ -60,8 +66,8 @@ describe("WidgetsView – rendu", () => {
 
   it("formate minutes et streams avec le séparateur de milliers local", () => {
     render(<WidgetsView resumeData={data()} />);
-    expect(screen.getByText(`${(1234567).toLocaleString()} min`)).toBeInTheDocument();
-    expect(screen.getByText(`${(9876).toLocaleString()} écoutes`)).toBeInTheDocument();
+    expect(screen.getByText(`${(1234567).toLocaleString("fr-FR").replace(/\s/g, " ")} min`)).toBeInTheDocument();
+    expect(screen.getByText(`${(9876).toLocaleString("fr-FR").replace(/\s/g, " ")} écoutes`)).toBeInTheDocument();
   });
 
   it("gère des statistiques à 0", () => {
@@ -150,4 +156,24 @@ describe("WidgetsView – glisser-déposer", () => {
 
   // Défaut connu : les cartes ne se déplacent qu'à la souris ; une alternative clavier (bouton « Ajouter ») reste à concevoir
   it.todo("les cartes ont une alternative clavier au glisser-déposer");
+});
+
+
+describe("WidgetsView – anglais", () => {
+  it("affiche sections, cartes et sous-titres en anglais avec la locale en-US", async () => {
+    lang.current = "en";
+    try {
+      render(<WidgetsView resumeData={data()} />);
+      expect(screen.getByText("Available widgets")).toBeInTheDocument();
+      await userEvent.click(section("Account"));
+      await userEvent.click(section("Stats"));
+      expect(screen.getByText("Profile picture")).toBeInTheDocument();
+      expect(screen.getByText("Your avatar")).toBeInTheDocument();
+      expect(screen.getByText("1,234,567 min")).toBeInTheDocument();
+      expect(screen.getByText("9,876 streams")).toBeInTheDocument();
+      expect(screen.getByText("12 unique tracks")).toBeInTheDocument();
+    } finally {
+      lang.current = "fr";
+    }
+  });
 });

@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Layout1x1, Layout2x1, Layout2x2 } from "./common_layouts";
+
+vi.mock("../../../context/languageContext", async () => {
+  const { languages } = await import("../../../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages.fr, language: "fr", changeLanguage: vi.fn() }) };
+});
 
 const icon = <svg data-testid="icon" />;
 const layouts = { Layout1x1, Layout2x1, Layout2x2 };

@@ -15,8 +15,6 @@ import toast from 'react-hot-toast';
 import { seasonOfMonth, seasonStart } from '../services/seasons';
 import { exportFileName, loadLayout, saveLayout } from './gridLayout';
 
-const SEASON_NAMES = ["Hiver", "Printemps", "Été", "Automne"];
-
 export default function ResumePage() {
   const { t } = useLanguage();
   const { getResumeStats } = useApiMyDatas();
@@ -49,25 +47,26 @@ export default function ResumePage() {
   // Calcul du libellé affiché (ex: "2025" ou "Mars 2026")
   const displayLabel = useMemo(() => {
     const now = new Date();
-    if (range === 'lifetime') return "All Time";
+    const seasonNames = [t.common.seasonWinter, t.common.seasonSpring, t.common.seasonSummer, t.common.seasonAutumn];
+    if (range === 'lifetime') return t.dashboard.lifetime;
     if (range === 'year') return now.getFullYear() - offset;
     if (range === 'month') {
       const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
-      return d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      return d.toLocaleDateString(t.common.locale, { month: 'long', year: 'numeric' });
     }
     if (range === 'day') {
       const d = new Date();
       d.setDate(d.getDate() - offset);
-      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+      return d.toLocaleDateString(t.common.locale, { day: 'numeric', month: 'short', year: 'numeric' });
     }
     if (range === 'season') {
       // Saisons météo partagées avec le dashboard et le backend ; l'année est celle du début de saison
       const start = seasonStart(now, -offset);
-      return `${SEASON_NAMES[seasonOfMonth(start.getMonth())]} ${start.getFullYear()}`;
+      return `${seasonNames[seasonOfMonth(start.getMonth())]} ${start.getFullYear()}`;
     }
     
     return range;
-  }, [range, offset]);
+  }, [range, offset, t]);
 
   useEffect(() => {
     // Une réponse arrivée après un changement de filtre (ou un démontage) ne doit pas écraser la plus récente
@@ -142,7 +141,7 @@ export default function ResumePage() {
       <div className="flex flex-col flex-5 border-r border-white/10 min-h-0">
         {/* HEADER FIXE */}
         <p className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic shrink-0">
-          {t.resume.title || "Your Universe"}
+          {t.resume.title}
         </p>
 
         {/* ZONE SCROLLABLE */}
@@ -150,7 +149,7 @@ export default function ResumePage() {
 
         {/* FOOTER */}
         <div className="p-4 bg-vert/10 border-t border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight shrink-0">
-          Glissez un widget sur la grille.
+          {t.resume.dropHint}
         </div>
       </div>
 
@@ -167,10 +166,10 @@ export default function ResumePage() {
         {/* HEADER FIXE */}
         <div className="flex px-3 pt-4 pb-3 border-l border-white/10 justify-between">
           <SecondaryButton onClick={exportImage} additional='px-4 py-2 gap-2'>
-            <Download size={20}/> {t.resume.download || "Télécharger"}
+            <Download size={20}/> {t.resume.download}
           </SecondaryButton>
           <PrimaryButton additional='px-5 py-2 gap-2 font-bold'>
-            <Share2 size={18}/> {t.resume.share || "Partager"}
+            <Share2 size={18}/> {t.resume.share}
           </PrimaryButton>
         </div>
 
@@ -179,7 +178,7 @@ export default function ResumePage() {
 
         {/* FOOTER */}
         <p className="p-4 bg-vert/10 border border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
-          Sélectionnez un élément sur la grille pour l'éditer.
+          {t.resume.selectHint}
         </p>
       </div>
       </div>
@@ -187,7 +186,7 @@ export default function ResumePage() {
     // <div className='flex'>
     //   {/* PANNEAU GAUCHE : ÉLÉMENTS À GLISSER */}
     //   <div className='flex flex-col w-[24%] border-r border-white/10'>
-    //     <h1 className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic">{t.resume.title || "Your Universe"}</h1>
+    //     <h1 className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic">{t.resume.title}</h1>
 
     //     <div className='flex-1 flex flex-col h-0'>
     //       <WidgetsView resumeData={resumeData}/>
@@ -260,10 +259,10 @@ export default function ResumePage() {
     //   <div className='flex-1 min-w-[24%] max-w-[24%]'>
         // <div className="flex px-6 pt-4 pb-3 border-l border-white/10 justify-between">
         //   <SecondaryButton onClick={exportImage} additional='px-5 py-2 gap-2'>
-        //     <Download size={20}/> {t.resume.download || "Télécharger"}
+        //     <Download size={20}/> {t.resume.download}
         //   </SecondaryButton>
         //   <PrimaryButton additional='px-8 py-2 gap-2 font-bold'>
-        //     <Share2 size={18}/> {t.resume.share || "Partager"}
+        //     <Share2 size={18}/> {t.resume.share}
         //   </PrimaryButton>
         // </div>
         

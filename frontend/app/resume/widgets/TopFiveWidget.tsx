@@ -1,5 +1,6 @@
 import { ItemBrief } from "../interfaces";
 import Widget from "./Widget";
+import { useLanguage } from "../../context/languageContext";
 
 interface TopFiveProps {
   w: number;
@@ -9,6 +10,9 @@ interface TopFiveProps {
 }
 
 export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
+  const { t } = useLanguage();
+  const typeLabel = t.common[type];
+  const streamsText = (n?: number) => `${n?.toLocaleString(t.common.locale)} ${t.common.streams}`;
   const items = data?.slice(0, 5) || [];
   // Sans élément, rien à afficher (les layouts lisent items[0])
   if (items.length === 0) return <div className="w-full h-full text1"/>;
@@ -50,7 +54,7 @@ export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
         {/* Header minimaliste */}
         <div className="mb-0.5 border-b border-white/10 pb-0.5">
           <p className="text-[7px] text-vert uppercase tracking-[0.3em] italic text-center">
-            {type}
+            {typeLabel}
           </p>
         </div>
 
@@ -86,7 +90,7 @@ export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
           
           {/* Titre du Widget */}
           <p className="text-[10px] font-black text-vert uppercase tracking-[0.4em] italic mb-4">
-            N°1 Incontesté {type}
+            {t.resume.wUnchallenged(typeLabel)}
           </p>
 
           {/* L'Image Géante */}
@@ -107,7 +111,7 @@ export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
               {items[0].name}
             </h3>
             <p className="text-[10px] text-gray-400 font-bold uppercase truncate tracking-widest leading-none">
-              {`${items[0].streams?.toLocaleString()} streams`}
+              {streamsText(items[0].streams)}
             </p>
           </div>
         </div>
@@ -135,7 +139,7 @@ export function TopFiveWidget({ w, h, type, data }: TopFiveProps) {
                   {item.name}
                 </p>
                 <p className="text-[7px] text-gray-500 font-medium truncate uppercase tracking-tighter leading-none opacity-80">
-                  {item.streams?.toLocaleString()} streams
+                  {streamsText(item.streams)}
                 </p>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
 import { UserProfile } from '../../interfaces';
 
@@ -9,6 +10,7 @@ interface ProfileWidgetProps {
 }
 
 export function ProfilePictureWidget({ w, h, user, settings }: ProfileWidgetProps) {
+  const { t } = useLanguage();
   const isRound = settings?.round ?? false;
   const hasBorder = settings?.border ?? false;
   const zoom = settings?.zoom ?? 1;
@@ -17,7 +19,7 @@ export function ProfilePictureWidget({ w, h, user, settings }: ProfileWidgetProp
     "1x1": (
       <img 
         src={user.avatar || undefined} 
-        alt={user.display_name || "Avatar"} 
+        alt={user.display_name || t.resume.wAvatarAlt} 
         style={{ transform: `scale(${zoom})` }} // Gestion du zoom
         className={`w-full h-full object-cover transition-all duration-500 
           ${isRound ? 'rounded-full' : 'rounded-xl'} 
@@ -39,19 +41,20 @@ export function ProfilePictureSettings({ settings, onChange }: { settings: any, 
   const update = (key: string, value: any) => {
     onChange({ ...settings, [key]: value });
   };
+  const { t } = useLanguage();
 
   return (
     <div className="space-y-6">
       {/* SECTION FORME */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Style</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wStyle}</label>
         
         {/* Toggle Arrondi */}
         <button 
           type="button" aria-pressed={!!settings?.round} onClick={() => update('round', !settings?.round)}
           className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[10px] font-bold"
         >
-          Photo Arrondie
+          {t.resume.wRoundPhoto}
           <div className={`w-7 h-4 rounded-full p-0.5 transition-all ${settings?.round ? 'bg-vert' : 'bg-white/20'}`}>
             <div className={`w-3 h-3 bg-white rounded-full transition-all ${settings?.round ? 'translate-x-3' : 'translate-x-0'}`} />
           </div>
@@ -62,7 +65,7 @@ export function ProfilePictureSettings({ settings, onChange }: { settings: any, 
           type="button" aria-pressed={!!settings?.border} onClick={() => update('border', !settings?.border)}
           className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[10px] font-bold"
         >
-          Bordure MyStats
+          {t.resume.wMyStatsBorder}
           <div className={`w-7 h-4 rounded-full p-0.5 transition-all ${settings?.border ? 'bg-vert' : 'bg-white/20'}`}>
             <div className={`w-3 h-3 bg-white rounded-full transition-all ${settings?.border ? 'translate-x-3' : 'translate-x-0'}`} />
           </div>
@@ -72,11 +75,11 @@ export function ProfilePictureSettings({ settings, onChange }: { settings: any, 
       {/* SECTION ZOOM */}
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Zoom Image</label>
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wZoom}</label>
           <span className="text-[10px] font-mono text-vert">{Math.round((settings?.zoom ?? 1) * 100)}%</span>
         </div>
         <input 
-          type="range" aria-label="Zoom Image" 
+          type="range" aria-label={t.resume.wZoom} 
           min="0.5" 
           max="2" 
           step="0.01"
