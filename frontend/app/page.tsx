@@ -8,9 +8,9 @@ import { useApiMyDatas } from "./hooks/useApiMyDatas";
 import { Play, Share2, Sparkles } from "lucide-react";
 import { useLanguage } from "./context/languageContext";
 import { FRONT_ROUTES } from "./constants/routes";
+import { TECHNOS } from "./constants/technos";
 import { useRouter } from "next/navigation";
 
-const TECHNOS = ["Next.js", "FastAPI", "SQLModel", "PostgreSQL"];
 const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
 const INITIALS_STATS = {
   users: 0,

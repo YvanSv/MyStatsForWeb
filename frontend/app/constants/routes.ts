@@ -60,7 +60,6 @@ export const FRONT_ROUTES = {
   ACCUEIL: '/',
   AUTH: '/auth',
   MY_RANKINGS: '/my',
-  ALL_RANKINGS: '/all',
   IMPORT: '/import',
   ACCOUNT: '/account',
   DASHBOARD: '/profile/dashboard',

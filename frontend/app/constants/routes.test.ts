@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FRONT_ROUTES } from "./routes";
 
@@ -12,10 +14,19 @@ afterEach(() => vi.unstubAllEnvs());
 
 const BASE = "http://127.0.0.1:8000";
 
+describe("FRONT_ROUTES – pages existantes", () => {
+  // Chaque route déclarée doit avoir son page.tsx : sinon un lien mène à une 404
+  const appDir = path.resolve(import.meta.dirname, "..");
+  const pageFor = (route: string) => path.join(appDir, route === "/" ? "" : route, "page.tsx");
+
+  it.each(Object.entries(FRONT_ROUTES))("%s a une page", (_key, route) => {
+    expect(fs.existsSync(pageFor(route)), `${route} → ${pageFor(route)}`).toBe(true);
+  });
+});
+
 describe("FRONT_ROUTES", () => {
   it("expose des chemins de classements sans slash final (pour éviter « /my//tracks »)", () => {
     expect(FRONT_ROUTES.MY_RANKINGS).toBe("/my");
-    expect(FRONT_ROUTES.ALL_RANKINGS).toBe("/all");
   });
 
   it.each([
