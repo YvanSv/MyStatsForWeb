@@ -24,6 +24,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (isLanguage(saved)) setLanguage(saved);
   }, []);
 
+  // L'attribut lang de <html> (lecteurs d'écran, traduction automatique, coupure des mots) suit la langue choisie
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   const changeLanguage = (newLanguage:string) => {
     if (!isLanguage(newLanguage)) return;
     setLanguage(newLanguage);

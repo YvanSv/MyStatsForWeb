@@ -6,7 +6,10 @@ import { LanguageProvider, useLanguage } from "./languageContext";
 
 const wrapper = ({ children }: { children: React.ReactNode }) => <LanguageProvider>{children}</LanguageProvider>;
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  document.documentElement.lang = "fr";
+});
 afterEach(() => vi.restoreAllMocks());
 
 describe("useLanguage", () => {
@@ -99,5 +102,40 @@ describe("LanguageProvider – changement de langue", () => {
     expect(screen.getByRole("button")).toHaveTextContent(languages.fr.account.save);
     await userEvent.setup().click(screen.getByRole("button"));
     expect(screen.getByRole("button")).toHaveTextContent(languages.en.account.save);
+  });
+});
+
+describe("LanguageProvider – attribut lang de <html>", () => {
+  it("vaut « fr » par défaut", () => {
+    renderHook(() => useLanguage(), { wrapper });
+    expect(document.documentElement.lang).toBe("fr");
+  });
+
+  it("passe à « en » quand l'utilisateur choisit l'anglais, puis revient à « fr »", () => {
+    const { result } = renderHook(() => useLanguage(), { wrapper });
+    act(() => result.current.changeLanguage("en"));
+    expect(document.documentElement.lang).toBe("en");
+    act(() => result.current.changeLanguage("fr"));
+    expect(document.documentElement.lang).toBe("fr");
+  });
+
+  it("applique la langue mémorisée au chargement", () => {
+    localStorage.setItem("language", "en");
+    renderHook(() => useLanguage(), { wrapper });
+    expect(document.documentElement.lang).toBe("en");
+  });
+
+  it("ignore une langue invalide : l'attribut ne change pas", () => {
+    const { result } = renderHook(() => useLanguage(), { wrapper });
+    act(() => result.current.changeLanguage("de" as never));
+    expect(document.documentElement.lang).toBe("fr");
+  });
+
+  it("n'utilise que des codes de langue disponibles dans les dictionnaires", () => {
+    const { result } = renderHook(() => useLanguage(), { wrapper });
+    for (const code of Object.keys(languages)) {
+      act(() => result.current.changeLanguage(code as never));
+      expect(document.documentElement.lang).toBe(code);
+    }
   });
 });
