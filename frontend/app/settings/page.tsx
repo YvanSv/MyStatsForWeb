@@ -24,9 +24,9 @@ export default function SettingsPage() {
     <div className="max-w-4xl mx-auto p-6 space-y-8 animate-in fade-in duration-500">
       <header>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/40 bg-clip-text text-transparent">
-          {t.settings.title || "Paramètres"}
+          {t.settings.title}
         </h1>
-        <p className="text-gray-500 mt-2">{t.settings.subtitle || "Gérez vos préférences et votre compte"}</p>
+        <p className="text-gray-500 mt-2">{t.settings.subtitle}</p>
       </header>
 
       <div className="grid gap-6">
@@ -34,7 +34,7 @@ export default function SettingsPage() {
         <section className="space-y-4">
           <div className="flex items-center gap-2 px-1 text-gray-400">
             <Globe size={18} />
-            <h2 className="text-sm font-semibold uppercase tracking-wider">{t.settings.appearance || "Apparence & Langue"}</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wider">{t.settings.appearance}</h2>
           </div>
 
           <div className={BASE_UI.glass + " p-6"}>

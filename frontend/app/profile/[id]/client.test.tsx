@@ -230,20 +230,20 @@ describe("ProfilePage - contenu", () => {
   it("affiche avatar, bannière, nom et bio", async () => {
     await renderPage();
     expect(screen.getByAltText("Avatar")).toHaveAttribute("src", "av.jpg");
-    expect(screen.getByAltText("Banner")).toHaveAttribute("src", "ban.jpg");
+    expect(screen.getByAltText("Bannière")).toHaveAttribute("src", "ban.jpg");
     expect(screen.getByText("Ma bio")).toBeInTheDocument();
   });
 
   it.each([["/banner_template.jpg"], [null], [undefined], [""]])("utilise l'image de bannière optimisée pour la valeur %j", async (banner) => {
     h.getProfile.mockResolvedValue(makeProfile({ banner }));
     await renderPage();
-    const src = screen.getByAltText("Banner").getAttribute("src") ?? "";
+    const src = screen.getByAltText("Bannière").getAttribute("src") ?? "";
     expect(src).toContain("banner_template_1100x390");
   });
 
   it("n'affiche pas la bannière par défaut quand une bannière personnalisée existe", async () => {
     await renderPage();
-    expect(screen.getByAltText("Banner").getAttribute("src")).toBe("ban.jpg");
+    expect(screen.getByAltText("Bannière").getAttribute("src")).toBe("ban.jpg");
   });
 
   it("affiche les cartes de statistiques formatées", async () => {

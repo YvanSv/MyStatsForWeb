@@ -254,6 +254,8 @@ interface RangeFilterProps {
 }
 
 function RangeFilter({ label, param, min, max, valueMin, valueMax, unit = "", onChange }: RangeFilterProps) {
+  const { t } = useLanguage();
+  const fmt = (v: number) => Number(v).toLocaleString(t.common.locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   // Le pas dépend du paramètre (et non du libellé, qui change avec la langue)
   const step = param === "rating" ? 0.05 : 1;
   return (
@@ -261,8 +263,8 @@ function RangeFilter({ label, param, min, max, valueMin, valueMax, unit = "", on
       <div className="flex justify-between items-center">
         <span className={SIDEBAR_STYLES.RANGE_LABEL}>{label}</span>
         <span className={SIDEBAR_STYLES.RANGE_VALUE}>
-          {Number(valueMin).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" ⟷ "} 
-          {Number(valueMax).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{unit}
+          {fmt(valueMin)}{" ⟷ "} 
+          {fmt(valueMax)}{unit}
         </span>
       </div>
       <div className="flex items-center gap-2">

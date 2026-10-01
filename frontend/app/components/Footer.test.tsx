@@ -25,10 +25,23 @@ afterEach(() => {
 });
 
 describe("Footer", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   it("affiche la marque deux fois (version PC et version mobile)", () => {
     render(<Footer />);
     expect(screen.getAllByRole("heading", { name: "MyStats" })).toHaveLength(2);
     expect(screen.getAllByText("Analytics Studio")).toHaveLength(2);
+  });
+
+  it("affiche la version lue dans NEXT_PUBLIC_APP_VERSION, et rien sans version", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_VERSION", "1.2.3");
+    const { unmount } = render(<Footer />);
+    expect(screen.getByText("v1.2.3")).toBeInTheDocument();
+    unmount();
+    vi.stubEnv("NEXT_PUBLIC_APP_VERSION", "");
+    render(<Footer />);
+    expect(screen.queryByText(/^v\d/)).not.toBeInTheDocument();
+    vi.unstubAllEnvs();
   });
 
   it("contient une balise footer", () => {
@@ -58,6 +71,7 @@ describe("Footer", () => {
   });
 
   it("affiche le badge de statut de l'API, la baseline et la version", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_VERSION", "0.12.2");
     render(<Footer />);
     expect(screen.getByTestId("api-status")).toBeInTheDocument();
     expect(screen.getByText(dict.tagline)).toBeInTheDocument();

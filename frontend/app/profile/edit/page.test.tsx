@@ -115,8 +115,8 @@ describe("EditProfilePage – chargement", () => {
     expect(nameInput()).toHaveValue("Yvan");
     expect(bioInput()).toHaveValue("Ma bio");
     expect(slugInput()).toHaveValue("yvan");
-    expect(screen.getByAltText("Avatar Preview")).toHaveAttribute("src", "https://img/a.png");
-    expect(screen.getByAltText("Banner")).toHaveAttribute("src", "https://img/b.png");
+    expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://img/a.png");
+    expect(screen.getByAltText("Bannière")).toHaveAttribute("src", "https://img/b.png");
   });
 
   it("affiche titres, libellés et indications", async () => {
@@ -131,8 +131,8 @@ describe("EditProfilePage – chargement", () => {
     expect(nameInput()).toHaveValue("");
     expect(bioInput()).toHaveValue("");
     expect(slugInput()).toHaveValue("");
-    expect(screen.getByAltText("Avatar Preview")).toHaveAttribute("src", "https://api.dicebear.com/7.x/avataaars/svg?seed=1");
-    expect(screen.getByAltText("Banner").getAttribute("src")).toContain("banner_template_1100x390");
+    expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://api.dicebear.com/7.x/avataaars/svg?seed=1");
+    expect(screen.getByAltText("Bannière").getAttribute("src")).toContain("banner_template_1100x390");
   });
 
   it("slug absent (undefined) : le champ reste utilisable", async () => {
@@ -587,7 +587,7 @@ describe("EditProfilePage – sauvegarde", () => {
     await act(async () => {
       fireEvent.change(container.querySelectorAll<HTMLInputElement>('input[type="file"]')[0], { target: { files: [file] } });
     });
-    await waitFor(() => expect(screen.getByAltText("Banner").getAttribute("src")).toMatch(/^data:/));
+    await waitFor(() => expect(screen.getByAltText("Bannière").getAttribute("src")).toMatch(/^data:/));
     await userEvent.setup().click(saveBtn());
     await waitFor(() => expect(h.patchProfile).toHaveBeenCalled());
     const payload = h.patchProfile.mock.calls[0][1];
@@ -652,8 +652,8 @@ describe("EditProfilePage – saisies et états concurrents", () => {
       setValue(nameInput(), "Pendant lecture");
     });
     await waitFor(() => {
-      expect(screen.getByAltText("Banner").getAttribute("src")).toMatch(/^data:/);
-      expect(screen.getByAltText("Avatar Preview").getAttribute("src")).toMatch(/^data:/);
+      expect(screen.getByAltText("Bannière").getAttribute("src")).toMatch(/^data:/);
+      expect(screen.getByAltText("Aperçu de l'avatar").getAttribute("src")).toMatch(/^data:/);
     });
     expect(nameInput()).toHaveValue("Pendant lecture");
   });
@@ -752,15 +752,15 @@ describe("EditProfilePage – images", () => {
     await readAs(container, 1, file);
     expect(window.alert).toHaveBeenCalledTimes(2);
     expect(window.alert).toHaveBeenCalledWith(dict.errorImageType);
-    expect(screen.getByAltText("Banner")).toHaveAttribute("src", "https://img/b.png");
-    expect(screen.getByAltText("Avatar Preview")).toHaveAttribute("src", "https://img/a.png");
+    expect(screen.getByAltText("Bannière")).toHaveAttribute("src", "https://img/b.png");
+    expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://img/a.png");
   });
 
   it.each(["image/jpeg", "image/webp", "image/gif"])("format %s accepté", async (type) => {
     const { container } = await renderLoaded();
     await readAs(container, 1, new File([new Uint8Array(10)], "x", { type }));
     expect(window.alert).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByAltText("Avatar Preview").getAttribute("src")).toMatch(/^data:image\//));
+    await waitFor(() => expect(screen.getByAltText("Aperçu de l'avatar").getAttribute("src")).toMatch(/^data:image\//));
   });
 
   it("vide le champ fichier après un refus pour pouvoir re-choisir le même fichier", async () => {
@@ -788,19 +788,19 @@ describe("EditProfilePage – images", () => {
   it("une bannière valide est lue en data URL et prévisualisée", async () => {
     const { container } = await renderLoaded();
     await readAs(container, 0, png());
-    await waitFor(() => expect(screen.getByAltText("Banner").getAttribute("src")).toMatch(/^data:image\/png/));
+    await waitFor(() => expect(screen.getByAltText("Bannière").getAttribute("src")).toMatch(/^data:image\/png/));
   });
 
   it("un avatar valide est lu en data URL et prévisualisé", async () => {
     const { container } = await renderLoaded();
     await readAs(container, 1, png());
-    await waitFor(() => expect(screen.getByAltText("Avatar Preview").getAttribute("src")).toMatch(/^data:image\/png/));
+    await waitFor(() => expect(screen.getByAltText("Aperçu de l'avatar").getAttribute("src")).toMatch(/^data:image\/png/));
   });
 
   it("l'image choisie est envoyée dans le PATCH", async () => {
     const { container } = await renderLoaded();
     await readAs(container, 1, png());
-    await waitFor(() => expect(screen.getByAltText("Avatar Preview").getAttribute("src")).toMatch(/^data:/));
+    await waitFor(() => expect(screen.getByAltText("Aperçu de l'avatar").getAttribute("src")).toMatch(/^data:/));
     await userEvent.setup().click(saveBtn());
     await waitFor(() => expect(h.patchProfile).toHaveBeenCalled());
     expect(h.patchProfile.mock.calls[0][1].avatar_url).toMatch(/^data:image\/png/);
@@ -810,21 +810,21 @@ describe("EditProfilePage – images", () => {
     const { container } = await renderLoaded();
     await readAs(container, 0, png(2 * 1024 * 1024 + 1));
     expect(window.alert).toHaveBeenCalledWith(dict.errorWeight);
-    expect(screen.getByAltText("Banner")).toHaveAttribute("src", "https://img/b.png");
+    expect(screen.getByAltText("Bannière")).toHaveAttribute("src", "https://img/b.png");
   });
 
   it("avatar > 2 Mo : alerte et image inchangée", async () => {
     const { container } = await renderLoaded();
     await readAs(container, 1, png(2 * 1024 * 1024 + 1));
     expect(window.alert).toHaveBeenCalledWith(dict.errorWeight);
-    expect(screen.getByAltText("Avatar Preview")).toHaveAttribute("src", "https://img/a.png");
+    expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://img/a.png");
   });
 
   it("fichier d'exactement 2 Mo accepté (valeur limite)", async () => {
     const { container } = await renderLoaded();
     await readAs(container, 1, png(2 * 1024 * 1024));
     expect(window.alert).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByAltText("Avatar Preview").getAttribute("src")).toMatch(/^data:/));
+    await waitFor(() => expect(screen.getByAltText("Aperçu de l'avatar").getAttribute("src")).toMatch(/^data:/));
   });
 
   it("aucun fichier sélectionné : rien ne change", async () => {
@@ -833,14 +833,14 @@ describe("EditProfilePage – images", () => {
       fireEvent.change(inputs(container)[1], { target: { files: [] } });
     });
     expect(window.alert).not.toHaveBeenCalled();
-    expect(screen.getByAltText("Avatar Preview")).toHaveAttribute("src", "https://img/a.png");
+    expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://img/a.png");
   });
 
   it("changer l'avatar après avoir saisi le nom conserve le nom saisi", async () => {
     const { container } = await renderLoaded();
     setValue(nameInput(), "Saisi");
     await readAs(container, 1, png());
-    await waitFor(() => expect(screen.getByAltText("Avatar Preview").getAttribute("src")).toMatch(/^data:/));
+    await waitFor(() => expect(screen.getByAltText("Aperçu de l'avatar").getAttribute("src")).toMatch(/^data:/));
     expect(nameInput()).toHaveValue("Saisi");
   });
 });
@@ -865,8 +865,8 @@ describe("EditProfilePage – accessibilité", () => {
 
   it("les images ont un texte alternatif", async () => {
     await renderLoaded();
-    expect(screen.getByAltText("Banner")).toBeInTheDocument();
-    expect(screen.getByAltText("Avatar Preview")).toBeInTheDocument();
+    expect(screen.getByAltText("Bannière")).toBeInTheDocument();
+    expect(screen.getByAltText("Aperçu de l'avatar")).toBeInTheDocument();
   });
 
   it("la navigation clavier atteint les champs puis les boutons", async () => {

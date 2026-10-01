@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
+import packageJson from "./package.json";
 
 const isProduction = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
+  // Version affichée dans le pied de page : celle de package.json
+  env: {
+    NEXT_PUBLIC_APP_VERSION: packageJson.version,
+  },
   images: {
     remotePatterns: [
       // Pochettes et images d'artistes (Spotify) : les seules images distantes passées à next/image

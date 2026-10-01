@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BASE_UI } from "./styles/general";
 import { useApiAllDatas } from "./hooks/useApiAllDatas";
 import { PrimaryButton, SecondaryButton } from "./components/Atomic/Buttons";
@@ -11,7 +11,6 @@ import { FRONT_ROUTES } from "./constants/routes";
 import { TECHNOS } from "./constants/technos";
 import { useRouter } from "next/navigation";
 
-const formatter = new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0});
 const INITIALS_STATS = {
   users: 0,
   streams: 0,
@@ -24,6 +23,7 @@ export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const formatter = useMemo(() => new Intl.NumberFormat(t.common.locale, {maximumFractionDigits: 0}), [t.common.locale]);
   const { refreshUserData, getTodayStats } = useApiMyDatas();
   const [userStats, setUserStats] = useState<{ nb_streams: string | number, nb_minutes: string | number }>({nb_streams: '...', nb_minutes: "..."});
   const [stats, setStats] = useState(INITIALS_STATS);
@@ -127,17 +127,17 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-lg leading-tight">
-                    {t.home.shareTitle || "Partagez votre univers"}
+                    {t.home.shareTitle}
                   </h3>
                   <p className="text-gray-400 text-sm">
-                    {t.home.shareSub || "Générez un résumé visuel de vos écoutes."}
+                    {t.home.shareSub}
                   </p>
                 </div>
               </div>
               
               <SecondaryButton onClick={() => router.push(FRONT_ROUTES.RESUME)} additional="group relative px-6 py-3 rounded-xl text1 font-bold transition-all hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden">
                 <span className="relative z-10 flex items-center gap-2">
-                   {t.home.btnShare || "Créer mon résumé"} <Sparkles size={16} />
+                   {t.home.btnShare} <Sparkles size={16} />
                 </span>
               </SecondaryButton>
             </div>

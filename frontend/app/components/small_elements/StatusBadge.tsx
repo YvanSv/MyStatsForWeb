@@ -76,7 +76,7 @@ export const ApiStatusBadge = () => {
             {dict.statusRateLimited}{" "}
             <span className={BADGE_STYLES.TIMER}>
               {remaining}
-              <span className={BADGE_STYLES.UNIT}>s</span>
+              <span className={BADGE_STYLES.UNIT}>{t.a11y.unitSeconds}</span>
             </span>
           </>
         ) : dict.statusActive}

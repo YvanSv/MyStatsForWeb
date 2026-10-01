@@ -147,7 +147,7 @@ describe("Header – utilisateur déconnecté", () => {
   it("affiche le bouton de connexion et pas le menu utilisateur", () => {
     render(<Header />);
     expect(screen.getByRole("button", { name: dict.login })).toBeInTheDocument();
-    expect(screen.queryByAltText("Avatar Preview")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Aperçu de l'avatar")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: dict.logout })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: dict.settings })).not.toBeInTheDocument();
   });
@@ -170,7 +170,7 @@ describe("Header – utilisateur déconnecté", () => {
 describe("Header – utilisateur connecté", () => {
   it("affiche l'avatar et le nom de l'utilisateur", () => {
     render(<Header />);
-    expect(screen.getByAltText("Avatar Preview")).toHaveAttribute("src", "https://img/avatar.png");
+    expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://img/avatar.png");
     expect(screen.getByText("Yvan")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: dict.login })).not.toBeInTheDocument();
   });
@@ -178,19 +178,19 @@ describe("Header – utilisateur connecté", () => {
   it("utilise « Username » quand le nom d'utilisateur est vide ou absent", () => {
     h.auth.user = makeUser({ user_name: "" });
     render(<Header />);
-    expect(screen.getByText("Username")).toBeInTheDocument();
+    expect(screen.getByText("Nom d'utilisateur")).toBeInTheDocument();
   });
 
   it("utilise « Username » quand l'utilisateur n'est pas encore chargé", () => {
     h.auth.user = null;
     render(<Header />);
-    expect(screen.getByText("Username")).toBeInTheDocument();
+    expect(screen.getByText("Nom d'utilisateur")).toBeInTheDocument();
   });
 
   it("redirige vers le compte au clic sur le bouton profil", async () => {
     const user = userEvent.setup();
     render(<Header />);
-    await user.click(screen.getByAltText("Avatar Preview"));
+    await user.click(screen.getByAltText("Aperçu de l'avatar"));
     expect(h.push).toHaveBeenCalledWith(FRONT_ROUTES.ACCOUNT);
   });
 
@@ -263,15 +263,15 @@ describe("Header – images absentes (pas de <img> sans src)", () => {
   it("affiche l'initiale du pseudo quand l'utilisateur n'a pas d'avatar", () => {
     h.auth.user = makeUser({ avatar: undefined });
     const { container } = render(<Header />);
-    expect(screen.queryByAltText("Avatar Preview")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Aperçu de l'avatar")).not.toBeInTheDocument();
     expect(container.querySelector("img:not([src])")).toBeNull();
     expect(screen.getByText("Y")).toBeInTheDocument();
   });
 
-  it("affiche l'initiale « U » (pseudo par défaut) sans avatar ni utilisateur chargé", () => {
+  it("affiche l'initiale du pseudo par défaut traduit sans avatar ni utilisateur chargé", () => {
     h.auth.user = null;
     render(<Header />);
-    expect(screen.getByText("U")).toBeInTheDocument();
+    expect(screen.getByText("N")).toBeInTheDocument();
   });
 
   it("affiche un repli à la place de la pochette quand cover_url est absent", () => {

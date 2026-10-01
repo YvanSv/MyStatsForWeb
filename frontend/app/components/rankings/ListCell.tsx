@@ -77,9 +77,9 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
     if (sort === 'rating') return <div className="h-5 md:hidden"/>;
     
     const config = {
-      play_count: { val: formatStreams(element.play_count, dict.locale), unit: "STR", present: isValidNumber(element.play_count) },
+      play_count: { val: formatStreams(element.play_count, dict.locale), unit: dict.unitStreams.toUpperCase(), present: isValidNumber(element.play_count) },
       engagement: { val: formatPercent(element.engagement, dict.locale), unit: "", present: false },
-      total_minutes: { val: formatMinutes(element.total_minutes, dict.locale), unit: "MIN", present: isValidNumber(element.total_minutes) }
+      total_minutes: { val: formatMinutes(element.total_minutes, dict.locale), unit: dict.unitMinutes.toUpperCase(), present: isValidNumber(element.total_minutes) }
     };
 
     const current = config[sort as keyof typeof config] || config.total_minutes;

@@ -171,7 +171,7 @@ function AuthContent() {
           )}
           <div className="space-y-1">
             <label htmlFor={`${uid}-reg-username`} className={AUTH_STYLES.INPUT_LABEL}>{dict.username}</label>
-            <input id={`${uid}-reg-username`} autoComplete="username" type="text" value={regData.username} placeholder="MusicFan_01"
+            <input id={`${uid}-reg-username`} autoComplete="username" type="text" value={regData.username} placeholder={dict.placeholderUsername}
               aria-invalid={!!registerErrors.username} aria-describedby={registerErrors.username ? `${uid}-reg-username-err` : undefined}
               onChange={(e) => setRegData({...regData, username: e.target.value})}
               className={AUTH_STYLES.INPUT_FIELD}

@@ -137,8 +137,8 @@ export default function ProfilePage({ id }: { id: string }) {
       {/* --- BANNIÈRE --- */}
       <div className={PROFILE_STYLES.BANNER_WRAPPER}>
         {isDefaultBanner(profile.banner)
-          ? <Image src={DEFAULT_BANNER_IMAGE} alt="Banner" className={PROFILE_STYLES.BANNER_IMG} width={1100} height={390}/>
-          : <img src={profile.banner!} className={PROFILE_STYLES.BANNER_IMG} alt="Banner"/>
+          ? <Image src={DEFAULT_BANNER_IMAGE} alt={t.a11y.banner} className={PROFILE_STYLES.BANNER_IMG} width={1100} height={390}/>
+          : <img src={profile.banner!} className={PROFILE_STYLES.BANNER_IMG} alt={t.a11y.banner}/>
         }
         <div className={PROFILE_STYLES.GRADIENT_OVERLAY}/>
       </div>

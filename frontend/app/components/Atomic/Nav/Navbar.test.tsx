@@ -1,7 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Navbar";
+
+let mockLang: "fr" | "en" = "fr";
+vi.mock("@/app/context/languageContext", async () => {
+  const { languages } = await import("@/app/constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[mockLang], language: mockLang, changeLanguage: vi.fn() }) };
+});
+afterEach(() => { mockLang = "fr"; });
 
 vi.mock("next/link", () => ({
   default: ({ href, children, onClick, ...rest }: { href: string; children: React.ReactNode; onClick?: () => void }) => (
@@ -22,6 +29,12 @@ describe("HeaderLogo", () => {
     render(<HeaderLogo />);
     expect(screen.getByAltText("Logo")).toHaveAttribute("src", "/logo.png");
     expect(screen.getByText("MyStats")).toBeInTheDocument();
+  });
+
+  it("alt du logo traduit en anglais", () => {
+    mockLang = "en";
+    render(<HeaderLogo />);
+    expect(screen.getByAltText("Logo")).toBeInTheDocument();
   });
 
   it("appelle onClick au clic", async () => {

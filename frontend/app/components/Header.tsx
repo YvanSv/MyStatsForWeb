@@ -40,7 +40,7 @@ export default function Header() {
   const { isLoggedIn, user, logout } = useAuth();
   const { t } = useLanguage();
   const dict = t.header;
-  const userName = user?.user_name || "Username";
+  const userName = user?.user_name || t.a11y.defaultUsername;
   const { listening, localProgress } = useSpotify();
   const cover = listening.data?.cover_url;
   // --- ÉTATS UI ---
@@ -146,7 +146,7 @@ export default function Header() {
           <div className={HEADER_STYLES.RIGHT_WRAPPER}>
             <TertiaryButton onClick={() => navigate(FRONT_ROUTES.ACCOUNT)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 lg:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
               {user?.avatar ? (
-                <img src={user.avatar} className={HEADER_STYLES.USER_AVATAR} alt="Avatar Preview"/>
+                <img src={user.avatar} className={HEADER_STYLES.USER_AVATAR} alt={t.a11y.avatarPreview}/>
               ) : (
                 <span className={HEADER_STYLES.USER_AVATAR} aria-hidden="true">{userName.charAt(0).toUpperCase()}</span>
               )}

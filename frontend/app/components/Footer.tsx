@@ -4,6 +4,7 @@ import { ApiStatusBadge } from './small_elements/StatusBadge';
 import { FRONT_ROUTES } from '../constants/routes';
 import { GENERAL_STYLES } from '../styles/general';
 import { useLanguage } from '../context/languageContext';
+import { APP_NAME } from '../constants/app';
 
 const FOOTER_STYLES = {
   // Structure globale
@@ -33,6 +34,7 @@ const FOOTER_STYLES = {
 export default function Footer() {
   const { t } = useLanguage();
   const dict = t.footer;
+  const version = process.env.NEXT_PUBLIC_APP_VERSION;
   const currentYear = new Date().getFullYear();
 
   return (
@@ -43,8 +45,8 @@ export default function Footer() {
           <span className={FOOTER_STYLES.LOGO_ICON}>⇅</span>
         </div>
         <div>
-          <h4 className={FOOTER_STYLES.BRAND_NAME}>MyStats</h4>
-          <p className={FOOTER_STYLES.BRAND_TAGLINE}>Analytics Studio</p>
+          <h4 className={FOOTER_STYLES.BRAND_NAME}>{APP_NAME}</h4>
+          <p className={FOOTER_STYLES.BRAND_TAGLINE}>{t.a11y.brandTagline}</p>
         </div>
       </div>
 
@@ -55,7 +57,7 @@ export default function Footer() {
           <Link href={FRONT_ROUTES.ABOUT} className={FOOTER_STYLES.LINK}>{dict.about}</Link>
         </nav>
         <p className={FOOTER_STYLES.COPYRIGHT}>
-          &copy; {currentYear} • MyStats • {dict.rights}
+          &copy; {currentYear} • {APP_NAME} • {dict.rights}
         </p>
       </div>
 
@@ -66,8 +68,8 @@ export default function Footer() {
             <span className={FOOTER_STYLES.LOGO_ICON}>⇅</span>
           </div>
           <div>
-            <h4 className={FOOTER_STYLES.BRAND_NAME}>MyStats</h4>
-            <p className={FOOTER_STYLES.BRAND_TAGLINE}>Analytics Studio</p>
+            <h4 className={FOOTER_STYLES.BRAND_NAME}>{APP_NAME}</h4>
+            <p className={FOOTER_STYLES.BRAND_TAGLINE}>{t.a11y.brandTagline}</p>
           </div>
         </div>
 
@@ -78,7 +80,7 @@ export default function Footer() {
           </div>
           <div className={FOOTER_STYLES.INFO_TEXT_GROUP}>
             <p className={FOOTER_STYLES.INFO_TAGLINE}>{dict.tagline}</p>
-            <p className={FOOTER_STYLES.INFO_VERSION}>v0.12.2</p>
+            {version && <p className={FOOTER_STYLES.INFO_VERSION}>v{version}</p>}
           </div>
         </div>
       </div>

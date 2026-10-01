@@ -1,12 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useLanguage } from "@/app/context/languageContext";
+import { APP_NAME } from "@/app/constants/app";
 
 // href : le composant devient un vrai lien (prefetch, clic droit, nouvel onglet) avec le même style
 interface ClickableProps { children?: ReactNode; onClick?: () => void; href?: string }
 interface StyledProps { children?: ReactNode; additional?: string }
 
 export function HeaderLogo({onClick}:{onClick?: () => void}) {
+  const { t } = useLanguage();
   const agencement = 'flex items-center w-fit';
   const forme = 'gap-2 lg:gap-3';
   const couleur = 'text1 text-[28px] md:text-[32px] lg:text-[40px] tracking-tighter font-semibold';
@@ -14,8 +17,8 @@ export function HeaderLogo({onClick}:{onClick?: () => void}) {
 
   return (
     <div className={`${agencement} ${couleur} ${transformation} ${forme}`} onClick={onClick}>
-      <Image src="/logo.png" alt="Logo" width={60} height={60} priority className="w-8 md:w-11 lg:w-13 h-auto" />
-      MyStats
+      <Image src="/logo.png" alt={t.a11y.logo} width={60} height={60} priority className="w-8 md:w-11 lg:w-13 h-auto" />
+      {APP_NAME}
     </div>
   );
 }

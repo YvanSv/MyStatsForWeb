@@ -256,8 +256,8 @@ function EditProfileContent() {
           onChange={handleBannerChange} className="hidden"
         />
         {isDefaultBanner(formData.banner_url)
-          ? <Image src={DEFAULT_BANNER_IMAGE} alt="Banner" className={PROFILE_EDIT_STYLES.BANNER_IMG} width={1100} height={390}/>
-          : <img src={formData.banner_url} className={PROFILE_EDIT_STYLES.BANNER_IMG} alt="Banner"/>
+          ? <Image src={DEFAULT_BANNER_IMAGE} alt={t.a11y.banner} className={PROFILE_EDIT_STYLES.BANNER_IMG} width={1100} height={390}/>
+          : <img src={formData.banner_url} className={PROFILE_EDIT_STYLES.BANNER_IMG} alt={t.a11y.banner}/>
         }
         <div className={PROFILE_EDIT_STYLES.BANNER_OVERLAY} onClick={() => bannerInputRef.current?.click()} style={{ cursor: 'pointer' }}>
           <div className={PROFILE_EDIT_STYLES.BANNER_BADGE}>
@@ -272,7 +272,7 @@ function EditProfileContent() {
         <div className={PROFILE_EDIT_STYLES.HEADER_FLEX}>
           <div className={PROFILE_EDIT_STYLES.AVATAR_WRAPPER}>
             <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} accept={ALLOWED_IMAGE_TYPES.join(",")} className="hidden"/>
-            <img src={formData.avatar_url} className={PROFILE_EDIT_STYLES.AVATAR_IMG} alt="Avatar Preview"/>
+            <img src={formData.avatar_url} className={PROFILE_EDIT_STYLES.AVATAR_IMG} alt={t.a11y.avatarPreview}/>
             <div className={PROFILE_EDIT_STYLES.OVERLAY_ICON} onClick={() => avatarInputRef.current?.click()} style={{ cursor: 'pointer' }}>
               <CameraIcon size={32} />
             </div>

@@ -1,12 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { AvatarContainer } from "./Profile";
+
+let mockLang: "fr" | "en" = "fr";
+vi.mock("@/app/context/languageContext", async () => {
+  const { languages } = await import("@/app/constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[mockLang], language: mockLang, changeLanguage: vi.fn() }) };
+});
+afterEach(() => { mockLang = "fr"; });
 
 describe("AvatarContainer", () => {
   it("affiche l'avatar et le nom d'utilisateur", () => {
     render(<AvatarContainer url="https://img/a.png" username="Yvan" />);
     expect(screen.getByAltText("Avatar")).toHaveAttribute("src", "https://img/a.png");
     expect(screen.getByRole("heading", { level: 1, name: "Yvan" })).toBeInTheDocument();
+  });
+
+  it("alt de l'avatar : texte du dictionnaire anglais", () => {
+    mockLang = "en";
+    render(<AvatarContainer url="a.png" username="A" />);
+    expect(screen.getByAltText("Avatar")).toBeInTheDocument();
   });
 
   it("affiche '...' sans nom d'utilisateur", () => {
