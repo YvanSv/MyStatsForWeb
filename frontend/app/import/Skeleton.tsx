@@ -10,7 +10,7 @@ const SKELETON_STYLES = {
 
 export function SkeletonImport() {
   const contents = [
-    <div className="space-y-6">
+    <div key="upload" className="space-y-6">
       <div className="h-40 w-full border-2 border-dashed border-white/5 rounded-[30px] flex flex-col items-center justify-center space-y-3">
         <div className="w-10 h-10 bg-white/5 rounded-full animate-pulse" />
         <div className={`w-40 ${SKELETON_STYLES.TEXT_SM}`} />
@@ -18,7 +18,7 @@ export function SkeletonImport() {
       <div className="h-14 w-full bg-white/10 rounded-2xl animate-pulse" />
       <div className={`w-48 mx-auto ${SKELETON_STYLES.TEXT_SM}`} />
     </div>,
-    <div className="space-y-6">
+    <div key="guide" className="space-y-6">
       {[1, 2, 3, 4].map((step) => (
         <div key={step} className="flex gap-4 items-start">
           <div className="w-8 h-8 shrink-0 bg-white/5 rounded-full animate-pulse" />

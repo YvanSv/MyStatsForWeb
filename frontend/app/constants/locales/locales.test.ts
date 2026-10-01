@@ -97,6 +97,8 @@ describe.each(dictionaries)("dictionnaire %s – qualité des textes", (_lang, d
 
   it("expose les fonctions de dictionnaire attendues", () => {
     expect(functions.map((f) => f.path).sort()).toEqual([
+      "importData.appleProgress",
+      "importData.appleSent",
       "importData.dropzoneActive",
       "importData.successImport",
       "profilePage.unitDays",

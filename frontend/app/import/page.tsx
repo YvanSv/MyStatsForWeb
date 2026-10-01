@@ -37,7 +37,7 @@ const IMPORT_STYLES = {
   FILE_BADGE: `text3 text-[9px] bg-white/5 px-3 py-1 ${BASE_UI.rounded.badge} border border-white/5 animate-in fade-in zoom-in-95`,
   
   // Alertes & Progress
-  ALERT_BASE: "border text-[10px] p-4 ${BASE_UI.rounded.input} font-bold uppercase tracking-widest",
+  ALERT_BASE: `border text-[10px] p-4 ${BASE_UI.rounded.input} font-bold uppercase tracking-widest`,
   get ALERT_ERROR() { return `${this.ALERT_BASE} bg-rouge/10 border-rouge/20 text-rouge animate-shake` },
   get ALERT_SUCCESS() { return `${this.ALERT_BASE} bg-vert/10 border-vert/20 text2` },
   PROGRESS_CONTAINER: "flex items-center text-[10px] text-white mb-4 gap-2",
@@ -73,8 +73,10 @@ export function ImportContent() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
-      const invalidFiles = selectedFiles.filter(f => !f.name.endsWith('.json') && !f.name.endsWith('.csv'));
-      if (invalidFiles.length > 0) return setError(dict.errorJsonOnly);
+      // Tous les fichiers doivent avoir la même extension (.json Spotify ou .csv Apple)
+      const extensions = new Set(selectedFiles.map(f => f.name.toLowerCase().split('.').pop()));
+      const valid = extensions.size === 1 && (extensions.has('json') || extensions.has('csv'));
+      if (!valid) return setError(dict.errorJsonOnly);
 
       setFiles(selectedFiles);
       setError("");
@@ -88,7 +90,7 @@ export function ImportContent() {
     if (files.length === 0) return setError(dict.errorNoFile);
     
     // Supposons qu'on détecte le type par l'extension du premier fichier
-    const isApple = files[0].name.endsWith('.csv');
+    const isApple = files[0].name.toLowerCase().endsWith('.csv');
 
     setError("");
     setSuccess("");
@@ -115,7 +117,7 @@ export function ImportContent() {
                     if (response && typeof response.added === 'number') {
                       totalAdded += response.added;
                       // Optionnel : mettre à jour un message pour afficher le cumul
-                      setProcessingMsg(`Traitement du fichier "${file.name}" (${nb}/${files.length}) (${totalAdded} écoutes importées)`);
+                      setProcessingMsg(dict.appleProgress(file.name, nb, files.length, totalAdded));
                     }
                   },
                   (processed, total) => {
@@ -128,13 +130,19 @@ export function ImportContent() {
               setProcessingMsg(null);
               // Le backend Apple ne pousse pas de progression : on ferme le WebSocket nous-mêmes
               ws.close();
-              resolve({ message: "Notre serveur a reçu vos données .csv, il est en train de les traiter. " + totalAdded + " écoutes envoyées.", added: totalAdded });
+              resolve({ message: dict.appleSent(totalAdded), added: totalAdded });
             } else resolve(await uploadSpotifyJson(files));
-          } catch (err) {reject(err)}
+          } catch (err) {
+            setProcessing(false);
+            setProcessingMsg(null);
+            reject(err);
+          }
         };
 
         ws.onmessage = (event) => {
-          const data = JSON.parse(event.data);
+          let data;
+          try { data = JSON.parse(event.data) } catch { return }
+          if (typeof data?.percentage !== 'number') return;
           setProgress(data.percentage);
           if (data.percentage === 100) ws.close();
         };
@@ -144,11 +152,11 @@ export function ImportContent() {
     };
 
     try {
-      const res: any = await startUpload();
+      const res = await startUpload() as { message?: string; added?: number; count?: number };
       setSuccess(res.message || dict.successImport(res.added ?? res.count ?? 0));
       setFiles([]);
-    } catch (err: any) {
-      setError(err instanceof ApiError ? err.message : dict.errorGeneric);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : (err as Error)?.message === dict.errorWs ? dict.errorWs : dict.errorGeneric);
       if (ws.readyState === WebSocket.OPEN) ws.close();
     }
   };
@@ -167,7 +175,8 @@ export function ImportContent() {
         transformHeader: (h) => h.trim(),
         
         chunk: async (results, parser) => {
-          parser.pause(); 
+          parser.pause();
+          try {
 
           // 1. Calcul des lignes (on compte tout, même les filtrées, pour la barre de progression)
           linesProcessed += results.data.length;
@@ -181,7 +190,8 @@ export function ImportContent() {
               const msPerPlay = Math.floor(totalMs / playCount);
               
               // Reconstruction de la date de base
-              const rawDate = row["Date Played"];
+              const rawDate = row["Date Played"] ?? "";
+              if (!/^\d{8}$/.test(rawDate)) throw new Error(`Date invalide : "${rawDate}"`);
               const year = rawDate.substring(0, 4);
               const month = rawDate.substring(4, 6);
               const day = rawDate.substring(6, 8);
@@ -222,6 +232,11 @@ export function ImportContent() {
           onProgress(results.meta.cursor, totalSize);
 
           parser.resume();
+          } catch (err) {
+            // Sans cela, l'erreur (ligne mal formée, échec d'un envoi) resterait une promesse rejetée non gérée et l'import ne se terminerait jamais
+            reject(err);
+            parser.abort(); // déclenche `complete`, sans effet : la promesse est déjà rejetée
+          }
         },
         complete: () => {
           // On force à 100% à la fin pour être sûr
@@ -292,7 +307,7 @@ export function ImportContent() {
           <span className={IMPORT_STYLES.STEP_NUMBER}>1</span>
           <div className={IMPORT_STYLES.STEP_TEXT}>
             {dict.step1}
-            <a href="https://www.spotify.com/account/privacy/" target="_blank" className={IMPORT_STYLES.EXTERNAL_LINK}>
+            <a href="https://www.spotify.com/account/privacy/" target="_blank" rel="noopener noreferrer" className={IMPORT_STYLES.EXTERNAL_LINK}>
               https://www.spotify.com/account/privacy/
             </a>
           </div>
