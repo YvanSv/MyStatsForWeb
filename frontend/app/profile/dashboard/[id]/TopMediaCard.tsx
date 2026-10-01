@@ -16,12 +16,14 @@ export default function TopMediaCard({label,item,loading,type,metric}:
   {label:string,item:any,loading:boolean,type:'track'|'album'|'artist',metric:string})
 {
   const { t } = useLanguage();
+  // Selon la métrique, l'élément à afficher est le premier (minutes) ou le second (streams) du couple renvoyé par l'API
+  const shown = metric === 'minutes' ? item?.[0] : item?.[1];
   return (
     <div className={TOP_ITEMS_STYLES.CARD}>
       <div className={TOP_ITEMS_STYLES.IMAGE_WRAPPER}>
         {loading ? <LoadingSpinner /> : (
           <img 
-            src={metric === 'minutes' ? item?.[0]?.image : item?.[1]?.image || "/default-cover.png"} 
+            src={shown?.image || "/default-cover.png"} 
             alt={label} 
             className={TOP_ITEMS_STYLES.IMAGE} 
           />
@@ -30,11 +32,11 @@ export default function TopMediaCard({label,item,loading,type,metric}:
       <div className={TOP_ITEMS_STYLES.CONTENT}>
         <span className={TOP_ITEMS_STYLES.LABEL}>{label}</span>
         <div className="flex flex-col min-w-0">
-          <h4 className={TOP_ITEMS_STYLES.TITLE}>{loading ? "..." : (metric === 'minutes' ? item?.[0]?.name : item?.[1]?.name || t.dashboard.none)}</h4>
+          <h4 className={TOP_ITEMS_STYLES.TITLE}>{loading ? "..." : (shown?.name || t.dashboard.none)}</h4>
           <p className={TOP_ITEMS_STYLES.SUBTITLE}>
-            {loading ? "..." : metric === 'minutes' ? item?.[0]?.artist : item?.[1]?.artist}
+            {loading ? "..." : shown?.artist}
             {!loading && type === 'track' && (
-              <span className="hidden md:inline"> ● <span className={TOP_ITEMS_STYLES.ALBUM}>{metric === 'minutes' ? item?.[0]?.album : item[1]?.album}</span></span>
+              <span className="hidden md:inline"> ● <span className={TOP_ITEMS_STYLES.ALBUM}>{shown?.album}</span></span>
             )}
           </p>
         </div>

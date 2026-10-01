@@ -57,15 +57,15 @@ export const FILTER_BAR_STYLES = {
     m-0 p-0 w-[90px]`,
 };
 
-function AvatarContainer({url,username,additional,title}:{url:string|undefined,username?:string,additional?:string,title?:any}) {
+function AvatarContainer({url,username,additional = "",title}:{url:string|undefined,username?:string,additional?:string,title?:any}) {
   const isSpecial = username === "Yvantmtc";
-  const styleImg = `w-full h-full rounded-[26px] lg:rounded-[31px] bg-bg2 object-cover ${!isSpecial && 'border-4 border-bg1'}`;
+  const styleImg = `w-full h-full rounded-[26px] lg:rounded-[31px] bg-bg2 object-cover ${isSpecial ? '' : 'border-4 border-bg1'}`;
 
   return (
     <div className={`flex flex-row lg:items-end gap-4 lg:gap-6 ${additional}`}>
       <div className={`
         w-20 h-20 lg:w-40 lg:h-40 rounded-[30px] lg:rounded-[35px] shadow-2xl flex items-center justify-center
-        ${isSpecial && 'p-[4px] bg-gradient-to-tr from-red-500 via-purple-500 to-blue-500 animate-gradient-xy'}
+        ${isSpecial ? 'p-[4px] bg-gradient-to-tr from-red-500 via-purple-500 to-blue-500 animate-gradient-xy' : ''}
       `}><img src={url || undefined} className={styleImg} alt="Avatar"/></div>
       <div className="flex flex-1 flex-col gap-4 lg:gap-6 mb-5">{title}</div>
     </div>
@@ -76,7 +76,12 @@ export default function DashboardPage() {
   const { id } = useParams();
   const { t } = useLanguage();
   const dict = t.dashboard;
-  const [loading, setLoading] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const loading = loadingProfile || loadingStats;
+  // Bornes saisies à la main (période personnalisée), au format AAAA-MM-JJ
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [range, setRange] = useState('lifetime');
@@ -96,42 +101,77 @@ export default function DashboardPage() {
     setOffset(0);
     setRange(interval);
   };
+  // Saisie d'une date : la période affichée devient la période personnalisée
+  const onCustomDateChange = (which: 'start' | 'end', value: string) => {
+    if (!value) return;
+    if (which === 'start') {
+      setCustomStart(value);
+      setCustomEnd(customEnd || endDate.split('T')[0]);
+    } else {
+      setCustomEnd(value);
+      setCustomStart(customStart || startDate.split('T')[0]);
+    }
+    setOffset(0);
+    setRange('custom');
+  };
 
   useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
     const loadData = async () => {
       try {
-        setLoading(true);
+        setLoadingProfile(true);
         setError(null);
         const data = await getProfile(id+'');
-        setProfile(data);
-      } catch (err: any) {setError(err)}
-      finally {setLoading(false)}
+        if (!cancelled) setProfile(data);
+      } catch (err: any) {if (!cancelled) setError(err)}
+      finally {if (!cancelled) setLoadingProfile(false)}
     };
     loadData();
+    return () => { cancelled = true };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
     if (!id) return;
-    
+    // Une réponse arrivée après un changement de période est ignorée
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
     const fetchStats = async () => {
-      setLoading(true);
+      setLoadingStats(true);
       setError(null);
-      
-      const { start, end } = getDateRange(range, offset);
+
+      let start: string | null, end: string | null;
+      if (range === 'custom' && customStart && customEnd) {
+        const from = new Date(`${customStart}T00:00:00`);
+        const to = new Date(`${customEnd}T23:59:59.999`);
+        start = isNaN(from.getTime()) ? null : from.toISOString();
+        end = isNaN(to.getTime()) ? null : to.toISOString();
+      } else ({ start, end } = getDateRange(range, offset));
       setStartDate(formatToInputDate(start));
       setEndDate(formatToInputDate(end));
 
       try {
         const stats = await getDashboard(`${id}`, start, end);
+        if (cancelled) return;
         setExtendedStats(stats);
       } catch (err: any) {
+        if (cancelled) return;
         setError(err);
         setExtendedStats(INITIAL_STATS);
-      } finally {setTimeout(() => setLoading(false), 150)}
+      } finally {
+        if (!cancelled) timer = setTimeout(() => setLoadingStats(false), 150);
+      }
     };
 
     fetchStats();
-  }, [id, range, offset]);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, range, offset, customStart, customEnd]);
 
   const filledEvolutionData = useMemo(() => {
     const rawData = extendedStats.streamsEvolution;
@@ -208,9 +248,9 @@ export default function DashboardPage() {
     }
   }, [extendedStats.cumulativeData, startDate, endDate]);
 
-  if (error && error.status === 404 && !profile) return <ErrorState title={dict.notFound} status={error.status}/>;
-
   const smoothHourlyData = (rawData: HourlyData[]): HourlyData[] => {
+    // Pas de cadran complet (données absentes) : rien à lisser
+    if (rawData.length < 24) return rawData;
     let data = rawData.map(h => ({ ...h }));
     let hasOverflow = true;
     let passes = 0;
@@ -244,6 +284,9 @@ export default function DashboardPage() {
     return extendedStats.clockData;
   }, [extendedStats.clockData, range]);
 
+  // Après tous les hooks (règle des hooks) : une page introuvable n'affiche que l'erreur
+  if (error && error.status === 404 && !profile) return <ErrorState title={dict.notFound} status={error.status}/>;
+
   return (
     <main className={STYLES.main}>
       <div className={STYLES.container}>
@@ -257,7 +300,7 @@ export default function DashboardPage() {
               </div>
               <div className="lg:hidden flex items-center justify-center gap-1">
                 <SecondaryButton onClick={decreaseInterval} disabled={range === "lifetime"}
-                  additional={`${range !== "lifetime" && 'hover:text-vert'} text-lg px-1 pb-1`}>
+                  additional={`${range !== "lifetime" ? 'hover:text-vert' : ''} text-lg px-1 pb-1`}>
                   −
                 </SecondaryButton>
                 <div className="w-[1px] h-4 bg-white/10"/>
@@ -275,14 +318,14 @@ export default function DashboardPage() {
                           type="date" 
                           value={startDate.split('T')[0]} 
                           className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
-                          onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                          onChange={(e) => onCustomDateChange('start', e.target.value)} 
                         />
                         <span className="text-gray-600 leading-none">→</span>
                         <input 
                           type="date" 
                           value={endDate.split('T')[0]} 
                           className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
-                          onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                          onChange={(e) => onCustomDateChange('end', e.target.value)} 
                         />
                       </div>
                     )}
@@ -290,7 +333,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-[1px] h-4 bg-white/10"/>
                 <SecondaryButton onClick={increaseInterval} disabled={offset === 0}
-                  additional={`${offset !== 0 && 'hover:text-vert'} text-lg px-1 pb-1`}>
+                  additional={`${offset !== 0 ? 'hover:text-vert' : ''} text-lg px-1 pb-1`}>
                   +
                 </SecondaryButton>
               </div>
@@ -299,7 +342,7 @@ export default function DashboardPage() {
 
           <div className="hidden lg:flex items-center justify-center gap-4">
             <SecondaryButton onClick={decreaseInterval} disabled={range === "lifetime"}
-              additional={`${range !== "lifetime" && 'hover:text-vert'} text-xl px-2.5 pb-1`}>
+              additional={`${range !== "lifetime" ? 'hover:text-vert' : ''} text-xl px-2.5 pb-1`}>
               −
             </SecondaryButton>
             <div className="w-[1px] h-4 bg-white/10"/>
@@ -317,14 +360,14 @@ export default function DashboardPage() {
                       type="date" 
                       value={startDate.split('T')[0]} 
                       className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
-                      onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                      onChange={(e) => onCustomDateChange('start', e.target.value)} 
                     />
                     <span className="text-gray-600 leading-none">→</span>
                     <input 
                       type="date" 
                       value={endDate.split('T')[0]} 
                       className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
-                      onChange={(e) => { onIntervalChange(e.target.value); setRange("custom"); }} 
+                      onChange={(e) => onCustomDateChange('end', e.target.value)} 
                     />
                   </div>
                 )}
@@ -332,7 +375,7 @@ export default function DashboardPage() {
             </div>
             <div className="w-[1px] h-4 bg-white/10"/>
             <SecondaryButton onClick={increaseInterval} disabled={offset === 0}
-              additional={`${offset !== 0 && 'hover:text-vert'} text-xl px-2.5 pb-1`}>
+              additional={`${offset !== 0 ? 'hover:text-vert' : ''} text-xl px-2.5 pb-1`}>
               +
             </SecondaryButton>
           </div>

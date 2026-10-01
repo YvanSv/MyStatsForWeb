@@ -123,6 +123,7 @@ export const en = {
     btnCancel: "Cancel",
     btnSave: "Save changes",
     successToast: "Profile updated!",
+    errorSave: "Unable to save your profile.",
     errorWeight: "Image is too heavy (max 2MB)",
     // Toggles
     toggleProfile: "Public profile",
@@ -260,6 +261,7 @@ export const en = {
     notFound: "Profile not found",
     unknownError: "Unknown error",
     copySuccess: "Link copied!",
+    shareBtn: "Share profile",
     copyError: "Unable to copy link",
     editBtn: "Edit profile",
     followBtn: "Follow user",
@@ -279,6 +281,7 @@ export const en = {
     unitDays: (count: number) => `${count} d`,
   },
   dashboard: {
+    lifetime: "All time",
     filtersBtn: "Filters",
     today: "24h",
     week: "7d",

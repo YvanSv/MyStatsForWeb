@@ -123,7 +123,7 @@ function EditProfileContent() {
       display_name: formData.display_name,
       bio: formData.bio,
       avatar_url: formData.avatar_url,
-      banner_url: formData.banner_url === "/template_banner.jpg" ? null : formData.banner_url,
+      banner_url: formData.banner_url === "/banner_template.jpg" ? null : formData.banner_url,
       slug: finalSlug === "" ? null : finalSlug,
       perms: formData.perms
     };
@@ -136,8 +136,8 @@ function EditProfileContent() {
       await refreshUser();
       router.push(`/profile/${finalSlug === "" || !finalSlug  ? user.id : finalSlug}`);
     } catch (err: any) {
-      if (err.status === 422) return;// setMessage({type: "error",text: "Votre pseudonyme doit faire au moins 3 caractères"});
-      else return; // setMessage({type: "error",text: err.message});
+      // Les erreurs de validation (422) n'ont pas de message lisible : on affiche le texte générique
+      toast.error(err?.status && err.status !== 422 && err.message ? err.message : dict.errorSave);
     }
   };
 
@@ -226,12 +226,12 @@ function EditProfileContent() {
         <div className={PROFILE_EDIT_STYLES.FORM_CARD}>
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
             <div className="flex justify-between">
-              <label className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelName}</label>
+              <label htmlFor="profile-name" className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelName}</label>
               <p className={`block text-xs mb-2 ml-1
                 ${(formData.display_name || "").length < 3 ? 'text-rouge' : (formData.display_name || "").length > 14 ? (formData.display_name.length > 17 ? (formData.display_name.length >= 20 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.display_name?.length || 0)}/20</p>
             </div>
-            <input type="text" className={PROFILE_EDIT_STYLES.INPUT} value={formData.display_name}
+            <input id="profile-name" type="text" className={PROFILE_EDIT_STYLES.INPUT} value={formData.display_name}
               onChange={(e) => {
                 if (e.target.value.length < 3) setErrors({...errors, errorName: errDict.errorName1});
                 else if (e.target.value.length > 20) setErrors({...errors, errorName: errDict.errorName2});
@@ -245,16 +245,16 @@ function EditProfileContent() {
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
             <div className="flex justify-between">
-              <label className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelBio}</label>
+              <label htmlFor="profile-bio" className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelBio}</label>
               <p className={`block text-xs mb-2 ml-1
                 ${(formData.bio || "").length > 400 ? (formData.bio.length > 450 ? (formData.bio.length >= 500 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.bio?.length || 0)}/500</p>
             </div>
-            <textarea rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
+            <textarea id="profile-bio" rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
               value={formData.bio} placeholder={dict.placeholderBio}
               onChange={(e) => {
                 if (e.target.value.length > 500) setErrors({...errors,errorBio: dict.errorBio});
-                else setErrors({...errors, errorName: ""});
+                else setErrors({...errors, errorBio: ""});
                 setFormData({...formData, bio: e.target.value})
               }}
             />
@@ -263,7 +263,7 @@ function EditProfileContent() {
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
             <div className="flex justify-between">
-              <label className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelUrl}</label>
+              <label htmlFor="profile-slug" className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelUrl}</label>
               <p className={`block text-xs mb-2 ml-1
                 ${(formData.slug || "").length > 20 ? (formData.slug.length > 25 ? (formData.slug.length === 30 ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.slug?.length || 0)}/30</p>
@@ -274,7 +274,7 @@ function EditProfileContent() {
                 mystatsfy.com/profile/
               </span>
               
-              <input type="text" className={`${PROFILE_EDIT_STYLES.INPUT} pl-[145px] text-md tracking-wider`}
+              <input id="profile-slug" type="text" className={`${PROFILE_EDIT_STYLES.INPUT} pl-[145px] text-md tracking-wider`}
                 value={formData.slug || ""} placeholder={dict.placeholderUrl}
                 onChange={(e) => {
                   let value = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -292,19 +292,19 @@ function EditProfileContent() {
           <div className="flex flex-col justify-center mt-8">
             <p className={PROFILE_EDIT_STYLES.LABEL}>{dict.labelPrivacy}</p>
             <div className="flex flex-col gap-8 p-4 border border-white/5 bg-white/5 rounded-2xl w-full">
-              <OptionToggle title="Profil public" description={dict.descProfile}
+              <OptionToggle title={dict.toggleProfile} description={dict.descProfile}
                 active={formData.perms.profile} onChange={(v:boolean) => updatePerm('profile',v)}
               />
-              <OptionToggle title="Statistiques public" description={dict.descStats}
+              <OptionToggle title={dict.toggleStats} description={dict.descStats}
                 active={formData.perms.stats} onChange={(v:boolean) => updatePerm('stats',v)} disabled={!formData.perms.profile}
               />
-              <OptionToggle title="Favoris public" description={dict.toggleFavs}
+              <OptionToggle title={dict.toggleFavs} description={dict.descFavs}
                 active={formData.perms.favorites} onChange={(v:boolean) => updatePerm('favorites',v)} disabled={!formData.perms.profile}
               />
-              <OptionToggle title="Historique public" description={dict.toggleHistory}
+              <OptionToggle title={dict.toggleHistory} description={dict.descHistory}
                 active={formData.perms.history} onChange={(v:boolean) => updatePerm('history',v)} disabled={!formData.perms.profile}
               />
-              <OptionToggle title="Dashboard public" description={dict.toggleDash}
+              <OptionToggle title={dict.toggleDash} description={dict.descDash}
                 active={formData.perms.dashboard} onChange={(v:boolean) => updatePerm('dashboard',v)} disabled={!formData.perms.profile}
               />
             </div>

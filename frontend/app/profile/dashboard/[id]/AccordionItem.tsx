@@ -36,7 +36,14 @@ const COMPONENT_STYLES = {
 
 export default function AccordionItem({ title, isOpen, onClick, icon, children, switchOption }: any) {
   return (
-    <div onClick={onClick} className={COMPONENT_STYLES.accordion.item(isOpen)}>
+    <div onClick={onClick} className={COMPONENT_STYLES.accordion.item(isOpen)}
+      role={isOpen ? undefined : "button"} tabIndex={isOpen ? undefined : 0} aria-expanded={isOpen ? undefined : false} aria-label={isOpen || typeof title !== 'string' ? undefined : title}
+      onKeyDown={(e) => {
+        // On ignore les touches venant des éléments interactifs du contenu (ex : interrupteur de métrique)
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
+      }}
+    >
       {/* Label Vertical (Fermé) */}
       <div className={COMPONENT_STYLES.accordion.titleVertical(isOpen)}>
         <span className="lg:rotate-[-90deg] whitespace-nowrap text-gray-500 font-bold uppercase tracking-[0.2em] text-sm flex items-center gap-3">
@@ -48,13 +55,13 @@ export default function AccordionItem({ title, isOpen, onClick, icon, children, 
       <div className={COMPONENT_STYLES.accordion.indicator(isOpen)}>
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-white/5">
-            <Pointer size={16} className={icon.props.className} />
+            <Pointer size={16} className={icon?.props?.className} />
           </div>
         </div>
       </div>
 
       {/* Contenu (Ouvert) */}
-      <div className={COMPONENT_STYLES.accordion.content(isOpen)}>
+      <div className={COMPONENT_STYLES.accordion.content(isOpen)} aria-hidden={!isOpen}>
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 rounded-xl bg-white/5">{icon}</div>
           <h2 className="text-2xl font-bold">{title}</h2>

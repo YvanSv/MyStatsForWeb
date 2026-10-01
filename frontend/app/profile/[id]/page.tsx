@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import ProfilePage from "./client";
 
 // On définit les types pour les paramètres de l'URL
-type Props = {params: { id: string }};
+type Props = {params: Promise<{ id: string }>};
 
 export async function generateViewport({ params }: Props) {
   return {
@@ -15,11 +15,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = (await params).id;
   if (!id || id === undefined) return { title: "Profil - MyStats" };
 
-  const response = await fetch(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/${id}`, {
-    next: { revalidate: 3600 } // Cache d'une heure pour les robots
-  });
-  
-  const profile = await response.json();
+  // Un backend indisponible ne doit pas faire planter le rendu de la page
+  let profile;
+  try {
+    const response = await fetch(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/${id}`, {
+      next: { revalidate: 3600 } // Cache d'une heure pour les robots
+    });
+    if (!response.ok) return { title: "Profil introuvable - MyStats" };
+    profile = await response.json();
+  } catch {
+    return { title: "Profil introuvable - MyStats" };
+  }
   if (!profile || !profile.display_name) return { title: "Profil introuvable - MyStats" };
   const title = `Profil de ${profile.display_name} | MyStats`;
   const description = profile.bio || `Découvrez les statistiques Spotify de ${profile.display_name}.`;
@@ -35,21 +41,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: description,
       url: `https://mystatsfy.vercel.app/profile/${id}`,
       siteName: 'MyStats',
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: `Bannière de ${profile.display_name}`,
-        },
-      ],
+      ...(imageUrl && {
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: `Bannière de ${profile.display_name}`,
+          },
+        ],
+      }),
       type: 'profile',
     },
     twitter: {
       card: 'summary_large_image',
       title: title,
       description: description,
-      images: [imageUrl],
+      ...(imageUrl && { images: [imageUrl] }),
     },
   };
 }

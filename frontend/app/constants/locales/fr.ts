@@ -123,6 +123,7 @@ export const fr = {
     btnCancel: "Annuler",
     btnSave: "Enregistrer les modifications",
     successToast: "Profil modifié !",
+    errorSave: "Impossible d'enregistrer le profil.",
     errorWeight: "L'image est trop lourde (max 2MB)",
     // Toggles
     toggleProfile: "Profil public",
@@ -261,6 +262,7 @@ export const fr = {
     unknownError: "Erreur inconnue",
     copySuccess: "Lien copié !",
     copyError: "Impossible de copier le lien",
+    shareBtn: "Partager le profil",
     editBtn: "Modifier le profil",
     followBtn: "Suivre l'utilisateur",
     statTime: "Temps d'écoute",
@@ -279,6 +281,7 @@ export const fr = {
     unitDays: (count: number) => `${count} j`,
   },
   dashboard: {
+    lifetime: "Tout l'historique",
     filtersBtn: "Filtres",
     today: "24h",
     week: "7j",

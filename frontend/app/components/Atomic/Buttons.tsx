@@ -29,7 +29,7 @@ export function SecondaryButton({children,additional='',onClick,disabled,type,ar
   const forme = forme_base;
   const couleur = `border font-semibold ${disabled ? 'border-gray-500/10 text3' :
     'border-white/10 hover:border-white/20 hover:bg-white/5 text1'}`;
-  const transformation = !disabled && transformation_base;
+  const transformation = disabled ? '' : transformation_base;
 
   return (
     <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick} disabled={disabled} type={type} aria-label={ariaLabel}>

@@ -40,7 +40,7 @@ export default function IntervalsSelector({ range, onIntervalChange }: {range:st
   return (
     <div className={`${COMPONENT_STYLES.selector.container}`}>
       {/* BOUTON BASCULE */}
-      <button onClick={() => setIsOpen(!isOpen)}
+      <button type="button" onClick={() => setIsOpen(!isOpen)} aria-expanded={isOpen} aria-label={dict.filtersBtn}
         className={`${COMPONENT_STYLES.selector.btn(false, true)} z-10`}
       >{isOpen ? '>' : `< ${dict.filtersBtn}`}</button>
 
@@ -53,7 +53,8 @@ export default function IntervalsSelector({ range, onIntervalChange }: {range:st
           >
             <div className="grid grid-cols-[repeat(7,auto)] items-stretch">
               {topRow.map((item) => (
-                <button key={item.id} onClick={() => onIntervalChange(item.id)}
+                <button type="button" key={item.id} onClick={() => onIntervalChange(item.id)}
+                  aria-pressed={range === item.id} aria-label={typeof item.label === 'string' ? undefined : dict.lifetime}
                   className={`${COMPONENT_STYLES.selector.btn(range === item.id,item.span)} border-b`}
                 >{item.label}</button>
               ))}

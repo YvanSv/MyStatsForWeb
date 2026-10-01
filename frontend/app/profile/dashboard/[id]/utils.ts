@@ -62,6 +62,7 @@ interface TopItem {
 export const formatToInputDate = (dateISO: string | null) => {
   if (!dateISO) return "";
   const d = new Date(dateISO);
+  if (isNaN(d.getTime())) return "";
   
   // On récupère l'année, le mois et le jour localement
   const year = d.getFullYear();
@@ -87,6 +88,7 @@ export const getDateRange = (range: string, offset:number = 0) => {
       const currentDay = start.getDay();
       start.setDate(start.getDate() - currentDay + (offset * 7));
       start.setHours(0, 0, 0, 0);
+      end.setTime(start.getTime());
       end.setDate(start.getDate() + 6);
       end.setHours(23, 59, 59, 999);
       break;
@@ -112,6 +114,9 @@ export const getDateRange = (range: string, offset:number = 0) => {
       else if (currentMonth >= 5 && currentMonth <= 7) startMonth = 5; // Juin (Été)
       else if (currentMonth >= 8 && currentMonth <= 10) startMonth = 8;// Sept (Automne)
       
+      // En janvier/février, l'hiver courant a commencé en décembre de l'année précédente
+      if (currentMonth < 2) start.setFullYear(start.getFullYear() - 1);
+
       // 2. Appliquer l'offset (1 unité = 3 mois)
       start.setMonth(startMonth + (offset * 3), 1);
       start.setHours(0, 0, 0, 0);

@@ -66,23 +66,35 @@ export default function ProfilePage({ id }: { id: string }) {
   useEffect(() => {
     if (!id || id === 'undefined') return;
     
+    // Si l'id change pendant un chargement, la réponse de l'ancien profil est ignorée
+    let cancelled = false;
+
     const loadData = async () => {
       setLoading(true);
       setError(null);
       try {
-        setProfile(await getProfile(id));
+        const data = await getProfile(id);
+        if (cancelled) return;
+        setProfile(data);
         loadTops(id);
       }
-      catch (err: any) {setError(err instanceof ApiError ? err : new ApiError(err.status,dict.unknownError))}
-      finally {setLoading(false)}
+      catch (err: any) {
+        if (!cancelled) setError(err instanceof ApiError ? err : new ApiError(err?.status ?? 500, dict.unknownError));
+      }
+      finally {if (!cancelled) setLoading(false)}
     };
 
     const loadTops = async (profileId: string) => {
-      try {setTopData(await getTopDataProfile(profileId))}
+      try {
+        const tops = await getTopDataProfile(profileId);
+        if (!cancelled) setTopData(tops);
+      }
       catch (err) {console.error("Erreur lors du chargement des tops", err)}
     };
 
     loadData();
+    return () => { cancelled = true };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const totalDays = profile ? Math.floor(profile.total_minutes / 1440) : 0;
@@ -97,7 +109,11 @@ export default function ProfilePage({ id }: { id: string }) {
     } catch (err) {toast.error(dict.copyError)}
   };
 
-  if (error instanceof ApiError && error.status === 404) return <ErrorState title={dict.notFound} status={error.status}/>;
+  if (error) {
+    return error.status === 404
+      ? <ErrorState title={dict.notFound} status={error.status}/>
+      : <ErrorState status={error.status} message={error.message}/>;
+  }
   if (loading || !profile) return <ProfileSkeleton/>;
   return (
     <div className={PROFILE_STYLES.MAIN_WRAPPER}>
@@ -125,7 +141,7 @@ export default function ProfilePage({ id }: { id: string }) {
                 {dict.followBtn}
               </SecondaryButton>
             )}
-            <SecondaryButton additional="p-3" onClick={handleShare}>
+            <SecondaryButton additional="p-3" onClick={handleShare} ariaLabel={dict.shareBtn}>
               <ShareIcon size={20} />
             </SecondaryButton>
           </div>
@@ -152,19 +168,20 @@ export default function ProfilePage({ id }: { id: string }) {
 
         {profile.perms.dashboard && (
           <div className="flex justify-end mb-8">
-            <span
+            <button
+              type="button"
               onClick={() => router.push(`/profile/dashboard/${id}`)}
               className={`text3 ${GENERAL_STYLES.TRANSITION_TEXT_VERT} ${GENERAL_STYLES.TRANSITION_ZOOM} flex gap-2 px-2 text-sm font-medium cursor-pointer`}
-            ><BarChart3 size={18}/> {dict.detailedStats}</span>
+            ><BarChart3 size={18}/> {dict.detailedStats}</button>
           </div>
         )}
 
         {/* SECTIONS TOP 50 HORIZONTALES */}
-        {(profile.perms.favorites && profile.top_50_tracks.length > 0) && (
+        {(profile.perms.favorites && (profile.top_50_tracks.length > 0 || profile.top_50_albums.length > 0 || profile.top_50_artists.length > 0)) && (
           <div className="mt-8 space-y-20">
-            <HorizontalTopSection title={dict.topTracks} items={profile.top_50_tracks}/>
-            <HorizontalTopSection title={dict.topAlbums} items={profile.top_50_albums}/>
-            <HorizontalTopSection title={dict.topArtists} items={profile.top_50_artists}/>
+            {profile.top_50_tracks.length > 0 && <HorizontalTopSection title={dict.topTracks} items={profile.top_50_tracks}/>}
+            {profile.top_50_albums.length > 0 && <HorizontalTopSection title={dict.topAlbums} items={profile.top_50_albums}/>}
+            {profile.top_50_artists.length > 0 && <HorizontalTopSection title={dict.topArtists} items={profile.top_50_artists}/>}
           </div>
         )}
         
@@ -174,7 +191,7 @@ export default function ProfilePage({ id }: { id: string }) {
             <h2 className={PROFILE_STYLES.SECTION_TITLE}>{dict.recentHistory}</h2>
             <div className="md:max-h-[500px] md:overflow-y-auto md:pr-2 md:custom-scrollbar">
               <div className="space-y-2">
-                {profile.top_50_tracks.length === 0 ? (
+                {profile.recent_tracks.length === 0 ? (
                   <div className={PROFILE_STYLES.TRACK_ITEM}>
                     <p className={PROFILE_STYLES.TRACK_NAME}>{dict.noHistory}</p>
                   </div>

@@ -2,12 +2,19 @@ import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { useLanguage } from "@/app/context/languageContext";
 import { TopStatCardProps } from "@/app/data/DataInfos";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function HorizontalTopSection({ title, items }: { title: string, items: any[] }) {
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const { t } = useLanguage();
   const dict = t.common;
+  // Échap ferme la modale
+  useEffect(() => {
+    if (!selectedItem) return;
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setSelectedItem(null) };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [selectedItem]);
   const RATING = (rating: number) => {
     const color = rating >= 1.35 ? `text2` : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
     return `text-3xl font-mono font-bold text-center ${color}`;
@@ -23,7 +30,12 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
       <>
         <div className="flex overflow-x-auto gap-4 pb-6 snap-x no-scrollbar">
           {items.map((item, index) => (
-            <div key={index} className="flex-shrink-0 w-[100px] md:w-[120px] snap-start group cursor-pointer" onClick={() => setSelectedItem(item)}>
+            <div key={index} role="button" tabIndex={0} className="flex-shrink-0 w-[100px] md:w-[120px] snap-start group cursor-pointer"
+              onClick={() => setSelectedItem(item)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedItem(item) }
+              }}
+            >
               {/* Image avec Overlay de Rank */}
               <div className="relative aspect-square mb-3 overflow-hidden rounded-xl shadow-lg border border-white/5">
                 <img src={item.image_url} alt={item.name}
@@ -44,7 +56,7 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
         {/* --- POPUP (MODALE) --- */}
         <AnimatePresence>
           {selectedItem && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={selectedItem.name}>
               {/* Overlay sombre */}
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -100,6 +112,7 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
                   </div>
 
                   <button 
+                    autoFocus
                     onClick={() => setSelectedItem(null)}
                     className="mt-8 text-xs uppercase tracking-widest font-bold text-gray-500 hover:text-white transition-colors"
                   >{t.ranking.closeBtn}</button>
