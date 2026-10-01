@@ -114,4 +114,38 @@ describe("FAQPage", () => {
       expect(faq.q8).toBeUndefined();
     }
   });
+
+  describe("hauteur du panneau de réponse", () => {
+    const panel = (i: number) => document.getElementById(getItems()[i].getAttribute("aria-controls")!)!;
+
+    it("n'impose aucune hauteur maximale fixe (une réponse longue ne peut pas être coupée)", () => {
+      render(<FAQPage />);
+      for (let i = 0; i < getItems().length; i++) expect(panel(i).className).not.toMatch(/max-h-/);
+    });
+
+    it("le panneau ouvert s'étend à la hauteur de son contenu, les autres sont repliés", () => {
+      render(<FAQPage />);
+      expect(panel(0).className).toContain("grid-rows-[1fr]");
+      expect(panel(1).className).toContain("grid-rows-[0fr]");
+    });
+
+    it("ouvrir une question déplie son panneau et replie le précédent", async () => {
+      const user = userEvent.setup();
+      render(<FAQPage />);
+      await user.click(getItems()[3]);
+      expect(panel(3).className).toContain("grid-rows-[1fr]");
+      expect(panel(0).className).toContain("grid-rows-[0fr]");
+    });
+
+    it("le contenu est dans un conteneur qui masque le débordement pendant l'animation", () => {
+      render(<FAQPage />);
+      expect(panel(0).firstElementChild!.className).toContain("overflow-hidden");
+    });
+
+    it("la réponse complète reste dans le DOM, sans troncature du texte", () => {
+      render(<FAQPage />);
+      const answer = (languages.fr.faq as Record<string, string>).a5;
+      expect(panel(4).textContent).toBe(answer);
+    });
+  });
 });

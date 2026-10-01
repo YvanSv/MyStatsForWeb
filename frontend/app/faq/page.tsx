@@ -70,10 +70,13 @@ export default function FAQPage() {
               aria-labelledby={`faq-question-${index}`}
               aria-hidden={openIndex !== index}
               inert={openIndex !== index}
-              className={`transition-all duration-500 ease-in-out ${openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+              // Hauteur animée par grid-template-rows (0fr -> 1fr) : elle s'adapte au texte, aucune réponse n'est coupée
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-in-out motion-reduce:transition-none ${openIndex === index ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
             >
-              <div className="p-6 pt-2 text-gray-500 leading-relaxed font-jost border-t border-white/5 bg-white/[0.01]">
-                {answer}
+              <div className="overflow-hidden">
+                <div className="p-6 pt-2 text-gray-500 leading-relaxed font-jost border-t border-white/5 bg-white/[0.01]">
+                  {answer}
+                </div>
               </div>
             </div>
           </div>
