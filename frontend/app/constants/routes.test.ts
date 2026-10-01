@@ -113,6 +113,34 @@ describe("API_ENDPOINTS – URL de base", () => {
     expect(API_ENDPOINTS.ME).toBe(`${BASE}/auth/me`);
   });
 
+  describe("en production", () => {
+    const loadInProduction = async (apiUrl?: string) => {
+      vi.stubEnv("NODE_ENV", "production");
+      return loadRoutes(apiUrl);
+    };
+
+    it("échoue avec un message clair quand NEXT_PUBLIC_API_URL est absente ou vide", async () => {
+      await expect(loadInProduction(undefined)).rejects.toThrow(/NEXT_PUBLIC_API_URL doit être définie en production/);
+      await expect(loadInProduction("")).rejects.toThrow(/NEXT_PUBLIC_API_URL/);
+    });
+
+    it("échoue aussi quand la variable ne contient que des espaces", async () => {
+      await expect(loadInProduction("   ")).rejects.toThrow(/NEXT_PUBLIC_API_URL/);
+    });
+
+    it("n'utilise jamais localhost : une URL définie est utilisée telle quelle", async () => {
+      const { API_ENDPOINTS } = await loadInProduction("https://api.mystats.app/");
+      expect(API_ENDPOINTS.LOGIN).toBe("https://api.mystats.app/auth/login");
+      expect(Object.values(API_ENDPOINTS).some((u) => u.includes("127.0.0.1"))).toBe(false);
+    });
+  });
+
+  it("en développement et en test, l'URL locale par défaut reste disponible", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const { API_ENDPOINTS } = await loadRoutes(undefined);
+    expect(API_ENDPOINTS.ME).toBe(`${BASE}/auth/me`);
+  });
+
   it("dérive tous les endpoints de la même base", async () => {
     const { API_ENDPOINTS } = await loadRoutes("https://api.mystats.app");
     for (const url of Object.values(API_ENDPOINTS)) expect(url.startsWith("https://api.mystats.app/")).toBe(true);

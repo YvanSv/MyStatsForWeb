@@ -1,5 +1,9 @@
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+// En production, une URL absente ferait contacter localhost sans le moindre message : on échoue dès le build
+if (!configuredApiUrl && process.env.NODE_ENV === "production")
+  throw new Error("NEXT_PUBLIC_API_URL doit être définie en production (URL du backend, ex. https://api.exemple.fr).");
 // Sans slash final, pour ne pas produire « http://hote//auth » quand la variable en contient un
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+const API_BASE_URL = (configuredApiUrl || "http://127.0.0.1:8000").replace(/\/+$/, "");
 const API_AUTH = API_BASE_URL+"/auth";
 const API_IMPORT = API_BASE_URL+"/import";
 const API_MY_DATA = API_BASE_URL+"/data/my";
