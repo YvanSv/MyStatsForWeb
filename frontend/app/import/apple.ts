@@ -1,0 +1,61 @@
+import { AppleCSVRow, CleanAppleData } from "../data/DataInfos";
+
+// Une ligne de l'export Apple résume une heure : au plus une écoute par seconde, donc 3600 par ligne.
+// Au-delà, les minutes dépasseraient 59 (date invalide) et une valeur aberrante pourrait saturer la mémoire.
+export const MAX_PLAYS_PER_ROW = 3600;
+// Taille maximale d'un envoi au serveur : borne le corps de chaque requête
+export const UPLOAD_BATCH_SIZE = 5000;
+// En dessous de 30 s par écoute, on considère que le morceau n'a pas été réellement écouté
+export const MIN_PLAY_MS = 30000;
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Transforme une ligne de l'export Apple en autant d'écoutes que de lectures, réparties à la seconde dans l'heure.
+ * Renvoie [] pour une ligne à ignorer (sans identifiant ou écoute trop courte) et lève une erreur pour une date ou une heure invalide.
+ * Les dates sont envoyées avec le suffixe « Z » (UTC), comme le serveur les attend.
+ */
+export function appleRowToPlays(row: AppleCSVRow): CleanAppleData[] {
+  const playCount = parseInt(row["Play Count"]) || 1;
+  const totalMs = parseInt(row["Play Duration Milliseconds"]) || 0;
+  if (!row["Track Identifier"] || Math.floor(totalMs / playCount) <= MIN_PLAY_MS) return [];
+  const msPerPlay = Math.floor(totalMs / playCount);
+
+  // Reconstruction de la date de base, validée (un mois 13 ou un jour 32 ferait rejeter tout le lot par le serveur)
+  const rawDate = row["Date Played"] ?? "";
+  if (!/^\d{8}$/.test(rawDate)) throw new Error(`Date invalide : "${rawDate}"`);
+  const year = Number(rawDate.substring(0, 4));
+  const month = Number(rawDate.substring(4, 6));
+  const day = Number(rawDate.substring(6, 8));
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day)
+    throw new Error(`Date invalide : "${rawDate}"`);
+  const hour = parseInt(row["Hours"]) || 0;
+  if (hour < 0 || hour > 23) throw new Error(`Heure invalide : "${row["Hours"]}"`);
+
+  const description = row["Track Description"] || "";
+  const parts = description.split(" - ");
+  const artist = parts.length > 1 ? parts[0] : "Unknown Artist";
+  const song = parts.length > 1 ? parts.slice(1).join(" - ") : description;
+
+  const plays: CleanAppleData[] = [];
+  const count = Math.min(playCount, MAX_PLAYS_PER_ROW);
+  for (let i = 0; i < count; i++) {
+    // Écoutes réparties seconde par seconde dans l'heure (i = 60 -> 00:01:00)
+    plays.push({
+      apple_track_id: String(row["Track Identifier"]),
+      song_name: song,
+      artist_name: artist,
+      played_at: `${rawDate.substring(0, 4)}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(Math.floor(i / 60))}:${pad(i % 60)}.000Z`,
+      ms_played: msPerPlay,
+    });
+  }
+  return plays;
+}
+
+/** Découpe une liste en lots d'au plus `size` éléments. */
+export function toBatches<T>(items: T[], size: number = UPLOAD_BATCH_SIZE): T[][] {
+  const batches: T[][] = [];
+  for (let i = 0; i < items.length; i += size) batches.push(items.slice(i, i + size));
+  return batches;
+}

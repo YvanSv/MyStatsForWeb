@@ -12,6 +12,7 @@ import { API_ENDPOINTS } from "../constants/routes";
 import { useLanguage } from "../context/languageContext";
 import Papa from 'papaparse';
 import { AppleCSVRow, CleanAppleData } from "../data/DataInfos";
+import { appleRowToPlays, toBatches } from "./apple";
 
 export default function ImportPage() {
   return (
@@ -174,7 +175,6 @@ export function ImportContent() {
     onProgress: (processed: number, total: number) => void
   ): Promise<void> => {
     return new Promise((resolve, reject) => {
-      let linesProcessed = 0;
       const totalSize = file.size; // On utilise la taille du fichier pour la progression globale
 
       Papa.parse<AppleCSVRow>(file, {
@@ -187,56 +187,13 @@ export function ImportContent() {
           parser.pause();
           try {
 
-          // 1. Calcul des lignes (on compte tout, même les filtrées, pour la barre de progression)
-          linesProcessed += results.data.length;
-          
-          // 2. Filtrage et Mapping
-          const cleanData = results.data
-            .filter(row => row["Track Identifier"] && Math.floor((parseInt(row["Play Duration Milliseconds"]) || 0) / (parseInt(row["Play Count"]) || 1)) > 30000)
-            .flatMap(row => {
-              const playCount = parseInt(row["Play Count"]) || 1;
-              const totalMs = parseInt(row["Play Duration Milliseconds"]) || 0;
-              const msPerPlay = Math.floor(totalMs / playCount);
-              
-              // Reconstruction de la date de base
-              const rawDate = row["Date Played"] ?? "";
-              if (!/^\d{8}$/.test(rawDate)) throw new Error(`Date invalide : "${rawDate}"`);
-              const year = rawDate.substring(0, 4);
-              const month = rawDate.substring(4, 6);
-              const day = rawDate.substring(6, 8);
-              const hour = (parseInt(row["Hours"]) || 0).toString().padStart(2, '0');
+          // 1. Filtrage et Mapping (une ligne = autant d'écoutes que de lectures, voir apple.ts)
+          const cleanData = results.data.flatMap(appleRowToPlays);
 
-              const description = row["Track Description"] || "";
-              const parts = description.split(" - ");
-              const artist = parts.length > 1 ? parts[0] : "Unknown Artist";
-              const song = parts.length > 1 ? parts.slice(1).join(" - ") : description;
+          // 2. Envoi au backend, par lots pour borner la taille de chaque requête
+          for (const batch of toBatches(cleanData)) await onChunk(batch);
 
-              // On crée un tableau d'écoutes basé sur le playCount
-              const plays = [];
-              for (let i = 0; i < playCount; i++) {
-                // Écoutes réparties seconde par seconde dans l'heure (i = 60 -> 00:01:00)
-                const minutes = Math.floor(i / 60).toString().padStart(2, '0');
-                const seconds = (i % 60).toString().padStart(2, '0');
-                const playedAt = `${year}-${month}-${day}T${hour}:${minutes}:${seconds}.000Z`;
-
-                plays.push({
-                  apple_track_id: String(row["Track Identifier"]),
-                  song_name: song,
-                  artist_name: artist,
-                  played_at: playedAt,
-                  ms_played: msPerPlay
-                });
-              }
-              return plays;
-            })
-
-          // 3. Envoi au backend
-          if (cleanData.length > 0) {
-            console.log("Envoi de", cleanData.length, "écoutes")
-            await onChunk(cleanData);
-          }
-
-          // 4. Notification de progression (basée sur la position du curseur dans le fichier)
+          // 3. Notification de progression (basée sur la position du curseur dans le fichier)
           // meta.cursor donne l'index de l'octet actuel dans le fichier
           onProgress(results.meta.cursor, totalSize);
 

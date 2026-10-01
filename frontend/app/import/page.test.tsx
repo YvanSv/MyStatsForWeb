@@ -451,6 +451,44 @@ describe("ImportContent (import Apple CSV)", () => {
     await waitFor(() => expect(submitBtn()).toBeEnabled());
   });
 
+  it("envoie les écoutes par lots d'au plus 5000, sans en perdre", async () => {
+    h.uploadAppleJson.mockResolvedValue({ added: 1 });
+    render(<ImportContent />);
+    // Deux lignes de 3600 écoutes (une par seconde dans l'heure) : 7200 écoutes au total
+    const big = (id: string, hour: number) => `"${id}","A - B",20240101,${hour},${3600 * 40000},3600`;
+    await start([big("1", 1), big("2", 2)]);
+    await waitFor(() => expect(h.uploadAppleJson).toHaveBeenCalledTimes(2));
+    expect(h.uploadAppleJson.mock.calls.map((c) => c[0].length)).toEqual([5000, 2200]);
+  });
+
+  it("plafonne un Play Count aberrant à 3600 écoutes par ligne (pas de minute ≥ 60)", async () => {
+    h.uploadAppleJson.mockResolvedValue({ added: 1 });
+    render(<ImportContent />);
+    await start([`"1","A - B",20240101,1,${100000 * 40000},100000`]);
+    await waitFor(() => expect(h.uploadAppleJson).toHaveBeenCalled());
+    const plays = h.uploadAppleJson.mock.calls.flatMap((c) => c[0]);
+    expect(plays).toHaveLength(3600);
+    expect(plays.every((p: { played_at: string }) => /T01:[0-5]\d:[0-5]\d\.000Z$/.test(p.played_at))).toBe(true);
+  });
+
+  it("refuse une date impossible (mois 13) avec une erreur, sans rien envoyer", async () => {
+    render(<ImportContent />);
+    await start(['"1","A - B",20241301,1,200000,1']);
+    await waitFor(() => expect(screen.getByText(dict.errorGeneric)).toBeInTheDocument());
+    expect(h.uploadAppleJson).not.toHaveBeenCalled();
+    await waitFor(() => expect(submitBtn()).toBeEnabled());
+  });
+
+  it("ne trace rien dans la console pendant l'import", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    h.uploadAppleJson.mockResolvedValue({ added: 1 });
+    render(<ImportContent />);
+    await start(['"1","A - B",20240101,1,200000,1']);
+    await waitFor(() => expect(h.uploadAppleJson).toHaveBeenCalled());
+    expect(log).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
+
   it("ne reste pas bloqué quand une ligne est mal formée (date manquante)", async () => {
     render(<ImportContent />);
     const user = await selectFiles([new File([`${HEADER}\n"1","A - B",,1,200000,1`], "bad.csv")]);
