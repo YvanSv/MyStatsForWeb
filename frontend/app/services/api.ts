@@ -29,6 +29,18 @@ const isPlainBody = (body: unknown): body is object => {
   return proto === Object.prototype || proto === null;
 };
 
+type UnauthorizedHandler = (endpoint: string) => void;
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+/**
+ * Enregistre la fonction appelée une seule fois par réponse 401 (session expirée ou absente), avant que l'erreur
+ * ne soit levée à l'appelant. Renvoie une fonction qui retire ce gestionnaire.
+ */
+export const setUnauthorizedHandler = (handler: UnauthorizedHandler) => {
+  unauthorizedHandler = handler;
+  return () => { if (unauthorizedHandler === handler) unauthorizedHandler = null };
+};
+
 export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const headers = new Headers(options.headers);
   let finalBody = options.body;
@@ -52,6 +64,10 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      // Un gestionnaire défaillant ne doit jamais masquer l'erreur d'origine
+      try { unauthorizedHandler?.(endpoint) } catch { /* ignoré */ }
+    }
     const errorDetail = await response.json().catch(() => response.statusText);
     throw new ApiError(response.status, errorDetail);
   }

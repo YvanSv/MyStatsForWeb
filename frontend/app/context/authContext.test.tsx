@@ -3,10 +3,13 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { languages } from "../constants/locales/lang";
 import { API_ENDPOINTS } from "../constants/routes";
 import { AuthProvider, useAuth } from "./authContext";
+import { apiRequest } from "../services/api";
 
 // --- Mocks -----------------------------------------------------------------
 
-const h = vi.hoisted(() => ({ request: vi.fn(), push: vi.fn() }));
+const h = vi.hoisted(() => ({ request: vi.fn(), push: vi.fn(), toastError: vi.fn() }));
+
+vi.mock("react-hot-toast", () => ({ default: { error: h.toastError, success: vi.fn() } }));
 
 vi.mock("../hooks/useApi", () => ({ useApi: () => ({ request: h.request }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: h.push }) }));
@@ -363,5 +366,56 @@ describe("AuthProvider – valeur exposée", () => {
     expect(result.current.isLoggedIn).toBe(true);
     await act(async () => { await result.current.logout(); });
     expect(result.current.isLoggedIn).toBe(false);
+  });
+});
+
+describe("AuthProvider – gestion globale du 401", () => {
+  // useApi est simulé : on déclenche un vrai 401 via apiRequest, dont le gestionnaire est enregistré par le provider
+  const unauthorized = async (url: string) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401, statusText: "", json: () => Promise.resolve({ detail: "x" }) }));
+    await act(async () => { await apiRequest(url).catch(() => {}); });
+    vi.unstubAllGlobals();
+  };
+
+  it("déconnecte l'utilisateur et prévient quand une requête de données est refusée (session expirée)", async () => {
+    const { result } = await renderAuth();
+    expect(result.current.user).not.toBeNull();
+    await unauthorized("http://api/data/my/tracks");
+    expect(result.current.user).toBeNull();
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(h.toastError).toHaveBeenCalledWith(languages.fr.api.redirect);
+  });
+
+  it("ne prévient qu'une fois si plusieurs requêtes échouent à la suite", async () => {
+    const { result } = await renderAuth();
+    await unauthorized("http://api/data/my/tracks");
+    await unauthorized("http://api/data/my/artists");
+    expect(result.current.user).toBeNull();
+    expect(h.toastError).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([API_ENDPOINTS.LOGIN, API_ENDPOINTS.REGISTER, API_ENDPOINTS.ME, API_ENDPOINTS.LOGOUT])(
+    "ignore le 401 attendu de %s",
+    async (url) => {
+      const { result } = await renderAuth();
+      await unauthorized(url);
+      expect(result.current.user).not.toBeNull();
+      expect(h.toastError).not.toHaveBeenCalled();
+    },
+  );
+
+  it("ne fait rien (ni message) quand personne n'est connecté", async () => {
+    me = new Error("401");
+    const { result } = await renderAuth();
+    expect(result.current.user).toBeNull();
+    await unauthorized("http://api/data/my/tracks");
+    expect(h.toastError).not.toHaveBeenCalled();
+  });
+
+  it("retire son gestionnaire au démontage du provider", async () => {
+    const { unmount } = await renderAuth();
+    unmount();
+    await unauthorized("http://api/data/my/tracks");
+    expect(h.toastError).not.toHaveBeenCalled();
   });
 });

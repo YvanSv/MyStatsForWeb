@@ -1,5 +1,7 @@
 "use client";
-import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useContext, useRef } from 'react';
+import toast from 'react-hot-toast';
+import { setUnauthorizedHandler } from '@/app/services/api';
 import { useApi } from '@/app/hooks/useApi';
 import { API_ENDPOINTS } from '@/app/constants/routes';
 import { useRouter } from 'next/navigation';
@@ -48,6 +50,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { request } = useApi();
   const router = useRouter();
+  const { t } = useLanguage();
+  const userRef = useRef<AuthResponse | null>(null);
+  useEffect(() => { userRef.current = user }, [user]);
+
+  // Gestion globale du 401 : si une requête d'un utilisateur connecté est refusée, la session a expiré.
+  // On le déconnecte ici ; les pages protégées (ProtectedRoute) le renvoient alors vers /auth.
+  useEffect(() => setUnauthorizedHandler((endpoint) => {
+    // Ces appels renvoient 401 en fonctionnement normal (mauvais identifiants, pas encore de session)
+    const expected = [API_ENDPOINTS.LOGIN, API_ENDPOINTS.REGISTER, API_ENDPOINTS.ME, API_ENDPOINTS.LOGOUT];
+    if (expected.some(e => endpoint.startsWith(e))) return;
+    if (!userRef.current) return;
+    userRef.current = null;
+    setUser(null);
+    toast.error(t.api.redirect);
+  }), [t]);
 
   // Fonction pour récupérer les infos de l'utilisateur
   const refreshUser = useCallback(async () => {

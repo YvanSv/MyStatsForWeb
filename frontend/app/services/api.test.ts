@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, apiRequest } from "./api";
+import { ApiError, apiRequest, setUnauthorizedHandler } from "./api";
 
 // --- ApiError --------------------------------------------------------------
 
@@ -231,5 +231,98 @@ describe("apiRequest – réponses particulières", () => {
     fetchMock.mockResolvedValue(errResponse(500, () => Promise.resolve({})));
     await apiRequest("http://api/test").catch(() => {});
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("apiRequest – gestion globale du 401", () => {
+  const handler = vi.fn();
+  let unsubscribe: () => void;
+
+  beforeEach(() => {
+    handler.mockReset();
+    unsubscribe = setUnauthorizedHandler(handler);
+  });
+  afterEach(() => unsubscribe());
+
+  it("appelle le gestionnaire une fois, avec l'URL demandée, sur une réponse 401", async () => {
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({ detail: "Non connecté" })));
+    await apiRequest("http://api/data").catch(() => {});
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith("http://api/data");
+  });
+
+  it("lève quand même l'ApiError 401 à l'appelant", async () => {
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({ detail: "Non connecté" })));
+    const err = await apiRequest("http://api/data").catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(401);
+    expect(err.message).toBe("Non connecté");
+  });
+
+  it("appelle le gestionnaire avant de lever l'erreur", async () => {
+    const order: string[] = [];
+    handler.mockImplementation(() => order.push("handler"));
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({})));
+    await apiRequest("http://api/data").catch(() => order.push("catch"));
+    expect(order).toEqual(["handler", "catch"]);
+  });
+
+  it.each([400, 403, 404, 422, 500, 503])("n'appelle pas le gestionnaire pour le statut %i", async (status) => {
+    fetchMock.mockResolvedValue(errResponse(status, () => Promise.resolve({})));
+    await apiRequest("http://api/data").catch(() => {});
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("n'appelle pas le gestionnaire pour une réponse réussie", async () => {
+    await apiRequest("http://api/data");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("appelle le gestionnaire même quand le corps de l'erreur n'est pas du JSON", async () => {
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.reject(new SyntaxError("x")), "Unauthorized"));
+    const err = await apiRequest("http://api/data").catch((e) => e);
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(err.message).toBe("Unauthorized");
+  });
+
+  it("un gestionnaire qui plante ne masque pas l'erreur d'origine", async () => {
+    handler.mockImplementation(() => { throw new Error("boom du gestionnaire"); });
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({ detail: "Non connecté" })));
+    const err = await apiRequest("http://api/data").catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.message).toBe("Non connecté");
+  });
+
+  it("le remplacement d'un gestionnaire retire l'ancien", async () => {
+    const second = vi.fn();
+    const off = setUnauthorizedHandler(second);
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({})));
+    await apiRequest("http://api/data").catch(() => {});
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(handler).not.toHaveBeenCalled();
+    off();
+  });
+
+  it("la fonction de retrait désactive le gestionnaire", async () => {
+    unsubscribe();
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({})));
+    await apiRequest("http://api/data").catch(() => {});
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("l'ancien retrait ne supprime pas un gestionnaire plus récent", async () => {
+    const second = vi.fn();
+    const off = setUnauthorizedHandler(second);
+    unsubscribe(); // retrait du premier, déjà remplacé
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({})));
+    await apiRequest("http://api/data").catch(() => {});
+    expect(second).toHaveBeenCalledTimes(1);
+    off();
+  });
+
+  it("sans gestionnaire enregistré, une 401 lève simplement l'ApiError", async () => {
+    unsubscribe();
+    fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({ detail: "x" })));
+    await expect(apiRequest("http://api/data")).rejects.toBeInstanceOf(ApiError);
   });
 });
