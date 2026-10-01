@@ -69,6 +69,16 @@ describe("ProtectedRoute – utilisateur non connecté", () => {
     expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fall%2Ftracks");
   });
 
+  it("conserve la query string d'origine (filtres, tri) dans le retour", () => {
+    h.pathname = "/my/tracks";
+    window.history.pushState({}, "", "/my/tracks?sort=rating&direction=asc&artist=Daft%20Punk");
+    renderRoute();
+    expect(h.push).toHaveBeenCalledWith(
+      `/auth?redirect=${encodeURIComponent("/my/tracks?sort=rating&direction=asc&artist=Daft%20Punk")}`,
+    );
+    window.history.pushState({}, "", "/");
+  });
+
   it("redirige aussi en mode adminOnly", () => {
     renderRoute({ adminOnly: true });
     expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Faccount");

@@ -1,6 +1,7 @@
 "use client";
 
 import { FRONT_ROUTES } from "@/app/constants/routes";
+import { authUrlFor } from "@/app/services/redirect";
 import { useAuth } from "@/app/context/authContext";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -19,9 +20,8 @@ export default function ProtectedRoute({ children, skeleton, adminOnly = false }
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        const searchParams = new URLSearchParams();
-        searchParams.set("redirect", pathname);
-        router.push(`${FRONT_ROUTES.AUTH}?${searchParams.toString()}`);
+        // On garde aussi la query string d'origine (filtres, tri…) : lue ici, côté client uniquement
+        router.push(authUrlFor(pathname + window.location.search));
       } 
       // Vérification supplémentaire pour l'admin
       else if (adminOnly && user.isAdmin !== true) {

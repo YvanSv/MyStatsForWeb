@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import PublicRoute from "./PublicRoute";
 
@@ -67,6 +67,49 @@ describe("PublicRoute", () => {
     h.auth = { user: null, loading: false };
     rerender(makeUi());
     expect(screen.getByTestId("contenu")).toBeInTheDocument();
+    expect(h.push).not.toHaveBeenCalled();
+  });
+});
+
+describe("PublicRoute – retour après connexion (paramètre redirect)", () => {
+  const withRedirect = (value: string | null) =>
+    window.history.pushState({}, "", value === null ? "/auth" : `/auth?redirect=${encodeURIComponent(value)}`);
+  afterEach(() => window.history.pushState({}, "", "/"));
+
+  beforeEach(() => { h.auth = { user: { id: 1 }, loading: false }; });
+
+  it("sans paramètre : page du compte", () => {
+    withRedirect(null);
+    render(makeUi());
+    expect(h.push).toHaveBeenCalledWith("/account");
+  });
+
+  it("renvoie vers la page demandée avant la connexion, query string comprise", () => {
+    withRedirect("/my/tracks?sort=rating");
+    render(makeUi());
+    expect(h.push).toHaveBeenCalledTimes(1);
+    expect(h.push).toHaveBeenCalledWith("/my/tracks?sort=rating");
+  });
+
+  it.each([
+    "https://evil.example/phish",
+    "//evil.example",
+    "/\\evil.example",
+    "javascript:alert(1)",
+    "/auth?redirect=/auth",
+    "profile",
+    "",
+  ])("ignore le retour dangereux ou invalide %j (redirection ouverte)", (value) => {
+    withRedirect(value);
+    render(makeUi());
+    expect(h.push).toHaveBeenCalledTimes(1);
+    expect(h.push).toHaveBeenCalledWith("/account");
+  });
+
+  it("n'agit pas tant que l'utilisateur n'est pas connecté", () => {
+    h.auth = { user: null, loading: false };
+    withRedirect("/my/tracks");
+    render(makeUi());
     expect(h.push).not.toHaveBeenCalled();
   });
 });

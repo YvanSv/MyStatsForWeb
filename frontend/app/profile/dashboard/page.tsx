@@ -4,6 +4,7 @@ import { useAuth } from "@/app/context/authContext";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { FRONT_ROUTES } from "@/app/constants/routes";
+import { authUrlFor } from "@/app/services/redirect";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading)
       if (isLoggedIn && user?.id) router.push(`${FRONT_ROUTES.DASHBOARD}/${!user.slug || user.slug === "" ? user.id : user.slug}`);
-      else router.push('/auth');
+      else router.push(authUrlFor(FRONT_ROUTES.DASHBOARD));
   }, [isLoggedIn, user, router, loading]);
 
   return (

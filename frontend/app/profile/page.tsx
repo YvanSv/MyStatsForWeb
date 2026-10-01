@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/app/context/authContext";
 import { useRouter } from "next/navigation";
 import { FRONT_ROUTES } from "@/app/constants/routes";
+import { authUrlFor } from "@/app/services/redirect";
 import { ProfileSkeleton } from "./[id]/Skeleton";
 
 export default function DashboardPage() {
@@ -12,7 +13,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading)
       if (isLoggedIn && user?.id) router.push(`${FRONT_ROUTES.PROFILE}/${!user.slug || user.slug === "" ? user.id : user.slug}`);
-      else router.push('/auth');
+      else router.push(authUrlFor(FRONT_ROUTES.PROFILE));
   }, [isLoggedIn, user, router, loading]);
 
   return <ProfileSkeleton/>;

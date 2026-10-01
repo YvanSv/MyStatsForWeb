@@ -46,19 +46,19 @@ describe("profile/page (redirection vers son profil)", () => {
   it("redirige vers /auth si l'utilisateur n'est pas connecté", () => {
     h.auth = { isLoggedIn: false, loading: false, user: null };
     render(<DashboardPage />);
-    expect(h.push).toHaveBeenCalledWith("/auth");
+    expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fprofile");
   });
 
   it("redirige vers /auth si connecté mais sans utilisateur", () => {
     h.auth = { isLoggedIn: true, loading: false, user: null };
     render(<DashboardPage />);
-    expect(h.push).toHaveBeenCalledWith("/auth");
+    expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fprofile");
   });
 
   it("redirige vers /auth si l'utilisateur n'a pas d'id", () => {
     h.auth = { isLoggedIn: true, loading: false, user: { slug: "x" } };
     render(<DashboardPage />);
-    expect(h.push).toHaveBeenCalledWith("/auth");
+    expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fprofile");
   });
 
   it("redirige une fois le chargement terminé", () => {

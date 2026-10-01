@@ -60,31 +60,31 @@ describe("DashboardPage (redirection)", () => {
   it("redirige vers /auth quand l'utilisateur n'est pas connecté", () => {
     h.auth = { isLoggedIn: false, user: null, loading: false };
     render(<DashboardPage />);
-    expect(h.push).toHaveBeenCalledWith("/auth");
+    expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fprofile%2Fdashboard");
   });
 
   it("redirige vers /auth quand connecté sans utilisateur", () => {
     h.auth = { isLoggedIn: true, user: null, loading: false };
     render(<DashboardPage />);
-    expect(h.push).toHaveBeenCalledWith("/auth");
+    expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fprofile%2Fdashboard");
   });
 
   it("redirige vers /auth quand l'utilisateur n'a pas d'id", () => {
     h.auth = { isLoggedIn: true, user: { slug: "yvan" }, loading: false };
     render(<DashboardPage />);
-    expect(h.push).toHaveBeenCalledWith("/auth");
+    expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fprofile%2Fdashboard");
   });
 
   it("redirige vers /auth quand l'id vaut 0", () => {
     h.auth = { isLoggedIn: true, user: { id: 0, slug: "" }, loading: false };
     render(<DashboardPage />);
-    expect(h.push).toHaveBeenCalledWith("/auth");
+    expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fprofile%2Fdashboard");
   });
 
   it("redirige vers /auth quand l'id existe mais que l'utilisateur est déconnecté", () => {
     h.auth = { isLoggedIn: false, user: { id: 7, slug: "yvan" }, loading: false };
     render(<DashboardPage />);
-    expect(h.push).toHaveBeenCalledWith("/auth");
+    expect(h.push).toHaveBeenCalledWith("/auth?redirect=%2Fprofile%2Fdashboard");
   });
 
   it("redirige une fois le chargement terminé", () => {
