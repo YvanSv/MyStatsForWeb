@@ -163,6 +163,36 @@ describe("ImportContent (sélection de fichiers)", () => {
     expect(submitBtn()).toBeDisabled();
   });
 
+  it("vide le champ fichier après un refus, pour que re-choisir le même fichier redéclenche la sélection", async () => {
+    render(<ImportContent />);
+    await selectFiles([new File(["x"], "notes.txt")]);
+    expect(screen.getByText(dict.errorJsonOnly)).toBeInTheDocument();
+    expect(getInput().value).toBe("");
+  });
+
+  it("vide aussi le champ après un mélange .json/.csv refusé", async () => {
+    render(<ImportContent />);
+    await selectFiles([jsonFile("a.json"), csvFile([], "b.csv")]);
+    expect(getInput().value).toBe("");
+  });
+
+  it("vide le champ après une sélection valide et garde bien les fichiers choisis", async () => {
+    render(<ImportContent />);
+    await selectFiles([jsonFile("a.json"), jsonFile("b.json")]);
+    expect(getInput().value).toBe("");
+    expect(screen.getByText("a.json")).toBeInTheDocument();
+    expect(screen.getByText("b.json")).toBeInTheDocument();
+  });
+
+  it("re-choisir le même fichier invalide affiche de nouveau l'erreur après qu'elle a été effacée", async () => {
+    render(<ImportContent />);
+    const user = await selectFiles([new File(["x"], "notes.txt")]);
+    await user.upload(getInput(), jsonFile());
+    expect(screen.queryByText(dict.errorJsonOnly)).toBeNull();
+    await user.upload(getInput(), new File(["x"], "notes.txt"));
+    expect(screen.getByText(dict.errorJsonOnly)).toBeInTheDocument();
+  });
+
   it("efface l'erreur quand une sélection valide suit une sélection invalide", async () => {
     render(<ImportContent />);
     const user = await selectFiles([new File(["x"], "notes.txt")]);

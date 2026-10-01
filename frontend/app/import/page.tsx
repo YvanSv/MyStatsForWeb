@@ -73,6 +73,10 @@ export function ImportContent() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
+      // On vide le champ dans tous les cas (même après un refus) : sans cela, re-choisir le même fichier
+      // ne déclencherait pas de nouvel événement change. Les File sont déjà copiés dans le tableau.
+      e.target.value = "";
+
       // Tous les fichiers doivent avoir la même extension (.json Spotify ou .csv Apple)
       const extensions = new Set(selectedFiles.map(f => f.name.toLowerCase().split('.').pop()));
       const valid = extensions.size === 1 && (extensions.has('json') || extensions.has('csv'));
@@ -81,7 +85,6 @@ export function ImportContent() {
       setFiles(selectedFiles);
       setError("");
       setSuccess("");
-      e.target.value = "";
     }
   };
 
