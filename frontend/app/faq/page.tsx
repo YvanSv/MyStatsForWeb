@@ -65,9 +65,13 @@ export default function FAQPage() {
             key={index}
             className="border border-white/5 bg-white/[0.02] rounded-xl overflow-hidden transition-all duration-300 hover:border-white/10"
           >
-            <div
+            <button
+              type="button"
+              id={`faq-question-${index}`}
+              aria-expanded={openIndex === index}
+              aria-controls={`faq-answer-${index}`}
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              className="w-full flex items-center justify-between p-6 text-left group"
+              className="w-full flex items-center justify-between p-6 text-left group cursor-pointer"
             >
               <div className="flex items-center gap-4">
                 <span className="transition-transform duration-300 group-hover:scale-110">
@@ -80,10 +84,16 @@ export default function FAQPage() {
               <ChevronDown 
                 className={`text-gray-600 transition-transform duration-500 ${openIndex === index ? 'rotate-180 text-white' : ''}`} 
                 size={20} 
+                aria-hidden="true"
               />
-            </div>
+            </button>
 
-            <div 
+            <div
+              id={`faq-answer-${index}`}
+              role="region"
+              aria-labelledby={`faq-question-${index}`}
+              aria-hidden={openIndex !== index}
+              inert={openIndex !== index}
               className={`transition-all duration-500 ease-in-out ${openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
             >
               <div className="p-6 pt-2 text-gray-500 leading-relaxed font-jost border-t border-white/5 bg-white/[0.01]">
