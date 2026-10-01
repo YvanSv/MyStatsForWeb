@@ -9,6 +9,8 @@ import { useApiAdmin } from '../../action';
 import { CreateRequest } from '@/app/data/admin-interfaces';
 import { TrackHistory, TrackMapping } from '@/app/data/interfaces';
 import { useLanguage } from '@/app/context/languageContext';
+import { TOAST_STYLE } from "@/app/constants/ui";
+import toast from "react-hot-toast";
 
 // --- COMPOSANTS UI UTILITAIRES ---
 
@@ -87,7 +89,7 @@ export default function CreateRequestDetailPage() {
       router.push(FRONT_ROUTES.ADMIN_CREATE_REQUESTS); 
       router.refresh();
     } catch (err) {
-      alert(t.admin.createDetail.resolveError);
+      toast.error(t.admin.createDetail.resolveError, { style: TOAST_STYLE });
       console.error(err);
     } finally {
       setResolving(false);

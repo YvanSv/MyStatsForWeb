@@ -949,3 +949,46 @@ describe("AccountPage – rafraîchissement du compte et saisies en cours", () =
     expect(mockAuth.updateUserProfile).toHaveBeenCalledWith({ username: "Ma saisie" });
   });
 });
+
+describe("AccountPage – accessibilité", () => {
+  it("relie chaque libellé à son champ", () => {
+    render(<AccountPage />);
+    expect(screen.getByLabelText(dict.titleDisplayname)).toBe(nameInput());
+    expect(screen.getByLabelText(dict.emailtitle)).toBe(emailInput());
+    expect(screen.getByLabelText(dict.passwordtitle)).toBe(pwInput());
+    expect(screen.getByLabelText(dict.confirmpwtitle)).toBe(confirmInput());
+  });
+
+  it("l'erreur du nom est une alerte reliée au champ (aria-describedby, aria-invalid)", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    expect(nameInput()).not.toHaveAttribute("aria-invalid", "true");
+    await typeInto(user, nameInput(), "ab");
+    expect(screen.getByRole("alert")).toHaveTextContent(dict.errorName1);
+    expect(nameInput()).toHaveAttribute("aria-invalid", "true");
+    expect(nameInput()).toHaveAccessibleDescription(dict.errorName1);
+  });
+
+  it("les erreurs du mot de passe et de la confirmation sont reliées à leur champ", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await typeInto(user, pwInput(), "abc");
+    expect(pwInput()).toHaveAttribute("aria-invalid", "true");
+    expect(pwInput()).toHaveAccessibleDescription(dict.errorPw1);
+    await typeInto(user, pwInput(), "motdepasse1");
+    await typeInto(user, confirmInput(), "autre");
+    expect(confirmInput()).toHaveAttribute("aria-invalid", "true");
+    expect(confirmInput()).toHaveAccessibleDescription(dict.errorPw3);
+  });
+
+  it("les boutons œil ont un nom accessible et un état aria-pressed", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    const [eye1] = screen.getAllByRole("button", { name: dict.showPassword });
+    expect(eye1).toHaveAttribute("aria-pressed", "false");
+    await user.click(eye1);
+    const hide = screen.getByRole("button", { name: dict.hidePassword });
+    expect(hide).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getAllByRole("button", { name: dict.showPassword })).toHaveLength(1);
+  });
+});

@@ -3,19 +3,17 @@ import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { useLanguage } from "@/app/context/languageContext";
 import { TopStatCardProps } from "@/app/data/DataInfos";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useFocusTrap } from "@/app/hooks/useFocusTrap";
 
 export function HorizontalTopSection({ title, items }: { title: string, items: any[] }) {
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const { t } = useLanguage();
   const dict = t.common;
-  // Échap ferme la modale
-  useEffect(() => {
-    if (!selectedItem) return;
-    const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setSelectedItem(null) };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [selectedItem]);
+  // Focus piégé dans la modale, Échap la ferme, le focus revient au déclencheur
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeModal = useCallback(() => setSelectedItem(null), []);
+  useFocusTrap(dialogRef, !!selectedItem, closeModal);
   const RATING = (rating: number) => {
     const color = rating >= RATING_GOOD ? `text2` : rating >= RATING_AVERAGE ? 'text-jaune' : 'text-rouge';
     return `text-3xl font-mono font-bold text-center ${color}`;
@@ -59,7 +57,7 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
         {/* --- POPUP (MODALE) --- */}
         <AnimatePresence>
           {selectedItem && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={selectedItem.name}>
+            <div ref={dialogRef} className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={selectedItem.name}>
               {/* Overlay sombre */}
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -83,7 +81,7 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
 
                 <div className="relative p-8 flex flex-col items-center">
                   {selectedItem.image_url
-                    ? <img src={selectedItem.image_url} alt="" className="w-32 h-32 rounded-2xl shadow-2xl mb-6 border border-white/10" />
+                    ? <img src={selectedItem.image_url} alt={selectedItem.name} className="w-32 h-32 rounded-2xl shadow-2xl mb-6 border border-white/10" />
                     : <div data-testid="modal-image-fallback" className="w-32 h-32 rounded-2xl mb-6 border border-white/10 bg-white/5"/>}
                   
                   <h3 className="text-2xl font-black text-white text-center mb-1">{selectedItem.name}</h3>
@@ -119,7 +117,6 @@ export function HorizontalTopSection({ title, items }: { title: string, items: a
                   </div>
 
                   <button 
-                    autoFocus
                     onClick={() => setSelectedItem(null)}
                     className="mt-8 text-xs uppercase tracking-widest font-bold text-gray-500 hover:text-white transition-colors"
                   >{t.ranking.closeBtn}</button>

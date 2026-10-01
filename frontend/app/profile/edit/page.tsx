@@ -209,11 +209,11 @@ function EditProfileContent() {
   // Retourne true si l'image est acceptable ; sinon prévient l'utilisateur (le serveur revérifie de toute façon)
   const checkImage = (file: File) => {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      alert(dict.errorImageType);
+      toast.error(dict.errorImageType, { style: TOAST_STYLE });
       return false;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      alert(dict.errorWeight);
+      toast.error(dict.errorWeight, { style: TOAST_STYLE });
       return false;
     }
     return true;
@@ -253,8 +253,10 @@ function EditProfileContent() {
   // Sans profil chargé, le formulaire serait vide et l'enregistrement écraserait le vrai profil
   if (loadFailed) {
     return (
-      <main className={PROFILE_EDIT_STYLES.MAIN} role="alert">
-        <ErrorState message={dict.errorLoad} onRetry={retryLoad}/>
+      <main className={PROFILE_EDIT_STYLES.MAIN}>
+        <div role="alert">
+          <ErrorState message={dict.errorLoad} onRetry={retryLoad}/>
+        </div>
       </main>
     );
   }
@@ -304,14 +306,14 @@ function EditProfileContent() {
                 ${(formData.display_name || "").length < NAME_MIN ? 'text-rouge' : (formData.display_name || "").length > NAME_WARN ? (formData.display_name.length > NAME_DANGER ? (formData.display_name.length >= NAME_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.display_name?.length || 0)}/{NAME_MAX}</p>
             </div>
-            <input id="profile-name" type="text" className={PROFILE_EDIT_STYLES.INPUT} value={formData.display_name}
+            <input id="profile-name" type="text" aria-invalid={!!errors.errorName} aria-describedby={errors.errorName ? "profile-name-err" : undefined} className={PROFILE_EDIT_STYLES.INPUT} value={formData.display_name}
               onChange={(e) => {
                 const value = e.target.value;
                 setFormData(prev => ({ ...prev, display_name: value }));
               }}
               placeholder={dict.placeholderName}
             />
-            {errors.errorName && (<label className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorName}</label>)}
+            {errors.errorName && (<p id="profile-name-err" role="alert" className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorName}</p>)}
           </div>
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
@@ -321,14 +323,14 @@ function EditProfileContent() {
                 ${(formData.bio || "").length > BIO_WARN ? (formData.bio.length > BIO_DANGER ? (formData.bio.length >= BIO_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(formData.bio?.length || 0)}/{BIO_MAX}</p>
             </div>
-            <textarea id="profile-bio" rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
+            <textarea id="profile-bio" rows={4} aria-invalid={!!errors.errorBio} aria-describedby={errors.errorBio ? "profile-bio-err" : undefined} className={PROFILE_EDIT_STYLES.TEXTAREA}
               value={formData.bio} placeholder={dict.placeholderBio}
               onChange={(e) => {
                 const value = e.target.value;
                 setFormData(prev => ({ ...prev, bio: value }));
               }}
             />
-            {errors.errorBio && (<label className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorBio}</label>)}
+            {errors.errorBio && (<p id="profile-bio-err" role="alert" className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorBio}</p>)}
           </div>
 
           <div className={PROFILE_EDIT_STYLES.FIELD_GROUP}>
@@ -344,7 +346,7 @@ function EditProfileContent() {
                 {SITE_HOST}/profile/
               </span>
               
-              <input id="profile-slug" type="text" className={`${PROFILE_EDIT_STYLES.INPUT} text-md tracking-wider`} style={{ paddingLeft: SLUG_PREFIX_PADDING }}
+              <input id="profile-slug" type="text" aria-invalid={!!errors.errorSlug} aria-describedby={errors.errorSlug ? "profile-slug-err" : undefined} className={`${PROFILE_EDIT_STYLES.INPUT} text-md tracking-wider`} style={{ paddingLeft: SLUG_PREFIX_PADDING }}
                 value={formData.slug || ""} placeholder={dict.placeholderUrl}
                 onChange={(e) => {
                   // Normalisation seulement : les valeurs invalides sont signalées par une erreur, pas ignorées
@@ -354,7 +356,7 @@ function EditProfileContent() {
               />
             </div>
             <p className="text-[10px] text-white/40 mt-2 ml-1">{dict.urlHint}</p>
-            {errors.errorSlug && (<label htmlFor="profile-slug" className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorSlug}</label>)}
+            {errors.errorSlug && (<p id="profile-slug-err" role="alert" className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorSlug}</p>)}
           </div>
 
           {/* --- RÉGLAGES PRIVAUTÉ --- */}
@@ -381,7 +383,7 @@ function EditProfileContent() {
 
           {/* --- ACTIONS --- */}
           <div className={PROFILE_EDIT_STYLES.FOOTER}>
-            <button onClick={() => router.back()} className={PROFILE_EDIT_STYLES.BTN_CANCEL}>
+            <button type="button" onClick={() => router.back()} className={PROFILE_EDIT_STYLES.BTN_CANCEL}>
               {dict.btnCancel}
             </button>
             <PrimaryButton onClick={handleSave} additional="px-6 py-2.5" disabled={hasError || saving}>

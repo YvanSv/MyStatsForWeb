@@ -112,6 +112,16 @@ describe("ImportContent (affichage)", () => {
     expect(screen.getByText(dict.footerHint)).toBeInTheDocument();
   });
 
+  it("le champ fichier a un nom accessible traduit et reste focalisable au clavier", async () => {
+    render(<ImportContent />);
+    const input = screen.getByLabelText(dict.fileInputLabel);
+    expect(input).toBe(getInput());
+    expect(input.className).not.toContain("hidden");
+    await userEvent.setup().tab();
+    expect(input).toHaveFocus();
+    expect(input.className).toContain("peer");
+  });
+
   it("le lien externe s'ouvre dans un nouvel onglet sans donner accès à window.opener", () => {
     render(<ImportContent />);
     const link = screen.getByRole("link", { name: /spotify\.com\/account\/privacy/ });

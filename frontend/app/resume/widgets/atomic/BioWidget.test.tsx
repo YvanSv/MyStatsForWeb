@@ -218,35 +218,36 @@ describe("BioSettings", () => {
 
   describe("palette de couleurs", () => {
     const COLORS = ["#9CA3AF", "#FFFFFF", "#1DB954", "#38BDF8", "#F1C40F"];
+    const NAMES: Record<string, string> = { "#9CA3AF": "Gris", "#FFFFFF": "Blanc", "#1DB954": "Vert", "#38BDF8": "Bleu ciel", "#F1C40F": "Jaune" };
 
     it("propose les couleurs attendues, la première étant le gris par défaut du rendu", () => {
       render(<BioSettings settings={{}} onChange={onChange} />);
-      for (const c of COLORS) expect(screen.getByRole("button", { name: c })).toBeInTheDocument();
+      for (const c of COLORS) expect(screen.getByRole("button", { name: NAMES[c] })).toBeInTheDocument();
     });
 
     it.each(COLORS)("clic sur %s : onChange avec fusion des réglages", async (c) => {
       render(<BioSettings settings={{ fontSize: "text-[13px]" }} onChange={onChange} />);
-      await userEvent.click(screen.getByRole("button", { name: c }));
+      await userEvent.click(screen.getByRole("button", { name: NAMES[c] }));
       expect(onChange).toHaveBeenCalledWith({ fontSize: "text-[13px]", color: c });
     });
 
     it("marque le gris comme sélectionné quand aucune couleur n'est définie", () => {
       render(<BioSettings settings={{}} onChange={onChange} />);
-      expect(screen.getByRole("button", { name: "#9CA3AF" })).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByRole("button", { name: "#FFFFFF" })).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByRole("button", { name: "Gris" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Blanc" })).toHaveAttribute("aria-pressed", "false");
     });
 
     it("expose la couleur choisie via aria-pressed et la bordure", () => {
       render(<BioSettings settings={{ color: "#1DB954" }} onChange={onChange} />);
-      expect(screen.getByRole("button", { name: "#1DB954" })).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByRole("button", { name: "#1DB954" })).toHaveClass("border-white");
-      expect(screen.getByRole("button", { name: "#9CA3AF" })).toHaveAttribute("aria-pressed", "false");
-      expect(screen.getByRole("button", { name: "#9CA3AF" })).toHaveClass("border-transparent");
+      expect(screen.getByRole("button", { name: "Vert" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Vert" })).toHaveClass("border-white");
+      expect(screen.getByRole("button", { name: "Gris" })).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByRole("button", { name: "Gris" })).toHaveClass("border-transparent");
     });
 
     it("la couleur choisie dans les réglages est appliquée par le widget", async () => {
       render(<BioSettings settings={{}} onChange={onChange} />);
-      await userEvent.click(screen.getByRole("button", { name: "#38BDF8" }));
+      await userEvent.click(screen.getByRole("button", { name: "Bleu ciel" }));
       const next = onChange.mock.calls[0][0];
       render(<BioWidget w={2} h={2} bio="Rendu" settings={next} />);
       expect(screen.getByText("Rendu")).toHaveStyle({ color: "#38BDF8" });

@@ -177,7 +177,7 @@ function AuthContent() {
               onChange={(e) => setRegData({...regData, username: e.target.value})}
               className={AUTH_STYLES.INPUT_FIELD}
             />
-            {registerErrors.username && <p id={`${uid}-reg-username-err`} className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.username}</p>}
+            {registerErrors.username && <p id={`${uid}-reg-username-err`} role="alert" className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.username}</p>}
           </div>
           <div className="space-y-1">
             <label htmlFor={`${uid}-reg-email`} className={AUTH_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
@@ -194,7 +194,7 @@ function AuthContent() {
                 onChange={(e) => setRegData({...regData, password: e.target.value})}
                 className={AUTH_STYLES.INPUT_FIELD} 
               />
-              {registerErrors.password && <p id={`${uid}-reg-pw-err`} className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.password}</p>}
+              {registerErrors.password && <p id={`${uid}-reg-pw-err`} role="alert" className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.password}</p>}
             </div>
             <div className="space-y-1">
               <label htmlFor={`${uid}-reg-confirm`} className={AUTH_STYLES.INPUT_LABEL}>{dict.confirm}</label>
@@ -203,7 +203,7 @@ function AuthContent() {
                 onChange={(e) => setRegData({...regData, confirmPassword: e.target.value})}
                 className={AUTH_STYLES.INPUT_FIELD}
               />
-              {registerErrors.confirm && <p id={`${uid}-reg-confirm-err`} className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.confirm}</p>}
+              {registerErrors.confirm && <p id={`${uid}-reg-confirm-err`} role="alert" className={AUTH_STYLES.FIELD_ERROR}>{registerErrors.confirm}</p>}
             </div>
           </div>
 

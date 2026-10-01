@@ -1,4 +1,5 @@
 import { Pointer } from "lucide-react";
+import { useId } from "react";
 
 const BASE_UI = {
   glass: "bg-white/[0.02] border border-white/5",
@@ -35,15 +36,22 @@ const COMPONENT_STYLES = {
 }
 
 export default function AccordionItem({ title, isOpen, onClick, icon, children, switchOption }: any) {
+  const contentId = useId();
+  // Ouvert : le conteneur n'est plus interactif (pas de handler sur le contenu) ; fermé : il sert de bouton pour ouvrir
+  const triggerProps = isOpen ? {} : {
+    onClick,
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-expanded": false,
+    "aria-controls": contentId,
+    "aria-label": typeof title === 'string' ? title : undefined,
+    onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.target !== e.currentTarget) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
+    },
+  };
   return (
-    <div onClick={onClick} className={COMPONENT_STYLES.accordion.item(isOpen)}
-      role={isOpen ? undefined : "button"} tabIndex={isOpen ? undefined : 0} aria-expanded={isOpen ? undefined : false} aria-label={isOpen || typeof title !== 'string' ? undefined : title}
-      onKeyDown={(e) => {
-        // On ignore les touches venant des éléments interactifs du contenu (ex : interrupteur de métrique)
-        if (e.target !== e.currentTarget) return;
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
-      }}
-    >
+    <div className={COMPONENT_STYLES.accordion.item(isOpen)} {...triggerProps}>
       {/* Label Vertical (Fermé) */}
       <div className={COMPONENT_STYLES.accordion.titleVertical(isOpen)}>
         <span className="lg:rotate-[-90deg] whitespace-nowrap text-gray-500 font-bold uppercase tracking-[0.2em] text-sm flex items-center gap-3">
@@ -61,7 +69,7 @@ export default function AccordionItem({ title, isOpen, onClick, icon, children, 
       </div>
 
       {/* Contenu (Ouvert) */}
-      <div className={COMPONENT_STYLES.accordion.content(isOpen)} aria-hidden={!isOpen}>
+      <div id={contentId} className={COMPONENT_STYLES.accordion.content(isOpen)} aria-hidden={!isOpen} inert={!isOpen}>
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 rounded-xl bg-white/5">{icon}</div>
           <h2 className="text-2xl font-bold">{title}</h2>

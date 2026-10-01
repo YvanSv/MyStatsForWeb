@@ -17,7 +17,9 @@ const h = vi.hoisted(() => ({
   params: { id: "5" } as { id: string },
   getCreateRequestById: vi.fn(),
   resolveCreateRequest: vi.fn(),
+  toastError: vi.fn(),
 }));
+vi.mock("react-hot-toast", () => ({ default: { error: h.toastError } }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: h.push, refresh: h.refresh }),
@@ -71,7 +73,7 @@ beforeEach(() => {
   h.resolveCreateRequest.mockReset();
   h.params = { id: "5" };
   vi.spyOn(console, "error").mockImplementation(() => {});
-  vi.spyOn(window, "alert").mockImplementation(() => {});
+  h.toastError.mockReset();
 });
 
 describe("CreateRequestDetailPage - chargement", () => {
@@ -417,12 +419,12 @@ describe("CreateRequestDetailPage - résolution", () => {
     expect(approve).toBeEnabled();
   });
 
-  it("affiche une alerte et reste sur la page en cas d'échec", async () => {
+  it("affiche un toast d'erreur et reste sur la page en cas d'échec", async () => {
     const user = userEvent.setup();
     h.resolveCreateRequest.mockRejectedValue(new Error("fail"));
     await renderLoaded();
     await user.click(screen.getByRole("button", { name: "Rejeter" }));
-    await waitFor(() => expect(window.alert).toHaveBeenCalledWith("Erreur lors de la résolution."));
+    await waitFor(() => expect(h.toastError).toHaveBeenCalledWith("Erreur lors de la résolution.", expect.objectContaining({ style: expect.any(Object) })));
     expect(h.push).not.toHaveBeenCalled();
     expect(h.refresh).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Rejeter" })).toBeEnabled();
@@ -434,7 +436,7 @@ describe("CreateRequestDetailPage - résolution", () => {
     h.resolveCreateRequest.mockRejectedValueOnce(new Error("fail")).mockResolvedValueOnce({});
     await renderLoaded();
     await user.click(screen.getByRole("button", { name: "Approuver" }));
-    await waitFor(() => expect(window.alert).toHaveBeenCalled());
+    await waitFor(() => expect(h.toastError).toHaveBeenCalled());
     await user.click(screen.getByRole("button", { name: "Approuver" }));
     await waitFor(() => expect(h.push).toHaveBeenCalledWith("/admin/create-requests"));
     expect(h.resolveCreateRequest).toHaveBeenCalledTimes(2);
@@ -484,7 +486,7 @@ afterEach(() => { lang.current = "fr"; });
     const user = userEvent.setup();
     h.resolveCreateRequest.mockRejectedValue(new Error("x"));
     await user.click(screen.getByRole("button", { name: /Approve/ }));
-    await waitFor(() => expect(window.alert).toHaveBeenCalledWith("Error while resolving the request."));
+    await waitFor(() => expect(h.toastError).toHaveBeenCalledWith("Error while resolving the request.", expect.objectContaining({ style: expect.any(Object) })));
   });
 
   it("chargement et requête introuvable en anglais", async () => {

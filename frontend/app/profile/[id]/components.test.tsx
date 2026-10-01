@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { languages } from "../../constants/locales/lang";
@@ -216,5 +216,30 @@ describe("HorizontalTopSection", () => {
     expect(screen.getByRole("button", { name: /Titre A/ })).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(screen.getByRole("heading", { level: 3, name: "Titre A" })).toBeInTheDocument();
+  });
+
+  it("modale : focus sur le bouton fermer, Tab reste dans la modale, focus rendu au déclencheur", async () => {
+    const user = userEvent.setup();
+    render(<HorizontalTopSection title="T" items={[item()]} />);
+    const trigger = screen.getByRole("button", { name: /Titre A/ });
+    await user.click(trigger);
+    const close = screen.getByRole("button", { name: t.ranking.closeBtn });
+    expect(close).toHaveFocus();
+    await user.tab();
+    expect(close).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(close).toHaveFocus();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(trigger).toHaveFocus();
+  });
+
+  it("l'image de la modale a pour alt le nom de l'élément", async () => {
+    const user = userEvent.setup();
+    render(<HorizontalTopSection title="T" items={[item({ image_url: "http://x/a.jpg" })]} />);
+    await user.click(screen.getByText("Titre A"));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(within(dialog).getByRole("img", { name: "Titre A" })).toBeInTheDocument();
   });
 });

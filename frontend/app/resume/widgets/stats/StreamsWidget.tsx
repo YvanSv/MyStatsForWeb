@@ -1,4 +1,5 @@
 import { useLanguage } from "../../../context/languageContext";
+import { colorLabel } from "../../colorNames";
 import Widget from "../Widget";
 import { Play } from "lucide-react";
 import { CustomLabel, ShortenFilter, ShowIconFilter } from "./common_filters";
@@ -41,8 +42,8 @@ export function StreamsSettings({ settings, onChange }: { settings: any, onChang
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAccentColor}</label>
         <div className="flex gap-2">
-          {[COLORS.SPOTIFY_GREEN, COLORS.WHITE, "#38BDF8", "#A855F7"].map(c => (
-            <button key={c} type="button" aria-label={c} aria-pressed={settings?.color === c} onClick={() => update('color', c)}
+          {[COLORS.SPOTIFY_GREEN, COLORS.WHITE, "#38BDF8", "#A855F7"].map((c, i) => (
+            <button key={c} type="button" aria-label={colorLabel(t.resume, c, i)} aria-pressed={settings?.color === c} onClick={() => update('color', c)}
               className={`w-6 h-6 rounded-full border-2 ${settings?.color === c ? 'border-white' : 'border-transparent'}`}
               style={{ backgroundColor: c }}
             />

@@ -1,4 +1,5 @@
 import { useLanguage } from "../../../context/languageContext";
+import { colorLabel } from "../../colorNames";
 import Widget from "../Widget";
 import { COLORS } from "../../../constants/ui";
 
@@ -101,9 +102,9 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wTextColor}</label>
         <div className="flex gap-2">
-          {colors.map(c => (
+          {colors.map((c, i) => (
             <button 
-              key={c} type="button" aria-label={c} aria-pressed={settings?.color === c}
+              key={c} type="button" aria-label={colorLabel(t.resume, c, i)} aria-pressed={settings?.color === c}
               onClick={() => update('color', c)}
               className={`w-6 h-6 rounded-full border-2 ${settings?.color === c ? 'border-white' : 'border-transparent'}`}
               style={{ backgroundColor: c }}

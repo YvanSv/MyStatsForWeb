@@ -512,6 +512,13 @@ describe("DashboardPage [id] : sélection de l'intervalle", () => {
       expect(inputs[1].value).toBe("2026-10-18");
     });
 
+    it("les champs date ont un nom accessible traduit (début / fin)", async () => {
+      const { container } = await openCustom();
+      const inputs = dateInputs(container);
+      expect(inputs[0]).toHaveAccessibleName(dict.dateStart);
+      expect(inputs[1]).toHaveAccessibleName(dict.dateEnd);
+    });
+
     it("les boutons − et + sont désactivés", async () => {
       await openCustom();
       for (const b of [...minusButtons(), ...plusButtons()]) expect(b).toBeDisabled();

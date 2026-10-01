@@ -71,11 +71,21 @@ describe("AccordionItem", () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it("un clic dans le contenu ouvert remonte aussi à onClick", async () => {
+  it("ouvert : aucun handler ni rôle sur le conteneur (un clic dans le contenu n'appelle pas onClick)", async () => {
     const user = userEvent.setup();
     render(<AccordionItem title="T" isOpen onClick={onClick} icon={icon}><p>Dedans</p></AccordionItem>);
     await user.click(screen.getByText("Dedans"));
-    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onClick).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("fermé : contenu inert (hors Tab) et aria-controls pointe vers lui ; ouvert : plus inert", () => {
+    const { rerender } = render(<AccordionItem title="T" isOpen={false} onClick={onClick} icon={icon}><button>Dedans</button></AccordionItem>);
+    const content = screen.getByText("Dedans").parentElement!.parentElement!;
+    expect(content).toHaveAttribute("inert");
+    expect(screen.getByRole("button", { name: "T" })).toHaveAttribute("aria-controls", content.id);
+    rerender(<AccordionItem title="T" isOpen onClick={onClick} icon={icon}><button>Dedans</button></AccordionItem>);
+    expect(content).not.toHaveAttribute("inert");
   });
 
   it("le panneau fermé est accessible au clavier (rôle bouton, focusable, aria-expanded)", async () => {

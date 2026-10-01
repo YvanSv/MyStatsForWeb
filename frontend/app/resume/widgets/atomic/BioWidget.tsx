@@ -1,4 +1,5 @@
 import { useLanguage } from "../../../context/languageContext";
+import { colorLabel } from "../../colorNames";
 import Widget from "../Widget";
 import { COLORS } from "../../../constants/ui";
 
@@ -76,9 +77,9 @@ export function BioSettings({ settings, onChange }: { settings: any, onChange: (
       <div className="flex flex-col gap-2">
         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wTextColor}</label>
         <div className="flex gap-2">
-          {BIO_COLORS.map(c => (
+          {BIO_COLORS.map((c, i) => (
             <button
-              key={c} type="button" aria-label={c} aria-pressed={currentColor === c}
+              key={c} type="button" aria-label={colorLabel(t.resume, c, i)} aria-pressed={currentColor === c}
               onClick={() => update('color', c)}
               className={`w-6 h-6 rounded-full border-2 ${currentColor === c ? 'border-white' : 'border-transparent'}`}
               style={{ backgroundColor: c }}

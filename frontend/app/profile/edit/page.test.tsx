@@ -77,7 +77,6 @@ beforeEach(() => {
   h.toast.error.mockReset();
   h.auth.user = { id: 1 };
   vi.spyOn(console, "error").mockImplementation(() => {});
-  vi.spyOn(window, "alert").mockImplementation(() => {});
 });
 
 describe("EditProfilePage – chargement", () => {
@@ -747,13 +746,13 @@ describe("EditProfilePage – images", () => {
     ["SVG", "image/svg+xml", "x.svg"],
     ["PDF", "application/pdf", "x.pdf"],
     ["type vide", "", "x"],
-  ])("fichier %s refusé pour la bannière et l'avatar : alerte et image inchangée", async (_l, type, name) => {
+  ])("fichier %s refusé pour la bannière et l'avatar : toast d erreur et image inchangée", async (_l, type, name) => {
     const { container } = await renderLoaded();
     const file = new File([new Uint8Array(10)], name, { type });
     await readAs(container, 0, file);
     await readAs(container, 1, file);
-    expect(window.alert).toHaveBeenCalledTimes(2);
-    expect(window.alert).toHaveBeenCalledWith(dict.errorImageType);
+    expect(h.toast.error).toHaveBeenCalledTimes(2);
+    expect(h.toast.error).toHaveBeenCalledWith(dict.errorImageType, expect.any(Object));
     expect(screen.getByAltText("Bannière")).toHaveAttribute("src", "https://img/b.png");
     expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://img/a.png");
   });
@@ -761,7 +760,7 @@ describe("EditProfilePage – images", () => {
   it.each(["image/jpeg", "image/webp", "image/gif"])("format %s accepté", async (type) => {
     const { container } = await renderLoaded();
     await readAs(container, 1, new File([new Uint8Array(10)], "x", { type }));
-    expect(window.alert).not.toHaveBeenCalled();
+    expect(h.toast.error).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.getByAltText("Aperçu de l'avatar").getAttribute("src")).toMatch(/^data:image\//));
   });
 
@@ -808,24 +807,24 @@ describe("EditProfilePage – images", () => {
     expect(h.patchProfile.mock.calls[0][1].avatar_url).toMatch(/^data:image\/png/);
   });
 
-  it("bannière > 2 Mo : alerte et image inchangée", async () => {
+  it("bannière > 2 Mo : toast d erreur et image inchangée", async () => {
     const { container } = await renderLoaded();
     await readAs(container, 0, png(2 * 1024 * 1024 + 1));
-    expect(window.alert).toHaveBeenCalledWith(dict.errorWeight);
+    expect(h.toast.error).toHaveBeenCalledWith(dict.errorWeight, expect.any(Object));
     expect(screen.getByAltText("Bannière")).toHaveAttribute("src", "https://img/b.png");
   });
 
-  it("avatar > 2 Mo : alerte et image inchangée", async () => {
+  it("avatar > 2 Mo : toast d erreur et image inchangée", async () => {
     const { container } = await renderLoaded();
     await readAs(container, 1, png(2 * 1024 * 1024 + 1));
-    expect(window.alert).toHaveBeenCalledWith(dict.errorWeight);
+    expect(h.toast.error).toHaveBeenCalledWith(dict.errorWeight, expect.any(Object));
     expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://img/a.png");
   });
 
   it("fichier d'exactement 2 Mo accepté (valeur limite)", async () => {
     const { container } = await renderLoaded();
     await readAs(container, 1, png(2 * 1024 * 1024));
-    expect(window.alert).not.toHaveBeenCalled();
+    expect(h.toast.error).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.getByAltText("Aperçu de l'avatar").getAttribute("src")).toMatch(/^data:/));
   });
 
@@ -834,7 +833,7 @@ describe("EditProfilePage – images", () => {
     await act(async () => {
       fireEvent.change(inputs(container)[1], { target: { files: [] } });
     });
-    expect(window.alert).not.toHaveBeenCalled();
+    expect(h.toast.error).not.toHaveBeenCalled();
     expect(screen.getByAltText("Aperçu de l'avatar")).toHaveAttribute("src", "https://img/a.png");
   });
 
@@ -887,5 +886,21 @@ describe("EditProfilePage – accessibilité", () => {
     const user = userEvent.setup();
     await user.tab();
     expect(document.activeElement).not.toBe(document.body);
+  });
+});
+
+describe("EditProfilePage – accessibilité", () => {
+  it("relie les libellés aux champs et les erreurs aux champs invalides", async () => {
+    await renderLoaded(profile({ bio: "a".repeat(501), slug: "12345" }));
+    expect(screen.getByLabelText(dict.labelName)).toBeInTheDocument();
+    expect(screen.getByLabelText(dict.labelBio)).toHaveAccessibleDescription(dict.errorBio);
+    expect(screen.getByLabelText(dict.labelBio)).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(dict.labelUrl)).toHaveAccessibleDescription(dict.errorSlugNumeric);
+    expect(screen.getAllByRole("alert").map((a) => a.tagName)).toEqual(["P", "P"]);
+  });
+
+  it("le bouton Annuler ne soumet pas de formulaire (type=button)", async () => {
+    await renderLoaded();
+    expect(screen.getByRole("button", { name: dict.btnCancel })).toHaveAttribute("type", "button");
   });
 });

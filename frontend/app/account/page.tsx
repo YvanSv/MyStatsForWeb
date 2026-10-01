@@ -129,23 +129,24 @@ function AccountContent() {
           {/* Champ Nom */}
           <div className="space-y-1">
             <div className="flex justify-between">
-              <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.titleDisplayname}</label>
+              <label htmlFor="account-name" className={PROFILE_STYLES.INPUT_LABEL}>{dict.titleDisplayname}</label>
               <p className={`${PROFILE_STYLES.INPUT_LABEL}
                 ${(username || "").length < NAME_MIN ? 'text-rouge' : (username || "").length > NAME_WARN ? (username.length > NAME_DANGER ? (username.length >= NAME_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(username?.length || 0)}/{NAME_MAX}</p>
             </div>
-            <input className={PROFILE_STYLES.INPUT_FIELD} value={username ?? ""} 
+            <input id="account-name" className={PROFILE_STYLES.INPUT_FIELD} value={username ?? ""} 
+              aria-invalid={!!errors.errorName} aria-describedby={errors.errorName ? "account-name-err" : undefined}
               onChange={(e) => setUsername(e.target.value)}
               type="text"
               placeholder={dict.placeholderName}
             />
-            {errors.errorName && (<label className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] pt-2`}>{errors.errorName}</label>)}
+            {errors.errorName && (<p id="account-name-err" role="alert" className={`${PROFILE_STYLES.INPUT_LABEL} block text-rouge text-[9px] pt-2`}>{errors.errorName}</p>)}
           </div>
 
           {/* Champ Email */}
           <div className="space-y-1">
-            <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
-            <input value={email} className={`${PROFILE_STYLES.INPUT_FIELD}`} onChange={e => setEmail(e.target.value)}/>
+            <label htmlFor="account-email" className={PROFILE_STYLES.INPUT_LABEL}>{dict.emailtitle}</label>
+            <input id="account-email" value={email} className={`${PROFILE_STYLES.INPUT_FIELD}`} onChange={e => setEmail(e.target.value)}/>
           </div>
 
           <hr className="border-white/5 my-4" />
@@ -153,54 +154,56 @@ function AccountContent() {
           {/* Champ Mot de Passe */}
           <div className="space-y-1">
             <div className="flex justify-between">
-              <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.passwordtitle}</label>
+              <label htmlFor="account-pw" className={PROFILE_STYLES.INPUT_LABEL}>{dict.passwordtitle}</label>
               <p className={`${PROFILE_STYLES.INPUT_LABEL}
                 ${(password || "").length < PASSWORD_MIN ? 'text-rouge' : (password || "").length > PASSWORD_WARN ? (password.length > PASSWORD_DANGER ? (password.length >= PASSWORD_MAX ? 'text-rouge' : 'text-orange') : 'text-jaune') : 'text2'}`}
               >{(password?.length || 0)}/{PASSWORD_MAX}</p>
             </div>
             
             <div className="relative">
-              <input className={`${PROFILE_STYLES.INPUT_FIELD} pr-10`} value={password} type={showPassword ? "text" : "password"}
+              <input id="account-pw" aria-invalid={!!errors.errorPw} aria-describedby={errors.errorPw ? "account-pw-err" : undefined} className={`${PROFILE_STYLES.INPUT_FIELD} pr-10`} value={password} type={showPassword ? "text" : "password"}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={dict.placeholderPw}
               />
               
               {/* Bouton Toggle Eye */}
               <button type="button" onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? dict.hidePassword : dict.showPassword} aria-pressed={showPassword}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
               >{showPassword ? (<EyeOff size={16}/>) : (<Eye size={16}/>)}</button>
             </div>
 
             {errors.errorPw && (
-              <label className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] pt-2`}>
+              <p id="account-pw-err" role="alert" className={`${PROFILE_STYLES.INPUT_LABEL} block text-rouge text-[9px] pt-2`}>
                 {errors.errorPw}
-              </label>
+              </p>
             )}
           </div>
 
           {/* Champ Confirmation */}
           <div className="space-y-1">
-            <label className={PROFILE_STYLES.INPUT_LABEL}>{dict.confirmpwtitle}</label>
+            <label htmlFor="account-confirm" className={PROFILE_STYLES.INPUT_LABEL}>{dict.confirmpwtitle}</label>
             <div className="relative">
-              <input value={confirmPassword} placeholder={dict.placeholderpwc} type={showConfirmPassword ? "text" : "password"}
+              <input id="account-confirm" aria-invalid={!!errors.errorConfirmPw} aria-describedby={errors.errorConfirmPw ? "account-confirm-err" : undefined} value={confirmPassword} placeholder={dict.placeholderpwc} type={showConfirmPassword ? "text" : "password"}
                 className={`${PROFILE_STYLES.INPUT_FIELD} pr-10 ${password && confirmPassword && password !== confirmPassword ? 'border-red-500/50' : ''}`}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
               
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? dict.hidePassword : dict.showPassword} aria-pressed={showConfirmPassword}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors focus:outline-none"
               >{showConfirmPassword ? (<EyeOff size={16}/>) : (<Eye size={16}/>)}</button>
             </div>
 
             {errors.errorConfirmPw && (
-              <label className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] pt-2 animate-pulse`}>
+              <p id="account-confirm-err" role="alert" className={`${PROFILE_STYLES.INPUT_LABEL} block text-rouge text-[9px] pt-2 animate-pulse`}>
                 {errors.errorConfirmPw}
-              </label>
+              </p>
             )}
           </div>
 
           {/* Bouton Enregistrer avec état de chargement */}
-          <button onClick={handleSave} disabled={updating || !username || errors.errorName !== "" || errors.errorPw !== "" || errors.errorConfirmPw !== ""}
+          <button type="button" onClick={handleSave} disabled={updating || !username || errors.errorName !== "" || errors.errorPw !== "" || errors.errorConfirmPw !== ""}
             className={`${PROFILE_STYLES.BTN_SAVE} disabled:opacity-50 transition-all ${updating || !username || errors.errorName !== "" || errors.errorPw !== "" || errors.errorConfirmPw !== "" ? 'cursor-not-allowed active:scale-100' : 'cursor-pointer'}`}
           >
             {updating ? (
@@ -209,7 +212,7 @@ function AccountContent() {
               </span>
             ) : dict.save}
           </button>
-          {errorApi && (<label role="alert" className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] block text-center`}>{errorApi}</label>)}
+          {errorApi && (<p role="alert" className={`${PROFILE_STYLES.INPUT_LABEL} text-rouge text-[9px] block text-center`}>{errorApi}</p>)}
         </div>
       </>,
   }

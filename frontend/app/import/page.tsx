@@ -29,7 +29,7 @@ const IMPORT_STYLES = {
   get ICON_BOX_BLUE() { return `${this.ICON_BOX} text-blue-400 bg-blue-500/10` },
 
   // Dropzone
-  DROPZONE: (hasFiles: boolean) => `border-2 border-dashed ${BASE_UI.rounded.medium} p-8 ${BASE_UI.anim.base} flex flex-col items-center justify-center gap-4 ${
+  DROPZONE: (hasFiles: boolean) => `border-2 border-dashed ${BASE_UI.rounded.medium} p-8 ${BASE_UI.anim.base} flex flex-col items-center justify-center gap-4 peer-focus-visible:ring-2 peer-focus-visible:ring-vert peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-transparent ${
     hasFiles ? "border-vert/50 bg-vert/5" : "border-white/10 bg-white/[0.02] group-hover:border-white/20"
   }`,
   
@@ -223,7 +223,7 @@ export function ImportContent() {
     content:
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="relative group">
-        <input type="file" multiple accept=".json, .csv" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
+        <input type="file" multiple accept=".json, .csv" aria-label={dict.fileInputLabel} onChange={handleFileChange} className="peer absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
         <div className={`${IMPORT_STYLES.DROPZONE(files.length > 0)} text3`}>
           <FileIcon size={40}/>
           <p className={`text3 text-xs text-center`}>

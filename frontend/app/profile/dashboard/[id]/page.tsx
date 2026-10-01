@@ -314,14 +314,14 @@ export default function DashboardPage() {
                     ) : (
                       <div className="flex items-center gap-2">
                         <input 
-                          type="date" 
+                          type="date" aria-label={dict.dateStart}
                           value={startDate} max={endDate || undefined} 
                           className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
                           onChange={(e) => onCustomDateChange('start', e.target.value)} 
                         />
                         <span className="text-gray-600 leading-none">→</span>
                         <input 
-                          type="date" 
+                          type="date" aria-label={dict.dateEnd}
                           value={endDate} min={startDate || undefined} 
                           className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
                           onChange={(e) => onCustomDateChange('end', e.target.value)} 
@@ -356,14 +356,14 @@ export default function DashboardPage() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <input 
-                      type="date" 
+                      type="date" aria-label={dict.dateStart}
                       value={startDate} max={endDate || undefined} 
                       className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
                       onChange={(e) => onCustomDateChange('start', e.target.value)} 
                     />
                     <span className="text-gray-600 leading-none">→</span>
                     <input 
-                      type="date" 
+                      type="date" aria-label={dict.dateEnd}
                       value={endDate} min={startDate || undefined} 
                       className={`${FILTER_BAR_STYLES.DATE_INPUT} leading-none py-0 h-6`}
                       onChange={(e) => onCustomDateChange('end', e.target.value)} 

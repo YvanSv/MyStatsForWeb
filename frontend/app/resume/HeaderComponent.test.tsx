@@ -42,6 +42,13 @@ describe("HeaderComponent – rendu", () => {
     expect(screen.getByText("Octobre 2026")).toBeInTheDocument();
   });
 
+  it("annonce le libellé de période dans une région status (aria-live polite)", () => {
+    setup({ displayLabel: "Été 2026" });
+    const region = screen.getByRole("status");
+    expect(region).toHaveTextContent("Été 2026");
+    expect(region).toHaveAttribute("aria-live", "polite");
+  });
+
   it("affiche le libellé fourni (nombre, y compris 0)", () => {
     setup({ displayLabel: 0 });
     expect(screen.getByText("0")).toBeInTheDocument();
