@@ -124,7 +124,8 @@ describe("RootLayout - rendu de l'intérieur du body", () => {
     const spotify = screen.getByTestId("spotify");
     const wrapper = spotify.firstElementChild!;
     expect(wrapper.className).toContain("jost-var-class");
-    expect(wrapper.className).toContain("h-screen");
+    expect(wrapper.className).toContain("app-shell");
+    expect(wrapper.className).not.toContain("h-screen");
     expect(wrapper.firstElementChild).toBe(screen.getByTestId("header"));
     const pos = (a: Node, b: Node) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
     expect(pos(screen.getByTestId("header"), screen.getByTestId("child"))).toBeTruthy();

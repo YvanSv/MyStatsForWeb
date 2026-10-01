@@ -51,3 +51,10 @@ describe("globals.css – police Hias Sans", () => {
     expect(rule(".font-hias")).toContain("font-family: var(--font-hias)");
   });
 });
+
+describe("globals.css – hauteur de l'application", () => {
+  it("app-shell utilise dvh (barre d'adresse mobile) avec vh en repli juste avant", () => {
+    const block = rule(".app-shell");
+    expect(block).toMatch(/height:\s*100vh;\s*height:\s*100dvh;/);
+  });
+});

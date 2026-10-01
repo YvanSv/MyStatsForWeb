@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ShowFiltersProvider>
               <AuthProvider>
                 <SpotifyProvider>
-                  <div className={`${jost.variable} flex flex-col h-screen overflow-hidden text1`}>
+                  <div className={`${jost.variable} app-shell flex flex-col overflow-hidden text1`}>
                     <Header/>
 
                     <div className="flex-1 overflow-y-auto">

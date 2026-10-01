@@ -49,6 +49,13 @@
     font-family: var(--font-jost);
   }
 
+  /* Hauteur de l'application : dvh suit la barre d'adresse des mobiles (100vh la dépasse et coupe le bas de page) ;
+     vh sert de repli pour les navigateurs sans dvh */
+  .app-shell {
+    height: 100vh;
+    height: 100dvh;
+  }
+
   .text1 {
     @apply text-white;
   }
