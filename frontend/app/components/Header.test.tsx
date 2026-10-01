@@ -22,6 +22,12 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useSearchParams: () => new URLSearchParams(),
 }));
+vi.mock("next/link", () => ({
+  // Lien simulé : on garde href et onClick, mais on neutralise la navigation native de jsdom
+  default: ({ href, children, onClick, ...rest }: { href: string; children: React.ReactNode; onClick?: () => void } & Record<string, unknown>) => (
+    <a href={href} onClick={(e) => { e.preventDefault(); onClick?.(); }} {...rest}>{children}</a>
+  ),
+}));
 vi.mock("next/image", () => ({
   // `priority` est une prop next/image qui n'existe pas sur <img>
   default: ({ priority, alt, ...props }: { priority?: boolean; alt?: string } & Record<string, unknown>) => {
@@ -78,7 +84,7 @@ describe("Header – navigation principale", () => {
     render(<Header />);
     const nav = within(pcNav());
     for (const label of [dict.rankings, dict.dashboard, dict.publicProfile, dict.help]) {
-      expect(nav.getAllByRole("button", { name: label }).length).toBeGreaterThan(0);
+      expect(nav.getAllByRole("link", { name: label }).length).toBeGreaterThan(0);
     }
   });
 
@@ -87,48 +93,49 @@ describe("Header – navigation principale", () => {
     [dict.dashboard, FRONT_ROUTES.DASHBOARD],
     [dict.publicProfile, FRONT_ROUTES.PROFILE],
     [dict.help, FRONT_ROUTES.HELP],
-  ])("le bouton principal « %s » mène vers %s", async (label, path) => {
-    const user = userEvent.setup();
+  ])("l'entrée principale « %s » est un vrai lien vers %s", (label, path) => {
     render(<Header />);
-    // Le premier bouton portant ce nom est l'entrée principale (avant son sous-menu)
-    await user.click(within(pcNav()).getAllByRole("button", { name: label })[0]);
-    expect(h.push).toHaveBeenCalledWith(path);
+    // Le premier lien portant ce nom est l'entrée principale (avant son sous-menu)
+    expect(within(pcNav()).getAllByRole("link", { name: label })[0]).toHaveAttribute("href", path);
   });
 
-  it("propose le sous-menu des classements (titres, albums, artistes)", async () => {
+  it("n'utilise plus router.push pour les entrées de navigation (liens natifs)", async () => {
     const user = userEvent.setup();
     render(<Header />);
-    const nav = within(pcNav());
-    await user.click(nav.getByRole("button", { name: dict.tracks }));
-    await user.click(nav.getByRole("button", { name: dict.albums }));
-    await user.click(nav.getByRole("button", { name: dict.artists }));
-    expect(h.push.mock.calls.map((c) => c[0])).toEqual(["/my/tracks", "/my/albums", "/my/artists"]);
+    await user.click(within(pcNav()).getAllByRole("link", { name: dict.dashboard })[0]);
+    expect(h.push).not.toHaveBeenCalled();
   });
 
-  it("ne génère jamais de double slash dans les chemins du sous-menu des classements", async () => {
-    const user = userEvent.setup();
+  it("propose le sous-menu des classements (titres, albums, artistes) sous forme de liens", () => {
     render(<Header />);
     const nav = within(pcNav());
-    for (const name of [dict.tracks, dict.albums, dict.artists]) await user.click(nav.getByRole("button", { name }));
-    for (const [path] of h.push.mock.calls) expect(path).not.toContain("//");
+    expect(nav.getByRole("link", { name: dict.tracks })).toHaveAttribute("href", "/my/tracks");
+    expect(nav.getByRole("link", { name: dict.albums })).toHaveAttribute("href", "/my/albums");
+    expect(nav.getByRole("link", { name: dict.artists })).toHaveAttribute("href", "/my/artists");
   });
 
-  it("propose le sous-menu du profil public (profil, import, compte)", async () => {
-    const user = userEvent.setup();
+  it("ne génère jamais de double slash dans les chemins du sous-menu des classements", () => {
     render(<Header />);
     const nav = within(pcNav());
-    // [0] = bouton principal, [1] = entrée du sous-menu
-    await user.click(nav.getAllByRole("button", { name: dict.publicProfile })[1]);
-    await user.click(nav.getByRole("button", { name: dict.import }));
-    await user.click(nav.getByRole("button", { name: dict.myAccount }));
-    expect(h.push.mock.calls.map((c) => c[0])).toEqual([FRONT_ROUTES.PROFILE, FRONT_ROUTES.IMPORT, FRONT_ROUTES.ACCOUNT]);
+    for (const name of [dict.tracks, dict.albums, dict.artists]) {
+      expect(nav.getByRole("link", { name }).getAttribute("href")).not.toContain("//");
+    }
+  });
+
+  it("propose le sous-menu du profil public (profil, import, compte) sous forme de liens", () => {
+    render(<Header />);
+    const nav = within(pcNav());
+    // [0] = lien principal, [1] = entrée du sous-menu
+    expect(nav.getAllByRole("link", { name: dict.publicProfile })[1]).toHaveAttribute("href", FRONT_ROUTES.PROFILE);
+    expect(nav.getByRole("link", { name: dict.import })).toHaveAttribute("href", FRONT_ROUTES.IMPORT);
+    expect(nav.getByRole("link", { name: dict.myAccount })).toHaveAttribute("href", FRONT_ROUTES.ACCOUNT);
   });
 
   it("le dashboard et l'aide n'ont pas de sous-menu", () => {
     render(<Header />);
     const nav = within(pcNav());
-    expect(nav.getAllByRole("button", { name: dict.dashboard })).toHaveLength(1);
-    expect(nav.getAllByRole("button", { name: dict.help })).toHaveLength(1);
+    expect(nav.getAllByRole("link", { name: dict.dashboard })).toHaveLength(1);
+    expect(nav.getAllByRole("link", { name: dict.help })).toHaveLength(1);
   });
 });
 
@@ -191,16 +198,13 @@ describe("Header – utilisateur connecté", () => {
     [dict.settings, FRONT_ROUTES.SETTINGS],
     [dict.import, FRONT_ROUTES.IMPORT],
     [dict.myAccount, FRONT_ROUTES.ACCOUNT],
-  ])("le menu utilisateur contient « %s » qui mène vers %s", async (label, path) => {
-    const user = userEvent.setup();
+  ])("le menu utilisateur contient le lien « %s » vers %s", (label, path) => {
     render(<Header />);
-    const buttons = screen.getAllByRole("button", { name: label });
-    await user.click(buttons[buttons.length - 1]);
-    expect(h.push).toHaveBeenCalledWith(path);
+    const links = screen.getAllByRole("link", { name: label });
+    expect(links[links.length - 1]).toHaveAttribute("href", path);
   });
 
-  it("le menu utilisateur donne accès au profil public, au dashboard et à l'aide", async () => {
-    const user = userEvent.setup();
+  it("le menu utilisateur donne accès au profil public, au dashboard et à l'aide", () => {
     render(<Header />);
     // Dernier bouton portant le nom = entrée du menu déroulant utilisateur
     for (const [label, path] of [
@@ -208,9 +212,8 @@ describe("Header – utilisateur connecté", () => {
       [dict.dashboard, FRONT_ROUTES.DASHBOARD],
       [dict.help, FRONT_ROUTES.HELP],
     ]) {
-      const buttons = screen.getAllByRole("button", { name: label });
-      await user.click(buttons[buttons.length - 1]);
-      expect(h.push).toHaveBeenLastCalledWith(path);
+      const links = screen.getAllByRole("link", { name: label });
+      expect(links[links.length - 1]).toHaveAttribute("href", path);
     }
   });
 
@@ -256,6 +259,38 @@ describe("Header – écoute Spotify en direct", () => {
   });
 });
 
+describe("Header – images absentes (pas de <img> sans src)", () => {
+  it("affiche l'initiale du pseudo quand l'utilisateur n'a pas d'avatar", () => {
+    h.auth.user = makeUser({ avatar: undefined });
+    const { container } = render(<Header />);
+    expect(screen.queryByAltText("Avatar Preview")).not.toBeInTheDocument();
+    expect(container.querySelector("img:not([src])")).toBeNull();
+    expect(screen.getByText("Y")).toBeInTheDocument();
+  });
+
+  it("affiche l'initiale « U » (pseudo par défaut) sans avatar ni utilisateur chargé", () => {
+    h.auth.user = null;
+    render(<Header />);
+    expect(screen.getByText("U")).toBeInTheDocument();
+  });
+
+  it("affiche un repli à la place de la pochette quand cover_url est absent", () => {
+    h.spotify.listening = { is_listening: true, data: { title: "Song" } };
+    const { container } = render(<Header />);
+    expect(screen.queryByAltText("Song")).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Song" })).toBeInTheDocument();
+    expect(container.querySelector("img:not([src])")).toBeNull();
+    expect(screen.getByText(dict.live)).toBeInTheDocument();
+  });
+
+  it("n'affiche aucune balise <img> sans src, même sans avatar ni pochette", () => {
+    h.auth.user = makeUser({ avatar: "" });
+    h.spotify.listening = { is_listening: true, data: { cover_url: "", title: "Song" } };
+    const { container } = render(<Header />);
+    for (const img of Array.from(container.querySelectorAll("img"))) expect(img).toHaveAttribute("src");
+  });
+});
+
 describe("Header – menu mobile", () => {
   it("est fermé par défaut", () => {
     render(<Header />);
@@ -286,10 +321,50 @@ describe("Header – menu mobile", () => {
     const navs = screen.getAllByRole("navigation");
     expect(navs).toHaveLength(2);
     const mobile = within(navs[1]);
-    expect(mobile.getAllByRole("button")).toHaveLength(4);
     for (const label of [dict.rankings, dict.dashboard, dict.publicProfile, dict.help]) {
-      expect(mobile.getByRole("button", { name: label })).toBeInTheDocument();
+      expect(mobile.getByRole("link", { name: label })).toBeInTheDocument();
     }
+  });
+
+  it("propose le compte et la déconnexion dans le menu mobile quand l'utilisateur est connecté", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<Header />);
+    await user.click(burger(container));
+    const mobile = within(screen.getAllByRole("navigation")[1]);
+    expect(mobile.getByRole("link", { name: dict.myAccount })).toHaveAttribute("href", FRONT_ROUTES.ACCOUNT);
+    expect(mobile.getByRole("button", { name: dict.logout })).toBeInTheDocument();
+    expect(mobile.queryByRole("link", { name: dict.login })).not.toBeInTheDocument();
+  });
+
+  it("se déconnecte puis ferme le menu mobile au clic sur « Déconnexion »", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<Header />);
+    await user.click(burger(container));
+    await user.click(within(screen.getAllByRole("navigation")[1]).getByRole("button", { name: dict.logout }));
+    expect(h.auth.logout).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole("navigation")).toHaveLength(1);
+  });
+
+  it("ferme le menu mobile après un clic sur « Mon compte »", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<Header />);
+    await user.click(burger(container));
+    await user.click(within(screen.getAllByRole("navigation")[1]).getByRole("link", { name: dict.myAccount }));
+    expect(screen.getAllByRole("navigation")).toHaveLength(1);
+  });
+
+  it("propose un lien de connexion (sans compte ni déconnexion) dans le menu mobile quand l'utilisateur est déconnecté", async () => {
+    const user = userEvent.setup();
+    h.auth = { isLoggedIn: false, user: null, logout: vi.fn() };
+    const { container } = render(<Header />);
+    await user.click(burger(container));
+    const mobile = within(screen.getAllByRole("navigation")[1]);
+    const login = mobile.getByRole("link", { name: dict.login });
+    expect(login).toHaveAttribute("href", FRONT_ROUTES.AUTH);
+    expect(mobile.queryByRole("link", { name: dict.myAccount })).not.toBeInTheDocument();
+    expect(mobile.queryByRole("button", { name: dict.logout })).not.toBeInTheDocument();
+    await user.click(login);
+    expect(screen.getAllByRole("navigation")).toHaveLength(1);
   });
 
   it("se referme au second clic sur le burger", async () => {
@@ -304,8 +379,9 @@ describe("Header – menu mobile", () => {
     const user = userEvent.setup();
     const { container } = render(<Header />);
     await user.click(burger(container));
-    await user.click(within(screen.getAllByRole("navigation")[1]).getByRole("button", { name: dict.dashboard }));
-    expect(h.push).toHaveBeenCalledWith(FRONT_ROUTES.DASHBOARD);
+    const link = within(screen.getAllByRole("navigation")[1]).getByRole("link", { name: dict.dashboard });
+    expect(link).toHaveAttribute("href", FRONT_ROUTES.DASHBOARD);
+    await user.click(link);
     expect(screen.getAllByRole("navigation")).toHaveLength(1);
   });
 

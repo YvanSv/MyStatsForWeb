@@ -31,12 +31,16 @@ export const ApiStatusBadge = () => {
   const { t } = useLanguage();
   const dict = t.api;
   const { getSpotifyStatus } = useApi();
-  const [status, setStatus] = useState({ is_rate_limited: false, retry_after_seconds: 0 });
+  // L'échéance est calculée à la réception du statut : le compte à rebours ne dépend pas de la fréquence du polling
+  const [status, setStatus] = useState({ is_rate_limited: false, retryAt: 0 });
+  const [now, setNow] = useState(() => Date.now());
 
   const checkStatus = useCallback(async () => {
     try {
-      const data = await getSpotifyStatus(); 
-      setStatus(data);
+      const data = await getSpotifyStatus();
+      const received = Date.now();
+      setStatus({ is_rate_limited: !!data.is_rate_limited, retryAt: received + (Number(data.retry_after_seconds) || 0) * 1000 });
+      setNow(received);
     } catch (err) {console.error(dict.status, err)}
   }, [getSpotifyStatus, dict.status]);
 
@@ -47,6 +51,15 @@ export const ApiStatusBadge = () => {
   }, [checkStatus]);
 
   const isLimited = status.is_rate_limited;
+
+  // Tic d'une seconde uniquement tant que l'API est limitée
+  useEffect(() => {
+    if (!isLimited) return;
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(tick);
+  }, [isLimited]);
+
+  const remaining = Math.max(0, Math.ceil((status.retryAt - now) / 1000));
 
   return (
     <div className={BADGE_STYLES.WRAPPER(isLimited)}>
@@ -62,7 +75,7 @@ export const ApiStatusBadge = () => {
           <>
             {dict.statusRateLimited}{" "}
             <span className={BADGE_STYLES.TIMER}>
-              {status.retry_after_seconds}
+              {remaining}
               <span className={BADGE_STYLES.UNIT}>s</span>
             </span>
           </>

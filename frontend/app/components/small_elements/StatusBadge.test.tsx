@@ -74,6 +74,62 @@ describe("ApiStatusBadge", () => {
     expect(api.getSpotifyStatus).toHaveBeenCalledTimes(1);
   });
 
+  it("décrémente le compte à rebours chaque seconde sans nouvelle requête", async () => {
+    api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 10 });
+    render(<ApiStatusBadge />);
+    await flush();
+    expect(screen.getByText("10", { exact: false })).toHaveTextContent("10s");
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+    expect(screen.getByText("7", { exact: false })).toHaveTextContent("7s");
+    expect(api.getSpotifyStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it("s'arrête à 0 seconde sans devenir négatif", async () => {
+    api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 2 });
+    render(<ApiStatusBadge />);
+    await flush();
+    await act(async () => { await vi.advanceTimersByTimeAsync(10000); });
+    expect(screen.getByText("0", { exact: false })).toHaveTextContent("0s");
+  });
+
+  it("repart de la nouvelle échéance à chaque statut reçu", async () => {
+    api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 100 });
+    render(<ApiStatusBadge />);
+    await flush();
+    api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 30 });
+    await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
+    expect(screen.getByText("30", { exact: false })).toHaveTextContent("30s");
+  });
+
+  it("n'interroge l'API qu'une fois par minute malgré le compte à rebours et ne relance pas l'effet à chaque rendu", async () => {
+    api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 500 });
+    render(<ApiStatusBadge />);
+    await flush();
+    await act(async () => { await vi.advanceTimersByTimeAsync(59000); });
+    expect(api.getSpotifyStatus).toHaveBeenCalledTimes(1);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    expect(api.getSpotifyStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it("nettoie le timer d'une seconde quand le statut n'est plus limité", async () => {
+    api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 500 });
+    render(<ApiStatusBadge />);
+    await flush();
+    expect(vi.getTimerCount()).toBe(2);
+    api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: false, retry_after_seconds: 0 });
+    await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
+    expect(screen.getByText(dict.statusActive)).toBeInTheDocument();
+    expect(vi.getTimerCount()).toBe(1);
+  });
+
+  it("nettoie tous les timers au démontage", async () => {
+    api.getSpotifyStatus.mockResolvedValue({ is_rate_limited: true, retry_after_seconds: 500 });
+    const { unmount } = render(<ApiStatusBadge />);
+    await flush();
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("journalise l'erreur et garde l'état précédent si l'API échoue", async () => {
     const err = new Error("réseau");
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});

@@ -1,7 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
-interface ClickableProps { children?: ReactNode; onClick?: () => void }
+// href : le composant devient un vrai lien (prefetch, clic droit, nouvel onglet) avec le même style
+interface ClickableProps { children?: ReactNode; onClick?: () => void; href?: string }
 interface StyledProps { children?: ReactNode; additional?: string }
 
 export function HeaderLogo({onClick}:{onClick?: () => void}) {
@@ -18,14 +20,16 @@ export function HeaderLogo({onClick}:{onClick?: () => void}) {
   );
 }
 
-export function NavButton({children,onClick}:ClickableProps) {
+export function NavButton({children,onClick,href}:ClickableProps) {
   const agencement = 'w-fit h-fit flex items-center gap-1 lg:gap-2';
   const forme = 'text-md xl:text-2xl';
   const couleur = 'text1 hover:text-vert';
   const transformation = 'cursor-pointer transition-all duration-300 active:scale-95 ease-out';
 
+  const className = `${agencement} ${couleur} ${transformation} ${forme}`;
+  if (href !== undefined) return <Link href={href} className={className} onClick={onClick}>{children}</Link>;
   return (
-    <button className={`${agencement} ${couleur} ${transformation} ${forme}`} onClick={onClick}>
+    <button className={className} onClick={onClick}>
       {children}
     </button>
   );
@@ -44,14 +48,16 @@ export function PopoverMenu({children,additional=''}:StyledProps) {
   );
 }
 
-export function MenuButton({children,onClick,additional='',label}:ClickableProps & StyledProps & { label?: string }) {
+export function MenuButton({children,onClick,additional='',label,href}:ClickableProps & StyledProps & { label?: string }) {
   const agencement = 'flex items-center text-left';
   const forme = 'w-full px-3 py-2.5 rounded-lg gap-4';
   const couleur = 'text-sm hover:text-vert hover:bg-white/[0.05]';
   const transformation = 'transition-colors';
 
+  const className = `${agencement} ${couleur} ${transformation} ${forme} ${additional}`;
+  if (href !== undefined) return <Link href={href} className={className} onClick={onClick} aria-label={label}>{children}</Link>;
   return (
-    <button className={`${agencement} ${couleur} ${transformation} ${forme} ${additional}`} onClick={onClick} aria-label={label}>
+    <button className={className} onClick={onClick} aria-label={label}>
       {children}
     </button>
   );

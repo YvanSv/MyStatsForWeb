@@ -1,5 +1,5 @@
 import { useLanguage } from '@/app/context/languageContext';
-import { useEffect, useState } from 'react';
+import { useId, useLayoutEffect, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarAngleAxis, PolarGrid, Radar, PolarRadiusAxis } from 'recharts';
 import { LineChart, Line, Legend } from 'recharts';
 
@@ -10,10 +10,11 @@ const parseChartDate = (value: string | number) => {
   return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : new Date(value);
 };
 
-// Largeur de la fenêtre, mise à jour au redimensionnement
-function useScreenWidth(initial = 250) {
+// Largeur de la fenêtre, mise à jour au redimensionnement.
+// Valeur initiale « desktop » (rendu serveur sûr), remplacée par la mesure réelle avant la première peinture : pas de saut visible.
+function useScreenWidth(initial = 1280) {
   const [width, setWidth] = useState(initial);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const update = () => setWidth(window.innerWidth);
     update();
     window.addEventListener('resize', update);
@@ -22,8 +23,19 @@ function useScreenWidth(initial = 250) {
   return width;
 }
 
+// Hauteur (px) de la barre discrète affichée pour une valeur nulle
+const MIN_BAR_HEIGHT = 3;
+
+// Vrai quand aucune des clés ne porte de valeur non nulle (ou quand il n'y a aucune donnée)
+const hasNoData = (data: Record<string, unknown>[] | undefined, keys: string[]) =>
+  !data?.length || !data.some(row => keys.some(key => Number(row?.[key]) > 0));
+
 const CustomBar = (props: any) => {
   const { x, y, width, height, value } = props;
+  if (value === 0) {
+    // Valeur nulle : la hauteur calculée est nulle, on dessine une petite barre discrète posée sur la ligne de base
+    return (<rect x={x} y={(y ?? 0) - MIN_BAR_HEIGHT} width={width} height={MIN_BAR_HEIGHT} fill="#ffffff10" rx={1.5} ry={1.5}/>);
+  }
   if (!height || height < 0) return null;
   return (<rect x={x} y={y} width={width} height={height} fill={value > 0 ? '#c084fc' : '#ffffff10'} rx={6} ry={6}/>);
 };
@@ -77,7 +89,7 @@ function CustomBarChart({data, type, metric}:{data:any[], type:string, metric: '
   const title = type === "day" ? t.charts.weekly : type === "month" ? t.charts.monthly : t.charts.annual;
   
   return (
-    <GraphContainer height={screenWidth < 1024 ? 200 : 250} title={title} additional={"flex flex-col"}>
+    <GraphContainer height={screenWidth < 1024 ? 200 : 250} title={title} additional={"flex flex-col"} empty={hasNoData(data, [metric === 'streams' ? 'streams' : 'value'])}>
       <BarChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }} barGap={0}>
           <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#ffffff05" />
           <XAxis dataKey={type} axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }} dy={10}/>
@@ -115,7 +127,7 @@ export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: 
 
   const maxRange = metric === 'minutes' && daysCount !== 0 ? 60 * daysCount : undefined;
   return (
-    <GraphContainer height={screenWidth < 1024 ? 200 : 250} title={t.charts.hourly}>
+    <GraphContainer height={screenWidth < 1024 ? 200 : 250} title={t.charts.hourly} empty={hasNoData(data, [metric === 'streams' ? 'streams' : 'value'])}>
       <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data} startAngle={90} endAngle={-270}>
         <PolarGrid stroke="#374151"/>
         <PolarAngleAxis dataKey="hour" tickFormatter={formatTicks} tick={{ fill: '#9CA3AF', fontSize: 10 }}/>
@@ -135,15 +147,18 @@ export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: 
 export function CumulativeChart({ data }:{ data: any[] }) {
   const { t } = useLanguage();
   const color1 = '#1DD05D', color2 = '#065e25';
+  // Ids de dégradé uniques par instance (les « : » de useId sont inutilisables dans url(#...))
+  const gradientId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const id1 = `colorArea1-${gradientId}`, id2 = `colorArea2-${gradientId}`;
   return (
-    <GraphContainer height={250} title={t.charts.cumulative}>
+    <GraphContainer height={250} title={t.charts.cumulative} empty={hasNoData(data, ['minutes', 'streams'])}>
       <AreaChart data={data} margin={{ top: 0, right: 0, left: -15, bottom: 0 }}>
         <defs>
-          <linearGradient id="colorArea1" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={id1} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={color1} stopOpacity={0.3}/>
             <stop offset="95%" stopColor={color1} stopOpacity={0}/>
           </linearGradient>
-          <linearGradient id="colorArea2" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={id2} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={color2} stopOpacity={0.3}/>
             <stop offset="95%" stopColor={color2} stopOpacity={0}/>
           </linearGradient>
@@ -154,8 +169,8 @@ export function CumulativeChart({ data }:{ data: any[] }) {
         <GraphYAxis/>
         <GraphLegend/>
         <Tooltip content={<ChartToolTip/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
-        <Area type="monotone" dataKey={"minutes"} stroke={color1} fillOpacity={1} fill="url(#colorArea1)" strokeWidth={2} dot={false}/>
-        <Area type="monotone" dataKey={"streams"} stroke={color2} fillOpacity={1} fill="url(#colorArea2)" strokeWidth={2} dot={false}/>
+        <Area type="monotone" dataKey={"minutes"} stroke={color1} fillOpacity={1} fill={`url(#${id1})`} strokeWidth={2} dot={false}/>
+        <Area type="monotone" dataKey={"streams"} stroke={color2} fillOpacity={1} fill={`url(#${id2})`} strokeWidth={2} dot={false}/>
       </AreaChart>
     </GraphContainer>
   );
@@ -165,7 +180,7 @@ export const EvolutionChart = ({ data }:{data: any[]}) => {
   const { t } = useLanguage();
   const color1 = "#1DB954", color2 = "#60a5fa", color3 = "#a78bfa";
   return (
-    <GraphContainer height={300} title={t.charts.discoveries}>
+    <GraphContainer height={300} title={t.charts.discoveries} empty={hasNoData(data, ['tracks', 'albums', 'artists'])}>
       <LineChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
         <Tooltip content={<ChartToolTip/>} cursor={{ stroke: color1, strokeWidth: 1 }}/>
@@ -184,7 +199,7 @@ export const EvolutionStreamsChart = ({ data }:{data: any[]}) => {
   const { t } = useLanguage();
   const color1 = '#1DD05D', color2 = '#065e25';
   return (
-    <GraphContainer height={280} title={t.charts.streamsEvolution}>
+    <GraphContainer height={280} title={t.charts.streamsEvolution} empty={hasNoData(data, ['minutes', 'streams'])}>
       <LineChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
         <GraphXAxis data={"date"}/>
@@ -231,15 +246,22 @@ const GraphYAxis = () => {
   );
 };
 
-function GraphContainer({children, height, title, additional}:any) {
+function GraphContainer({children, height, title, additional, empty}:any) {
+  const { t } = useLanguage();
   return (
     <div style={{ height: `${height}px` }} className={`flex flex-col w-full bg-white/[0.02] border border-white/5 px-2 py-4 md:p-4 rounded-2xl ${additional}`}>
       <h3 className={`text-gray-400 text-[9px] md:text-xs font-bold uppercase`}>{title}</h3>
-      <div className='flex-1 min-h-0 w-full'>
-        <ResponsiveContainer width="100%" height="100%">
-          {children}
-        </ResponsiveContainer>
-      </div>
+      {empty ? (
+        <div role="status" className="flex-1 min-h-0 w-full flex items-center justify-center text-gray-500 text-sm">
+          {t.charts.empty}
+        </div>
+      ) : (
+        <div className='flex-1 min-h-0 w-full'>
+          <ResponsiveContainer width="100%" height="100%">
+            {children}
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }

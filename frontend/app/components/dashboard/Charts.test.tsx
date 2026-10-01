@@ -86,8 +86,8 @@ vi.mock("recharts", async () => {
 const last = (name: string) => captured[name][captured[name].length - 1];
 const all = (name: string) => captured[name] ?? [];
 const sampleData = [
-  { day: "Lun", month: "Jan", year: "2024", hour: "0h", date: "2024-03-15", streams: 3, value: 12, minutes: 12 },
-  { day: "Mar", month: "Fév", year: "2025", hour: "1h", date: "2024-03-16", streams: 5, value: 20, minutes: 20 },
+  { day: "Lun", month: "Jan", year: "2024", hour: "0h", date: "2024-03-15", streams: 3, value: 12, minutes: 12, tracks: 4, albums: 2, artists: 1 },
+  { day: "Mar", month: "Fév", year: "2025", hour: "1h", date: "2024-03-16", streams: 5, value: 20, minutes: 20, tracks: 6, albums: 3, artists: 2 },
 ];
 const tooltipText = () => screen.getByTestId("Tooltip").textContent ?? "";
 
@@ -127,20 +127,21 @@ describe("Graphiques en barres (Weekly / Monthly / Annual)", () => {
     expect(last("Bar").dataKey).toBe(dataKey);
   });
 
-  it("affiche le conteneur sans données (tableau vide)", () => {
+  it("affiche le titre et un message « aucune donnée » sans données (tableau vide)", () => {
     render(<WeeklyChart data={[]} metric="streams" />);
-    expect(screen.getByTestId("BarChart").dataset.data).toBe("[]");
+    expect(screen.queryByTestId("BarChart")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(t.charts.empty);
     expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
   });
 
   it("utilise une hauteur de 250px sur grand écran et 200px sur petit écran", () => {
     vi.stubGlobal("innerWidth", 1280);
-    const { container, unmount } = render(<WeeklyChart data={[]} metric="streams" />);
+    const { container, unmount } = render(<WeeklyChart data={sampleData} metric="streams" />);
     expect((container.firstChild as HTMLElement).style.height).toBe("250px");
     unmount();
 
     vi.stubGlobal("innerWidth", 500);
-    const small = render(<WeeklyChart data={[]} metric="streams" />);
+    const small = render(<WeeklyChart data={sampleData} metric="streams" />);
     expect((small.container.firstChild as HTMLElement).style.height).toBe("200px");
     vi.stubGlobal("innerWidth", 1024);
   });
@@ -184,6 +185,91 @@ describe("CustomBar (forme des barres)", () => {
   it.each([[0], [undefined], [-3]])("ne dessine rien quand la hauteur vaut %s", (height) => {
     const { container } = renderShape({ x: 1, y: 2, width: 24, height, value: 10 });
     expect(container.querySelector("rect")).toBeNull();
+  });
+});
+
+describe("CustomBar – valeur nulle", () => {
+  const renderShape = (props: Record<string, unknown>) => {
+    render(<WeeklyChart data={sampleData} metric="streams" />);
+    const shape = last("Bar").shape;
+    return render(<svg>{{ ...shape, props: { ...shape.props, ...props } }}</svg>);
+  };
+
+  it("dessine une barre minimale discrète posée sur la ligne de base quand la hauteur calculée est nulle", () => {
+    const { container } = renderShape({ x: 1, y: 100, width: 24, height: 0, value: 0 });
+    const rect = container.querySelector("rect")!;
+    expect(rect).toHaveAttribute("fill", "#ffffff10");
+    expect(Number(rect.getAttribute("height"))).toBeGreaterThan(0);
+    // La barre se termine exactement sur la ligne de base (y + height = 100)
+    expect(Number(rect.getAttribute("y")) + Number(rect.getAttribute("height"))).toBe(100);
+    expect(rect).toHaveAttribute("width", "24");
+  });
+});
+
+describe("État vide des graphiques", () => {
+  it.each([
+    ["WeeklyChart", () => <WeeklyChart data={[]} metric="streams" />],
+    ["MonthlyChart", () => <MonthlyChart data={[]} metric="minutes" />],
+    ["AnnualChart", () => <AnnualChart data={[]} metric="streams" />],
+    ["ClockChart", () => <ClockChart data={[]} metric="streams" />],
+    ["CumulativeChart", () => <CumulativeChart data={[]} />],
+    ["EvolutionChart", () => <EvolutionChart data={[]} />],
+    ["EvolutionStreamsChart", () => <EvolutionStreamsChart data={[]} />],
+  ])("%s : message traduit et aucun graphique quand data est vide", (_n, ui) => {
+    render(ui());
+    expect(screen.getByRole("status")).toHaveTextContent(t.charts.empty);
+    expect(screen.queryByTestId("ResponsiveContainer")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
+  });
+
+  it("affiche le message quand toutes les valeurs de la métrique sont nulles", () => {
+    const zeros = [{ day: "Lun", streams: 0, value: 0 }, { day: "Mar", streams: 0, value: 0 }];
+    render(<WeeklyChart data={zeros} metric="streams" />);
+    expect(screen.getByRole("status")).toHaveTextContent(t.charts.empty);
+  });
+
+  it("considère la métrique affichée : des minutes non nulles suffisent pour la métrique minutes", () => {
+    const data = [{ day: "Lun", streams: 0, value: 15 }];
+    render(<WeeklyChart data={data} metric="minutes" />);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByTestId("BarChart")).toBeInTheDocument();
+  });
+
+  it("n'affiche pas le message quand au moins une valeur est non nulle", () => {
+    render(<WeeklyChart data={[{ day: "Lun", streams: 0, value: 0 }, { day: "Mar", streams: 2, value: 0 }]} metric="streams" />);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("gère une valeur data undefined sans planter", () => {
+    const Chart = WeeklyChart as any;
+    render(<Chart metric="streams" />);
+    expect(screen.getByRole("status")).toHaveTextContent(t.charts.empty);
+  });
+});
+
+describe("Hauteur initiale (pas de saut desktop)", () => {
+  it("rend la hauteur desktop (250px) sur grand écran, sans passer par la hauteur mobile", () => {
+    vi.stubGlobal("innerWidth", 1280);
+    const { container } = render(<WeeklyChart data={sampleData} metric="streams" />);
+    expect((container.firstChild as HTMLElement).style.height).toBe("250px");
+    vi.stubGlobal("innerWidth", 1024);
+  });
+
+  it("rend la hauteur serveur desktop (250px) par défaut avant mesure (renderToString)", async () => {
+    const { renderToString } = await import("react-dom/server");
+    const html = renderToString(<WeeklyChart data={sampleData} metric="streams" />);
+    expect(html).toContain("height:250px");
+  });
+
+  it("passe en hauteur mobile (200px) au redimensionnement", () => {
+    vi.stubGlobal("innerWidth", 1280);
+    const { container } = render(<WeeklyChart data={sampleData} metric="streams" />);
+    act(() => {
+      vi.stubGlobal("innerWidth", 500);
+      window.dispatchEvent(new Event("resize"));
+    });
+    expect((container.firstChild as HTMLElement).style.height).toBe("200px");
+    vi.stubGlobal("innerWidth", 1024);
   });
 });
 
@@ -236,7 +322,7 @@ describe("ClockChart", () => {
 
   it("utilise une hauteur adaptée à la largeur de l'écran", () => {
     vi.stubGlobal("innerWidth", 600);
-    const { container } = render(<ClockChart data={[]} metric="streams" daysCount={0} />);
+    const { container } = render(<ClockChart data={sampleData} metric="streams" daysCount={0} />);
     expect((container.firstChild as HTMLElement).style.height).toBe("200px");
     vi.stubGlobal("innerWidth", 1024);
   });
@@ -250,18 +336,31 @@ describe("CumulativeChart", () => {
     const areas = all("Area");
     expect(areas.map((a) => a.dataKey)).toEqual(["minutes", "streams"]);
     expect(areas.map((a) => a.stroke)).toEqual(["#1DD05D", "#065e25"]);
-    expect(areas.map((a) => a.fill)).toEqual(["url(#colorArea1)", "url(#colorArea2)"]);
+    expect(areas.map((a) => a.fill)).toEqual([expect.stringMatching(/^url\(#colorArea1-[\w-]+\)$/), expect.stringMatching(/^url\(#colorArea2-[\w-]+\)$/)]);
   });
 
   it("définit les deux dégradés référencés par les aires", () => {
-    const { container } = render(<CumulativeChart data={[]} />);
-    expect(container.querySelector("linearGradient#colorArea1")).not.toBeNull();
-    expect(container.querySelector("linearGradient#colorArea2")).not.toBeNull();
+    const { container } = render(<CumulativeChart data={sampleData} />);
+    const ids = Array.from(container.querySelectorAll("linearGradient")).map((g) => g.id);
+    expect(ids).toHaveLength(2);
+    const fills = all("Area").map((a) => a.fill as string);
+    expect(fills).toEqual(ids.map((id) => `url(#${id})`));
   });
 
-  it("affiche une légende sans erreur avec des données vides", () => {
-    render(<CumulativeChart data={[]} />);
-    expect(screen.getByTestId("AreaChart").dataset.data).toBe("[]");
+  it("utilise des ids de dégradé valides dans url(#...) (sans « : »)", () => {
+    const { container } = render(<CumulativeChart data={sampleData} />);
+    for (const g of Array.from(container.querySelectorAll("linearGradient"))) expect(g.id).toMatch(/^[\w-]+$/);
+  });
+
+  it("deux graphiques cumulés n'ont aucun id de dégradé en commun", () => {
+    const { container } = render(<><CumulativeChart data={sampleData} /><CumulativeChart data={sampleData} /></>);
+    const ids = Array.from(container.querySelectorAll("linearGradient")).map((g) => g.id);
+    expect(ids).toHaveLength(4);
+    expect(new Set(ids).size).toBe(4);
+  });
+
+  it("affiche légende et aires avec des données", () => {
+    render(<CumulativeChart data={sampleData} />);
     expect(screen.getByTestId("Legend")).toBeInTheDocument();
   });
 });
@@ -277,7 +376,7 @@ describe("EvolutionChart (découvertes)", () => {
   });
 
   it("affiche la légende via le formatter (texte dans un span en gras)", () => {
-    render(<EvolutionChart data={[]} />);
+    render(<EvolutionChart data={sampleData} />);
     const span = screen.getByTestId("Legend").querySelector("span")!;
     expect(span).toHaveTextContent("Titres");
     expect(span).toHaveClass("font-bold");

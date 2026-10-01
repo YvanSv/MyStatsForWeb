@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FRONT_ROUTES } from "../constants/routes";
 import { BASE_UI } from "../styles/general";
@@ -29,7 +30,8 @@ const HEADER_STYLES = {
   
   MOBILE_OVERLAY: `absolute top-full left-0 w-full bg-bg1 backdrop-blur-xl border-b border-white/10 md:hidden animate-in slide-in-from-top-2`,
   MOBILE_NAV: `flex flex-col p-4 space-y-1 text-center`,
-  MOBILE_ITEM: `flex gap-4 justify-center text-[16px] py-4 hover:bg-white/5 transition-colors font-medium text-white font-semibold`
+  MOBILE_ITEM: `flex gap-4 justify-center text-[16px] py-4 hover:bg-white/5 transition-colors font-medium text-white font-semibold`,
+  MOBILE_ITEM_DANGER: `flex gap-4 justify-center text-[16px] py-4 hover:bg-red-500/10 transition-colors font-semibold text-red-400`
 };
 
 export default function Header() {
@@ -40,6 +42,7 @@ export default function Header() {
   const dict = t.header;
   const userName = user?.user_name || "Username";
   const { listening, localProgress } = useSpotify();
+  const cover = listening.data?.cover_url;
   // --- ÉTATS UI ---
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
@@ -75,6 +78,7 @@ export default function Header() {
     router.push(path);
     setIsMobileNavOpen(false);
   };
+  const closeMobileNav = () => setIsMobileNavOpen(false);
 
   return (
     <header className={HEADER_STYLES.CONTAINER}>
@@ -89,13 +93,13 @@ export default function Header() {
             const subMenu = isRankings ? sous_menu_ranking : sous_menu_compte;
             return (
               <div key={item.id} className={HEADER_STYLES.NAV_ITEM_WRAPPER}>
-                <NavButton onClick={() => navigate(item.path)}>
+                <NavButton href={item.path} onClick={closeMobileNav}>
                   {item.icon} {item.label}
                 </NavButton>
 
                 <PopoverMenu>
                   {subMenu.map(v => (
-                    <MenuButton key={v.id} onClick={() => navigate(v.path)} additional="text3">
+                    <MenuButton key={v.id} href={v.path} onClick={closeMobileNav} additional="text3">
                       {v.icon} {v.label}
                     </MenuButton>
                   ))}
@@ -105,7 +109,7 @@ export default function Header() {
           }
 
           return (
-            <NavButton key={item.id} onClick={() => navigate(item.path)}>
+            <NavButton key={item.id} href={item.path} onClick={closeMobileNav}>
               {item.icon} {item.label}
             </NavButton>
           );
@@ -118,7 +122,13 @@ export default function Header() {
           <div className={`${HEADER_STYLES.RIGHT_WRAPPER} pt-2`}>
             <TertiaryButton>
               <div className="relative flex-shrink-0">
-                <img src={listening.data?.cover_url} alt={listening.data?.title ?? ""} className="w-10 h-10 rounded-xl"/>
+                {cover ? (
+                  <img src={cover} alt={listening.data?.title ?? ""} className="w-10 h-10 rounded-xl"/>
+                ) : (
+                  <div role="img" aria-label={listening.data?.title ?? ""} className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <Music2 size={18} aria-hidden="true"/>
+                  </div>
+                )}
                 <div className={`shadow-lg object-cover absolute -top-1.5 -left-1.5 bg-green-500 text-[8px] px-1 font-black py-0.5 rounded-full text-black uppercase tracking-tighter shadow-xl`}>
                   {dict.live}
                 </div>
@@ -135,13 +145,17 @@ export default function Header() {
         {isLoggedIn ? (
           <div className={HEADER_STYLES.RIGHT_WRAPPER}>
             <TertiaryButton onClick={() => navigate(FRONT_ROUTES.ACCOUNT)} additional="text1 flex items-center gap-2 md:gap-3 bg-bg2/10 px-2 lg:px-3 py-1.5 text-sm font-medium md:hover:border-vert">
-              <img src={user?.avatar} className={HEADER_STYLES.USER_AVATAR} alt="Avatar Preview"/>
+              {user?.avatar ? (
+                <img src={user.avatar} className={HEADER_STYLES.USER_AVATAR} alt="Avatar Preview"/>
+              ) : (
+                <span className={HEADER_STYLES.USER_AVATAR} aria-hidden="true">{userName.charAt(0).toUpperCase()}</span>
+              )}
               <span className="hidden lg:block max-w-[80px] truncate">{userName}</span>
             </TertiaryButton>
 
             <PopoverMenu additional="-ml-4">
               {dropdown_menu.map(v => (
-                <MenuButton key={v.id} onClick={() => navigate(v.path)}
+                <MenuButton key={v.id} href={v.path} onClick={closeMobileNav}
                   additional={`transition-all duration-300 ease-out text1`}
                 >{v.icon}{v.label}</MenuButton>
               ))}
@@ -174,9 +188,23 @@ export default function Header() {
         <div className={HEADER_STYLES.MOBILE_OVERLAY}>
           <nav className={HEADER_STYLES.MOBILE_NAV}>
             {navigation_menu.map(item => 
-              <button key={item.id} className={HEADER_STYLES.MOBILE_ITEM} onClick={() => navigate(item.path)}>
+              <Link key={item.id} href={item.path} className={HEADER_STYLES.MOBILE_ITEM} onClick={closeMobileNav}>
                 {item.icon} {item.label}
-              </button>
+              </Link>
+            )}
+            {isLoggedIn ? (
+              <>
+                <Link href={FRONT_ROUTES.ACCOUNT} className={HEADER_STYLES.MOBILE_ITEM} onClick={closeMobileNav}>
+                  <User className="w-4 h-4 lg:w-6 lg:h-6"/> {dict.myAccount}
+                </Link>
+                <button className={HEADER_STYLES.MOBILE_ITEM_DANGER} onClick={() => { closeMobileNav(); logout(); }}>
+                  <LogoutIcon/> {dict.logout}
+                </button>
+              </>
+            ) : (
+              <Link href={FRONT_ROUTES.AUTH} className={HEADER_STYLES.MOBILE_ITEM} onClick={closeMobileNav}>
+                {dict.login}
+              </Link>
             )}
           </nav>
         </div>

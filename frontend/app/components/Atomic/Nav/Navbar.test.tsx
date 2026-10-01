@@ -3,6 +3,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from "./Navbar";
 
+vi.mock("next/link", () => ({
+  default: ({ href, children, onClick, ...rest }: { href: string; children: React.ReactNode; onClick?: () => void }) => (
+    <a href={href} onClick={(e) => { e.preventDefault(); onClick?.(); }} {...rest}>{children}</a>
+  ),
+}));
 vi.mock("next/image", () => ({
   // `priority` est une prop next/image qui n'existe pas sur <img>
   default: ({ priority, alt, ...props }: { priority?: boolean; alt?: string } & Record<string, unknown>) => {
@@ -38,6 +43,22 @@ describe("NavButton", () => {
     const onClick = vi.fn();
     render(<NavButton onClick={onClick}>Stats</NavButton>);
     await userEvent.setup().click(screen.getByRole("button", { name: "Stats" }));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("NavButton / MenuButton avec href", () => {
+  it.each([
+    ["NavButton", NavButton, "hover:text-vert"],
+    ["MenuButton", MenuButton, "hover:text-vert"],
+  ])("%s devient un vrai lien avec son style et appelle onClick", async (_n, Comp, colorClass) => {
+    const onClick = vi.fn((e?: unknown) => void e);
+    render(<Comp href="/my/tracks" onClick={() => onClick()}>Titres</Comp>);
+    const link = screen.getByRole("link", { name: "Titres" });
+    expect(link).toHaveAttribute("href", "/my/tracks");
+    expect(link).toHaveClass(colorClass);
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    await userEvent.setup().click(link);
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

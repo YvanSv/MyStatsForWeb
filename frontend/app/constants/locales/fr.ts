@@ -238,6 +238,7 @@ export const fr = {
     cumulative: "Évolution cumulée",
     discoveries: "Évolution de mes découvertes",
     streamsEvolution: "Évolution du nombre d'écoutes",
+    empty: "Aucune donnée à afficher",
   },
   common: {
     locale: "fr-FR",

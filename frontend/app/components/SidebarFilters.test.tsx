@@ -394,6 +394,46 @@ describe("SidebarFilters – saisie et application", () => {
   });
 });
 
+describe("SidebarFilters – changements d'URL étrangers aux filtres", () => {
+  const rerenderSidebar = (rerender: (ui: React.ReactElement) => void) =>
+    rerender(<SidebarFilters config={fullConfig()} loading={false} isVisible toggleShowFilters={toggle} />);
+
+  it("conserve les saisies non appliquées quand seul le tri ou l'offset change dans l'URL", async () => {
+    const user = userEvent.setup();
+    h.search = "track=Numb&sort=streams";
+    const { rerender } = renderSidebar();
+    await user.type(screen.getByPlaceholderText(dict.placeholderAlbum), "Meteora");
+    h.search = "track=Numb&sort=minutes&offset=50";
+    rerenderSidebar(rerender);
+    expect(screen.getByPlaceholderText(dict.placeholderAlbum)).toHaveValue("Meteora");
+    expect(screen.getByPlaceholderText(dict.placeholderTrack)).toHaveValue("Numb");
+  });
+
+  it("reprend le tri courant de l'URL (et non un ancien) à l'application", async () => {
+    const user = userEvent.setup();
+    h.search = "sort=streams";
+    const { rerender } = renderSidebar();
+    h.search = "sort=minutes";
+    rerenderSidebar(rerender);
+    await user.type(screen.getByPlaceholderText(dict.placeholderTrack), "Numb");
+    await user.click(applyBtn());
+    const params = new URLSearchParams(h.push.mock.calls[0][0].split("?")[1]);
+    expect(params.get("sort")).toBe("minutes");
+    expect(params.get("track")).toBe("Numb");
+  });
+
+  it("écrase la saisie locale quand un paramètre de filtre change réellement dans l'URL", async () => {
+    const user = userEvent.setup();
+    h.search = "track=Numb";
+    const { rerender } = renderSidebar();
+    await user.type(screen.getByPlaceholderText(dict.placeholderAlbum), "Meteora");
+    h.search = "track=Faint&sort=minutes";
+    rerenderSidebar(rerender);
+    expect(screen.getByPlaceholderText(dict.placeholderTrack)).toHaveValue("Faint");
+    expect(screen.getByPlaceholderText(dict.placeholderAlbum)).toHaveValue("");
+  });
+});
+
 describe("SidebarFilters – fermeture sur mobile", () => {
   it("referme la sidebar après application sur un écran < 1024px", async () => {
     const user = userEvent.setup();
@@ -419,9 +459,17 @@ describe("SidebarFilters – fermeture sur mobile", () => {
     expect(toggle).not.toHaveBeenCalled();
   });
 
-  it("ne referme pas la sidebar à la réinitialisation, même sur mobile", async () => {
+  it("referme la sidebar à la réinitialisation sur mobile", async () => {
     const user = userEvent.setup();
     setWidth(500);
+    renderSidebar();
+    await user.click(resetBtn());
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("laisse la sidebar ouverte à la réinitialisation sur un écran large", async () => {
+    const user = userEvent.setup();
+    setWidth(1280);
     renderSidebar();
     await user.click(resetBtn());
     expect(toggle).not.toHaveBeenCalled();
@@ -439,14 +487,17 @@ describe("SidebarFilters – réinitialisation", () => {
     expect(dateInputs(container)[0]).toHaveValue("");
     expect(sliders()[0]).toHaveValue("1");
     expect(h.push).toHaveBeenCalledTimes(1);
-    expect(h.push).toHaveBeenCalledWith("/my/tracks");
+    expect(h.push).toHaveBeenCalledWith("/my/tracks", { scroll: false });
   });
 
   it("la réinitialisation écrase aussi les paramètres inconnus au prochain « Appliquer »", async () => {
     const user = userEvent.setup();
     h.search = "sort=streams";
-    renderSidebar();
+    const { rerender } = renderSidebar();
     await user.click(resetBtn());
+    // L'URL est vidée par la navigation de la réinitialisation
+    h.search = "";
+    rerender(<SidebarFilters config={fullConfig()} loading={false} isVisible toggleShowFilters={toggle} />);
     await user.click(applyBtn());
     expect(h.push).toHaveBeenLastCalledWith("/my/tracks", { scroll: false });
   });

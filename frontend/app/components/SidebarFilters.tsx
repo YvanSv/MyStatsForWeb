@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PrimaryButton } from "./Atomic/Buttons";
 import { useLanguage } from "../context/languageContext";
@@ -57,6 +57,12 @@ interface SidebarFiltersProps {
 
 const STAT_KEYS: StatKey[] = ['streams', 'minutes', 'engagement', 'rating'];
 
+// Seuls ces paramètres d'URL sont gérés par la sidebar ; les autres (tri, pagination...) lui sont étrangers
+const FILTER_PARAM_KEYS = new Set([
+  'track', 'album', 'artist', 'date_min', 'date_max',
+  ...STAT_KEYS.flatMap(stat => [`${stat}_min`, `${stat}_max`]),
+]);
+
 // Valeur d'un curseur : 0 est une valeur valide, seule l'absence (ou une valeur invalide) retombe sur le repli
 const toNumber = (value: string | undefined, fallback: number) => {
   if (value === undefined || value === "") return fallback;
@@ -70,7 +76,14 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const dict = t.sidebarFilters;
-  const [localFilters, setLocalFilters] = useState<Record<string, string>>({});
+
+  // Clé stable construite à partir des seuls paramètres de filtre de l'URL
+  const filterKey = useMemo(() => {
+    const entries: [string, string][] = [];
+    searchParams.forEach((value, key) => { if (FILTER_PARAM_KEYS.has(key)) entries.push([key, value]); });
+    return JSON.stringify(entries.sort(([a], [b]) => a.localeCompare(b)));
+  }, [searchParams]);
+  const [localFilters, setLocalFilters] = useState<Record<string, string>>(() => Object.fromEntries(JSON.parse(filterKey)));
 
   // Fonction utilitaire pour traduire les labels des stats
   const getStatLabel = (stat: string) => {
@@ -83,13 +96,10 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
     }
   };
 
+  // Resynchronise la saisie locale uniquement quand les filtres de l'URL changent réellement
   useEffect(() => {
-    const currentParams: Record<string, string> = {};
-    searchParams.forEach((value, key) => {
-      currentParams[key] = value;
-    });
-    setLocalFilters(currentParams);
-  }, [searchParams]);
+    setLocalFilters(Object.fromEntries(JSON.parse(filterKey)));
+  }, [filterKey]);
 
   const handleLocalChange = (key: string, value: string) => {
     setLocalFilters(prev => ({ ...prev, [key]: value }));
@@ -97,6 +107,10 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
 
   const applyFilters = () => {
     const params = new URLSearchParams();
+    // Les paramètres étrangers aux filtres (tri...) sont repris tels qu'ils sont actuellement dans l'URL
+    searchParams.forEach((value, key) => {
+      if (!FILTER_PARAM_KEYS.has(key)) params.append(key, value);
+    });
 
     Object.entries(localFilters).forEach(([key, value]) => {
       if (value && value !== "") {
@@ -112,7 +126,9 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
 
   const resetFilters = () => {
     setLocalFilters({});
-    router.push(pathname);
+    router.push(pathname, { scroll: false });
+    // Fermer la sidebar sur mobile, comme après application
+    if (window.innerWidth < 1024) toggleShowFilters();
   };
 
   return (

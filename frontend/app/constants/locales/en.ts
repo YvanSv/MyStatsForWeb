@@ -238,6 +238,7 @@ export const en = {
     cumulative: "Cumulative evolution",
     discoveries: "Evolution of my discoveries",
     streamsEvolution: "Streams evolution",
+    empty: "No data to display",
   },
   common: {
     locale: "en-US",
