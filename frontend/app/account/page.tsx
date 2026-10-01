@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/authContext";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
@@ -55,10 +55,19 @@ function AccountContent() {
   // Erreur renvoyée par l'API lors de l'enregistrement (ex : email déjà utilisé)
   const [errorApi, setErrorApi] = useState('');
 
+  // Les champs reprennent les valeurs enregistrées, sans jamais écraser une saisie en cours :
+  // un champ n'est mis à jour que s'il n'a pas été modifié depuis la dernière synchronisation,
+  // et seulement quand la valeur enregistrée change (un nouvel objet `user` identique ne fait rien).
+  const synced = useRef({ name: "", email: "" });
+  const savedName = user?.user_name ?? "";
+  const savedEmail = user?.email ?? "";
   useEffect(() => {
-    if (user?.user_name) setUsername(user.user_name);
-    if (user?.email) setEmail(user.email);
-  }, [user]);
+    // Copie des anciennes valeurs : les fonctions de mise à jour s'exécutent plus tard, après la réaffectation ci-dessous
+    const previous = synced.current;
+    setUsername(current => current === previous.name ? savedName : current);
+    setEmail(current => current === previous.email ? savedEmail : current);
+    synced.current = { name: savedName, email: savedEmail };
+  }, [savedName, savedEmail]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

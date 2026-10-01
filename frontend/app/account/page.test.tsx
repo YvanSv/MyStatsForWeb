@@ -772,17 +772,17 @@ describe("AccountPage – suppression du compte", () => {
 describe("AccountPage – erreurs toujours cohérentes avec les valeurs saisies", () => {
   const isBlocked = () => (saveButton() as HTMLButtonElement).disabled;
 
-  it("une erreur de nom disparaît quand le compte est rafraîchi et que le nom revient à la valeur enregistrée", async () => {
+  it("une erreur de nom disparaît quand le compte enregistré prend la valeur saisie (après un enregistrement)", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<AccountPage />);
-    await typeInto(user, nameInput(), "ab");
-    expect(screen.getByText(dict.errorName1)).toBeInTheDocument();
-    expect(isBlocked()).toBe(true);
-    // refreshUser renvoie un nouvel objet : le champ reprend le nom enregistré
-    mockAuth.user = makeUser({ user_name: "Yvan2" });
+    await typeInto(user, nameInput(), "Nouveau");
+    await user.click(saveButton());
+    // refreshUser renvoie le compte avec le nouveau nom : plus aucune différence avec la valeur enregistrée
+    mockAuth.user = makeUser({ user_name: "Nouveau" });
     rerender(<AccountPage />);
-    expect(nameInput()).toHaveValue("Yvan2");
-    expect(screen.queryByText(dict.errorName1)).not.toBeInTheDocument();
+    expect(nameInput()).toHaveValue("Nouveau");
+    await user.click(saveButton());
+    expect(toast).toHaveBeenCalledWith(dict.noChanges);
     expect(isBlocked()).toBe(false);
   });
 
@@ -876,5 +876,76 @@ describe("AccountPage – erreurs toujours cohérentes avec les valeurs saisies"
     await typeInto(user, confirmInput(), "motdepasse1");
     await user.click(saveButton());
     expect(mockAuth.updateUserProfile).toHaveBeenCalledWith({ password: "motdepasse1" });
+  });
+});
+
+describe("AccountPage – rafraîchissement du compte et saisies en cours", () => {
+  it("un nouvel objet utilisateur identique ne touche pas aux saisies en cours", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccountPage />);
+    const email = emailInput(); // le champ est retrouvé par sa valeur : à récupérer avant de la modifier
+    await typeInto(user, nameInput(), "En cours");
+    await user.type(email, "x");
+    mockAuth.user = makeUser(); // même valeurs, nouvelle référence
+    rerender(<AccountPage />);
+    expect(nameInput()).toHaveValue("En cours");
+    expect(email).toHaveValue("yvan@example.comx");
+  });
+
+  it("une valeur enregistrée différente met à jour un champ non modifié", () => {
+    const { rerender } = render(<AccountPage />);
+    mockAuth.user = makeUser({ user_name: "Renommé", email: "nouveau@example.com" });
+    rerender(<AccountPage />);
+    expect(nameInput()).toHaveValue("Renommé");
+    expect(emailInput()).toHaveValue("nouveau@example.com");
+  });
+
+  it("une valeur enregistrée différente n'écrase pas un champ en cours de modification", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccountPage />);
+    await typeInto(user, nameInput(), "Ma saisie");
+    mockAuth.user = makeUser({ user_name: "Autre côté" });
+    rerender(<AccountPage />);
+    expect(nameInput()).toHaveValue("Ma saisie");
+  });
+
+  it("met à jour l'email non modifié même quand le nom est en cours de modification", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccountPage />);
+    await typeInto(user, nameInput(), "Ma saisie");
+    mockAuth.user = makeUser({ email: "change@example.com" });
+    rerender(<AccountPage />);
+    expect(nameInput()).toHaveValue("Ma saisie");
+    expect(emailInput()).toHaveValue("change@example.com");
+  });
+
+  it("les mots de passe saisis ne sont jamais touchés par un rafraîchissement", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccountPage />);
+    await typeInto(user, pwInput(), "motdepasse1");
+    await typeInto(user, confirmInput(), "motdepasse1");
+    mockAuth.user = makeUser({ user_name: "Renommé" });
+    rerender(<AccountPage />);
+    expect(pwInput()).toHaveValue("motdepasse1");
+    expect(confirmInput()).toHaveValue("motdepasse1");
+  });
+
+  it("un champ remis à la valeur enregistrée suit de nouveau les rafraîchissements", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccountPage />);
+    await typeInto(user, nameInput(), "Yvan"); // revient exactement à la valeur enregistrée
+    mockAuth.user = makeUser({ user_name: "Renommé" });
+    rerender(<AccountPage />);
+    expect(nameInput()).toHaveValue("Renommé");
+  });
+
+  it("enregistre bien la saisie en cours après un rafraîchissement du compte", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccountPage />);
+    await typeInto(user, nameInput(), "Ma saisie");
+    mockAuth.user = makeUser();
+    rerender(<AccountPage />);
+    await user.click(saveButton());
+    expect(mockAuth.updateUserProfile).toHaveBeenCalledWith({ username: "Ma saisie" });
   });
 });
