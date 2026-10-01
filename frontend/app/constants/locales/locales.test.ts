@@ -97,6 +97,7 @@ describe.each(dictionaries)("dictionnaire %s – qualité des textes", (_lang, d
 
   it("expose les fonctions de dictionnaire attendues", () => {
     expect(functions.map((f) => f.path).sort()).toEqual([
+      "account.confirmMismatch",
       "importData.appleProgress",
       "importData.appleSent",
       "importData.dropzoneActive",

@@ -4,6 +4,7 @@ import { useAuth } from "../context/authContext";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
+import { ConfirmDialog } from "../components/Atomic/ConfirmDialog/ConfirmDialog";
 import { Skeleton } from "./Skeleton";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
@@ -40,6 +41,9 @@ function AccountContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [updating, setUpdating] = useState(false);
+  // Confirmation en cours (suppression ou nettoyage) et exécution de l'action
+  const [dialog, setDialog] = useState<"delete" | "clear" | null>(null);
+  const [dangerBusy, setDangerBusy] = useState(false);
   // Erreurs calculées à chaque rendu à partir des valeurs saisies (jamais stockées) : elles ne peuvent pas être périmées,
   // quel que soit le champ modifié en dernier ou l'ordre des mises à jour.
   const nameChanged = username !== (user?.user_name ?? "");
@@ -84,31 +88,22 @@ function AccountContent() {
     } finally {setUpdating(false)}
   };
 
-  const handleDeleteAccount = async () => {
-    const confirmation = prompt(dict.confirmDelete);
-    
-    if (confirmation === dict.deleteValidation) {
-      try {
-        await deleteAccount();
-        toast.success(dict.successDeleteToast, {
-          style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
-          iconTheme: { primary: '#1DD05D', secondary: '#fff' },
-        });
-      } catch {toast.error(dict.errorDeleteMessage)}
-    }
+  const toastStyle = {
+    style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+    iconTheme: { primary: '#1DD05D', secondary: '#fff' },
   };
 
-  const handleClearAccount = async () => {
-    const confirmation = prompt(dict.confirmClear);
-    
-    if (confirmation === dict.clearValidation) {
-      try {
-        await clearAccount();
-        toast.success(dict.successToastClear, {
-          style: { borderRadius: '15px', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
-          iconTheme: { primary: '#1DD05D', secondary: '#fff' },
-        });
-      } catch {toast.error(dict.errorDeleteMessage)}
+  // Exécute l'action irréversible une fois la saisie de confirmation validée par la fenêtre
+  const runDangerAction = async (kind: "delete" | "clear") => {
+    setDangerBusy(true);
+    try {
+      if (kind === "delete") await deleteAccount();
+      else await clearAccount();
+      toast.success(kind === "delete" ? dict.successDeleteToast : dict.successToastClear, toastStyle);
+    } catch {toast.error(dict.errorDeleteMessage)}
+    finally {
+      setDangerBusy(false);
+      setDialog(null);
     }
   };
 
@@ -250,7 +245,7 @@ function AccountContent() {
         </p>
         {/* Zone de danger : Suppression du compte */}
         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col items-center">
-          <button onClick={handleClearAccount}
+          <button type="button" onClick={() => setDialog("clear")}
             className="group flex flex-col items-center gap-3 transition-all duration-300 hover:opacity-80 pb-8"
           >
             <div className="px-6 py-3 rounded-full border border-rouge/20 bg-rouge/5 text-rouge text-[11px] font-bold uppercase tracking-widest group-hover:bg-rouge group-hover:text-white transition-all">
@@ -258,7 +253,7 @@ function AccountContent() {
             </div>
           </button>
 
-          <button onClick={handleDeleteAccount}
+          <button type="button" onClick={() => setDialog("delete")}
             className="group flex flex-col items-center gap-3 transition-all duration-300 hover:opacity-80"
           >
             <div className="px-6 py-3 rounded-full border border-rouge/20 bg-rouge/5 text-rouge text-[11px] font-bold uppercase tracking-widest group-hover:bg-rouge group-hover:text-white transition-all">
@@ -274,11 +269,26 @@ function AccountContent() {
   }
 
   return (
-    <DoubleFrame
-      titles={[left_col.title,right_col.title]}
-      subtitles={[left_col.subtitle,right_col.subtitle]}
-      contents={[left_col.content,right_col.content]}
-    />
+    <>
+      <DoubleFrame
+        titles={[left_col.title,right_col.title]}
+        subtitles={[left_col.subtitle,right_col.subtitle]}
+        contents={[left_col.content,right_col.content]}
+      />
+      {dialog && (
+        <ConfirmDialog
+          title={dialog === "delete" ? dict.deleteaccount : dict.cleardata}
+          description={dialog === "delete" ? dict.confirmDelete : dict.confirmClear}
+          expected={dialog === "delete" ? dict.deleteValidation : dict.clearValidation}
+          confirmLabel={dialog === "delete" ? dict.deleteaccount : dict.cleardata}
+          cancelLabel={dict.cancel}
+          mismatchMessage={dict.confirmMismatch}
+          busy={dangerBusy}
+          onConfirm={() => runDangerAction(dialog)}
+          onCancel={() => setDialog(null)}
+        />
+      )}
+    </>
   );
 }
 

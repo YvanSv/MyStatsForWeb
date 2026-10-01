@@ -19,6 +19,8 @@ export const fr = {
   },
   account: {
     successToast: "Compte mis à jour avec succès !",
+    cancel: "Annuler",
+    confirmMismatch: (word: string) => `Saisie incorrecte : recopiez exactement « ${word} ».`,
     noChanges: "Aucune modification à enregistrer.",
     confirmDelete: "Pour confirmer la suppression de votre compte et de toutes vos statistiques, tapez 'SUPPRIMER' ci-dessous :",
     deleteValidation: "SUPPRIMER",

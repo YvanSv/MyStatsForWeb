@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { languages } from "../constants/locales/lang";
 import AccountPage from "./page";
@@ -532,104 +532,240 @@ describe("AccountPage – liaison Spotify", () => {
   });
 });
 
+// Les actions irréversibles passent par une fenêtre de confirmation de la page (plus de prompt() natif)
+const dialog = () => screen.getByRole("dialog");
+const dialogInput = () => within(dialog()).getByRole("textbox");
+const dialogConfirm = (label: string) => within(dialog()).getByRole("button", { name: label });
+
 describe("AccountPage – nettoyage des données", () => {
-  it("demande une confirmation avec le bon message", async () => {
+  it("n'utilise jamais prompt() natif", async () => {
     const prompt = vi.spyOn(window, "prompt").mockReturnValue(null);
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.cleardata));
-    expect(prompt).toHaveBeenCalledWith(dict.confirmClear);
+    expect(prompt).not.toHaveBeenCalled();
   });
 
-  it("nettoie les données quand le mot de confirmation est correct", async () => {
-    vi.spyOn(window, "prompt").mockReturnValue(dict.clearValidation);
+  it("ouvre une fenêtre de confirmation avec le bon message", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await user.click(screen.getByText(dict.cleardata));
+    expect(within(dialog()).getByText(dict.confirmClear)).toBeInTheDocument();
+    expect(mockAuth.clearAccount).not.toHaveBeenCalled();
+  });
+
+  it("nettoie les données quand le mot de confirmation est recopié correctement", async () => {
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), dict.clearValidation);
+    await user.click(dialogConfirm(dict.cleardata));
     await waitFor(() => expect(mockAuth.clearAccount).toHaveBeenCalledTimes(1));
     expect(toast.success).toHaveBeenCalledWith(dict.successToastClear, expect.anything());
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
-  it.each([["confirmer"], ["oui"], [""], [null]])("ne fait rien quand la réponse est %j", async (answer) => {
-    vi.spyOn(window, "prompt").mockReturnValue(answer as string | null);
+  it("valide aussi avec la touche Entrée", async () => {
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), `${dict.clearValidation}{Enter}`);
+    await waitFor(() => expect(mockAuth.clearAccount).toHaveBeenCalledTimes(1));
+  });
+
+  it.each([["confirmer"], ["oui"], ["CONFIRME"]])("saisie fausse %j : message d'erreur visible et bouton bloqué", async (answer) => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), answer);
+    expect(within(dialog()).getByText(dict.confirmMismatch(dict.clearValidation))).toBeInTheDocument();
+    expect(dialogConfirm(dict.cleardata)).toBeDisabled();
     expect(mockAuth.clearAccount).not.toHaveBeenCalled();
     expect(toast.success).not.toHaveBeenCalled();
   });
 
-  it("n'accepte pas le mot de confirmation de la suppression du compte", async () => {
-    vi.spyOn(window, "prompt").mockReturnValue(dict.deleteValidation);
+  it("le bouton est bloqué et sans message tant que rien n'est saisi", async () => {
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.cleardata));
+    expect(dialogConfirm(dict.cleardata)).toBeDisabled();
+    expect(within(dialog()).queryByText(dict.confirmMismatch(dict.clearValidation))).not.toBeInTheDocument();
+  });
+
+  it("le message d'erreur disparaît quand la saisie devient correcte", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), "CONF");
+    expect(within(dialog()).getByText(dict.confirmMismatch(dict.clearValidation))).toBeInTheDocument();
+    await user.type(dialogInput(), "IRMER");
+    expect(within(dialog()).queryByText(dict.confirmMismatch(dict.clearValidation))).not.toBeInTheDocument();
+    expect(dialogConfirm(dict.cleardata)).toBeEnabled();
+  });
+
+  it("ne valide pas avec Entrée quand la saisie est fausse", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), "oui{Enter}");
     expect(mockAuth.clearAccount).not.toHaveBeenCalled();
   });
 
-  it("affiche une erreur quand le nettoyage échoue", async () => {
-    vi.spyOn(window, "prompt").mockReturnValue(dict.clearValidation);
+  it("n'accepte pas le mot de confirmation de la suppression du compte", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), dict.deleteValidation);
+    expect(dialogConfirm(dict.cleardata)).toBeDisabled();
+  });
+
+  it("Annuler ferme la fenêtre sans rien faire", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    await user.click(within(dialog()).getByRole("button", { name: dict.cancel }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mockAuth.clearAccount).not.toHaveBeenCalled();
+  });
+
+  it("Échap ferme la fenêtre sans rien faire", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mockAuth.clearAccount).not.toHaveBeenCalled();
+  });
+
+  it("rouvrir la fenêtre repart d'un champ vide", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), "CONF");
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByText(dict.cleardata));
+    expect(dialogInput()).toHaveValue("");
+  });
+
+  it("affiche une erreur quand le nettoyage échoue, et ferme la fenêtre", async () => {
     mockAuth.clearAccount = vi.fn().mockRejectedValue(new Error("boom"));
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), dict.clearValidation);
+    await user.click(dialogConfirm(dict.cleardata));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(dict.errorDeleteMessage));
     expect(toast.success).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
-  it("ne supprime pas le compte en nettoyant les données", async () => {
-    vi.spyOn(window, "prompt").mockReturnValue(dict.clearValidation);
+  it("bloque la fenêtre pendant l'action (pas de double envoi, pas de fermeture)", async () => {
+    let resolve!: () => void;
+    mockAuth.clearAccount = vi.fn(() => new Promise<void>((r) => (resolve = r)));
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), dict.clearValidation);
+    await user.click(dialogConfirm(dict.cleardata));
+    expect(dialogConfirm(dict.cleardata)).toBeDisabled();
+    expect(within(dialog()).getByRole("button", { name: dict.cancel })).toBeDisabled();
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(mockAuth.clearAccount).toHaveBeenCalledTimes(1);
+    resolve();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("ne supprime pas le compte en nettoyant les données", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    await user.type(dialogInput(), dict.clearValidation);
+    await user.click(dialogConfirm(dict.cleardata));
     await waitFor(() => expect(mockAuth.clearAccount).toHaveBeenCalled());
     expect(mockAuth.deleteAccount).not.toHaveBeenCalled();
   });
 });
 
 describe("AccountPage – suppression du compte", () => {
-  it("demande une confirmation avec le bon message", async () => {
+  it("n'utilise jamais prompt() natif", async () => {
     const prompt = vi.spyOn(window, "prompt").mockReturnValue(null);
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.deleteaccount));
-    expect(prompt).toHaveBeenCalledWith(dict.confirmDelete);
+    expect(prompt).not.toHaveBeenCalled();
   });
 
-  it("supprime le compte quand le mot de confirmation est correct", async () => {
-    vi.spyOn(window, "prompt").mockReturnValue(dict.deleteValidation);
+  it("ouvre une fenêtre de confirmation avec le bon message", async () => {
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.deleteaccount));
+    expect(within(dialog()).getByText(dict.confirmDelete)).toBeInTheDocument();
+    expect(mockAuth.deleteAccount).not.toHaveBeenCalled();
+  });
+
+  it("supprime le compte quand le mot de confirmation est recopié correctement", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.deleteaccount));
+    await user.type(dialogInput(), dict.deleteValidation);
+    await user.click(dialogConfirm(dict.deleteaccount));
     await waitFor(() => expect(mockAuth.deleteAccount).toHaveBeenCalledTimes(1));
     expect(toast.success).toHaveBeenCalledWith(dict.successDeleteToast, expect.anything());
   });
 
-  it.each([["supprimer"], ["non"], [""], [null]])("ne fait rien quand la réponse est %j", async (answer) => {
-    vi.spyOn(window, "prompt").mockReturnValue(answer as string | null);
+  it.each([["supprimer"], ["non"], ["SUPPRIME"]])("saisie fausse %j : message visible et rien n'est supprimé", async (answer) => {
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.deleteaccount));
+    await user.type(dialogInput(), answer);
+    expect(within(dialog()).getByText(dict.confirmMismatch(dict.deleteValidation))).toBeInTheDocument();
+    expect(dialogConfirm(dict.deleteaccount)).toBeDisabled();
     expect(mockAuth.deleteAccount).not.toHaveBeenCalled();
     expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("n'accepte pas le mot de confirmation du nettoyage des données", async () => {
-    vi.spyOn(window, "prompt").mockReturnValue(dict.clearValidation);
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.deleteaccount));
+    await user.type(dialogInput(), dict.clearValidation);
+    expect(dialogConfirm(dict.deleteaccount)).toBeDisabled();
+  });
+
+  it("Annuler et Échap ferment sans supprimer", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.deleteaccount));
+    await user.click(within(dialog()).getByRole("button", { name: dict.cancel }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await user.click(screen.getByText(dict.deleteaccount));
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(mockAuth.deleteAccount).not.toHaveBeenCalled();
   });
 
   it("affiche une erreur quand la suppression échoue", async () => {
-    vi.spyOn(window, "prompt").mockReturnValue(dict.deleteValidation);
     mockAuth.deleteAccount = vi.fn().mockRejectedValue(new Error("boom"));
     const user = userEvent.setup();
     render(<AccountPage />);
     await user.click(screen.getByText(dict.deleteaccount));
+    await user.type(dialogInput(), dict.deleteValidation);
+    await user.click(dialogConfirm(dict.deleteaccount));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(dict.errorDeleteMessage));
     expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it("une seule fenêtre à la fois : celle de suppression remplace celle du nettoyage", async () => {
+    const user = userEvent.setup();
+    render(<AccountPage />);
+    await user.click(screen.getByText(dict.cleardata));
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByText(dict.deleteaccount));
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    expect(within(dialog()).getByText(dict.confirmDelete)).toBeInTheDocument();
   });
 });
 

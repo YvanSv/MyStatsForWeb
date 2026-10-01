@@ -19,6 +19,8 @@ export const en = {
   },
   account: {
     successToast: "Account successfully updated!",
+    cancel: "Cancel",
+    confirmMismatch: (word: string) => `Incorrect entry: type exactly "${word}".`,
     noChanges: "No changes to save.",
     confirmDelete: "To confirm the deletion of your account and all your statistics, type 'DELETE' below :",
     deleteValidation: "DELETE",
