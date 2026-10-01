@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { formatStat, isValidNumber, safeNumber } from "./format";
+import {
+  RATING_AVERAGE, RATING_GOOD, formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, safeNumber, withUnit,
+} from "./format";
 
 describe("isValidNumber", () => {
   it.each([[0], [1], [-3], [1.5], [1e9]])("accepte %s", (v) => expect(isValidNumber(v)).toBe(true));
@@ -33,5 +35,63 @@ describe("safeNumber", () => {
 
   it.each([[undefined], [null], [NaN], [Infinity], [-Infinity]])("renvoie 0 pour %s", (v) => {
     expect(safeNumber(v as number | null | undefined)).toBe(0);
+  });
+});
+
+describe("formatStreams", () => {
+  it("sépare les milliers selon la langue", () => {
+    expect(formatStreams(1234567, "en-US")).toBe("1,234,567");
+    expect(formatStreams(1234567, "fr-FR").replace(/\s/g, " ")).toBe("1 234 567");
+  });
+
+  it.each([[undefined], [null], [NaN]])("renvoie « - » pour %s", (v) => {
+    expect(formatStreams(v as number | null | undefined, "fr-FR")).toBe("-");
+  });
+
+  it("garde 0", () => expect(formatStreams(0, "fr-FR")).toBe("0"));
+});
+
+describe("formatMinutes", () => {
+  it("arrondit à l'unité et sépare les milliers", () => {
+    expect(formatMinutes(678.6, "en-US")).toBe("679");
+    expect(formatMinutes(12345.4, "en-US")).toBe("12,345");
+  });
+
+  it.each([[undefined], [null], [NaN], [Infinity]])("renvoie « - » pour %s (et non 0)", (v) => {
+    expect(formatMinutes(v as number | null | undefined, "fr-FR")).toBe("-");
+  });
+
+  it("garde 0", () => expect(formatMinutes(0, "fr-FR")).toBe("0"));
+});
+
+describe("formatPercent", () => {
+  it("ajoute le % et formate selon la langue", () => {
+    expect(formatPercent(42.5, "fr-FR")).toBe("42,5%");
+    expect(formatPercent(42.5, "en-US")).toBe("42.5%");
+    expect(formatPercent(0, "fr-FR")).toBe("0%");
+  });
+
+  it.each([[undefined], [null], [NaN]])("renvoie « - » seul (jamais « -% ») pour %s", (v) => {
+    expect(formatPercent(v as number | null | undefined, "fr-FR")).toBe("-");
+  });
+});
+
+describe("withUnit", () => {
+  it("accole l'unité à une valeur présente", () => expect(withUnit("679", "m")).toBe("679m"));
+  it("laisse « - » sans unité", () => expect(withUnit("-", "m")).toBe("-"));
+});
+
+describe("seuils de note", () => {
+  it("expose les seuils partagés", () => {
+    expect(RATING_GOOD).toBe(1.35);
+    expect(RATING_AVERAGE).toBe(0.8);
+  });
+
+  it.each([
+    [1.35, "text2"], [3, "text2"], [1.349, "text-jaune"], [0.8, "text-jaune"],
+    [0.799, "text-rouge"], [0, "text-rouge"], [-1, "text-rouge"],
+    [undefined, "text-rouge"], [null, "text-rouge"], [NaN, "text-rouge"],
+  ])("note %s -> %s", (rating, cls) => {
+    expect(ratingColorClass(rating as number | null | undefined)).toBe(cls);
   });
 });

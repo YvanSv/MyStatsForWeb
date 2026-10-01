@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { languages } from "../../constants/locales/lang";
 import type { DataInfo } from "@/app/data/DataInfos";
 
@@ -109,35 +109,62 @@ describe("GridCell – nom et image de repli", () => {
   });
 });
 
+const desktopFooter = (container: HTMLElement) => container.querySelector<HTMLElement>(".md\\:grid")!;
+const mobileFooter = (container: HTMLElement) => container.querySelector<HTMLElement>(".md\\:hidden")!;
+
 describe("GridCell – statistiques", () => {
   it("formate les statistiques du pied de page desktop avec la locale", () => {
-    renderCell(track);
-    expect(screen.getByText(fmt(12345))).toBeInTheDocument();
-    expect(screen.getByText(fmt(679))).toBeInTheDocument(); // minutes arrondies
-    expect(screen.getByText(fmt(42.5))).toBeInTheDocument();
-    expect(screen.getByText(dict.unitStreams)).toBeInTheDocument();
-    expect(screen.getByText(dict.unitMinutes)).toBeInTheDocument();
-    expect(screen.getByText("%")).toBeInTheDocument();
+    const { container } = renderCell(track);
+    const footer = within(desktopFooter(container));
+    expect(footer.getByText(fmt(12345))).toBeInTheDocument();
+    expect(footer.getByText(fmt(679))).toBeInTheDocument(); // minutes arrondies
+    expect(footer.getByText(fmt(42.5))).toBeInTheDocument();
+    expect(footer.getByText(dict.unitStreams)).toBeInTheDocument();
+    expect(footer.getByText(dict.unitMinutes)).toBeInTheDocument();
+    expect(footer.getByText("%")).toBeInTheDocument();
   });
 
-  it("affiche les valeurs brutes dans le pied de page mobile", () => {
-    renderCell(track);
-    expect(screen.getByText("12345")).toBeInTheDocument();
-    expect(screen.getByText("679m")).toBeInTheDocument();
-    expect(screen.getByText("42.5%")).toBeInTheDocument();
+  it("formate le pied de page mobile comme le desktop (séparateur de milliers, minutes arrondies)", () => {
+    const { container } = renderCell(track);
+    const footer = within(mobileFooter(container));
+    expect(footer.getByText(fmt(12345))).toBeInTheDocument();
+    expect(footer.getByText(`${fmt(679)}m`)).toBeInTheDocument();
+    expect(footer.getByText(`${fmt(42.5)}%`)).toBeInTheDocument();
   });
 
-  it("remplace les minutes par « - » quand elles sont absentes (desktop), et les masque sur mobile", () => {
-    renderCell({ ...track, total_minutes: undefined as unknown as number });
-    expect(screen.getByText("-")).toBeInTheDocument();
-    expect(screen.queryByText(dict.unitMinutes)).not.toBeInTheDocument();
-    expect(screen.queryByText(/m$/)).not.toBeInTheDocument();
+  it("sépare les milliers dans le pied de page mobile", () => {
+    const { container } = renderCell({ ...track, play_count: 1234567, total_minutes: 98765 });
+    expect(mobileFooter(container).textContent!.replace(/\s/g, " ")).toContain(fmt(1234567));
+    expect(mobileFooter(container).textContent!.replace(/\s/g, " ")).toContain(`${fmt(98765)}m`);
   });
 
-  it("affiche 0 minute quand total_minutes vaut 0", () => {
-    renderCell({ ...track, total_minutes: 0 });
-    expect(screen.queryByText("-")).not.toBeInTheDocument();
-    expect(screen.getByText("0m")).toBeInTheDocument();
+  it.each([[undefined], [null], [NaN]])("minutes %s : « - » sans unité sur desktop comme sur mobile", (minutes) => {
+    const { container } = renderCell({ ...track, total_minutes: minutes as unknown as number });
+    expect(within(desktopFooter(container)).queryByText(dict.unitMinutes)).not.toBeInTheDocument();
+    expect(within(desktopFooter(container)).getByText("-")).toBeInTheDocument();
+    expect(within(mobileFooter(container)).getByText("-")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/-m|NaN/);
+  });
+
+  it("n'affiche jamais « -% » : engagement absent = « - » sur desktop et mobile", () => {
+    const { container } = renderCell({ ...track, engagement: undefined as unknown as number });
+    expect(mobileFooter(container)).not.toHaveTextContent("%");
+    expect(desktopFooter(container)).not.toHaveTextContent("%");
+    expect(container.textContent).not.toContain("-%");
+  });
+
+  it("streams absents : « - » sans unité, partout", () => {
+    const { container } = renderCell({ ...track, play_count: null as unknown as number });
+    expect(within(desktopFooter(container)).queryByText(dict.unitStreams)).not.toBeInTheDocument();
+    expect(within(mobileFooter(container)).getAllByText("-")).toHaveLength(1);
+  });
+
+  it("affiche 0 quand total_minutes, play_count ou engagement valent 0", () => {
+    const { container } = renderCell({ ...track, total_minutes: 0, play_count: 0, engagement: 0 });
+    expect(container.textContent).not.toContain("-");
+    expect(within(mobileFooter(container)).getByText("0m")).toBeInTheDocument();
+    expect(within(mobileFooter(container)).getByText("0%")).toBeInTheDocument();
+    expect(within(mobileFooter(container)).getByText("0")).toBeInTheDocument();
   });
 });
 
@@ -169,26 +196,25 @@ describe("GridCell – mise en évidence du tri", () => {
     ["total_minutes", () => fmt(679)],
     ["engagement", () => fmt(42.5)],
   ])("tri %s : seule la statistique correspondante est en évidence", (sort, value) => {
-    renderCell(track, 0, sort);
-    const all = [fmt(12345), fmt(679), fmt(42.5)];
-    for (const v of all) {
-      const el = screen.getByText(v);
-      if (v === value()) expect(el).toHaveClass("text2");
-      else expect(el).toHaveClass("text3");
+    const { container } = renderCell(track, 0, sort);
+    for (const v of [fmt(12345), fmt(679), fmt(42.5)]) {
+      const el = within(desktopFooter(container)).getByText(v);
+      expect(el).toHaveClass(v === value() ? "text2" : "text3");
     }
   });
 
   it("met en évidence la valeur mobile correspondant au tri", () => {
-    renderCell(track, 0, "engagement");
-    expect(screen.getByText("42.5%")).toHaveClass("text2");
-    expect(screen.getByText("12345")).toHaveClass("text3");
-    expect(screen.getByText("679m")).toHaveClass("text3");
+    const { container } = renderCell(track, 0, "engagement");
+    const footer = within(mobileFooter(container));
+    expect(footer.getByText(`${fmt(42.5)}%`)).toHaveClass("text2");
+    expect(footer.getByText(fmt(12345))).toHaveClass("text3");
+    expect(footer.getByText(`${fmt(679)}m`)).toHaveClass("text3");
   });
 
   it("aucune statistique en évidence pour un tri inconnu", () => {
-    renderCell(track, 0, "title");
-    expect(screen.getByText(fmt(12345))).toHaveClass("text3");
-    expect(screen.getByText("679m")).toHaveClass("text3");
+    const { container } = renderCell(track, 0, "title");
+    expect(within(desktopFooter(container)).getByText(fmt(12345))).toHaveClass("text3");
+    expect(within(mobileFooter(container)).getByText(`${fmt(679)}m`)).toHaveClass("text3");
   });
 });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import SidebarFilters from "../SidebarFilters";
 import { useViewMode } from "../../context/viewModeContext";
 import { useShowFilters } from "../../context/showFiltersContext";
@@ -9,7 +10,7 @@ import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
 import { PrimaryButton, SecondaryButton } from "../Atomic/Buttons";
 import { useLanguage } from "@/app/context/languageContext";
-import { MenuButton, PopoverMenu } from "../Atomic/Nav/Navbar";
+import { MenuButton } from "../Atomic/Nav/Navbar";
 import { Grid2X2, Grid3X3, List } from "lucide-react";
 
 interface RankingViewProps {
@@ -41,7 +42,9 @@ const RANKING_VIEW_STYLES = {
   SORT_SELECT_WRAPPER: "relative flex-[1.5] md:flex-none group",
   SORT_LABEL: `text3 absolute -top-2 left-4 px-1.5 bg-bg1 text-[8px] md:text-[10px] font-bold uppercase tracking-wider z-10`,
   SORT_ICON_POS: `text3 absolute right-3 pointer-events-none`,
-  RIGHT_WRAPPER: "relative group",
+  RIGHT_WRAPPER: "relative",
+  VIEW_TRIGGER: "text2 flex flex-col items-center justify-center p-1 lg:p-2 rounded-full border border-white/10 hover:border-white/20 hover:bg-white/5 font-semibold transition-all duration-300 ease-out active:scale-95 cursor-pointer",
+  VIEW_MENU: "absolute top-full left-1/2 -translate-x-1/2 z-50 overflow-hidden whitespace-nowrap rounded-xl mt-1 p-1 bg-bg2 border border-white/10 shadow-2xl",
 
   // Titre de la page
   PAGE_TITLE: "text-3xl md:text-5xl tracking-tighter text-left md:text-right",
@@ -67,6 +70,26 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
   ] as const;
 
   const activeView = views.find(v => v.id === viewMode) || views[1];
+
+  // Menu de changement de vue : ouvert au clic / Entrée / Espace (pas d'ouverture au survol : elle contredirait l'état au clic), fermé au choix, à Échap et au clic extérieur
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [menuOpen]);
+
+  const closeOnEscape = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape" && menuOpen) {
+      setMenuOpen(false);
+      menuRef.current?.querySelector<HTMLButtonElement>("button[aria-haspopup]")?.focus();
+    }
+  };
 
   return (
     <main className={`text1 min-h-screen relative overflow-hidden`}>
@@ -121,20 +144,24 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
               </SecondaryButton>
 
               {/* View Mode Selector */}
-              <div className={RANKING_VIEW_STYLES.RIGHT_WRAPPER}>
-                <SecondaryButton ariaLabel={activeView.label} additional="text2 flex flex-col items-center p-1 lg:p-2 justify-center">
+              <div ref={menuRef} className={RANKING_VIEW_STYLES.RIGHT_WRAPPER} onKeyDown={closeOnEscape}>
+                {/* Bouton natif : SecondaryButton n'expose pas aria-haspopup / aria-expanded */}
+                <button type="button" aria-label={activeView.label} aria-haspopup="true" aria-expanded={menuOpen}
+                  onClick={() => setMenuOpen(o => !o)} className={RANKING_VIEW_STYLES.VIEW_TRIGGER}>
                   <div className="flex items-center justify-center">{activeView.icon}</div>
-                </SecondaryButton>
-      
-                <PopoverMenu>
-                  {views.map(v => (
-                    <MenuButton key={v.id} label={v.label} onClick={() => toggleViewMode(v.id)} additional={`duration-300 ease-out
-                        ${viewMode === v.id ? `text2 bg-white/5` : `text3 hover:text-white hover:bg-white/5`}
-                        ${v.hideMobile ? 'hidden lg:flex' : 'flex'}
-                      `}
-                    >{v.icon}</MenuButton>
-                  ))}
-                </PopoverMenu>
+                </button>
+
+                {menuOpen && (
+                  <div className={RANKING_VIEW_STYLES.VIEW_MENU}>
+                    {views.map(v => (
+                      <MenuButton key={v.id} label={v.label} onClick={() => { toggleViewMode(v.id); setMenuOpen(false); }} additional={`duration-300 ease-out
+                          ${viewMode === v.id ? `text2 bg-white/5` : `text3 hover:text-white hover:bg-white/5`}
+                          ${v.hideMobile ? 'hidden lg:flex' : 'flex'}
+                        `}
+                      >{v.icon}</MenuButton>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -161,9 +188,9 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
           </div>
 
           {/* LOAD MORE */}
-          {(hasMore && !loading) && (
+          {hasMore && (
             <div className="flex justify-center">
-              <SecondaryButton onClick={loadMore} additional="px-8 py-4 disabled:opacity-50">
+              <SecondaryButton onClick={loadMore} disabled={loading} additional="px-8 py-4 disabled:opacity-50">
                 {loading ? dict.loading : dict.loadMore}
               </SecondaryButton>
             </div>

@@ -109,10 +109,24 @@ describe("SmallGridCell – statistiques", () => {
     expect(screen.getByText("%")).toBeInTheDocument();
   });
 
-  it("affiche « - » quand les minutes sont absentes", () => {
-    renderCell({ ...track, total_minutes: undefined as unknown as number });
+  it.each([[undefined], [null], [NaN]])("affiche « - » sans unité quand les minutes valent %s", (minutes) => {
+    const { container } = renderCell({ ...track, total_minutes: minutes as unknown as number });
     expect(screen.getByText("-")).toBeInTheDocument();
     expect(screen.queryByText(dict.unitMinutes)).not.toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/NaN/);
+  });
+
+  it("affiche « - » sans unité « str » quand les streams sont absents", () => {
+    renderCell({ ...track, play_count: undefined as unknown as number });
+    expect(screen.getByText("-")).toBeInTheDocument();
+    expect(screen.queryByText(dict.unitStreams)).not.toBeInTheDocument();
+  });
+
+  it("affiche « - » sans « % » quand l'engagement est absent", () => {
+    const { container } = renderCell({ ...track, engagement: undefined as unknown as number });
+    expect(screen.getByText("-")).toBeInTheDocument();
+    expect(screen.queryByText("%")).not.toBeInTheDocument();
+    expect(container.textContent).not.toContain("-%");
   });
 
   it("affiche 0 (et non « - ») quand total_minutes vaut 0", () => {

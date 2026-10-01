@@ -178,6 +178,12 @@ describe("RankingView – tri", () => {
   });
 });
 
+const trigger = () => screen.getByRole("button", { expanded: false }) as HTMLButtonElement;
+const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(screen.getByRole("button", { name: /^(Grille|Petite grille|Liste)$/, expanded: false }));
+};
+const menuButton = (icon: string) => screen.getAllByTestId(icon).map((i) => i.closest("button")!).find((b) => b.className.includes("w-full"))!;
+
 describe("RankingView – modes d'affichage", () => {
   it.each([
     ["grid", "cell-grid", "grid-cols-3"],
@@ -196,25 +202,10 @@ describe("RankingView – modes d'affichage", () => {
     ["grid", dict.viewGrid],
     ["grid_sm", dict.viewGridSm],
     ["list", dict.viewList],
-  ])("mode %s : le bouton de vue actif a pour nom accessible « %s »", (mode, label) => {
+  ])("mode %s : le bouton de vue (menu fermé) a pour nom accessible « %s »", (mode, label) => {
     h.viewMode = mode;
     renderView();
-    // bouton actif + entrée du menu de vues
-    expect(screen.getAllByRole("button", { name: label })).toHaveLength(2);
-  });
-
-  it("donne un nom accessible aux trois choix de vue (grille, petite grille, liste)", () => {
-    renderView();
-    for (const label of [dict.viewGrid, dict.viewGridSm, dict.viewList]) {
-      expect(screen.getAllByRole("button", { name: label }).length).toBeGreaterThan(0);
-    }
-  });
-
-  it("change de vue en cliquant sur un choix nommé", async () => {
-    const user = userEvent.setup();
-    renderView();
-    await user.click(screen.getAllByRole("button", { name: dict.viewList })[0]);
-    expect(h.toggleViewMode).toHaveBeenCalledWith("list");
+    expect(screen.getAllByRole("button", { name: label })).toHaveLength(1);
   });
 
   it("mode inconnu : retombe sur la grille standard", () => {
@@ -226,8 +217,7 @@ describe("RankingView – modes d'affichage", () => {
   it("mode inconnu : l'icône active est celle de la grille", () => {
     h.viewMode = "bizarre";
     renderView();
-    // icône du bouton actif + icône dans le menu
-    expect(screen.getAllByTestId("icon-grid")).toHaveLength(2);
+    expect(screen.getAllByTestId("icon-grid")).toHaveLength(1);
   });
 
   it.each([
@@ -237,34 +227,128 @@ describe("RankingView – modes d'affichage", () => {
   ])("le bouton de vue affiche l'icône du mode %s", (mode, icon) => {
     h.viewMode = mode;
     renderView();
-    expect(screen.getAllByTestId(icon)).toHaveLength(2);
-    for (const other of ["icon-grid_sm", "icon-grid", "icon-list"].filter((i) => i !== icon)) {
-      expect(screen.getAllByTestId(other)).toHaveLength(1);
+    expect(screen.getAllByTestId(/^icon-/).map((i) => i.getAttribute("data-testid"))).toEqual([icon]);
+  });
+});
+
+describe("RankingView – menu de changement de vue", () => {
+  it("est fermé au départ : bouton annoncé comme menu replié, aucune option affichée", () => {
+    renderView();
+    const btn = trigger();
+    expect(btn).toHaveAttribute("aria-haspopup", "true");
+    expect(btn).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getAllByRole("button", { name: dict.viewGrid })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: dict.viewList })).not.toBeInTheDocument();
+  });
+
+  it("ne s'ouvre pas au simple survol", async () => {
+    const user = userEvent.setup();
+    renderView();
+    await user.hover(trigger());
+    expect(screen.queryByRole("button", { name: dict.viewList })).not.toBeInTheDocument();
+  });
+
+  it("s'ouvre au clic et expose les trois choix de vue", async () => {
+    const user = userEvent.setup();
+    renderView();
+    await openMenu(user);
+    expect(screen.getByRole("button", { name: dict.viewGrid, expanded: true })).toHaveAttribute("aria-haspopup", "true");
+    for (const label of [dict.viewGridSm, dict.viewList]) {
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
+    expect(screen.getAllByRole("button", { name: dict.viewGrid })).toHaveLength(2);
+  });
+
+  it.each([["{Enter}"], [" "]])("s'ouvre au clavier (touche %j) et les options sont atteignables par Tab", async (key) => {
+    const user = userEvent.setup();
+    renderView();
+    trigger().focus();
+    await user.keyboard(key);
+    expect(screen.getByRole("button", { name: dict.viewList })).toBeInTheDocument();
+    await user.tab();
+    expect(menuButton("icon-grid_sm")).not.toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: dict.viewGridSm }).closest("button"));
+  });
+
+  it("un second clic sur le bouton referme le menu", async () => {
+    const user = userEvent.setup();
+    renderView();
+    await openMenu(user);
+    await user.click(screen.getByRole("button", { expanded: true }));
+    expect(screen.queryByRole("button", { name: dict.viewList })).not.toBeInTheDocument();
+    expect(trigger()).toHaveAttribute("aria-expanded", "false");
   });
 
   it.each([
     ["icon-grid_sm", "grid_sm"],
-    ["icon-grid", "grid"],
     ["icon-list", "list"],
-  ])("cliquer sur l'entrée de menu %s passe en mode %s", async (icon, mode) => {
-    h.viewMode = mode === "list" ? "grid" : "list";
+  ])("choisir l'entrée %s passe en mode %s et ferme le menu", async (icon, mode) => {
     const user = userEvent.setup();
     renderView();
-    const entry = screen.getAllByTestId(icon).map((i) => i.closest("button")!).find((b) => b.className.includes("w-full"))!;
-    await user.click(entry);
+    await openMenu(user);
+    await user.click(menuButton(icon));
+    expect(h.toggleViewMode).toHaveBeenCalledTimes(1);
     expect(h.toggleViewMode).toHaveBeenCalledWith(mode);
+    expect(screen.queryByRole("button", { name: dict.viewList })).not.toBeInTheDocument();
+    expect(trigger()).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("met en évidence l'entrée du mode courant et masque la petite grille sur mobile", () => {
-    h.viewMode = "list";
+  it("choisir la vue déjà active ferme aussi le menu", async () => {
+    const user = userEvent.setup();
     renderView();
-    const menuButton = (icon: string) => screen.getAllByTestId(icon).map((i) => i.closest("button")!).find((b) => b.className.includes("w-full"))!;
+    await openMenu(user);
+    await user.click(menuButton("icon-grid"));
+    expect(h.toggleViewMode).toHaveBeenCalledWith("grid");
+    expect(trigger()).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("se ferme avec Échap et rend le focus au bouton", async () => {
+    const user = userEvent.setup();
+    renderView();
+    await openMenu(user);
+    await user.tab();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("button", { name: dict.viewList })).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it("Échap sans menu ouvert ne fait rien", async () => {
+    const user = userEvent.setup();
+    renderView();
+    trigger().focus();
+    await user.keyboard("{Escape}");
+    expect(trigger()).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("se ferme au clic en dehors du menu, mais pas au clic dedans sur le bouton", async () => {
+    const user = userEvent.setup();
+    renderView();
+    await openMenu(user);
+    await user.click(screen.getByRole("main"));
+    expect(screen.queryByRole("button", { name: dict.viewList })).not.toBeInTheDocument();
+    expect(h.toggleViewMode).not.toHaveBeenCalled();
+  });
+
+  it("met en évidence l'entrée du mode courant et masque la petite grille sur mobile", async () => {
+    h.viewMode = "list";
+    const user = userEvent.setup();
+    renderView();
+    await openMenu(user);
     expect(menuButton("icon-list")).toHaveClass("text2", "bg-white/5");
     expect(menuButton("icon-grid")).toHaveClass("text3");
     expect(menuButton("icon-grid_sm")).toHaveClass("hidden", "lg:flex");
     expect(menuButton("icon-grid")).toHaveClass("flex");
     expect(menuButton("icon-grid")).not.toHaveClass("hidden");
+  });
+
+  it("retire ses écouteurs globaux au démontage", async () => {
+    const user = userEvent.setup();
+    const remove = vi.spyOn(document, "removeEventListener");
+    const { unmount } = renderView();
+    await openMenu(user);
+    unmount();
+    expect(remove).toHaveBeenCalledWith("pointerdown", expect.any(Function));
+    remove.mockRestore();
   });
 });
 
@@ -337,16 +421,42 @@ describe("RankingView – charger plus", () => {
     expect(screen.queryByRole("button", { name: dict.loadMore })).not.toBeInTheDocument();
   });
 
-  it("masque le bouton pendant un chargement (et n'affiche pas « Chargement... »)", () => {
+  it("garde le bouton visible pendant un chargement : désactivé, avec le libellé de chargement", () => {
     renderView({ hasMore: true, loading: true });
+    const btn = screen.getByRole("button", { name: dict.loading });
+    expect(btn).toBeDisabled();
     expect(screen.queryByRole("button", { name: dict.loadMore })).not.toBeInTheDocument();
+  });
+
+  it("ne rappelle pas loadMore au clic pendant un chargement", async () => {
+    const user = userEvent.setup();
+    const { props } = renderView({ hasMore: true, loading: true });
+    await user.click(screen.getByRole("button", { name: dict.loading }));
+    expect(props.loadMore).not.toHaveBeenCalled();
+  });
+
+  it("le bouton est actif hors chargement", () => {
+    renderView({ hasMore: true, loading: false });
+    expect(screen.getByRole("button", { name: dict.loadMore })).toBeEnabled();
+  });
+
+  it("retrouve « Charger plus » actif quand le chargement se termine", () => {
+    const { rerender, props } = renderView({ hasMore: true, loading: true });
+    rerender(<RankingView {...props} loading={false} />);
+    expect(screen.getByRole("button", { name: dict.loadMore })).toBeEnabled();
     expect(screen.queryByText(dict.loading)).not.toBeInTheDocument();
   });
 
-  it("réapparaît quand le chargement se termine", () => {
+  it("disparaît à la fin du chargement s'il n'y a plus d'éléments", () => {
     const { rerender, props } = renderView({ hasMore: true, loading: true });
-    rerender(<RankingView {...props} loading={false} />);
-    expect(screen.getByRole("button", { name: dict.loadMore })).toBeInTheDocument();
+    rerender(<RankingView {...props} hasMore={false} loading={false} />);
+    expect(screen.queryByRole("button", { name: dict.loading })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: dict.loadMore })).not.toBeInTheDocument();
+  });
+
+  it("n'affiche pas le bouton en chargement quand il n'y a plus d'éléments", () => {
+    renderView({ hasMore: false, loading: true });
+    expect(screen.queryByRole("button", { name: dict.loading })).not.toBeInTheDocument();
   });
 
   it("cache le bouton sans élément ni suite", () => {

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { DataInfo } from "@/app/data/DataInfos";
 import { useLanguage } from "@/app/context/languageContext";
-import { formatStat, safeNumber } from "./format";
+import { formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, safeNumber, withUnit } from "./format";
 
 interface ListCellProps {
   element: DataInfo;
@@ -43,7 +43,7 @@ const LIST_CELL_STYLES = {
   
   // Rating (Couleurs conditionnelles)
   RATING: (rating: number, isActive: boolean) => {
-    const color = rating >= 1.35 ? `text2` : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
+    const color = ratingColorClass(rating);
     return `text-xs text-right md:text-base w-full lg:text-center ${color} ${isActive ? 'font-bold' : 'text-sm'}`;
   }
 };
@@ -77,16 +77,16 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
     if (sort === 'rating') return <div className="h-5 md:hidden"/>;
     
     const config = {
-      play_count: { val: element.play_count ?? "-", unit: "STR" },
-      engagement: { val: `${element.engagement ?? "-"}%`, unit: "" },
-      total_minutes: { val: Math.round(element.total_minutes || 0), unit: "MIN" }
+      play_count: { val: formatStreams(element.play_count, dict.locale), unit: "STR", present: isValidNumber(element.play_count) },
+      engagement: { val: formatPercent(element.engagement, dict.locale), unit: "", present: false },
+      total_minutes: { val: formatMinutes(element.total_minutes, dict.locale), unit: "MIN", present: isValidNumber(element.total_minutes) }
     };
 
     const current = config[sort as keyof typeof config] || config.total_minutes;
 
     return (
       <div className={LIST_CELL_STYLES.MOBILE_STAT_CONTAINER}>
-        {current.val}<span className="text-[8px] ml-1 lg:hidden opacity-70">{current.unit}</span>
+        {current.val}{current.present && <span className="text-[8px] ml-1 lg:hidden opacity-70">{current.unit}</span>}
       </div>
     );
   };
@@ -111,17 +111,17 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
 
       {/* COLONNES DESKTOP */}
       <div className={LIST_CELL_STYLES.COLUMN_DESKTOP(sort === 'play_count')}>
-        {formatStat(element.play_count, dict.locale)} <span className="text-[10px]">{dict.unitStreams}</span>
+        {formatStreams(element.play_count, dict.locale)}{isValidNumber(element.play_count) && <> <span className="text-[10px]">{dict.unitStreams}</span></>}
       </div>
 
       <div className={LIST_CELL_STYLES.COLUMN_DESKTOP(sort === 'total_minutes')}>
-        {Math.round(element.total_minutes || 0).toLocaleString(dict.locale)} <span className="text-[10px]">{dict.unitMinutes}</span>
+        {formatMinutes(element.total_minutes, dict.locale)}{isValidNumber(element.total_minutes) && <> <span className="text-[10px]">{dict.unitMinutes}</span></>}
       </div>
 
       <div className="hidden lg:flex justify-center">
         <div className="flex items-center gap-2">
           <span className={sort === 'engagement' ? `text2 font-bold` : `text3 text-sm`}>
-            {formatStat(element.engagement, dict.locale)}%
+            {formatPercent(element.engagement, dict.locale)}
           </span>
           <div className={LIST_CELL_STYLES.ENGAGEMENT_BAR_CONTAINER}>
             <div 
@@ -136,7 +136,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
       <div className={LIST_CELL_STYLES.RIGHT_BLOCK}>
         <div className="lg:hidden">{renderMobileStat()}</div>
         <div className={LIST_CELL_STYLES.RATING(safeNumber(element.rating), sort === 'rating')}>
-          {formatStat(element.rating, dict.locale)}★
+          {withUnit(formatStat(element.rating, dict.locale), "★")}
         </div>
       </div>
     </div>

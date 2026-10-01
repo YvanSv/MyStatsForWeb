@@ -96,9 +96,27 @@ describe("ListCell – colonnes desktop", () => {
     expect(screen.getByText("1,5★")).toBeInTheDocument();
   });
 
-  it("affiche 0 minute quand total_minutes est absent", () => {
-    const { container } = renderCell({ ...track, total_minutes: undefined as unknown as number });
-    expect(container.textContent).toContain(`0 ${dict.unitMinutes}`);
+  it.each([[undefined], [null], [NaN]])("affiche « - » sans unité (et non « 0 min ») quand total_minutes vaut %s", (minutes) => {
+    const { container } = renderCell({ ...track, total_minutes: minutes as unknown as number });
+    expect(container.textContent).not.toContain(dict.unitMinutes);
+    expect(container.textContent).not.toMatch(/0 min|NaN/);
+    expect(container.textContent).toContain("-");
+  });
+
+  it("affiche 0 min (et non « - ») quand total_minutes vaut 0", () => {
+    const { container } = renderCell({ ...track, total_minutes: 0 });
+    expect(container.textContent!.replace(/\s/g, " ")).toContain(`0 ${dict.unitMinutes}`);
+  });
+
+  it("streams et engagement absents : « - » sans unité ni « -% »", () => {
+    const { container } = renderCell({ ...track, play_count: undefined as unknown as number, engagement: undefined as unknown as number });
+    expect(container.textContent).not.toContain(dict.unitStreams);
+    expect(container.textContent).not.toContain("%");
+  });
+
+  it("note absente : « - » sans étoile", () => {
+    const { container } = renderCell({ ...track, rating: undefined as unknown as number });
+    expect(container.textContent).not.toContain("★");
   });
 
   it.each([[0], [42.5], [100]])("la barre d'engagement fait %s%% de large", (engagement) => {
@@ -119,14 +137,24 @@ describe("ListCell – colonnes desktop", () => {
 describe("ListCell – statistique mobile", () => {
   const mobile = (container: HTMLElement) => container.querySelector(".lg\\:hidden")!;
 
-  it("tri play_count : nombre brut + unité STR", () => {
+  it("tri play_count : nombre formaté (séparateur de milliers) + unité STR", () => {
     const { container } = renderCell(track, 0, "play_count");
-    expect(mobile(container)).toHaveTextContent("12345STR");
+    expect(mobile(container).textContent!.replace(/\s/g, " ")).toBe(`${fmt(12345)}STR`);
+  });
+
+  it("tri play_count : streams absents = « - » sans unité", () => {
+    const { container } = renderCell({ ...track, play_count: undefined as unknown as number }, 0, "play_count");
+    expect(mobile(container)).toHaveTextContent(/^-$/);
+  });
+
+  it("tri engagement : engagement absent = « - » (et non « -% »)", () => {
+    const { container } = renderCell({ ...track, engagement: undefined as unknown as number }, 0, "engagement");
+    expect(mobile(container)).toHaveTextContent(/^-$/);
   });
 
   it("tri engagement : pourcentage sans unité", () => {
     const { container } = renderCell(track, 0, "engagement");
-    expect(mobile(container)).toHaveTextContent(/^42\.5%$/);
+    expect(mobile(container)).toHaveTextContent(new RegExp(`^${fmt(42.5)}%$`));
   });
 
   it("tri total_minutes : minutes arrondies + unité MIN", () => {
@@ -146,8 +174,13 @@ describe("ListCell – statistique mobile", () => {
     expect(mobile(container)).not.toHaveTextContent("STR");
   });
 
-  it("minutes absentes : affiche 0 MIN", () => {
+  it("minutes absentes : « - » sans unité (comme les autres cellules)", () => {
     const { container } = renderCell({ ...track, total_minutes: undefined as unknown as number }, 0, "total_minutes");
+    expect(mobile(container)).toHaveTextContent(/^-$/);
+  });
+
+  it("minutes à 0 : affiche 0 MIN", () => {
+    const { container } = renderCell({ ...track, total_minutes: 0 }, 0, "total_minutes");
     expect(mobile(container)).toHaveTextContent("0MIN");
   });
 });
@@ -190,7 +223,7 @@ describe("ListCell – mise en évidence des colonnes", () => {
 
   it("tri engagement : le pourcentage est en évidence", () => {
     renderCell(track, 0, "engagement");
-    expect(screen.getByText(`${fmt(42.5)}%`)).toHaveClass("text2", "font-bold");
+    expect(screen.getAllByText(`${fmt(42.5)}%`)[0]).toHaveClass("text2", "font-bold");
   });
 
   it("tri autre : le pourcentage est atténué", () => {

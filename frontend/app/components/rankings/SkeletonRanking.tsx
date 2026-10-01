@@ -1,9 +1,17 @@
+"use client";
+
+import { useViewMode } from "@/app/context/viewModeContext";
+
 const SKELETON_STYLES = {
   PULSE: "animate-pulse bg-white/5 rounded-2xl",
   TEXT_SM: "h-3 bg-white/5 rounded animate-pulse",
 };
 
-export default function SkeletonRanking({ viewMode = 'grid' }: { viewMode?: 'list' | 'grid' | 'grid_sm' }) {
+export default function SkeletonRanking({ viewMode: viewModeProp }: { viewMode?: 'list' | 'grid' | 'grid_sm' }) {
+  // La prop est prioritaire ; sinon le squelette reprend le mode de vue courant
+  const { viewMode: currentViewMode } = useViewMode();
+  const viewMode = viewModeProp ?? currentViewMode;
+
   return (
     <div className="flex min-h-screen bg-bg1">
       {/* 1. SIDEBAR FILTERS SKELETON */}

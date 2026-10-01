@@ -1,7 +1,7 @@
 import { useLanguage } from "@/app/context/languageContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import Image from "next/image";
-import { formatStat, safeNumber } from "./format";
+import { formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, withUnit } from "./format";
 
 interface GridCellProps {
   element: DataInfo;
@@ -39,8 +39,8 @@ const GRID_CELL_STYLES = {
       ? 'bottom-2 left-1/2 -translate-x-1/2 md:px-2 md:py-0.5 md:rounded-full bg-black/40 backdrop-blur-sm' 
       : 'bg-black/60 backdrop-blur-md border border-white/10 top-1 right-1 md:top-3 md:right-3 px-1 md:px-2 py-0.5 rounded-md'}
   `,
-  RATING_TEXT: (rating: number, isActive: boolean) => {
-    const color = rating >= 1.35 ? `text2` : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
+  RATING_TEXT: (rating: number | undefined, isActive: boolean) => {
+    const color = ratingColorClass(rating);
     return `${isActive ? 'font-black' : 'font-medium'} ${color} text-[7px] md:text-xs tracking-tighter`;
   },
 
@@ -104,8 +104,8 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
 
         {/* Badge Rating */}
         <div className={GRID_CELL_STYLES.RATING_BADGE(isArtist)}>
-          <span className={GRID_CELL_STYLES.RATING_TEXT(safeNumber(element.rating), sort === "rating")}>
-            {formatStat(element.rating, dict.locale)} ★
+          <span className={GRID_CELL_STYLES.RATING_TEXT(element.rating, sort === "rating")}>
+            {withUnit(formatStat(element.rating, dict.locale), " ★")}
           </span>
         </div>
       </div>
@@ -124,42 +124,36 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
       <div className={GRID_CELL_STYLES.FOOTER_PC}>
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
           <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'play_count')}>
-            {formatStat(element.play_count, dict.locale)}
+            {formatStreams(element.play_count, dict.locale)}
           </span>
-          <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitStreams}</span>
+          {isValidNumber(element.play_count) && <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitStreams}</span>}
         </div>
 
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
-          {element.total_minutes !== undefined ? (
-            <>
-              <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'total_minutes')}>
-                {Math.round(element.total_minutes).toLocaleString(dict.locale)}
-              </span>
-              <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitMinutes}</span>
-            </>
-          ) : (<span className={`text2 font-bold`}>-</span>)}
+          <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'total_minutes')}>
+              {formatMinutes(element.total_minutes, dict.locale)}
+            </span>
+            {isValidNumber(element.total_minutes) && <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitMinutes}</span>}
         </div>
 
         <div className={GRID_CELL_STYLES.STAT_BLOCK}>
           <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'engagement')}>
             {formatStat(element.engagement, dict.locale)}
           </span>
-          <span className={GRID_CELL_STYLES.STAT_LABEL}>%</span>
+          {isValidNumber(element.engagement) && <span className={GRID_CELL_STYLES.STAT_LABEL}>%</span>}
         </div>
       </div>
 
       {/* FOOTER MOBILE */}
       <div className={GRID_CELL_STYLES.FOOTER_MOBILE}>
         <span className={GRID_CELL_STYLES.MOBILE_VALUE(sort === 'play_count')}>
-          {element.play_count ?? "-"}
+          {formatStreams(element.play_count, dict.locale)}
         </span>
-        {element.total_minutes !== undefined && (
-          <span className={GRID_CELL_STYLES.MOBILE_VALUE(sort === 'total_minutes')}>
-            {Math.round(element.total_minutes)}m
-          </span>
-        )}
+        <span className={GRID_CELL_STYLES.MOBILE_VALUE(sort === 'total_minutes')}>
+          {withUnit(formatMinutes(element.total_minutes, dict.locale), "m")}
+        </span>
         <span className={GRID_CELL_STYLES.MOBILE_VALUE(sort === 'engagement')}>
-          {element.engagement ?? "-"}%
+          {formatPercent(element.engagement, dict.locale)}
         </span>
       </div>
     </div>

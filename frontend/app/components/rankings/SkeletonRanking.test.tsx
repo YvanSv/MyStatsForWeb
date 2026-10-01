@@ -1,6 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import SkeletonRanking from "./SkeletonRanking";
+
+const h = vi.hoisted(() => ({ viewMode: "grid" as string }));
+vi.mock("@/app/context/viewModeContext", () => ({
+  useViewMode: () => ({ viewMode: h.viewMode, toggleViewMode: vi.fn() }),
+}));
+
+beforeEach(() => {
+  h.viewMode = "grid";
+});
 
 /** Conteneur des 20 éléments factices (celui qui a 20 enfants). */
 const itemsContainer = (container: HTMLElement) =>
@@ -56,5 +65,30 @@ describe("SkeletonRanking", () => {
   it("anime tous les blocs factices", () => {
     const { container } = render(<SkeletonRanking />);
     expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(20);
+  });
+
+  it.each([
+    ["grid_sm", ["grid", "grid-cols-3", "lg:grid-cols-8"]],
+    ["grid", ["grid", "grid-cols-2", "lg:grid-cols-5"]],
+    ["list", ["space-y-3"]],
+  ])("sans prop, reprend le mode de vue courant du contexte (%s)", (mode, classes) => {
+    h.viewMode = mode;
+    const { container } = render(<SkeletonRanking />);
+    expect(itemsContainer(container)).toHaveClass(...classes);
+  });
+
+  it("la prop viewMode est prioritaire sur le contexte", () => {
+    h.viewMode = "list";
+    const { container } = render(<SkeletonRanking viewMode="grid_sm" />);
+    expect(itemsContainer(container)).toHaveClass("lg:grid-cols-8");
+    expect(itemsContainer(container)).not.toHaveClass("space-y-3");
+  });
+
+  it("suit le changement de mode du contexte au rendu suivant", () => {
+    const { container, rerender } = render(<SkeletonRanking />);
+    expect(itemsContainer(container)).toHaveClass("grid-cols-2");
+    h.viewMode = "list";
+    rerender(<SkeletonRanking />);
+    expect(itemsContainer(container)).toHaveClass("space-y-3");
   });
 });

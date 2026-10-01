@@ -1,7 +1,7 @@
 import { useLanguage } from "@/app/context/languageContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import Image from "next/image";
-import { formatStat, safeNumber } from "./format";
+import { formatMinutes, formatStat, formatStreams, isValidNumber, ratingColorClass, withUnit } from "./format";
 
 interface SmallGridCellProps {
   element: DataInfo;
@@ -39,8 +39,8 @@ const SMALL_GRID_STYLES = {
       ? 'bottom-2 left-1/2 -translate-x-1/2' 
       : 'bg-black/60 backdrop-blur-md border border-white/10 top-0.75 right-0.75 md:top-2 md:right-2 px-0.75 md:px-1.5 py-0.37 rounded-md'}
   `,
-  RATING_TEXT: (rating: number, isActive: boolean) => {
-    const color = rating >= 1.35 ? `text2`  : rating >= 0.8 ? 'text-jaune' : 'text-rouge';
+  RATING_TEXT: (rating: number | undefined, isActive: boolean) => {
+    const color = ratingColorClass(rating);
     return `${isActive ? 'font-bold' : 'font-medium'} ${color} text-[6px] md:text-xs`;
   },
 
@@ -100,8 +100,8 @@ export default function SmallGridCell({ element, index, sort }: SmallGridCellPro
 
         {/* Badge Rating */}
         <div className={SMALL_GRID_STYLES.RATING_BADGE(isArtist)}>
-          <span className={SMALL_GRID_STYLES.RATING_TEXT(safeNumber(element.rating), sort === "rating")}>
-            {formatStat(element.rating, dict.locale)} ★
+          <span className={SMALL_GRID_STYLES.RATING_TEXT(element.rating, sort === "rating")}>
+            {withUnit(formatStat(element.rating, dict.locale), " ★")}
           </span>
         </div>
       </div>
@@ -121,21 +121,17 @@ export default function SmallGridCell({ element, index, sort }: SmallGridCellPro
         {/* Streams */}
         <div className={SMALL_GRID_STYLES.STAT_BLOCK}>
           <span className={SMALL_GRID_STYLES.STAT_VALUE(sort === 'play_count')}>
-            {formatStat(element.play_count, dict.locale)}
+            {formatStreams(element.play_count, dict.locale)}
           </span>
-          <span className={SMALL_GRID_STYLES.STAT_LABEL}>{dict.unitStreams}</span>
+          {isValidNumber(element.play_count) && <span className={SMALL_GRID_STYLES.STAT_LABEL}>{dict.unitStreams}</span>}
         </div>
 
         {/* Minutes */}
         <div className={SMALL_GRID_STYLES.STAT_BLOCK}>
-          {element.total_minutes !== undefined ? (
-            <>
-              <span className={SMALL_GRID_STYLES.STAT_VALUE(sort === 'total_minutes')}>
-                {Math.round(element.total_minutes).toLocaleString(dict.locale)}
-              </span>
-              <span className={SMALL_GRID_STYLES.STAT_LABEL}>{dict.unitMinutes}</span>
-            </>
-          ) : (<span className="text-gray-400 font-bold text-[10px]">-</span>)}
+          <span className={SMALL_GRID_STYLES.STAT_VALUE(sort === 'total_minutes')}>
+              {formatMinutes(element.total_minutes, dict.locale)}
+            </span>
+            {isValidNumber(element.total_minutes) && <span className={SMALL_GRID_STYLES.STAT_LABEL}>{dict.unitMinutes}</span>}
         </div>
 
         {/* Engagement */}
@@ -143,7 +139,7 @@ export default function SmallGridCell({ element, index, sort }: SmallGridCellPro
           <span className={SMALL_GRID_STYLES.STAT_VALUE(sort === 'engagement')}>
             {formatStat(element.engagement, dict.locale)}
           </span>
-          <span className={SMALL_GRID_STYLES.STAT_LABEL}>%</span>
+          {isValidNumber(element.engagement) && <span className={SMALL_GRID_STYLES.STAT_LABEL}>%</span>}
         </div>
       </div>
     </div>
