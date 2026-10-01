@@ -1,8 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isValidElement } from "react";
 import { API_ENDPOINTS } from "@/app/constants/routes";
+import { languages } from "@/app/constants/locales/lang";
 import ServerProfilePage, { generateMetadata, generateViewport } from "./page";
 
+const h = vi.hoisted(() => ({ acceptLanguage: null as string | null }));
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers(h.acceptLanguage ? { "accept-language": h.acceptLanguage } : {}),
+}));
 vi.mock("./client", () => ({ default: () => null }));
 
 const fetchMock = vi.fn();
@@ -10,6 +15,7 @@ const params = (id: string) => ({ params: Promise.resolve({ id }) }) as any; // 
 const respond = (body: unknown) => fetchMock.mockResolvedValue({ ok: true, json: async () => body });
 
 beforeEach(() => {
+  h.acceptLanguage = null;
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -108,5 +114,43 @@ describe("ServerProfilePage", () => {
     const el = await ServerProfilePage(params("yvan"));
     expect(isValidElement(el)).toBe(true);
     expect((el as { props: { id: string } }).props.id).toBe("yvan");
+  });
+});
+
+describe("generateMetadata - langue (Accept-Language)", () => {
+  const en = languages.en.meta;
+
+  it("anglais quand Accept-Language est en", async () => {
+    h.acceptLanguage = "en-GB,en;q=0.9";
+    respond({ display_name: "Yvan", banner: "b.jpg" });
+    const meta = await generateMetadata(params("yvan"));
+    expect(meta.title).toBe("Yvan's profile | MyStats");
+    expect(meta.description).toBe("Discover Yvan's Spotify statistics.");
+    expect(meta.openGraph).toMatchObject({
+      title: "Yvan's profile | MyStats",
+      images: [{ url: "b.jpg", width: 1200, height: 630, alt: "Yvan's banner" }],
+    });
+    expect(meta.twitter).toMatchObject({ title: "Yvan's profile | MyStats" });
+  });
+
+  it("la bio reste telle quelle, quelle que soit la langue", async () => {
+    h.acceptLanguage = "en";
+    respond({ display_name: "Yvan", bio: "Ma bio" });
+    expect((await generateMetadata(params("yvan"))).description).toBe("Ma bio");
+  });
+
+  it("titres génériques et « introuvable » traduits", async () => {
+    h.acceptLanguage = "en";
+    expect(await generateMetadata(params(""))).toEqual({ title: en.profileGeneric });
+    respond(null);
+    expect(await generateMetadata(params("zz"))).toEqual({ title: en.profileNotFound });
+    fetchMock.mockRejectedValue(new Error("réseau"));
+    expect(await generateMetadata(params("zz"))).toEqual({ title: en.profileNotFound });
+  });
+
+  it.each([["de"], ["*"], ["???"], [""]])("repli sur le français pour l'en-tête %j", async (header) => {
+    h.acceptLanguage = header;
+    respond({ display_name: "Yvan" });
+    expect((await generateMetadata(params("yvan"))).title).toBe("Profil de Yvan | MyStats");
   });
 });

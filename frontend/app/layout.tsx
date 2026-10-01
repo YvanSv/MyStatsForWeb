@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import { languages } from "./constants/locales/lang";
+import { getServerLanguage } from "./services/serverLanguage";
 import { Jost } from "next/font/google";
 import "./globals.css";
 import { ViewModeProvider } from "./context/viewModeContext";
@@ -16,20 +19,24 @@ const jost = Jost({
   variable: "--font-jost",
 });
 
-export const metadata = {
-  title: "MyStats - Votre musique, décryptée.",
-  description: "Découvrez vos statistiques Spotify ! Venez analyser vos habitudes d'écoute.",
-  openGraph: {
-    title: "MyStats - Votre musique, décryptée.",
-    description: "Découvrez vos statistiques Spotify ! Venez analyser vos habitudes d'écoute.",
-    url: "https://mystatsfy.vercel.app/",
-    siteName: "MyStats",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // La langue choisie dans l'application est côté navigateur : le serveur se fie à Accept-Language
+  const m = languages[await getServerLanguage()].meta;
+  return {
+    title: m.siteTitle,
+    description: m.siteDescription,
+    openGraph: {
+      title: m.siteTitle,
+      description: m.siteDescription,
+      url: "https://mystatsfy.vercel.app/",
+      siteName: "MyStats",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+    },
+  };
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

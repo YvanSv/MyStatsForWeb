@@ -1,3 +1,4 @@
+import type { fr } from "@/app/constants/locales/fr";
 import { seasonEnd, seasonOfMonth, seasonStart } from "@/app/services/seasons";
 
 export interface HourlyData {
@@ -143,43 +144,45 @@ export const getDateRange = (range: string, offset: number = 0) => {
   return { start: start.toISOString(), end: end.toISOString() };
 };
 
-const SEASON_NAMES = ["Hiver", "Printemps", "Été", "Automne"];
+type Dictionary = typeof fr;
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // « 5 oct. – 11 oct. 2026 » ; l'année du début n'apparaît que si elle diffère de celle de la fin
-const formatDaySpan = (from: Date, to: Date) => {
+const formatDaySpan = (from: Date, to: Date, locale: string) => {
   const day = (x: Date, withYear: boolean) =>
-    x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) });
+    x.toLocaleDateString(locale, { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) });
   return `${day(from, from.getFullYear() !== to.getFullYear())} – ${day(to, true)}`;
 };
 
-const formatMonthSpan = (from: Date, to: Date) => {
-  const month = (x: Date) => x.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+const formatMonthSpan = (from: Date, to: Date, locale: string) => {
+  const month = (x: Date) => x.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
   return `${month(from)} – ${month(to)}`;
 };
 
-/** Libellé de la période affichée, ou null pour une période personnalisée (dates éditables). */
-export const getRangeLabel = (range: string, offset: number) => {
+/** Libellé de la période affichée (dans la langue du dictionnaire), ou null pour une période personnalisée (dates éditables). */
+export const getRangeLabel = (range: string, offset: number, t: Dictionary) => {
   const { start, end } = getDateRange(range, offset);
-  if (!start || !end) return range === 'lifetime' ? "Tout l'historique" : null;
+  if (!start || !end) return range === 'lifetime' ? t.dashboard.lifetime : null;
 
+  const locale = t.common.locale;
   const from = new Date(start);
   const to = new Date(end);
   const year = from.getFullYear();
+  const seasons = [t.common.seasonWinter, t.common.seasonSpring, t.common.seasonSummer, t.common.seasonAutumn];
 
   switch (range) {
-    case 'today': return from.toLocaleDateString('fr-FR');
+    case 'today': return from.toLocaleDateString(locale);
 
-    case 'week': return formatDaySpan(from, to);
+    case 'week': return formatDaySpan(from, to, locale);
 
-    case 'month': return `${capitalize(from.toLocaleDateString('fr-FR', { month: 'long' }))} ${year}`;
+    case 'month': return `${capitalize(from.toLocaleDateString(locale, { month: 'long' }))} ${year}`;
 
-    case 'season': return `${SEASON_NAMES[seasonOfMonth(from.getMonth())]} ${year}`;
+    case 'season': return `${seasons[seasonOfMonth(from.getMonth())]} ${year}`;
 
-    case '1m': return offset === 0 ? "30 derniers jours" : formatDaySpan(from, to);
+    case '1m': return offset === 0 ? t.dashboard.last30Days : formatDaySpan(from, to, locale);
 
-    case '6m': return offset === 0 ? "6 derniers mois" : formatMonthSpan(from, to);
+    case '6m': return offset === 0 ? t.dashboard.last6Months : formatMonthSpan(from, to, locale);
 
     case 'year': return `${year}`;
 

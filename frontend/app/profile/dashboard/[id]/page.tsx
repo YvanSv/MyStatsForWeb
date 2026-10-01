@@ -131,7 +131,7 @@ export default function DashboardPage() {
     setOffset(0);
     setRange('custom');
   };
-  const label = getRangeLabel(range, offset);
+  const label = getRangeLabel(range, offset, t);
   const isCustom = range === 'custom';
   const retry = () => {
     if (profileError) setProfileAttempt(n => n + 1);

@@ -480,7 +480,7 @@ describe("DashboardPage [id] : sélection de l'intervalle", () => {
     const { container } = await renderLoaded();
     await clickInterval(user, (dict as any)[key]);
     expect(container.querySelectorAll('input[type="date"]')).toHaveLength(0);
-    expect(screen.getAllByText(getRangeLabel(rangeId, 0)!)).toHaveLength(2);
+    expect(screen.getAllByText(getRangeLabel(rangeId, 0, languages.fr)!)).toHaveLength(2);
   });
 
   it("pour la semaine, le libellé va du lundi au dimanche", async () => {

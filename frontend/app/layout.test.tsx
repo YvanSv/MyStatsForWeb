@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 const h = vi.hoisted(() => ({
+  acceptLanguage: null as string | null,
   jostCalls: [] as any[],
   provider: (name: string) => ({ children }: { children: any }) => ({
     type: "div", props: { "data-testid": name, children }, key: null, ref: null, $$typeof: Symbol.for("react.transitional.element"),
@@ -12,6 +13,9 @@ const h = vi.hoisted(() => ({
 
 vi.mock("next/font/google", () => ({
   Jost: (opts: any) => { h.jostCalls.push(opts); return { variable: "jost-var-class", className: "jost-class" }; },
+}));
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers(h.acceptLanguage ? { "accept-language": h.acceptLanguage } : {}),
 }));
 vi.mock("./globals.css", () => ({}));
 vi.mock("@vercel/speed-insights/next", () => ({ SpeedInsights: () => <div data-testid="speed" /> }));
@@ -27,7 +31,13 @@ vi.mock("./context/showFiltersContext", () => ({ ShowFiltersProvider: h.provider
 vi.mock("./context/authContext", () => ({ AuthProvider: h.provider("auth") }));
 vi.mock("./context/currentlyPlayingContext", () => ({ SpotifyProvider: h.provider("spotify") }));
 
-import RootLayout, { metadata } from "./layout";
+import RootLayout, { generateMetadata } from "./layout";
+import { languages } from "./constants/locales/lang";
+
+const metaFor = async (acceptLanguage: string | null = null) => {
+  h.acceptLanguage = acceptLanguage;
+  return (await generateMetadata()) as any;
+};
 
 const Child = () => <p data-testid="child">contenu</p>;
 
@@ -43,12 +53,14 @@ const renderBody = (children: React.ReactNode = <Child />) => {
 };
 
 describe("metadata", () => {
-  it("définit titre et description", () => {
+  it("définit titre et description en français par défaut", async () => {
+    const metadata = await metaFor();
     expect(metadata.title).toBe("MyStats - Votre musique, décryptée.");
     expect(metadata.description).toBe("Découvrez vos statistiques Spotify ! Venez analyser vos habitudes d'écoute.");
   });
 
-  it("openGraph reprend titre et description de la page", () => {
+  it("openGraph reprend titre et description de la page", async () => {
+    const metadata = await metaFor();
     expect(metadata.openGraph.title).toBe(metadata.title);
     expect(metadata.openGraph.description).toBe(metadata.description);
     expect(metadata.openGraph.url).toBe("https://mystatsfy.vercel.app/");
@@ -56,14 +68,29 @@ describe("metadata", () => {
     expect(metadata.openGraph.type).toBe("website");
   });
 
-  it("twitter utilise la grande carte", () => {
-    expect(metadata.twitter).toEqual({ card: "summary_large_image" });
+  it("twitter utilise la grande carte", async () => {
+    expect((await metaFor()).twitter).toEqual({ card: "summary_large_image" });
   });
 
-  it("l'URL openGraph est absolue en https", () => {
-    expect(() => new URL(metadata.openGraph.url)).not.toThrow();
-    expect(new URL(metadata.openGraph.url).protocol).toBe("https:");
+  it("l'URL openGraph est absolue en https", async () => {
+    const url = (await metaFor()).openGraph.url;
+    expect(() => new URL(url)).not.toThrow();
+    expect(new URL(url).protocol).toBe("https:");
   });
+
+  it("passe en anglais quand Accept-Language est en", async () => {
+    const metadata = await metaFor("en-US,en;q=0.9,fr;q=0.8");
+    expect(metadata.title).toBe(languages.en.meta.siteTitle);
+    expect(metadata.description).toBe(languages.en.meta.siteDescription);
+    expect(metadata.openGraph.title).toBe(languages.en.meta.siteTitle);
+    expect(metadata.openGraph.description).toBe(languages.en.meta.siteDescription);
+    expect(metadata.title).not.toBe(languages.fr.meta.siteTitle);
+  });
+
+  it.each([["de-DE,de;q=0.9"], ["*"], [";;;"], ["fr-FR,fr;q=0.9,en;q=0.8"]])(
+    "reste en français pour l'en-tête %j", async (header) => {
+      expect((await metaFor(header)).title).toBe(languages.fr.meta.siteTitle);
+    });
 });
 
 describe("Jost", () => {

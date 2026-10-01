@@ -3,9 +3,16 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MetricSwitch } from "./MetricSwitch";
 
+const lang = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
+vi.mock("@/app/context/languageContext", async () => {
+  const { languages } = await import("@/app/constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[lang.current], language: lang.current, changeLanguage: vi.fn() }) };
+});
+
 const onChange = vi.fn();
 
 beforeEach(() => {
+  lang.current = "fr";
   onChange.mockReset();
 });
 
@@ -80,5 +87,22 @@ describe("MetricSwitch", () => {
     const [minutes, streams] = screen.getAllByRole("button");
     expect(minutes).toHaveAttribute("aria-pressed", "false");
     expect(streams).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("MetricSwitch - langue", () => {
+  it("noms accessibles en français", () => {
+    lang.current = "fr";
+    render(<MetricSwitch value="minutes" onChange={onChange} />);
+    expect(screen.getByRole("button", { name: "Minutes" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Streams" })).toBeInTheDocument();
+  });
+
+  it("noms accessibles issus du dictionnaire anglais", async () => {
+    lang.current = "en";
+    const { languages } = await import("@/app/constants/locales/lang");
+    render(<MetricSwitch value="minutes" onChange={onChange} />);
+    expect(screen.getByRole("button", { name: languages.en.dashboard.metricMinutes })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: languages.en.dashboard.metricStreams })).toBeInTheDocument();
   });
 });

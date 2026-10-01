@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { languages } from "@/app/constants/locales/lang";
 import { formatToInputDate, getDateRange, getRangeLabel, INITIAL_STATS, smoothHourlyData } from "./utils";
 
 // Toutes les dates sont construites en heure locale : les tests restent valides quel que soit TZ.
@@ -447,87 +448,118 @@ describe("getDateRange", () => {
   });
 });
 
+const fr = languages.fr;
+const en = languages.en;
+
 describe("getRangeLabel", () => {
   it("lifetime : libellé de tout l'historique", () => {
-    expect(getRangeLabel("lifetime", 0)).toBe("Tout l'historique");
+    expect(getRangeLabel("lifetime", 0, fr)).toBe("Tout l'historique");
   });
 
   it("lifetime : l'offset n'a pas d'effet", () => {
-    expect(getRangeLabel("lifetime", -3)).toBe("Tout l'historique");
+    expect(getRangeLabel("lifetime", -3, fr)).toBe("Tout l'historique");
   });
 
   it("today : date au format fr-FR", () => {
-    expect(getRangeLabel("today", 0)).toBe("01/10/2026");
+    expect(getRangeLabel("today", 0, fr)).toBe("01/10/2026");
   });
 
   it("today : tient compte de l'offset à travers la fin de mois", () => {
-    expect(getRangeLabel("today", -1)).toBe("30/09/2026");
+    expect(getRangeLabel("today", -1, fr)).toBe("30/09/2026");
   });
 
   it("month : nom du mois capitalisé suivi de l'année", () => {
-    expect(getRangeLabel("month", 0)).toBe("Octobre 2026");
-    expect(getRangeLabel("month", -1)).toBe("Septembre 2026");
+    expect(getRangeLabel("month", 0, fr)).toBe("Octobre 2026");
+    expect(getRangeLabel("month", -1, fr)).toBe("Septembre 2026");
   });
 
   it("month : passe à l'année suivante avec l'offset", () => {
-    expect(getRangeLabel("month", 3)).toBe("Janvier 2027");
+    expect(getRangeLabel("month", 3, fr)).toBe("Janvier 2027");
   });
 
   it("month : mois accentué (février, août, décembre)", () => {
     setNow(2026, 2, 10);
-    expect(getRangeLabel("month", 0)).toBe("Février 2026");
-    expect(getRangeLabel("month", 6)).toBe("Août 2026");
-    expect(getRangeLabel("month", 10)).toBe("Décembre 2026");
+    expect(getRangeLabel("month", 0, fr)).toBe("Février 2026");
+    expect(getRangeLabel("month", 6, fr)).toBe("Août 2026");
+    expect(getRangeLabel("month", 10, fr)).toBe("Décembre 2026");
   });
 
   it("season : automne pour septembre à novembre", () => {
-    expect(getRangeLabel("season", 0)).toBe("Automne 2026");
+    expect(getRangeLabel("season", 0, fr)).toBe("Automne 2026");
   });
 
   it("season : été, hiver, printemps selon l'offset", () => {
-    expect(getRangeLabel("season", -1)).toBe("Été 2026");
-    expect(getRangeLabel("season", 1)).toBe("Hiver 2026");
-    expect(getRangeLabel("season", 2)).toBe("Printemps 2027");
+    expect(getRangeLabel("season", -1, fr)).toBe("Été 2026");
+    expect(getRangeLabel("season", 1, fr)).toBe("Hiver 2026");
+    expect(getRangeLabel("season", 2, fr)).toBe("Printemps 2027");
   });
 
   it("season : l'hiver en janvier est rattaché à l'année de son début (décembre précédent)", () => {
     setNow(2026, 1, 15);
-    expect(getRangeLabel("season", 0)).toBe("Hiver 2025");
+    expect(getRangeLabel("season", 0, fr)).toBe("Hiver 2025");
   });
 
   it("year : année seule", () => {
-    expect(getRangeLabel("year", 0)).toBe("2026");
-    expect(getRangeLabel("year", -1)).toBe("2025");
+    expect(getRangeLabel("year", 0, fr)).toBe("2026");
+    expect(getRangeLabel("year", -1, fr)).toBe("2025");
   });
 
   it("week : jours de début et de fin avec l'année (lundi au dimanche)", () => {
     setNow(2026, 10, 11);
-    expect(getRangeLabel("week", 0)).toBe("5 oct. – 11 oct. 2026");
-    expect(getRangeLabel("week", 1)).toBe("12 oct. – 18 oct. 2026");
+    expect(getRangeLabel("week", 0, fr)).toBe("5 oct. – 11 oct. 2026");
+    expect(getRangeLabel("week", 1, fr)).toBe("12 oct. – 18 oct. 2026");
   });
 
   it("week : à cheval sur deux années, les deux années sont indiquées", () => {
     setNow(2026, 1, 1);
-    expect(getRangeLabel("week", 0)).toBe("29 déc. 2025 – 4 janv. 2026");
+    expect(getRangeLabel("week", 0, fr)).toBe("29 déc. 2025 – 4 janv. 2026");
   });
 
   it("1m : « 30 derniers jours » pour la période courante, les dates sinon", () => {
-    expect(getRangeLabel("1m", 0)).toBe("30 derniers jours");
-    expect(getRangeLabel("1m", -1)).toBe("3 août – 1 sept. 2026");
+    expect(getRangeLabel("1m", 0, fr)).toBe("30 derniers jours");
+    expect(getRangeLabel("1m", -1, fr)).toBe("3 août – 1 sept. 2026");
   });
 
   it("6m : « 6 derniers mois » pour la période courante, les mois sinon", () => {
-    expect(getRangeLabel("6m", 0)).toBe("6 derniers mois");
-    expect(getRangeLabel("6m", -1)).toBe("nov. 2025 – avr. 2026");
+    expect(getRangeLabel("6m", 0, fr)).toBe("6 derniers mois");
+    expect(getRangeLabel("6m", -1, fr)).toBe("nov. 2025 – avr. 2026");
   });
 
   it.each(["today", "week", "month", "season", "1m", "6m", "year", "lifetime"])(
     "%j : renvoie toujours un libellé non vide (pas de dates éditables)", (range) => {
-      for (const offset of [-2, 0, 1]) expect(getRangeLabel(range, offset)).toBeTruthy();
+      for (const offset of [-2, 0, 1]) expect(getRangeLabel(range, offset, fr)).toBeTruthy();
     });
 
   it.each(["custom", ""])("%j : pas de libellé (null) : seule la période personnalisée affiche des dates", (range) => {
-    expect(getRangeLabel(range, 0)).toBeNull();
+    expect(getRangeLabel(range, 0, fr)).toBeNull();
+  });
+
+  describe("en anglais", () => {
+    it("libellés fixes traduits", () => {
+      expect(getRangeLabel("lifetime", 0, en)).toBe("All time");
+      expect(getRangeLabel("1m", 0, en)).toBe("Last 30 days");
+      expect(getRangeLabel("6m", 0, en)).toBe("Last 6 months");
+    });
+
+    it("date, mois et saison selon la locale du dictionnaire", () => {
+      expect(getRangeLabel("today", 0, en)).toBe("10/1/2026");
+      expect(getRangeLabel("month", 0, en)).toBe("October 2026");
+      expect(getRangeLabel("season", 0, en)).toBe("Autumn 2026");
+      expect(getRangeLabel("season", -1, en)).toBe("Summer 2026");
+      expect(getRangeLabel("season", 1, en)).toBe("Winter 2026");
+      expect(getRangeLabel("season", 2, en)).toBe("Spring 2027");
+    });
+
+    it("plages de dates formatées en anglais", () => {
+      expect(getRangeLabel("1m", -1, en)).toBe("Aug 3 – Sep 1, 2026");
+      expect(getRangeLabel("6m", -1, en)).toBe("Nov 2025 – Apr 2026");
+      setNow(2026, 10, 11);
+      expect(getRangeLabel("week", 0, en)).toBe("Oct 5 – Oct 11, 2026");
+    });
+
+    it("aucun libellé pour une période personnalisée", () => {
+      expect(getRangeLabel("custom", 0, en)).toBeNull();
+    });
   });
 });
 

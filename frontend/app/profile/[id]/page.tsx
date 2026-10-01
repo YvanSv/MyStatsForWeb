@@ -2,6 +2,8 @@ import { API_ENDPOINTS } from "@/app/constants/routes";
 import { Metadata } from 'next';
 import ProfilePage from "./client";
 import { pathSegment } from "@/app/services/url";
+import { languages } from "@/app/constants/locales/lang";
+import { getServerLanguage } from "@/app/services/serverLanguage";
 
 // On définit les types pour les paramètres de l'URL
 type Props = {params: Promise<{ id: string }>};
@@ -14,7 +16,8 @@ export async function generateViewport({ params }: Props) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = (await params).id;
-  if (!id || id === undefined) return { title: "Profil - MyStats" };
+  const m = languages[await getServerLanguage()].meta;
+  if (!id || id === undefined) return { title: m.profileGeneric };
 
   // Un backend indisponible ne doit pas faire planter le rendu de la page
   let profile;
@@ -22,14 +25,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const response = await fetch(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/${pathSegment(id)}`, {
       next: { revalidate: 3600 } // Cache d'une heure pour les robots
     });
-    if (!response.ok) return { title: "Profil introuvable - MyStats" };
+    if (!response.ok) return { title: m.profileNotFound };
     profile = await response.json();
   } catch {
-    return { title: "Profil introuvable - MyStats" };
+    return { title: m.profileNotFound };
   }
-  if (!profile || !profile.display_name) return { title: "Profil introuvable - MyStats" };
-  const title = `Profil de ${profile.display_name} | MyStats`;
-  const description = profile.bio || `Découvrez les statistiques Spotify de ${profile.display_name}.`;
+  if (!profile || !profile.display_name) return { title: m.profileNotFound };
+  const title = m.profileTitle(profile.display_name);
+  const description = profile.bio || m.profileDescription(profile.display_name);
   
   // On utilise la bannière si elle existe, sinon l'avatar
   const imageUrl = profile.banner || profile.avatar;
@@ -48,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: imageUrl,
             width: 1200,
             height: 630,
-            alt: `Bannière de ${profile.display_name}`,
+            alt: m.bannerAlt(profile.display_name),
           },
         ],
       }),
