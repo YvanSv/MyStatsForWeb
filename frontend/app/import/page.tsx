@@ -88,6 +88,8 @@ export function ImportContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) return setError(dict.errorNoFile);
+    // Sans utilisateur connecté, pas de suivi de progression possible (le serveur refuserait la connexion)
+    if (!user?.id) return setError(dict.errorSession);
     
     // Supposons qu'on détecte le type par l'extension du premier fichier
     const isApple = files[0].name.toLowerCase().endsWith('.csv');
@@ -96,11 +98,13 @@ export function ImportContent() {
     setSuccess("");
     setProgress(0);
 
-    const ws = new WebSocket(`${API_ENDPOINTS.WEBSOCKET_PROGRESS}/${user?.id}`);
+    const ws = new WebSocket(`${API_ENDPOINTS.WEBSOCKET_PROGRESS}/${user.id}`);
 
     const startUpload = () => {
       return new Promise((resolve, reject) => {
+        let opened = false;
         ws.onopen = async () => {
+          opened = true;
           try {
             if (isApple) {
               setProcessing(true);
@@ -148,6 +152,8 @@ export function ImportContent() {
         };
         
         ws.onerror = () => reject(new Error(dict.errorWs));
+        // Connexion refusée ou coupée avant l'ouverture : sans cela la promesse ne se terminerait jamais
+        ws.onclose = () => { if (!opened) reject(new Error(dict.errorWs)) };
       });
     };
 

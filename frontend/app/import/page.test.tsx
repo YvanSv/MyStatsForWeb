@@ -43,6 +43,7 @@ class FakeWebSocket {
   onopen: (() => void | Promise<void>) | null = null;
   onmessage: ((e: { data: string }) => void) | null = null;
   onerror: (() => void) | null = null;
+  onclose: (() => void) | null = null;
   close = vi.fn(() => { this.readyState = 3; });
   constructor(url: string) {
     this.url = url;
@@ -267,6 +268,33 @@ describe("ImportContent (import Spotify)", () => {
     await submit();
     await openWs();
     await waitFor(() => expect(screen.getByText(dict.errorGeneric)).toBeInTheDocument());
+  });
+
+  it("n'ouvre aucun WebSocket sans utilisateur connecté (pas d'URL .../undefined)", async () => {
+    h.user = null;
+    render(<ImportContent />);
+    await submit();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(screen.getByText(dict.errorSession)).toBeInTheDocument();
+    expect(h.uploadSpotifyJson).not.toHaveBeenCalled();
+  });
+
+  it("affiche l'erreur de connexion quand le serveur ferme le WebSocket avant son ouverture (connexion refusée)", async () => {
+    render(<ImportContent />);
+    await submit();
+    act(() => lastWs().onclose!());
+    await waitFor(() => expect(screen.getByText(dict.errorWs)).toBeInTheDocument());
+    expect(h.uploadSpotifyJson).not.toHaveBeenCalled();
+  });
+
+  it("une fermeture normale après l'ouverture n'est pas une erreur", async () => {
+    h.uploadSpotifyJson.mockResolvedValue({ count: 2 });
+    render(<ImportContent />);
+    await submit();
+    await openWs();
+    act(() => lastWs().onclose!());
+    await waitFor(() => expect(screen.getByText(dict.successImport(2))).toBeInTheDocument());
+    expect(screen.queryByText(dict.errorWs)).toBeNull();
   });
 
   it("affiche l'erreur de WebSocket quand la connexion échoue", async () => {

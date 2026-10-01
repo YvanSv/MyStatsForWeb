@@ -233,6 +233,7 @@ export const en = {
     errorJsonOnly: "Only .json (Spotify) or .csv (Apple Music) files are accepted, without mixing the two.",
     errorNoFile: "Please select at least one file.",
     errorGeneric: "Error during importation.",
+    errorSession: "Session expired, sign in again to import your data.",
     errorWs: "Connection error to progress tracker.",
     successImport: (count: number) => `${count} streams imported!`,
     appleProgress: (file: string, current: number, total: number, added: number) => `Processing file "${file}" (${current}/${total}) (${added} streams imported)`,
