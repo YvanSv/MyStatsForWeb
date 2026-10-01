@@ -134,6 +134,11 @@ export const fr = {
     errorSave: "Impossible d'enregistrer le profil.",
     errorWeight: "L'image est trop lourde (max 2MB)",
     errorImageType: "Format non pris en charge : utilisez une image PNG, JPEG, WebP ou GIF.",
+    saving: "Enregistrement...",
+    errorLoad: "Impossible de charger votre profil.",
+    errorSlugNumeric: "L'URL ne peut pas être uniquement composée de chiffres.",
+    errorSlugReserved: "Cette URL est réservée, choisissez-en une autre.",
+    errorSlugLength: "L'URL doit faire 30 caractères maximum.",
     // Toggles
     toggleProfile: "Profil public",
     descProfile: "Autoriser les autres à accéder à votre profil",

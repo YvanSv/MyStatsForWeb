@@ -144,11 +144,68 @@ describe("EditProfilePage – chargement", () => {
     expect(slugInput()).toHaveValue("abc");
   });
 
-  it("échec du chargement : erreur loguée et formulaire affiché avec les valeurs par défaut", async () => {
+  it("échec du chargement : erreur loguée, état d'erreur affiché et aucun formulaire", async () => {
     h.getEditableProfile.mockRejectedValue(new Error("boom"));
     render(<EditProfilePage />);
-    expect(await screen.findByPlaceholderText(dict.placeholderName)).toHaveValue("");
+    expect(await screen.findByRole("alert")).toHaveTextContent(dict.errorLoad);
     expect(console.error).toHaveBeenCalled();
+    expect(screen.queryByPlaceholderText(dict.placeholderName)).toBeNull();
+    expect(screen.queryByRole("button", { name: dict.btnSave })).toBeNull();
+    expect(h.patchProfile).not.toHaveBeenCalled();
+  });
+
+  it("échec du chargement : Réessayer relance le chargement et affiche le formulaire une fois réussi", async () => {
+    h.getEditableProfile.mockRejectedValueOnce(new Error("boom"));
+    h.getEditableProfile.mockResolvedValueOnce(profile());
+    render(<EditProfilePage />);
+    await userEvent.setup().click(await screen.findByRole("button", { name: languages.fr.error.retry }));
+    expect(await screen.findByPlaceholderText(dict.placeholderName)).toHaveValue("Yvan");
+    expect(h.getEditableProfile).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("échec du chargement : un nouvel échec reste sur l'état d'erreur", async () => {
+    h.getEditableProfile.mockRejectedValue(new Error("boom"));
+    render(<EditProfilePage />);
+    await userEvent.setup().click(await screen.findByRole("button", { name: languages.fr.error.retry }));
+    await waitFor(() => expect(h.getEditableProfile).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(dict.placeholderName)).toBeNull();
+  });
+
+  it("un nouvel objet utilisateur de même id ne recharge pas le profil et conserve les saisies", async () => {
+    const { rerender } = await renderLoaded();
+    setValue(nameInput(), "Brouillon");
+    h.auth.user = { id: 1, name: "autre objet" };
+    rerender(<EditProfilePage />);
+    expect(h.getEditableProfile).toHaveBeenCalledTimes(1);
+    expect(nameInput()).toHaveValue("Brouillon");
+  });
+
+  it("un changement d'identifiant d'utilisateur recharge le profil", async () => {
+    const { rerender } = await renderLoaded();
+    h.auth.user = { id: 2 };
+    rerender(<EditProfilePage />);
+    await waitFor(() => expect(h.getEditableProfile).toHaveBeenCalledWith("2"));
+    expect(h.getEditableProfile).toHaveBeenCalledTimes(2);
+  });
+
+  it("un nom invalide chargé depuis l'API affiche l'erreur dès le chargement et bloque l'enregistrement", async () => {
+    await renderLoaded(profile({ display_name: "ab" }));
+    expect(screen.getByText(errDict.errorName1)).toBeInTheDocument();
+    expect(saveBtn()).toBeDisabled();
+  });
+
+  it("une bio trop longue chargée depuis l'API affiche l'erreur dès le chargement et bloque l'enregistrement", async () => {
+    await renderLoaded(profile({ bio: "a".repeat(501) }));
+    expect(screen.getByText(dict.errorBio)).toBeInTheDocument();
+    expect(saveBtn()).toBeDisabled();
+  });
+
+  it("un slug invalide chargé depuis l'API affiche l'erreur dès le chargement et bloque l'enregistrement", async () => {
+    await renderLoaded(profile({ slug: "12345" }));
+    expect(screen.getByText(dict.errorSlugNumeric)).toBeInTheDocument();
+    expect(saveBtn()).toBeDisabled();
   });
 });
 
@@ -304,16 +361,20 @@ describe("EditProfilePage – slug", () => {
     expect(slugInput()).toHaveValue("abcd");
   });
 
-  it("refuse un nombre pur (valeur conservée)", async () => {
+  it("accepte la saisie d'un nombre pur mais affiche l'erreur et bloque l'enregistrement", async () => {
     await renderLoaded();
     setValue(slugInput(), "12345");
-    expect(slugInput()).toHaveValue("yvan");
+    expect(slugInput()).toHaveValue("12345");
+    expect(screen.getByText(dict.errorSlugNumeric)).toBeInTheDocument();
+    expect(saveBtn()).toBeDisabled();
   });
 
-  it.each(["dashboard", "edit", "settings", "admin", "login", "api"])("refuse le mot réservé « %s »", async (word) => {
+  it.each(["dashboard", "edit", "settings", "admin", "login", "api"])("accepte la saisie du mot réservé « %s » avec une erreur explicite", async (word) => {
     await renderLoaded();
     setValue(slugInput(), word);
-    expect(slugInput()).toHaveValue("yvan");
+    expect(slugInput()).toHaveValue(word);
+    expect(screen.getByText(dict.errorSlugReserved)).toBeInTheDocument();
+    expect(saveBtn()).toBeDisabled();
   });
 
   it("accepte un mot contenant un mot réservé", async () => {
@@ -322,12 +383,34 @@ describe("EditProfilePage – slug", () => {
     expect(slugInput()).toHaveValue("admin2");
   });
 
-  it("accepte 30 caractères et refuse 31", async () => {
+  it("30 caractères valides ; 31 caractères acceptés en saisie avec une erreur de longueur", async () => {
     await renderLoaded();
     setValue(slugInput(), "a".repeat(30));
-    expect(slugInput()).toHaveValue("a".repeat(30));
+    expect(screen.queryByText(dict.errorSlugLength)).toBeNull();
+    expect(saveBtn()).toBeEnabled();
     setValue(slugInput(), "a".repeat(31));
-    expect(slugInput()).toHaveValue("a".repeat(30));
+    expect(slugInput()).toHaveValue("a".repeat(31));
+    expect(screen.getByText(dict.errorSlugLength)).toBeInTheDocument();
+    expect(saveBtn()).toBeDisabled();
+  });
+
+  it("l'erreur de slug disparaît quand la valeur redevient valide ; un slug vide est valide", async () => {
+    await renderLoaded();
+    setValue(slugInput(), "admin");
+    setValue(slugInput(), "admin-2");
+    expect(screen.queryByText(dict.errorSlugReserved)).toBeNull();
+    expect(saveBtn()).toBeEnabled();
+    setValue(slugInput(), "123");
+    setValue(slugInput(), "");
+    expect(screen.queryByText(dict.errorSlugNumeric)).toBeNull();
+    expect(saveBtn()).toBeEnabled();
+  });
+
+  it("n'envoie rien tant que le slug est invalide", async () => {
+    await renderLoaded();
+    setValue(slugInput(), "admin");
+    await userEvent.setup().click(saveBtn());
+    expect(h.patchProfile).not.toHaveBeenCalled();
   });
 
   it("permet de vider le champ", async () => {
@@ -365,13 +448,45 @@ describe("EditProfilePage – permissions", () => {
     expect(switchOf("Profil public").parentElement).not.toHaveClass("pointer-events-none");
   });
 
-  it("réactiver le profil ne réactive pas les autres options", async () => {
+  it("réactiver le profil restaure les autres permissions telles qu'avant le décochage", async () => {
+    await renderLoaded(profile({ perms: { profile: true, stats: true, favorites: false, history: true, dashboard: false } }));
+    const user = userEvent.setup();
+    await user.click(switchOf("Profil public"));
+    expect(switchOf("Statistiques public")).toHaveClass("bg-white/10");
+    await user.click(switchOf("Profil public"));
+    expect(switchOf("Profil public")).toHaveClass("bg-vert");
+    expect(switchOf("Statistiques public")).toHaveClass("bg-vert");
+    expect(switchOf("Favoris public")).toHaveClass("bg-white/10");
+    expect(switchOf("Historique public")).toHaveClass("bg-vert");
+    expect(switchOf("Dashboard public")).toHaveClass("bg-white/10");
+  });
+
+  it("les interrupteurs dépendants restent désactivés tant que le profil est privé", async () => {
+    await renderLoaded();
+    await userEvent.setup().click(switchOf("Profil public"));
+    for (const t of titles.slice(1)) expect(switchOf(t)).toBeDisabled();
+    await userEvent.setup().click(switchOf("Profil public"));
+    for (const t of titles.slice(1)) expect(switchOf(t)).toBeEnabled();
+  });
+
+  it("une permission modifiée avant le décochage est celle restaurée", async () => {
+    await renderLoaded();
+    const user = userEvent.setup();
+    await user.click(switchOf("Favoris public"));
+    await user.click(switchOf("Profil public"));
+    await user.click(switchOf("Profil public"));
+    expect(switchOf("Favoris public")).toHaveClass("bg-white/10");
+    expect(switchOf("Statistiques public")).toHaveClass("bg-vert");
+  });
+
+  it("décocher puis recocher le profil envoie les permissions d'origine", async () => {
     await renderLoaded();
     const user = userEvent.setup();
     await user.click(switchOf("Profil public"));
     await user.click(switchOf("Profil public"));
-    expect(switchOf("Profil public")).toHaveClass("bg-vert");
-    expect(switchOf("Statistiques public")).toHaveClass("bg-white/10");
+    await user.click(saveBtn());
+    await waitFor(() => expect(h.patchProfile).toHaveBeenCalled());
+    expect(h.patchProfile.mock.calls[0][1].perms).toEqual({ profile: true, stats: true, favorites: true, history: true, dashboard: true });
   });
 
   it("bascule individuellement une option sans toucher aux autres", async () => {
@@ -417,8 +532,6 @@ describe("EditProfilePage – sauvegarde", () => {
     expect(h.patchProfile).toHaveBeenCalledWith("1", {
       display_name: "Nouveau",
       bio: "Autre bio",
-      avatar_url: "https://img/a.png",
-      banner_url: "https://img/b.png",
       slug: "mon-slug",
       perms: { profile: true, stats: true, favorites: true, history: true, dashboard: true },
     });
@@ -450,13 +563,113 @@ describe("EditProfilePage – sauvegarde", () => {
     expect(h.patchProfile.mock.calls[0][1].perms).toEqual({ profile: false, stats: false, favorites: false, history: false, dashboard: false });
   });
 
-  it("bannière par défaut : envoie banner_url null au lieu du chemin du gabarit", async () => {
-    await renderLoaded(profile({ banner_url: null }));
+  it("avatar et bannière inchangés sont omis du PATCH", async () => {
+    await renderLoaded();
     await userEvent.setup().click(saveBtn());
     await waitFor(() => expect(h.patchProfile).toHaveBeenCalled());
-    expect(h.patchProfile.mock.calls[0][1].banner_url).toBeNull();
+    const payload = h.patchProfile.mock.calls[0][1];
+    expect(payload).not.toHaveProperty("avatar_url");
+    expect(payload).not.toHaveProperty("banner_url");
   });
 
+  it("avatar dicebear et bannière par défaut non modifiés ne sont pas enregistrés", async () => {
+    await renderLoaded(profile({ avatar_url: null, banner_url: null }));
+    await userEvent.setup().click(saveBtn());
+    await waitFor(() => expect(h.patchProfile).toHaveBeenCalled());
+    const payload = h.patchProfile.mock.calls[0][1];
+    expect(payload).not.toHaveProperty("avatar_url");
+    expect(payload).not.toHaveProperty("banner_url");
+  });
+
+  it("seule l'image modifiée est envoyée (bannière changée, avatar inchangé)", async () => {
+    const { container } = await renderLoaded();
+    const file = new File([new Uint8Array(10)], "x.png", { type: "image/png" });
+    await act(async () => {
+      fireEvent.change(container.querySelectorAll<HTMLInputElement>('input[type="file"]')[0], { target: { files: [file] } });
+    });
+    await waitFor(() => expect(screen.getByAltText("Banner").getAttribute("src")).toMatch(/^data:/));
+    await userEvent.setup().click(saveBtn());
+    await waitFor(() => expect(h.patchProfile).toHaveBeenCalled());
+    const payload = h.patchProfile.mock.calls[0][1];
+    expect(payload.banner_url).toMatch(/^data:image\/png/);
+    expect(payload).not.toHaveProperty("avatar_url");
+  });
+});
+
+describe("EditProfilePage – enregistrement en cours", () => {
+  const pending = () => {
+    let resolve!: (v?: unknown) => void;
+    let reject!: (e: unknown) => void;
+    h.patchProfile.mockReturnValue(new Promise((res, rej) => { resolve = res; reject = rej; }));
+    return { resolve: () => resolve({}), reject: (e: unknown) => reject(e) };
+  };
+
+  it("un double clic n'envoie qu'un seul PATCH", async () => {
+    await renderLoaded();
+    pending();
+    const btn = saveBtn();
+    await act(async () => {
+      fireEvent.click(btn);
+      fireEvent.click(btn);
+    });
+    expect(h.patchProfile).toHaveBeenCalledTimes(1);
+  });
+
+  it("pendant l'enregistrement : bouton désactivé avec le libellé « Enregistrement... » et Annuler reste possible", async () => {
+    await renderLoaded();
+    pending();
+    await userEvent.setup().click(saveBtn());
+    const btn = await screen.findByRole("button", { name: dict.saving });
+    expect(btn).toBeDisabled();
+    expect(screen.queryByRole("button", { name: dict.btnSave })).toBeNull();
+    const cancel = screen.getByRole("button", { name: dict.btnCancel });
+    expect(cancel).toBeEnabled();
+    await userEvent.setup().click(cancel);
+    expect(h.back).toHaveBeenCalledTimes(1);
+  });
+
+  it("après une erreur, le bouton redevient actif et un nouvel envoi est possible", async () => {
+    await renderLoaded();
+    const p = pending();
+    const user = userEvent.setup();
+    await user.click(saveBtn());
+    await act(async () => p.reject(Object.assign(new Error("fail"), { status: 500 })));
+    await waitFor(() => expect(saveBtn()).toBeEnabled());
+    h.patchProfile.mockResolvedValue({});
+    await user.click(saveBtn());
+    await waitFor(() => expect(h.patchProfile).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("EditProfilePage – saisies et états concurrents", () => {
+  it("lire un fichier d'avatar puis une bannière n'écrase pas l'autre image ni les champs (état à jour)", async () => {
+    const { container } = await renderLoaded();
+    const inputsList = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
+    const file = new File([new Uint8Array(10)], "x.png", { type: "image/png" });
+    await act(async () => {
+      fireEvent.change(inputsList[0], { target: { files: [file] } });
+      fireEvent.change(inputsList[1], { target: { files: [file] } });
+      setValue(nameInput(), "Pendant lecture");
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText("Banner").getAttribute("src")).toMatch(/^data:/);
+      expect(screen.getByAltText("Avatar Preview").getAttribute("src")).toMatch(/^data:/);
+    });
+    expect(nameInput()).toHaveValue("Pendant lecture");
+  });
+
+  it("deux saisies consécutives dans le même rendu sont toutes deux conservées", async () => {
+    await renderLoaded();
+    await act(async () => {
+      setValue(nameInput(), "Nouveau nom");
+      setValue(bioInput(), "Nouvelle bio");
+    });
+    expect(nameInput()).toHaveValue("Nouveau nom");
+    expect(bioInput()).toHaveValue("Nouvelle bio");
+  });
+});
+
+describe("EditProfilePage – sauvegarde (suite)", () => {
   it("erreur de l'API : pas de toast de succès, pas de redirection, pas de rejet non géré", async () => {
     await renderLoaded();
     h.patchProfile.mockRejectedValue(Object.assign(new Error("fail"), { status: 500 }));

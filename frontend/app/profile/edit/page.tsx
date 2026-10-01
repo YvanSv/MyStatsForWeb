@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import { PrimaryButton } from "@/app/components/Atomic/Buttons";
@@ -11,6 +11,8 @@ import Image from "next/image";
 import { ProfileEditSkeleton } from "./Skeleton";
 import { OptionToggle } from "./OptionToggle";
 import { useLanguage } from "@/app/context/languageContext";
+import { ErrorState } from "@/app/components/Atomic/Error/Error";
+import { DEFAULT_BANNER, DEFAULT_BANNER_IMAGE, isDefaultBanner } from "@/app/constants/images";
 
 export default function EditProfilePage() {
   return (
@@ -59,6 +61,15 @@ const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const RESERVED_SLUGS = ["dashboard", "edit", "settings", "admin", "login", "api"];
 
+const ALL_PERMS = { profile: true, stats: true, favorites: true, history: true, dashboard: true };
+type PermKey = keyof typeof ALL_PERMS;
+type FormData = {
+  display_name: string; bio: string; slug: string; avatar_url: string; banner_url: string;
+  perms: typeof ALL_PERMS;
+  // Permissions à restaurer quand le profil redevient public
+  savedPerms: typeof ALL_PERMS;
+};
+
 function EditProfileContent() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
@@ -68,68 +79,93 @@ function EditProfileContent() {
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { getEditableProfile, patchProfile } = useProfile();
+  const userId = user?.id;
   const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState({
-    errorName: "",
-    errorBio: "",
-    errorSlug: ""
-  });
-  const [formData, setFormData] = useState({
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [saving, setSaving] = useState(false);
+  // Garde synchrone : un second clic peut arriver avant le re-rendu qui désactive le bouton
+  const savingRef = useRef(false);
+  const [formData, setFormData] = useState<FormData>({
     display_name: "",
     bio: "",
     slug: "",
     avatar_url: "",
     banner_url: "",
-    perms: {
-      profile: true,
-      stats: true,
-      favorites: true,
-      history: true,
-      dashboard: true
-    }
+    perms: { ...ALL_PERMS },
+    savedPerms: { ...ALL_PERMS }
   });
+  // Images chargées : seules celles modifiées par l'utilisateur sont envoyées au PATCH
+  const [initialImages, setInitialImages] = useState({ avatar_url: "", banner_url: "" });
 
+  // Erreurs calculées à partir des valeurs (donc aussi pour un profil chargé invalide)
+  const name = formData.display_name || "";
+  const bio = formData.bio || "";
+  const slug = (formData.slug || "").trim();
+  const errors = {
+    errorName: name.length < 3 ? errDict.errorName1 : name.length > 20 ? errDict.errorName2 : "",
+    errorBio: bio.length > 500 ? dict.errorBio : "",
+    errorSlug: /^\d+$/.test(slug) ? dict.errorSlugNumeric
+      : RESERVED_SLUGS.includes(slug) ? dict.errorSlugReserved
+      : slug.length > 30 ? dict.errorSlugLength : "",
+  };
+  const hasError = errors.errorName !== "" || errors.errorBio !== "" || errors.errorSlug !== "";
+
+  // Ne recharge que si l'utilisateur change (ou sur « Réessayer »), jamais pour un nouvel objet identique
   useEffect(() => {
-    if (!user || !user.id) return;
+    if (!userId) return;
+    let cancelled = false;
+    setLoading(true);
+    setLoadFailed(false);
 
     const fetchSettings = async () => {
       try {
-        const data = await getEditableProfile(''+user.id);
-        
+        const data = await getEditableProfile(''+userId);
+        if (cancelled) return;
+        const avatar = data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
+        const banner = data.banner_url || DEFAULT_BANNER;
+        const perms = data.perms ? { ...ALL_PERMS, ...data.perms } : { ...ALL_PERMS };
         setFormData({
           display_name: data.display_name || "",
           bio: data.bio || "",
-          avatar_url: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
-          banner_url: data.banner_url || "/banner_template.jpg",
-          slug: data.slug,
-          perms: data.perms || {
-            profile: true,
-            stats: true,
-            favorites: true,
-            history: true,
-            dashboard: true
-          }
+          avatar_url: avatar,
+          banner_url: banner,
+          slug: data.slug || "",
+          perms,
+          savedPerms: perms
         });
+        setInitialImages({ avatar_url: avatar, banner_url: banner });
       } catch (error) {
+        if (cancelled) return;
         console.error(error);
-      } finally {setLoading(false)}
+        setLoadFailed(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
 
     fetchSettings();
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [userId, reloadKey, getEditableProfile]);
+
+  const retryLoad = useCallback(() => setReloadKey(k => k + 1), []);
 
   const handleSave = async () => {
     if (!user || !user.id) return;
-    if (errors.errorBio !== "" || errors.errorName !== "" || errors.errorSlug !== "") return;
-    const finalSlug = formData.slug && formData.slug.trim();
-    const payload = {
+    if (hasError || savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    const finalSlug = slug;
+    const payload: Record<string, unknown> = {
       display_name: formData.display_name,
       bio: formData.bio,
-      avatar_url: formData.avatar_url,
-      banner_url: formData.banner_url === "/banner_template.jpg" ? null : formData.banner_url,
       slug: finalSlug === "" ? null : finalSlug,
       perms: formData.perms
     };
+    // Avatar et bannière : uniquement s'ils ont été modifiés (évite d'enregistrer l'avatar par défaut)
+    if (formData.avatar_url !== initialImages.avatar_url) payload.avatar_url = formData.avatar_url;
+    if (formData.banner_url !== initialImages.banner_url)
+      payload.banner_url = isDefaultBanner(formData.banner_url) ? null : formData.banner_url;
     try {
       await patchProfile('' + user.id, payload);
       toast.success(dict.successToast, {
@@ -137,19 +173,25 @@ function EditProfileContent() {
         iconTheme: { primary: '#1DD05D', secondary: '#fff' },
       });
       await refreshUser();
-      router.push(`/profile/${finalSlug === "" || !finalSlug  ? user.id : finalSlug}`);
-    } catch (err: any) {
+      router.push(`/profile/${finalSlug === "" ? user.id : finalSlug}`);
+    } catch (e) {
+      const err = e as { status?: number; message?: string };
       // Les erreurs de validation (422) n'ont pas de message lisible : on affiche le texte générique
       toast.error(err?.status && err.status !== 422 && err.message ? err.message : dict.errorSave);
+      savingRef.current = false;
+      setSaving(false);
     }
   };
 
-  const updatePerm = (key: string, value: boolean) => {
+  const updatePerm = (key: PermKey, value: boolean) => {
     setFormData(prev => {
-      const newPerms = { ...prev.perms, [key]: value };
-      if (key === 'profile' && value === false)
-        Object.keys(newPerms).forEach(k => newPerms[k as keyof typeof newPerms] = false);
-      return { ...prev, perms: newPerms };
+      if (key === 'profile') {
+        if (value === prev.perms.profile) return prev;
+        // Décocher mémorise les autres permissions ; recocher les restaure
+        if (!value) return { ...prev, savedPerms: prev.perms, perms: { profile: false, stats: false, favorites: false, history: false, dashboard: false } };
+        return { ...prev, perms: { ...prev.savedPerms, profile: true } };
+      }
+      return { ...prev, perms: { ...prev.perms, [key]: value } };
     });
   };
 
@@ -175,7 +217,7 @@ function EditProfileContent() {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({ ...formData, banner_url: reader.result as string });
+        setFormData(prev => ({ ...prev, banner_url: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -189,13 +231,22 @@ function EditProfileContent() {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({ ...formData, avatar_url: reader.result as string });
+        setFormData(prev => ({ ...prev, avatar_url: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
   };
 
   if (loading) return <ProfileEditSkeleton/>;
+
+  // Sans profil chargé, le formulaire serait vide et l'enregistrement écraserait le vrai profil
+  if (loadFailed) {
+    return (
+      <main className={PROFILE_EDIT_STYLES.MAIN} role="alert">
+        <ErrorState message={dict.errorLoad} onRetry={retryLoad}/>
+      </main>
+    );
+  }
 
   return (
     <main className={PROFILE_EDIT_STYLES.MAIN}>
@@ -204,8 +255,8 @@ function EditProfileContent() {
         <input type="file" ref={bannerInputRef} accept={ALLOWED_IMAGE_TYPES.join(",")}
           onChange={handleBannerChange} className="hidden"
         />
-        {formData.banner_url === "/banner_template.jpg"
-          ? <Image src="/banner_template_1100x390.jpg" alt="Banner" className={PROFILE_EDIT_STYLES.BANNER_IMG} width={1100} height={390}/>
+        {isDefaultBanner(formData.banner_url)
+          ? <Image src={DEFAULT_BANNER_IMAGE} alt="Banner" className={PROFILE_EDIT_STYLES.BANNER_IMG} width={1100} height={390}/>
           : <img src={formData.banner_url} className={PROFILE_EDIT_STYLES.BANNER_IMG} alt="Banner"/>
         }
         <div className={PROFILE_EDIT_STYLES.BANNER_OVERLAY} onClick={() => bannerInputRef.current?.click()} style={{ cursor: 'pointer' }}>
@@ -244,10 +295,8 @@ function EditProfileContent() {
             </div>
             <input id="profile-name" type="text" className={PROFILE_EDIT_STYLES.INPUT} value={formData.display_name}
               onChange={(e) => {
-                if (e.target.value.length < 3) setErrors({...errors, errorName: errDict.errorName1});
-                else if (e.target.value.length > 20) setErrors({...errors, errorName: errDict.errorName2});
-                else setErrors({...errors, errorName: ""});
-                setFormData({...formData, display_name: e.target.value})
+                const value = e.target.value;
+                setFormData(prev => ({ ...prev, display_name: value }));
               }}
               placeholder={dict.placeholderName}
             />
@@ -264,9 +313,8 @@ function EditProfileContent() {
             <textarea id="profile-bio" rows={4} className={PROFILE_EDIT_STYLES.TEXTAREA}
               value={formData.bio} placeholder={dict.placeholderBio}
               onChange={(e) => {
-                if (e.target.value.length > 500) setErrors({...errors,errorBio: dict.errorBio});
-                else setErrors({...errors, errorBio: ""});
-                setFormData({...formData, bio: e.target.value})
+                const value = e.target.value;
+                setFormData(prev => ({ ...prev, bio: value }));
               }}
             />
             {errors.errorBio && (<label className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorBio}</label>)}
@@ -288,15 +336,14 @@ function EditProfileContent() {
               <input id="profile-slug" type="text" className={`${PROFILE_EDIT_STYLES.INPUT} pl-[145px] text-md tracking-wider`}
                 value={formData.slug || ""} placeholder={dict.placeholderUrl}
                 onChange={(e) => {
-                  let value = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                  // Nombre pur et Mot réservé et taille <= 30
-                  if (!/^\d+$/.test(value) && !RESERVED_SLUGS.includes(value) && value.length <= 30) setFormData({...formData, slug: value});
-                  else if (value === "") setFormData({...formData, slug: ""})
+                  // Normalisation seulement : les valeurs invalides sont signalées par une erreur, pas ignorées
+                  const value = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                  setFormData(prev => ({ ...prev, slug: value }));
                 }}
               />
             </div>
             <p className="text-[10px] text-white/40 mt-2 ml-1">{dict.urlHint}</p>
-            {errors.errorSlug && (<label>{errors.errorSlug}</label>)}
+            {errors.errorSlug && (<label htmlFor="profile-slug" className={`${PROFILE_EDIT_STYLES.LABEL} text-rouge text-[9px] pt-2`}>{errors.errorSlug}</label>)}
           </div>
 
           {/* --- RÉGLAGES PRIVAUTÉ --- */}
@@ -326,8 +373,8 @@ function EditProfileContent() {
             <button onClick={() => router.back()} className={PROFILE_EDIT_STYLES.BTN_CANCEL}>
               {dict.btnCancel}
             </button>
-            <PrimaryButton onClick={handleSave} additional="px-6 py-2.5" disabled={errors.errorBio !== "" || errors.errorName !== "" || errors.errorSlug !== ""}>
-              {dict.btnSave}
+            <PrimaryButton onClick={handleSave} additional="px-6 py-2.5" disabled={hasError || saving}>
+              {saving ? dict.saving : dict.btnSave}
             </PrimaryButton>
           </div>
         </div>

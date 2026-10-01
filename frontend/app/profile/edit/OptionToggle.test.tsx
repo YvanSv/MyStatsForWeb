@@ -37,7 +37,21 @@ describe("OptionToggle – affichage", () => {
   it("inactif : fond gris et pastille décalée à gauche", () => {
     const { sw, knob } = setup({ active: false });
     expect(sw).toHaveClass("bg-white/10");
+    expect(sw).not.toHaveClass("bg-vert");
     expect(knob).toHaveClass("-translate-x-6");
+  });
+
+  it("la couleur de fond n'est fixée que par la branche active/inactive (une seule classe de fond)", () => {
+    const on = setup({ active: true });
+    expect(on.sw.className.match(/bg-(vert|white\/10)/g)).toEqual(["bg-vert"]);
+    on.unmount();
+    const off = setup({ active: false });
+    expect(off.sw.className.match(/bg-(vert|white\/10)/g)).toEqual(["bg-white/10"]);
+  });
+
+  it("la pastille est ancrée à droite (right-1) et décalée de 24px à gauche quand inactive", () => {
+    const { knob } = setup({ active: false });
+    expect(knob).toHaveClass("right-1", "top-1", "-translate-x-6");
   });
 
   it("désactivé : carte atténuée et sans interaction pointeur", () => {

@@ -134,6 +134,11 @@ export const en = {
     errorSave: "Unable to save your profile.",
     errorWeight: "Image is too heavy (max 2MB)",
     errorImageType: "Unsupported format: use a PNG, JPEG, WebP or GIF image.",
+    saving: "Saving...",
+    errorLoad: "Unable to load your profile.",
+    errorSlugNumeric: "The URL cannot be made of digits only.",
+    errorSlugReserved: "This URL is reserved, please choose another one.",
+    errorSlugLength: "The URL must be 30 characters maximum.",
     // Toggles
     toggleProfile: "Public profile",
     descProfile: "Allow others to access your profile",
