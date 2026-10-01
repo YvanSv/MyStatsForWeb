@@ -13,6 +13,7 @@ from .data.everyone import router as all_data_router
 from .data_import.workers.spotify import router as status_router
 from .profile import router as profile_router
 from .utils.progress_manager import router as utils_router
+from .utils.cors import ALLOWED_ORIGINS
 from .data_import import router as import_router
 from .admin import router as admin_router
 
@@ -33,7 +34,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:3001","http://localhost:3001","http://localhost:3000","http://127.0.0.1:3000","https://mystatsfy.vercel.app"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
