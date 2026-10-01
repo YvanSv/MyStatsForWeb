@@ -336,5 +336,25 @@ export const fr = {
     loadError: "Impossible de charger votre résumé.",
     retry: "Réessayer",
     download: "Télécharger"
+  },
+  faq: {
+    title: "FAQ",
+    subtitle: "Tout ce que vous devez savoir sur vos statistiques musicales.",
+    q1: "Comment sont calculés mes classements ?",
+    a1: "Tes classements sont basés sur tes habitudes d'écoute réelles. Nous analysons le nombre de lectures, la durée d'écoute et la récurrence pour générer un score unique par titre, album et artiste.",
+    q2: "Mes données sont-elles sécurisées ?",
+    a2: "Absolument. La sécurité de votre vie privée est notre priorité. Nous utilisons des protocoles de chiffrement pour protéger toutes les communications entre votre navigateur et nos serveurs. Vos mots de passe sont hachés via des algorithmes de pointe et ne sont jamais stockés en clair. Concernant vos fichiers Spotify, nous ne conservons que les informations nécessaires au calcul de vos statistiques (titres, artistes, dates d'écoute) et ne vendons jamais vos données à des tiers.",
+    q3: "À quelle fréquence les stats sont-elles mises à jour ?",
+    a3: "Cela dépend de votre mode d'utilisation. Si vous utilisez l'importation de fichiers JSON, vos statistiques sont mises à jour instantanément après chaque import réussi. Si votre compte est synchronisé via l'API Spotify, MyStats actualise vos \"Écoutes récentes\" et vos tops à chaque fois qu'une page en a le besoin pour vous garantir une vue toujours fraîche de vos habitudes musicales.",
+    q4: "Puis-je partager mes rankings avec mes amis ?",
+    a4: "Oui ! MyStats est conçu pour être social. Vous disposez d'un profil public unique (identifiable par votre url personnalisée) que vous pouvez copier et envoyer à vos proches. Vous pouvez également générer des cartes de partage optimisées pour vos réseaux sociaux (Instagram, Twitter, etc.) affichant vos artistes et titres favoris du moment. Cependant, uniquement les 50 meilleurs artistes/albums/tracks ne sont visibles par vos amis sur votre profil.",
+    q5: "Pourquoi mes statistiques d'albums et d'artistes ne s'affichent-elles pas immédiatement après un import ?",
+    a5: "Lors d'un import massif de données d'historique, MyStats doit traiter des milliers de lignes pour identifier et regrouper chaque morceau par track, album et artiste. Ce processus peut prendre entre quelques secondes et quelques minutes selon la taille de vos fichiers. Il faut savoir que le temps varie aussi en fonction du nombre de personnes qui importent leurs données en même temps sur le site. Le processus d'import est très complexe, mais il est optimal pour vous offrir les meilleurs temps de réponses par la suite. Pour vous donner un ordre d'idée, nous récupérons les données de 50 artistes puis 50 albums en 5 secondes.",
+    q6: "Puis-je réinitialiser mes données sans supprimer mon compte ?",
+    a6: "Oui. Si vous souhaitez repartir de zéro ou corriger un import erroné, vous pouvez choisir l'option \"Nettoyer mes données\" dans vos paramètres de compte. Cela effacera tout votre historique d'écoute importé tout en conservant vos paramètres de compte (nom d'utilisateur, email, mot de passe).",
+    q7: "Comment puis-je supprimer mon compte ?",
+    a7: "Nous sommes tristes de vous voir partir, mais la procédure est simple. Rendez-vous dans les Paramètres du compte, tout en bas de la page. Vous y trouverez une option \"Supprimer mon compte MyStats\". Cette action est définitive : elle supprimera immédiatement votre profil, vos identifiants ainsi que l'intégralité de votre historique d'écoute de nos serveurs.",
+    notFound: "Vous ne trouvez pas votre réponse ?",
+    contact: "Nous contacter"
   }
 }

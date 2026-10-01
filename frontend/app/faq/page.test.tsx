@@ -1,11 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { languages } from "../constants/locales/lang";
 import FAQPage from "./page";
+
+const h = vi.hoisted(() => ({ lang: "fr" as "fr" | "en" }));
+vi.mock("../context/languageContext", async () => {
+  const { languages } = await import("../constants/locales/lang");
+  return { useLanguage: () => ({ t: languages[h.lang], language: h.lang, changeLanguage: vi.fn() }) };
+});
 
 const getItems = () => screen.getAllByRole("button").filter((b) => b.hasAttribute("aria-expanded"));
 
 describe("FAQPage", () => {
+  beforeEach(() => {
+    h.lang = "fr";
+  });
+
   it("affiche le titre et la phrase d'introduction", () => {
     render(<FAQPage />);
     expect(screen.getByRole("heading", { level: 1, name: "FAQ" })).toBeInTheDocument();
@@ -82,5 +93,25 @@ describe("FAQPage", () => {
     render(<FAQPage />);
     expect(screen.getByText("Vous ne trouvez pas votre réponse ?")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Nous contacter" })).toBeInTheDocument();
+  });
+
+  it("affiche les textes en anglais quand la langue est en", () => {
+    h.lang = "en";
+    render(<FAQPage />);
+    expect(screen.getByText(languages.en.faq.subtitle)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: languages.en.faq.q1 })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: languages.en.faq.contact })).toBeInTheDocument();
+    expect(screen.queryByText("Nous contacter")).toBeNull();
+  });
+
+  it("a une question et une réponse non vides pour chaque entrée dans les deux langues", () => {
+    for (const lang of ["fr", "en"] as const) {
+      const faq = languages[lang].faq as Record<string, string>;
+      for (let i = 1; i <= 7; i++) {
+        expect(faq[`q${i}`]).toBeTruthy();
+        expect(faq[`a${i}`]).toBeTruthy();
+      }
+      expect(faq.q8).toBeUndefined();
+    }
   });
 });

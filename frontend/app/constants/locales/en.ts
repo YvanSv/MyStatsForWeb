@@ -336,5 +336,25 @@ export const en = {
     loadError: "Unable to load your summary.",
     retry: "Try again",
     download: "Download"
+  },
+  faq: {
+    title: "FAQ",
+    subtitle: "Everything you need to know about your music statistics.",
+    q1: "How are my rankings calculated?",
+    a1: "Your rankings are based on your actual listening habits. We analyze play count, listening time and repeat listens to generate a unique score for each track, album and artist.",
+    q2: "Is my data secure?",
+    a2: "Absolutely. Your privacy is our priority. We use encryption protocols to protect all communication between your browser and our servers. Your passwords are hashed with state-of-the-art algorithms and are never stored in plain text. For your Spotify files, we only keep the information needed to compute your statistics (tracks, artists, listening dates) and we never sell your data to third parties.",
+    q3: "How often are the stats updated?",
+    a3: "It depends on how you use the app. If you import JSON files, your statistics are updated instantly after each successful import. If your account is synced through the Spotify API, MyStats refreshes your \"Recent plays\" and your tops whenever a page needs it, so you always get a fresh view of your listening habits.",
+    q4: "Can I share my rankings with my friends?",
+    a4: "Yes! MyStats is built to be social. You have a unique public profile (identified by your custom URL) that you can copy and send to your friends. You can also generate share cards optimized for social networks (Instagram, Twitter, etc.) showing your current favorite artists and tracks. However, only your top 50 artists/albums/tracks are visible to your friends on your profile.",
+    q5: "Why don't my album and artist stats show up right after an import?",
+    a5: "During a large history import, MyStats has to process thousands of rows to identify and group each song by track, album and artist. This can take from a few seconds to a few minutes depending on the size of your files, and also on how many people are importing their data at the same time. The import process is complex, but it is optimized to give you the best response times afterwards. To give you an idea, we fetch the data of 50 artists then 50 albums in 5 seconds.",
+    q6: "Can I reset my data without deleting my account?",
+    a6: "Yes. If you want to start over or fix a faulty import, choose the \"Clean my data\" option in your account settings. This erases all your imported listening history while keeping your account settings (username, email, password).",
+    q7: "How can I delete my account?",
+    a7: "We are sad to see you go, but the procedure is simple. Go to the account Settings, at the very bottom of the page. You will find a \"Delete my MyStats account\" option. This action is final: it immediately deletes your profile, your credentials and your entire listening history from our servers.",
+    notFound: "Can't find your answer?",
+    contact: "Contact us"
   }
 }
