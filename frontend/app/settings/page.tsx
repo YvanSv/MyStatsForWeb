@@ -2,6 +2,7 @@
 
 import { Globe, User, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../context/languageContext';
+import { useAuth } from '../context/authContext';
 
 const BASE_UI = {
   glass: "bg-white/[0.02] border border-white/5 rounded-2xl",
@@ -10,6 +11,9 @@ const BASE_UI = {
 
 export default function SettingsPage() {
   const { language, changeLanguage, t } = useLanguage();
+  const { user } = useAuth();
+  const name = user?.user_name ?? "";
+  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
 
   const languages = [
     { code: 'fr', label: 'Français', flag: '🇫🇷' },
@@ -44,6 +48,8 @@ export default function SettingsPage() {
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
+                    type="button"
+                    aria-pressed={language === lang.code}
                     onClick={() => changeLanguage(lang.code as "fr" | "en")}
                     className={`
                       flex items-center gap-2 px-6 py-2 rounded-lg transition-all duration-300
@@ -52,7 +58,7 @@ export default function SettingsPage() {
                         : "text-gray-500 hover:text-gray-300"}
                     `}
                   >
-                    <span>{lang.flag}</span>
+                    <span aria-hidden="true">{lang.flag}</span>
                     <span className="font-medium">{lang.label}</span>
                   </button>
                 ))}
@@ -65,15 +71,15 @@ export default function SettingsPage() {
         <section className="space-y-4 opacity-50 grayscale pointer-events-none">
            <div className="flex items-center gap-2 px-1 text-gray-400">
             <User size={18} />
-            <h2 className="text-sm font-semibold uppercase tracking-wider">Compte</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wider">{t.settings.account}</h2>
           </div>
           <div className={BASE_UI.glass}>
              <div className={`p-4 flex items-center justify-between ${BASE_UI.glassHover}`}>
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-vert/20 flex items-center justify-center text-vert">YS</div>
+                    <div className="w-10 h-10 rounded-full bg-vert/20 flex items-center justify-center text-vert">{initials}</div>
                     <div>
-                        <p className="font-medium text-white">Yvan Sv</p>
-                        <p className="text-xs text-gray-500 underline">yvan@example.com</p>
+                        <p className="font-medium text-white">{name}</p>
+                        <p className="text-xs text-gray-500 underline">{user?.email}</p>
                     </div>
                 </div>
                 <ChevronRight size={20} className="text-gray-600" />
