@@ -64,6 +64,26 @@ describe("useProfile", () => {
     });
   });
 
+  it.each(["a/b", "x?y=1", "../admin"])("encode l'identifiant %j dans toutes les URL de profil", async (id) => {
+    const { result } = renderHook(() => useProfile());
+    await act(async () => {
+      await result.current.getProfile(id);
+      await result.current.getTopDataProfile(id);
+      await result.current.getEditableProfile(id);
+      await result.current.patchProfile(id, {});
+      await result.current.getDashboard(id, null, null);
+    });
+    const encoded = encodeURIComponent(id);
+    const urls = h.apiRequest.mock.calls.map((c) => c[0] as string);
+    expect(urls).toEqual([
+      `${API_ENDPOINTS.PROFILE_DATA}/${encoded}`,
+      `${API_ENDPOINTS.PROFILE_DATA_TOPS}/${encoded}`,
+      `${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${encoded}`,
+      `${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${encoded}`,
+      `${API_ENDPOINTS.DASHBOARD_DATA}/${encoded}`,
+    ]);
+  });
+
   it("renvoie la réponse de l'API", async () => {
     h.apiRequest.mockResolvedValue({ id: 1 });
     const { result } = renderHook(() => useProfile());

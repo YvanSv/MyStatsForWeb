@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from "@/app/constants/routes";
 import { Metadata } from 'next';
 import ProfilePage from "./client";
+import { pathSegment } from "@/app/services/url";
 
 // On définit les types pour les paramètres de l'URL
 type Props = {params: Promise<{ id: string }>};
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Un backend indisponible ne doit pas faire planter le rendu de la page
   let profile;
   try {
-    const response = await fetch(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/${id}`, {
+    const response = await fetch(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/${pathSegment(id)}`, {
       next: { revalidate: 3600 } // Cache d'une heure pour les robots
     });
     if (!response.ok) return { title: "Profil introuvable - MyStats" };
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: title,
       description: description,
-      url: `https://mystatsfy.vercel.app/profile/${id}`,
+      url: `https://mystatsfy.vercel.app/profile/${pathSegment(id)}`,
       siteName: 'MyStats',
       ...(imageUrl && {
         images: [

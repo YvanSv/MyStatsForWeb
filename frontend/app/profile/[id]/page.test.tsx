@@ -36,6 +36,23 @@ describe("generateMetadata", () => {
     expect(fetchMock).toHaveBeenCalledWith(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/yvan`, { next: { revalidate: 3600 } });
   });
 
+  it.each([
+    ["a/b", "a%2Fb"],
+    ["x?y=1", "x%3Fy%3D1"],
+    ["../admin", "..%2Fadmin"],
+  ])("encode l'identifiant %j dans l'URL appelée (%s) : il ne change pas la route", async (id, encoded) => {
+    respond({ display_name: "Yvan" });
+    const meta = await generateMetadata(params(id));
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/${encoded}`);
+    expect((meta.openGraph as { url: string }).url).toBe(`https://mystatsfy.vercel.app/profile/${encoded}`);
+  });
+
+  it("n'encode pas deux fois un identifiant déjà encodé", async () => {
+    respond({ display_name: "Yvan" });
+    await generateMetadata(params("caf%C3%A9"));
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_ENDPOINTS.SIMPLE_PROFILE_DATA}/caf%C3%A9`);
+  });
+
   it("construit titre, description, OpenGraph et Twitter avec la bannière", async () => {
     respond({ display_name: "Yvan", bio: "Ma bio", banner: "b.jpg", avatar: "a.jpg" });
     const meta = await generateMetadata(params("yvan"));
