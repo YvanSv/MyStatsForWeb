@@ -1,3 +1,5 @@
+import { seasonEnd, seasonOfMonth, seasonStart } from "@/app/services/seasons";
+
 export interface HourlyData {
   hour: string;
   value: number;
@@ -72,109 +74,142 @@ export const formatToInputDate = (dateISO: string | null) => {
   return `${year}-${month}-${day}`;
 };
 
-export const getDateRange = (range: string, offset:number = 0) => {
-  const start = new Date();
-  const end = new Date();
-  
+/**
+ * Bornes de la période demandée, en ISO UTC.
+ * Les journées sont calculées en heure locale de l'utilisateur (minuit local, 23:59:59.999 local)
+ * puis converties en instants UTC : c'est voulu, l'API filtre ainsi sur les journées locales
+ * de l'utilisateur et non sur les journées UTC. Les dates sont construites par composantes
+ * (année, mois, jour) pour rester correctes lors des changements d'heure.
+ */
+export const getDateRange = (range: string, offset: number = 0) => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const endOfDay = (yy: number, mm: number, dd: number) => new Date(yy, mm, dd, 23, 59, 59, 999);
+  let start: Date;
+  let end: Date;
+
   switch (range) {
     case 'today':
-      start.setDate(start.getDate() + offset);
-      start.setHours(0, 0, 0, 0);
-      end.setDate(end.getDate() + offset);
-      end.setHours(23, 59, 59, 999);
+      start = new Date(y, m, d + offset);
+      end = endOfDay(y, m, d + offset);
       break;
 
-    case 'week':
-      const currentDay = start.getDay();
-      start.setDate(start.getDate() - currentDay + (offset * 7));
-      start.setHours(0, 0, 0, 0);
-      end.setTime(start.getTime());
-      end.setDate(start.getDate() + 6);
-      end.setHours(23, 59, 59, 999);
-      break;
-
-    case 'month':
-      // Décale de X mois calendaires
-      start.setMonth(start.getMonth() + offset, 1);
-      start.setHours(0, 0, 0, 0);
-      end.setMonth(end.getMonth() + offset + 1, 0);
-      end.setHours(23, 59, 59, 999);
-      break;
-
-    case '1m':
-      start.setDate(start.getDate() + (offset * 30) - 30);
-      end.setDate(end.getDate() + (offset * 30));
-      break;
-
-    case 'season': {
-      // 1. Déterminer le début de la saison actuelle (Mars, Juin, Sept, Déc)
-      const currentMonth = start.getMonth();
-      let startMonth = 11; // Décembre (Hiver)
-      if (currentMonth >= 2 && currentMonth <= 4) startMonth = 2;      // Mars (Printemps)
-      else if (currentMonth >= 5 && currentMonth <= 7) startMonth = 5; // Juin (Été)
-      else if (currentMonth >= 8 && currentMonth <= 10) startMonth = 8;// Sept (Automne)
-      
-      // En janvier/février, l'hiver courant a commencé en décembre de l'année précédente
-      if (currentMonth < 2) start.setFullYear(start.getFullYear() - 1);
-
-      // 2. Appliquer l'offset (1 unité = 3 mois)
-      start.setMonth(startMonth + (offset * 3), 1);
-      start.setHours(0, 0, 0, 0);
-      
-      // La fin de la saison est 3 mois après le début, moins 1 jour
-      end.setTime(start.getTime());
-      end.setMonth(start.getMonth() + 3, 0); 
-      end.setHours(23, 59, 59, 999);
+    case 'week': {
+      // La semaine commence le lundi
+      const sinceMonday = (now.getDay() + 6) % 7;
+      start = new Date(y, m, d - sinceMonday + offset * 7);
+      end = endOfDay(start.getFullYear(), start.getMonth(), start.getDate() + 6);
       break;
     }
 
+    case 'month':
+      // Décale de X mois calendaires
+      start = new Date(y, m + offset, 1);
+      end = endOfDay(y, m + offset + 1, 0);
+      break;
+
+    case '1m':
+      // 30 jours glissants alignés sur les jours, aujourd'hui compris
+      start = new Date(y, m, d + offset * 30 - 29);
+      end = endOfDay(y, m, d + offset * 30);
+      break;
+
+    case 'season':
+      start = seasonStart(now, offset);
+      end = seasonEnd(start);
+      break;
+
     case '6m':
-      start.setDate(start.getDate() + (offset * 180) - 180);
-      end.setDate(end.getDate() + (offset * 180));
+      // 6 mois calendaires, le mois courant compris
+      start = new Date(y, m + offset * 6 - 5, 1);
+      end = endOfDay(y, m + offset * 6 + 1, 0);
       break;
 
     case 'year':
-      start.setFullYear(start.getFullYear() + offset, 0, 1);
-      start.setHours(0, 0, 0, 0);
-      end.setFullYear(start.getFullYear(), 11, 31);
-      end.setHours(23, 59, 59, 999);
+      start = new Date(y + offset, 0, 1);
+      end = endOfDay(y + offset, 11, 31);
       break;
 
     case 'lifetime':
       return { start: null, end: null };
 
     default:
-      start.setHours(0, 0, 0, 0);
+      start = new Date(y, m, d);
+      end = now;
   }
 
-  return { 
-    start: start.toISOString(), 
-    end: end.toISOString() 
-  };
+  return { start: start.toISOString(), end: end.toISOString() };
 };
 
+const SEASON_NAMES = ["Hiver", "Printemps", "Été", "Automne"];
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+// « 5 oct. – 11 oct. 2026 » ; l'année du début n'apparaît que si elle diffère de celle de la fin
+const formatDaySpan = (from: Date, to: Date) => {
+  const day = (x: Date, withYear: boolean) =>
+    x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) });
+  return `${day(from, from.getFullYear() !== to.getFullYear())} – ${day(to, true)}`;
+};
+
+const formatMonthSpan = (from: Date, to: Date) => {
+  const month = (x: Date) => x.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+  return `${month(from)} – ${month(to)}`;
+};
+
+/** Libellé de la période affichée, ou null pour une période personnalisée (dates éditables). */
 export const getRangeLabel = (range: string, offset: number) => {
-  const { start } = getDateRange(range, offset);
-  if (!start && range === 'lifetime') return "Tout l'historique";
-  
-  const date = new Date(start!);
-  const year = date.getFullYear();
+  const { start, end } = getDateRange(range, offset);
+  if (!start || !end) return range === 'lifetime' ? "Tout l'historique" : null;
+
+  const from = new Date(start);
+  const to = new Date(end);
+  const year = from.getFullYear();
 
   switch (range) {
-    case 'today': return date.toLocaleDateString('fr-FR');
-    
-    case 'month':
-      const monthName = date.toLocaleDateString('fr-FR', { month: 'long' });
-      return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`;
+    case 'today': return from.toLocaleDateString('fr-FR');
 
-    case 'season':
-      const months = date.getMonth();
-      if (months === 2) return `Printemps ${year}`;
-      if (months === 5) return `Été ${year}`;
-      if (months === 8) return `Automne ${year}`;
-      return `Hiver ${year}`;
+    case 'week': return formatDaySpan(from, to);
+
+    case 'month': return `${capitalize(from.toLocaleDateString('fr-FR', { month: 'long' }))} ${year}`;
+
+    case 'season': return `${SEASON_NAMES[seasonOfMonth(from.getMonth())]} ${year}`;
+
+    case '1m': return offset === 0 ? "30 derniers jours" : formatDaySpan(from, to);
+
+    case '6m': return offset === 0 ? "6 derniers mois" : formatMonthSpan(from, to);
 
     case 'year': return `${year}`;
+
     default: return null;
   }
+};
+
+/**
+ * Lisse les minutes d'une journée (24 entrées horaires) : chaque heure est plafonnée à 60 minutes
+ * et le surplus est reporté sur les heures suivantes, de façon cyclique (23h -> 0h), sur 24 heures
+ * au plus. Le total est conservé, sauf s'il dépasse 24 * 60 minutes (le reste est alors perdu).
+ * L'entrée n'est pas modifiée ; moins de 24 entrées : renvoyée telle quelle.
+ */
+export const smoothHourlyData = (rawData: HourlyData[]): HourlyData[] => {
+  if (rawData.length < 24) return rawData;
+  const data = rawData.map(h => ({ ...h }));
+  let carry = 0;
+
+  // Premier tour : chaque heure reçoit son propre volume plus le report des heures précédentes
+  for (let i = 0; i < 24; i++) {
+    const total = rawData[i].value + carry;
+    data[i].value = Math.min(60, total);
+    carry = total - data[i].value;
+  }
+  // Second tour (cycle 23h -> 0h) : le report comble la place restante, heure après heure
+  for (let i = 0; i < 24 && carry > 0; i++) {
+    const added = Math.min(60 - data[i].value, carry);
+    data[i].value += added;
+    carry -= added;
+  }
+
+  return data;
 };

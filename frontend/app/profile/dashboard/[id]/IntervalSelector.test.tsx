@@ -25,15 +25,15 @@ beforeEach(() => {
   onIntervalChange.mockReset();
 });
 
-const labels = [dict.today, dict.week, dict.month, dict.season, dict.sixMonths, dict.year, dict.lastMonth];
+const labels = [dict.today, dict.week, dict.month, dict.season, dict.sixMonths, dict.year, dict.lastMonth, dict.custom];
 const toggle = () => screen.getAllByRole("button")[0];
 
 describe("IntervalsSelector", () => {
   it("est déplié par défaut et affiche tous les intervalles", () => {
     render(<IntervalsSelector range="lifetime" onIntervalChange={onIntervalChange} />);
     for (const label of labels) expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
-    // bascule + 7 intervalles (dont lifetime en icône)
-    expect(screen.getAllByRole("button")).toHaveLength(9);
+    // bascule + 8 intervalles (dont lifetime en icône et la période personnalisée)
+    expect(screen.getAllByRole("button")).toHaveLength(10);
   });
 
   it("affiche l'icône infini pour lifetime", () => {
@@ -49,6 +49,7 @@ describe("IntervalsSelector", () => {
     [dict.sixMonths, "6m"],
     [dict.year, "year"],
     [dict.lastMonth, "1m"],
+    [dict.custom, "custom"],
   ])("un clic sur %s notifie l'intervalle %s", async (label, id) => {
     const user = userEvent.setup();
     render(<IntervalsSelector range="lifetime" onIntervalChange={onIntervalChange} />);
@@ -76,8 +77,15 @@ describe("IntervalsSelector", () => {
     expect(container.querySelector("svg.lucide-infinity")!.closest("button")!.className).toContain("bg-vert");
   });
 
-  it("aucun intervalle n'est actif pour un intervalle inconnu (custom)", () => {
+  it("met en évidence la période personnalisée quand elle est active", () => {
     render(<IntervalsSelector range="custom" onIntervalChange={onIntervalChange} />);
+    const active = screen.getAllByRole("button").filter((b) => b.className.includes("bg-vert"));
+    expect(active).toHaveLength(1);
+    expect(active[0]).toHaveTextContent(dict.custom);
+  });
+
+  it("aucun intervalle n'est actif pour un intervalle inconnu", () => {
+    render(<IntervalsSelector range="inconnu" onIntervalChange={onIntervalChange} />);
     expect(screen.getAllByRole("button").filter((b) => b.className.includes("bg-vert"))).toHaveLength(0);
   });
 

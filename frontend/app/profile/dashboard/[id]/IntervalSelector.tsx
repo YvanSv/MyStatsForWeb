@@ -35,6 +35,7 @@ export default function IntervalsSelector({ range, onIntervalChange }: {range:st
     { id: 'year', label: dict.year, span: true },
     { id: 'lifetime', label: <Infinity size={16}/>, span: true },
     { id: '1m', label: dict.lastMonth, span: false },
+    { id: 'custom', label: dict.custom, span: false },
   ];
 
   return (

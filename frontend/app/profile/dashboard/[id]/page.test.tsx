@@ -3,9 +3,10 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderToString } from "react-dom/server";
 import { languages } from "@/app/constants/locales/lang";
 import DashboardPage from "./page";
-import { INITIAL_STATS } from "./utils";
+import { getRangeLabel, INITIAL_STATS } from "./utils";
 
 const dict = languages.fr.dashboard;
 
@@ -42,8 +43,8 @@ vi.mock("@/app/components/small_elements/CustomSpinner", () => ({
   LoadingSpinner: () => <div data-testid="spinner" />,
 }));
 vi.mock("@/app/components/Atomic/Error/Error", () => ({
-  ErrorState: ({ title, status }: { title?: string; status?: number }) => (
-    <div data-testid="error-state" data-status={status}>{title}</div>
+  ErrorState: ({ title, status, onRetry }: { title?: string; status?: number; onRetry?: () => void }) => (
+    <div data-testid="error-state" data-status={status}>{title}{onRetry && <button onClick={onRetry}>retry-state</button>}</div>
   ),
 }));
 vi.mock("framer-motion", () => ({
@@ -263,6 +264,65 @@ describe("DashboardPage [id] : chargement et valeurs", () => {
   });
 });
 
+describe("DashboardPage [id] : premier rendu", () => {
+  it("affiche l'état de chargement dès le premier rendu quand un identifiant est présent (pas de flash vide)", () => {
+    const html = renderToString(<DashboardPage />);
+    expect(html).toContain("...");
+    expect(html).not.toContain(`0 ${dict.unitMin}`);
+  });
+
+  it("n'affiche pas de chargement sans identifiant", () => {
+    h.params = {};
+    const html = renderToString(<DashboardPage />);
+    expect(html).not.toContain(">...<");
+    expect(html).toContain(`0 ${dict.unitMin}`);
+  });
+});
+
+describe("DashboardPage [id] : widgets selon l'intervalle (identifiants réels)", () => {
+  const widgets = async (label: string) => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    await clickInterval(user, label);
+    await waitFor(() => expect(h.getDashboard).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryAllByText("...")).toHaveLength(0));
+    return {
+      peakMonth: screen.queryByText(dict.statPeakMonth) !== null,
+      monthly: screen.queryByTestId("chart-monthly") !== null,
+      annual: screen.queryByTestId("chart-annual") !== null,
+    };
+  };
+
+  it.each([
+    ["sixMonths", true, true, false],
+    ["year", true, true, false],
+    ["month", false, false, false],
+    ["season", false, false, false],
+    ["week", false, false, false],
+    ["lastMonth", false, false, false],
+    ["custom", false, false, false],
+  ])("%s : mois musical %s, graphique mensuel %s, graphique annuel %s", async (key, peak, monthly, annual) => {
+    expect(await widgets((dict as any)[key])).toEqual({ peakMonth: peak, monthly, annual });
+  });
+
+  it("lifetime : mois musical, graphiques mensuel et annuel", async () => {
+    await renderLoaded();
+    expect(screen.getByText(dict.statPeakMonth)).toBeInTheDocument();
+    expect(screen.getByTestId("chart-monthly")).toBeInTheDocument();
+    expect(screen.getByTestId("chart-annual")).toBeInTheDocument();
+  });
+
+  it("6m et année utilisent la grille large des stats d'habitudes (3 colonnes)", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    const grid = () => screen.getByText(dict.statPeakHour).closest('[class*="grid-cols"]') as HTMLElement;
+    await clickInterval(user, dict.sixMonths);
+    expect(grid().className).toContain("grid-cols-3");
+    await clickInterval(user, dict.week);
+    expect(grid().className).toContain("grid-cols-2");
+  });
+});
+
 describe("DashboardPage [id] : erreurs", () => {
   it("affiche l'état introuvable quand le profil renvoie 404", async () => {
     h.getProfile.mockRejectedValue({ status: 404 });
@@ -276,30 +336,67 @@ describe("DashboardPage [id] : erreurs", () => {
     expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
   });
 
-  it("n'affiche pas l'état introuvable pour une erreur non 404", async () => {
+  it("affiche un bandeau d'erreur (role=alert) pour une erreur de stats non 404, sans état introuvable", async () => {
     h.getProfile.mockRejectedValue({ status: 500 });
     h.getDashboard.mockRejectedValue({ status: 500 });
     render(<DashboardPage />);
-    await waitFor(() => expect(h.getDashboard).toHaveBeenCalled());
-    await screen.findByText(`0 ${dict.unitMin}`);
+    expect(await screen.findByRole("alert")).toHaveTextContent(dict.loadError);
     expect(screen.queryByTestId("error-state")).toBeNull();
   });
 
-  it("garde la page quand seules les stats renvoient 404 mais que le profil existe", async () => {
+  it("affiche le bandeau d'erreur quand seul le profil échoue (500), les stats restant affichées", async () => {
+    h.getProfile.mockRejectedValue({ status: 500 });
+    render(<DashboardPage />);
+    await screen.findByText(`${fmt(1234)} ${dict.unitMin}`);
+    expect(await screen.findByRole("alert")).toHaveTextContent(dict.loadError);
+  });
+
+  it("n'affiche aucun bandeau quand tout se charge", async () => {
+    await renderLoaded();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("garde la page avec un bandeau quand seules les stats renvoient 404 mais que le profil existe", async () => {
     h.getDashboard.mockRejectedValue({ status: 404 });
     render(<DashboardPage />);
-    await screen.findByText(`0 ${dict.unitMin}`);
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByAltText("Avatar")).toHaveAttribute("src", "/avatar.png"));
     expect(screen.queryByTestId("error-state")).toBeNull();
   });
 
-  it("réinitialise les stats quand le chargement échoue après un succès", async () => {
+  it("conserve les dernières stats valides quand le chargement échoue après un succès", async () => {
     const user = userEvent.setup();
     await renderLoaded();
     h.getDashboard.mockRejectedValue({ status: 500 });
     await clickInterval(user, dict.year);
-    await screen.findByText(`0 ${dict.unitMin}`);
-    expect(screen.queryByText(`${fmt(1234)} ${dict.unitMin}`)).toBeNull();
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryAllByText("...")).toHaveLength(0));
+    expect(screen.getByText(`${fmt(1234)} ${dict.unitMin}`)).toBeInTheDocument();
+    expect(screen.queryByText(`0 ${dict.unitMin}`)).toBeNull();
+  });
+
+  it("« Réessayer » relance le chargement des stats et fait disparaître le bandeau", async () => {
+    const user = userEvent.setup();
+    h.getDashboard.mockRejectedValueOnce({ status: 500 });
+    render(<DashboardPage />);
+    const alert = await screen.findByRole("alert");
+    expect(h.getDashboard).toHaveBeenCalledTimes(1);
+    await user.click(within(alert).getByRole("button", { name: dict.retry }));
+    await screen.findByText(`${fmt(1234)} ${dict.unitMin}`);
+    expect(h.getDashboard).toHaveBeenCalledTimes(2);
+    expect(h.getProfile).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  });
+
+  it("« Réessayer » relance aussi le chargement du profil en erreur", async () => {
+    const user = userEvent.setup();
+    h.getProfile.mockRejectedValueOnce({ status: 500 });
+    render(<DashboardPage />);
+    const alert = await screen.findByRole("alert");
+    await user.click(within(alert).getByRole("button", { name: dict.retry }));
+    await waitFor(() => expect(h.getProfile).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(screen.getByAltText("Avatar")).toHaveAttribute("src", "/avatar.png");
   });
 
   it("ne produit pas de rejet non géré quand le profil échoue", async () => {
@@ -374,27 +471,93 @@ describe("DashboardPage [id] : sélection de l'intervalle", () => {
     await waitFor(() => expect(h.getDashboard).toHaveBeenLastCalledWith("yvan", null, null));
   });
 
-  it("pour la semaine, affiche deux champs date remplis avec les bornes", async () => {
-    vi.setSystemTime(local(2026, 10, 14, 12));
+  it.each([
+    ["week", "week"],
+    ["lastMonth", "1m"],
+    ["sixMonths", "6m"],
+  ])("pour %s, affiche un libellé et aucun champ date éditable", async (key, rangeId) => {
     const user = userEvent.setup();
     const { container } = await renderLoaded();
-    await clickInterval(user, dict.week);
-    await waitFor(() => {
-      const inputs = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="date"]'));
-      expect(inputs).toHaveLength(4);
-      expect(inputs[0].value).toBe("2026-10-11");
-      expect(inputs[1].value).toBe("2026-10-17");
-    });
+    await clickInterval(user, (dict as any)[key]);
+    expect(container.querySelectorAll('input[type="date"]')).toHaveLength(0);
+    expect(screen.getAllByText(getRangeLabel(rangeId, 0)!)).toHaveLength(2);
   });
 
-  it("modifier la date de début applique la période personnalisée choisie", async () => {
+  it("pour la semaine, le libellé va du lundi au dimanche", async () => {
     vi.setSystemTime(local(2026, 10, 14, 12));
     const user = userEvent.setup();
-    const { container } = await renderLoaded();
+    await renderLoaded();
     await clickInterval(user, dict.week);
-    const input = container.querySelectorAll<HTMLInputElement>('input[type="date"]')[0];
-    fireEvent.change(input, { target: { value: "2026-05-01" } });
-    await waitFor(() => expect(h.getDashboard.mock.calls.at(-1)![1]).toBe(startOf(2026, 5, 1)));
+    expect(screen.getAllByText("12 oct. – 18 oct. 2026")).toHaveLength(2);
+    await waitFor(() => expect(h.getDashboard).toHaveBeenLastCalledWith("yvan", startOf(2026, 10, 12), endOf(2026, 10, 18)));
+  });
+
+  describe("période personnalisée", () => {
+    const dateInputs = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll<HTMLInputElement>('input[type="date"]'));
+    const openCustom = async () => {
+      vi.setSystemTime(local(2026, 10, 14, 12));
+      const user = userEvent.setup();
+      const utils = await renderLoaded();
+      await clickInterval(user, dict.week);
+      await clickInterval(user, dict.custom);
+      await waitFor(() => expect(dateInputs(utils.container)).toHaveLength(4));
+      return { user, ...utils };
+    };
+
+    it("n'affiche les champs date (début et fin, remplis avec la période courante) que pour 'custom'", async () => {
+      const { container } = await openCustom();
+      const inputs = dateInputs(container);
+      expect(inputs[0].value).toBe("2026-10-12");
+      expect(inputs[1].value).toBe("2026-10-18");
+    });
+
+    it("les boutons − et + sont désactivés", async () => {
+      await openCustom();
+      for (const b of [...minusButtons(), ...plusButtons()]) expect(b).toBeDisabled();
+    });
+
+    it("modifier la date de début applique la période choisie", async () => {
+      const { container } = await openCustom();
+      fireEvent.change(dateInputs(container)[0], { target: { value: "2026-10-14" } });
+      await waitFor(() => expect(h.getDashboard).toHaveBeenLastCalledWith("yvan", startOf(2026, 10, 14), endOf(2026, 10, 18)));
+    });
+
+    it("un début postérieur à la fin entraîne la fin avec lui", async () => {
+      const { container } = await openCustom();
+      fireEvent.change(dateInputs(container)[0], { target: { value: "2026-11-05" } });
+      await waitFor(() => expect(h.getDashboard).toHaveBeenLastCalledWith("yvan", startOf(2026, 11, 5), endOf(2026, 11, 5)));
+      expect(dateInputs(container)[0].value).toBe("2026-11-05");
+      expect(dateInputs(container)[1].value).toBe("2026-11-05");
+    });
+
+    it("une fin antérieure au début entraîne le début avec elle", async () => {
+      const { container } = await openCustom();
+      fireEvent.change(dateInputs(container)[1], { target: { value: "2026-09-01" } });
+      await waitFor(() => expect(h.getDashboard).toHaveBeenLastCalledWith("yvan", startOf(2026, 9, 1), endOf(2026, 9, 1)));
+      expect(dateInputs(container)[0].value).toBe("2026-09-01");
+    });
+
+    it("les champs portent min (début) et max (fin) pour empêcher l'inversion", async () => {
+      const { container } = await openCustom();
+      const [start, end] = dateInputs(container);
+      expect(start).toHaveAttribute("max", "2026-10-18");
+      expect(end).toHaveAttribute("min", "2026-10-12");
+    });
+
+    it("une saisie vidée est ignorée", async () => {
+      const { container } = await openCustom();
+      const calls = h.getDashboard.mock.calls.length;
+      fireEvent.change(dateInputs(container)[0], { target: { value: "" } });
+      expect(h.getDashboard).toHaveBeenCalledTimes(calls);
+    });
+
+    it("choisir un autre intervalle ramène le libellé et réactive − ", async () => {
+      const { user, container } = await openCustom();
+      await clickInterval(user, dict.month);
+      expect(dateInputs(container)).toHaveLength(0);
+      expect(minusButtons()[0]).toBeEnabled();
+    });
   });
 });
 

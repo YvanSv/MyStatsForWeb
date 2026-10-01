@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatToInputDate, getDateRange, getRangeLabel, INITIAL_STATS } from "./utils";
+import { formatToInputDate, getDateRange, getRangeLabel, INITIAL_STATS, smoothHourlyData } from "./utils";
 
 // Toutes les dates sont construites en heure locale : les tests restent valides quel que soit TZ.
 const local = (y: number, m: number, d: number, h = 0, mi = 0, s = 0, ms = 0) => new Date(y, m - 1, d, h, mi, s, ms);
@@ -140,49 +140,54 @@ describe("getDateRange", () => {
     });
   });
 
-  describe("week (du dimanche au samedi)", () => {
-    it("renvoie la semaine du dimanche au samedi en milieu de mois", () => {
+  describe("week (du lundi au dimanche)", () => {
+    it("renvoie la semaine du lundi au dimanche en milieu de mois", () => {
       setNow(2026, 10, 14); // mercredi
-      expect(getDateRange("week")).toEqual({ start: startOf(2026, 10, 11), end: endOf(2026, 10, 17) });
+      expect(getDateRange("week")).toEqual({ start: startOf(2026, 10, 12), end: endOf(2026, 10, 18) });
     });
 
-    it("démarre le jour même quand on est dimanche", () => {
+    it("démarre le lundi même quand on est lundi", () => {
+      setNow(2026, 10, 12); // lundi
+      expect(getDateRange("week")).toEqual({ start: startOf(2026, 10, 12), end: endOf(2026, 10, 18) });
+    });
+
+    it("le dimanche appartient à la semaine qui s'achève ce jour-là", () => {
       setNow(2026, 10, 11); // dimanche
-      expect(getDateRange("week")).toEqual({ start: startOf(2026, 10, 11), end: endOf(2026, 10, 17) });
+      expect(getDateRange("week")).toEqual({ start: startOf(2026, 10, 5), end: endOf(2026, 10, 11) });
     });
 
-    it("se termine le jour même quand on est samedi", () => {
+    it("se termine le dimanche suivant quand on est samedi", () => {
       setNow(2026, 10, 17); // samedi
-      expect(getDateRange("week")).toEqual({ start: startOf(2026, 10, 11), end: endOf(2026, 10, 17) });
+      expect(getDateRange("week")).toEqual({ start: startOf(2026, 10, 12), end: endOf(2026, 10, 18) });
     });
 
     it("recule d'une semaine avec offset -1", () => {
       setNow(2026, 10, 14);
-      expect(getDateRange("week", -1)).toEqual({ start: startOf(2026, 10, 4), end: endOf(2026, 10, 10) });
+      expect(getDateRange("week", -1)).toEqual({ start: startOf(2026, 10, 5), end: endOf(2026, 10, 11) });
     });
 
     it("avance d'une semaine avec offset +1", () => {
       setNow(2026, 10, 14);
-      expect(getDateRange("week", 1)).toEqual({ start: startOf(2026, 10, 18), end: endOf(2026, 10, 24) });
+      expect(getDateRange("week", 1)).toEqual({ start: startOf(2026, 10, 19), end: endOf(2026, 10, 25) });
     });
 
-    it("une semaine à cheval sur deux mois se termine bien le samedi suivant (jeudi 1er octobre)", () => {
-      // dimanche 27 septembre -> samedi 3 octobre
-      expect(getDateRange("week")).toEqual({ start: startOf(2026, 9, 27), end: endOf(2026, 10, 3) });
+    it("une semaine à cheval sur deux mois se termine bien le dimanche suivant (jeudi 1er octobre)", () => {
+      // lundi 28 septembre -> dimanche 4 octobre
+      expect(getDateRange("week")).toEqual({ start: startOf(2026, 9, 28), end: endOf(2026, 10, 4) });
     });
 
-    it("une semaine à cheval sur deux années se termine bien le samedi suivant (jeudi 1er janvier)", () => {
-      setNow(2026, 1, 1); // dimanche 28 décembre 2025 -> samedi 3 janvier 2026
-      expect(getDateRange("week")).toEqual({ start: startOf(2025, 12, 28), end: endOf(2026, 1, 3) });
+    it("une semaine à cheval sur deux années se termine bien le dimanche suivant (jeudi 1er janvier)", () => {
+      setNow(2026, 1, 1); // lundi 29 décembre 2025 -> dimanche 4 janvier 2026
+      expect(getDateRange("week")).toEqual({ start: startOf(2025, 12, 29), end: endOf(2026, 1, 4) });
     });
 
     it("une semaine reculée à cheval sur deux mois garde une fin cohérente", () => {
       setNow(2026, 10, 14);
-      // offset -2 : dimanche 27 septembre -> samedi 3 octobre
-      expect(getDateRange("week", -2)).toEqual({ start: startOf(2026, 9, 27), end: endOf(2026, 10, 3) });
+      // offset -2 : lundi 28 septembre -> dimanche 4 octobre
+      expect(getDateRange("week", -2)).toEqual({ start: startOf(2026, 9, 28), end: endOf(2026, 10, 4) });
     });
 
-    it("la fin est toujours exactement 6 jours après le début (pas de dérive d'un mois)", () => {
+    it("la fin est toujours exactement 7 jours calendaires après le début (pas de dérive)", () => {
       const { start, end } = getDateRange("week");
       const days = (new Date(end!).getTime() - new Date(start!).getTime()) / 86_400_000;
       expect(Math.round(days)).toBe(7);
@@ -232,46 +237,61 @@ describe("getDateRange", () => {
     });
   });
 
-  describe("1m (30 derniers jours glissants)", () => {
-    it("va de maintenant - 30 jours à maintenant", () => {
-      const expectedStart = local(2026, 10, 1, 12);
-      expectedStart.setDate(expectedStart.getDate() - 30);
-      expect(getDateRange("1m")).toEqual({ start: iso(expectedStart), end: iso(local(2026, 10, 1, 12)) });
+  describe("1m (30 jours glissants alignés sur les jours)", () => {
+    it("va d'aujourd'hui - 29 jours à 00:00:00.000 jusqu'à aujourd'hui 23:59:59.999", () => {
+      expect(getDateRange("1m")).toEqual({ start: startOf(2026, 9, 2), end: endOf(2026, 10, 1) });
     });
 
     it("décale de 30 jours par offset", () => {
-      const s = local(2026, 10, 1, 12);
-      s.setDate(s.getDate() - 60);
-      const e = local(2026, 10, 1, 12);
-      e.setDate(e.getDate() - 30);
-      expect(getDateRange("1m", -1)).toEqual({ start: iso(s), end: iso(e) });
+      expect(getDateRange("1m", -1)).toEqual({ start: startOf(2026, 8, 3), end: endOf(2026, 9, 1) });
+      expect(getDateRange("1m", 1)).toEqual({ start: startOf(2026, 10, 2), end: endOf(2026, 10, 31) });
     });
 
-    it("l'intervalle fait 30 jours", () => {
+    it("couvre exactement 30 journées locales", () => {
       const { start, end } = getDateRange("1m");
-      expect(Math.round((new Date(end!).getTime() - new Date(start!).getTime()) / 86_400_000)).toBe(30);
+      const days = (new Date(end!).getTime() - new Date(start!).getTime() + 1) / 86_400_000;
+      expect(Math.round(days)).toBe(30);
     });
 
-    it("deux offsets consécutifs sont contigus", () => {
+    it("deux offsets consécutifs sont contigus (sans trou ni chevauchement)", () => {
       const a = getDateRange("1m", -1);
       const b = getDateRange("1m", 0);
-      expect(a.end).toBe(b.start);
+      expect(new Date(b.start!).getTime() - new Date(a.end!).getTime()).toBe(1);
+    });
+
+    it("ne dépend pas de l'heure courante (23:59 et 00:00 donnent la même période)", () => {
+      setNow(2026, 10, 1, 0, 0, 0, 0);
+      const midnight = getDateRange("1m");
+      setNow(2026, 10, 1, 23, 59, 59, 999);
+      expect(getDateRange("1m")).toEqual(midnight);
     });
   });
 
-  describe("6m (180 derniers jours glissants)", () => {
-    it("va de maintenant - 180 jours à maintenant", () => {
-      const s = local(2026, 10, 1, 12);
-      s.setDate(s.getDate() - 180);
-      expect(getDateRange("6m")).toEqual({ start: iso(s), end: iso(local(2026, 10, 1, 12)) });
+  describe("6m (6 mois calendaires)", () => {
+    it("va du 1er du mois courant - 5 à 00:00 au dernier jour du mois courant 23:59:59.999", () => {
+      expect(getDateRange("6m")).toEqual({ start: startOf(2026, 5, 1), end: endOf(2026, 10, 31) });
     });
 
-    it("décale de 180 jours par offset", () => {
-      const s = local(2026, 10, 1, 12);
-      s.setDate(s.getDate() - 360);
-      const e = local(2026, 10, 1, 12);
-      e.setDate(e.getDate() - 180);
-      expect(getDateRange("6m", -1)).toEqual({ start: iso(s), end: iso(e) });
+    it("décale de 6 mois par offset", () => {
+      expect(getDateRange("6m", -1)).toEqual({ start: startOf(2025, 11, 1), end: endOf(2026, 4, 30) });
+      expect(getDateRange("6m", 1)).toEqual({ start: startOf(2026, 11, 1), end: endOf(2027, 4, 30) });
+    });
+
+    it("depuis un 31 du mois, ne déborde pas sur un mois plus court (31 août)", () => {
+      setNow(2026, 8, 31);
+      expect(getDateRange("6m")).toEqual({ start: startOf(2026, 3, 1), end: endOf(2026, 8, 31) });
+      expect(getDateRange("6m", -1)).toEqual({ start: startOf(2025, 9, 1), end: endOf(2026, 2, 28) });
+    });
+
+    it("février bissextile comme dernier mois", () => {
+      setNow(2028, 2, 10);
+      expect(getDateRange("6m")).toEqual({ start: startOf(2027, 9, 1), end: endOf(2028, 2, 29) });
+    });
+
+    it("deux offsets consécutifs sont contigus", () => {
+      const a = getDateRange("6m", -1);
+      const b = getDateRange("6m", 0);
+      expect(new Date(b.start!).getTime() - new Date(a.end!).getTime()).toBe(1);
     });
   });
 
@@ -480,7 +500,106 @@ describe("getRangeLabel", () => {
     expect(getRangeLabel("year", -1)).toBe("2025");
   });
 
-  it.each(["week", "1m", "6m", "custom", ""])("%j : pas de libellé (null) pour afficher les dates", (range) => {
+  it("week : jours de début et de fin avec l'année (lundi au dimanche)", () => {
+    setNow(2026, 10, 11);
+    expect(getRangeLabel("week", 0)).toBe("5 oct. – 11 oct. 2026");
+    expect(getRangeLabel("week", 1)).toBe("12 oct. – 18 oct. 2026");
+  });
+
+  it("week : à cheval sur deux années, les deux années sont indiquées", () => {
+    setNow(2026, 1, 1);
+    expect(getRangeLabel("week", 0)).toBe("29 déc. 2025 – 4 janv. 2026");
+  });
+
+  it("1m : « 30 derniers jours » pour la période courante, les dates sinon", () => {
+    expect(getRangeLabel("1m", 0)).toBe("30 derniers jours");
+    expect(getRangeLabel("1m", -1)).toBe("3 août – 1 sept. 2026");
+  });
+
+  it("6m : « 6 derniers mois » pour la période courante, les mois sinon", () => {
+    expect(getRangeLabel("6m", 0)).toBe("6 derniers mois");
+    expect(getRangeLabel("6m", -1)).toBe("nov. 2025 – avr. 2026");
+  });
+
+  it.each(["today", "week", "month", "season", "1m", "6m", "year", "lifetime"])(
+    "%j : renvoie toujours un libellé non vide (pas de dates éditables)", (range) => {
+      for (const offset of [-2, 0, 1]) expect(getRangeLabel(range, offset)).toBeTruthy();
+    });
+
+  it.each(["custom", ""])("%j : pas de libellé (null) : seule la période personnalisée affiche des dates", (range) => {
     expect(getRangeLabel(range, 0)).toBeNull();
+  });
+});
+
+describe("smoothHourlyData", () => {
+  const hours = (overrides: Record<number, number> = {}) =>
+    Array.from({ length: 24 }, (_, i) => ({ hour: `${i}h`, value: overrides[i] ?? 0, streams: 1 }));
+  const values = (d: { value: number }[]) => d.map((x) => x.value);
+  const total = (d: { value: number }[]) => d.reduce((sum, x) => sum + x.value, 0);
+
+  it("ne change rien quand aucune heure ne dépasse 60 (60 inclus)", () => {
+    const raw = hours({ 5: 60, 6: 59, 7: 0 });
+    expect(values(smoothHourlyData(raw))).toEqual(values(raw));
+  });
+
+  it("plafonne chaque heure à 60 et reporte le surplus sur l'heure suivante", () => {
+    const out = smoothHourlyData(hours({ 10: 75 }));
+    expect(out[10].value).toBe(60);
+    expect(out[11].value).toBe(15);
+  });
+
+  it("aucune heure ne dépasse 60 et le total est conservé", () => {
+    const raw = hours({ 2: 90, 9: 130, 20: 61, 21: 300 });
+    const out = smoothHourlyData(raw);
+    expect(Math.max(...values(out))).toBeLessThanOrEqual(60);
+    expect(total(out)).toBe(total(raw));
+  });
+
+  it("23h déborde sur 0h (cycle du cadran)", () => {
+    const out = smoothHourlyData(hours({ 23: 100 }));
+    expect(out[23].value).toBe(60);
+    expect(out[0].value).toBe(40);
+  });
+
+  it("reporte en chaîne : une heure pleine laisse passer le surplus à la suivante", () => {
+    const out = smoothHourlyData(hours({ 8: 150, 9: 50 }));
+    expect(out.slice(8, 12).map((x) => x.value)).toEqual([60, 60, 60, 20]);
+  });
+
+  it("le report passe par minuit et comble les premières heures déjà occupées", () => {
+    const out = smoothHourlyData(hours({ 22: 200, 23: 50, 0: 50 }));
+    expect(out[22].value).toBe(60);
+    expect(out[23].value).toBe(60);
+    expect(out[0].value).toBe(60);
+    expect(out[1].value).toBe(60);
+    expect(out[2].value).toBe(60);
+    expect(total(out)).toBe(300);
+  });
+
+  it("une journée de 24 heures pleines est inchangée et une heure à 1440 est répartie partout", () => {
+    const out = smoothHourlyData(hours({ 13: 1440 }));
+    expect(values(out)).toEqual(Array(24).fill(60));
+  });
+
+  it("au-delà de 24 * 60 minutes, tout est plafonné à 60 et le reste est perdu", () => {
+    const out = smoothHourlyData(hours({ 3: 2000 }));
+    expect(values(out)).toEqual(Array(24).fill(60));
+  });
+
+  it("conserve les autres champs (hour, streams)", () => {
+    expect(smoothHourlyData(hours({ 4: 80 }))[4]).toMatchObject({ hour: "4h", streams: 1 });
+  });
+
+  it("ne modifie pas l'entrée", () => {
+    const raw = hours({ 10: 75, 23: 100 });
+    const copy = JSON.parse(JSON.stringify(raw));
+    smoothHourlyData(raw);
+    expect(raw).toEqual(copy);
+  });
+
+  it("renvoie tel quel un tableau vide ou de moins de 24 entrées, sans planter", () => {
+    expect(smoothHourlyData([])).toEqual([]);
+    const short = [{ hour: "0h", value: 500, streams: 1 }];
+    expect(smoothHourlyData(short)).toBe(short);
   });
 });
