@@ -364,6 +364,12 @@ export const en = {
     totalStreams: "Number of streams",
     loadError: "Unable to load your summary.",
     retry: "Try again",
+    exportError: "Unable to generate the image. If your avatar or banner comes from another site, the browser may block the export.",
+    labelStreams: "Streams",
+    labelMinutes: "Minutes",
+    labelTracks: "Tracks",
+    labelAlbums: "Albums",
+    labelArtists: "Artists",
     download: "Download"
   },
   faq: {

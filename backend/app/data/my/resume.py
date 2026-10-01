@@ -59,8 +59,8 @@ async def get_resume_data(
         "distinct_artists": distincts.nb_artists
     }
 
-def get_range_dates(range,offset):
-    now = datetime.utcnow()
+def get_range_dates(range,offset,now=None):
+    now = now or datetime.utcnow()
     start_date, end_date = None, None
 
     if range == "day":
@@ -77,11 +77,14 @@ def get_range_dates(range,offset):
         end_date = start_date + timedelta(days=days_in_month)
 
     elif range == "season":
-        # Une saison = 3 mois. Offset 0 = saison actuelle.
-        current_season_start_month = ((now.month - 1) // 3) * 3 + 1
-        target_date = datetime(now.year, current_season_start_month, 1) - timedelta(days=offset * 90)
-        start_date = datetime(target_date.year, ((target_date.month - 1) // 3) * 3 + 1, 1)
-        end_date = start_date + timedelta(days=92) # Approx 3 mois
+        # Saisons météorologiques, comme le dashboard : hiver déc-fév, printemps mars-mai, été juin-août, automne sept-nov.
+        # Offset 0 = saison actuelle, 1 = la précédente, etc. (calcul en mois : pas de dérive de 90 jours)
+        season_start_month = (12, 3, 6, 9)[(now.month % 12) // 3]
+        season_start_year = now.year - (1 if now.month in (1, 2) else 0)
+        months = season_start_year * 12 + (season_start_month - 1) - offset * 3
+        start_date = datetime(months // 12, months % 12 + 1, 1)
+        end_months = months + 3
+        end_date = datetime(end_months // 12, end_months % 12 + 1, 1)
 
     elif range == "year":
         target_year = now.year - offset
