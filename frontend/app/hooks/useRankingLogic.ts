@@ -59,7 +59,11 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
   // Cela évite de re-déclencher si l'objet currentSort change de référence mais pas de contenu
   const searchParamsKey = searchParams.toString();
 
+  // Identifiant de la dernière requête lancée : les réponses plus anciennes sont ignorées
+  const lastRequest = useRef(0);
+
   const fetchData = useCallback(async (newOffset: number, clearExisting: boolean) => {
+    const requestId = ++lastRequest.current;
     setStatus(prev => ({ ...prev, loading: true }));
     try {
       const dataToFetch = {
@@ -69,6 +73,7 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
       };
       
       const newData = await fetchFn(dataToFetch);
+      if (requestId !== lastRequest.current) return;
       setItems(prev => clearExisting ? (newData || []) : [...prev, ...(newData || [])]);
       setStatus(prev => ({ 
         ...prev, 
@@ -77,6 +82,7 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
         loading: false 
       }));
     } catch (err) {
+      if (requestId !== lastRequest.current) return;
       setStatus(prev => ({ ...prev, loading: false }));
     }
   }, [fetchFn, currentSort, searchParams]);
@@ -96,6 +102,8 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
           date_max: cleanDate(data.date_max, new Date().toISOString().split('T')[0])
         }));
       }
+    }).catch(() => {
+      // Métadonnées indisponibles : on garde les bornes par défaut
     });
   }, [metadataFn]);
 

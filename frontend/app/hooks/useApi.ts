@@ -1,14 +1,20 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../services/api";
 import { API_ENDPOINTS } from "../constants/routes";
 
 export const useApi = () => {
   const [loading, setLoading] = useState(false);
+  // Nombre de requêtes en cours : loading ne retombe à false qu'une fois toutes terminées
+  const pending = useRef(0);
 
   const execute = useCallback(async (task: () => Promise<any>) => {
+    pending.current += 1;
     setLoading(true);
     try {return await task()}
-    finally {setLoading(false)}
+    finally {
+      pending.current -= 1;
+      setLoading(pending.current > 0);
+    }
   }, []);
 
   const requestWithLoading = useCallback((endpoint: string, options?: RequestInit) => 
