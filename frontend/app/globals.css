@@ -10,6 +10,29 @@
 @theme {
   --font-jost: var(--font-jost);
   --font-hias: "Hias Sans", var(--font-jost), sans-serif;
+
+  /* Animations utilisées par les classes animate-shake, animate-progress-fast et animate-gradient-xy */
+  --animate-shake: shake 0.4s ease-in-out;
+  --animate-progress-fast: progress-fast 0.9s ease-in-out infinite;
+  --animate-gradient-xy: gradient-xy 4s ease infinite;
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  @keyframes progress-fast {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.35); }
+  }
+
+  @keyframes gradient-xy {
+    0%, 100% { background-size: 200% 200%; background-position: 0% 50%; }
+    50% { background-size: 200% 200%; background-position: 100% 50%; }
+  }
   
   --color-vert: #1DD05D;
   --color-jaune: #D3F527;
@@ -74,6 +97,13 @@ body {
 
 .animation-delay-4000 {
   animation-delay: 4s;
+}
+
+/* Pas d'animation décorative pour les personnes qui l'ont demandé dans leur système */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake, .animate-progress-fast, .animate-gradient-xy, .animate-blob {
+    animation: none;
+  }
 }
 
 /* SCROLLBAR */
