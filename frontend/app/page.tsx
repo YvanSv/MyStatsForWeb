@@ -27,28 +27,51 @@ export default function HomePage() {
   const { refreshUserData, getTodayStats } = useApiMyDatas();
   const [userStats, setUserStats] = useState<{ nb_streams: string | number, nb_minutes: string | number }>({nb_streams: '...', nb_minutes: "..."});
   const [stats, setStats] = useState(INITIALS_STATS);
-  const [loading, setLoading] = useState(true);
+  // Deux états de chargement indépendants : les stats globales ne repassent pas à « ... »
+  // pendant le chargement des stats du jour
+  const [loadingGlobal, setLoadingGlobal] = useState(true);
+  const [loadingToday, setLoadingToday] = useState(false);
   const { getHomeData } = useApiAllDatas();
+  // Primitifs : l'effet ne se relance pas à chaque rafraîchissement du même utilisateur
+  const isLoggedIn = !!user?.is_logged_in;
+  const userId = user?.id;
 
   useEffect(() => {
-    setLoading(true);
-    const loadData = async () => {try { setStats((await getHomeData()) ?? INITIALS_STATS)} catch(e) {} finally {setLoading(false)}}
+    let cancelled = false;
+    setLoadingGlobal(true);
+    const loadData = async () => {
+      try {
+        const data = await getHomeData();
+        if (!cancelled) setStats(data ?? INITIALS_STATS);
+      } catch (e) {
+        console.error("Erreur lors du chargement des stats globales", e);
+      } finally {
+        if (!cancelled) setLoadingGlobal(false);
+      }
+    };
     loadData();
+    return () => { cancelled = true; };
   }, [getHomeData]);
 
   useEffect(() => {
-    if (!user?.is_logged_in) return;
-    setLoading(true);
+    if (!isLoggedIn) return;
+    let cancelled = false;
+    setLoadingToday(true);
 
     const loadData = async () => {
       try {
         await refreshUserData();
         const today = await getTodayStats();
-        setUserStats({ nb_streams: today?.nb_streams ?? 0, nb_minutes: today?.nb_minutes ?? 0 });
-      } catch(e) {} finally {setLoading(false)}
-    }
+        if (!cancelled) setUserStats({ nb_streams: today?.nb_streams ?? 0, nb_minutes: today?.nb_minutes ?? 0 });
+      } catch (e) {
+        console.error("Erreur lors du chargement des stats du jour", e);
+      } finally {
+        if (!cancelled) setLoadingToday(false);
+      }
+    };
     loadData();
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [isLoggedIn, userId, refreshUserData, getTodayStats]);
 
   return (
     <main className={ACCUEIL_STYLES.MAIN}>
@@ -67,7 +90,7 @@ export default function HomePage() {
                     </div>
                     <div>
                       <p className="text-3xl font-black text-white leading-none">
-                        {userStats.nb_streams.toLocaleString()}
+                        {loadingToday ? "..." : userStats.nb_streams.toLocaleString()}
                       </p>
                       <p className="text-gray-400 text-sm font-medium mt-1 uppercase tracking-tight">Streams</p>
                     </div>
@@ -84,7 +107,7 @@ export default function HomePage() {
                     </div>
                     <div>
                       <p className="text-3xl font-black text-white leading-none">
-                        {userStats.nb_minutes.toLocaleString()}
+                        {loadingToday ? "..." : userStats.nb_minutes.toLocaleString()}
                       </p>
                       <p className="text-gray-400 text-sm font-medium mt-1 uppercase tracking-tight">Minutes</p>
                     </div>
@@ -143,13 +166,13 @@ export default function HomePage() {
       {/* SECTION STATISTIQUES GÉNÉRALES */}
       <section className={ACCUEIL_STYLES.STATS_SECTION}>
         <div className={ACCUEIL_STYLES.STATS_GRID}>
-          <StatCard value={loading ? "..." : formatter.format(stats.streams)} label={t.home.stats1}/>
-          <StatCard value={loading ? "..." : formatter.format(stats.users)} label={t.home.stats2}/>
+          <StatCard value={loadingGlobal ? "..." : formatter.format(stats.streams)} label={t.home.stats1}/>
+          <StatCard value={loadingGlobal ? "..." : formatter.format(stats.users)} label={t.home.stats2}/>
         </div>
         <div className={ACCUEIL_STYLES.STATS_GRID}>
-          <StatCard value={loading ? "..." : formatter.format(stats.tracks)} label={t.home.stats3}/>
-          <StatCard value={loading ? "..." : formatter.format(stats.albums)} label={t.home.stats4}/>
-          <StatCard value={loading ? "..." : formatter.format(stats.artists)} label={t.home.stats5}/>
+          <StatCard value={loadingGlobal ? "..." : formatter.format(stats.tracks)} label={t.home.stats3}/>
+          <StatCard value={loadingGlobal ? "..." : formatter.format(stats.albums)} label={t.home.stats4}/>
+          <StatCard value={loadingGlobal ? "..." : formatter.format(stats.artists)} label={t.home.stats5}/>
         </div>
       </section>
 

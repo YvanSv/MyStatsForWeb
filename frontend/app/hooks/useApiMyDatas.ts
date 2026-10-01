@@ -50,7 +50,7 @@ export const useApiMyDatas = () => {
 
   const refreshUserData = useCallback(() => request(API_ENDPOINTS.REFRESH_USER_DATA), [request]);
   const getTodayStats = useCallback(() => request(API_ENDPOINTS.TODAY_STATS), [request]);
-  const getResumeStats = useCallback((filters?: Record<string, any>) => request(`${API_ENDPOINTS.SHARE}?${buildParams(filters)}`), [request]);
+  const getResumeStats = useCallback((filters?: Record<string, any>) => request(`${API_ENDPOINTS.SHARE}?${buildParams(filters)}`), [request, buildParams]);
 
   return useMemo(() => ({
     loading, getTracks, getArtists, getAlbums, getResumeStats,

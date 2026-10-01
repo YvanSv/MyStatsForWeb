@@ -6,7 +6,8 @@ import { useApiAllDatas } from "./useApiAllDatas";
 import { useApiMyDatas } from "./useApiMyDatas";
 
 const h = vi.hoisted(() => ({ request: vi.fn() }));
-vi.mock("./useApi", () => ({ useApi: () => ({ loading: false, request: h.request }) }));
+const useApiMock = vi.hoisted(() => vi.fn());
+vi.mock("./useApi", () => ({ useApi: () => useApiMock() }));
 
 const parse = (url: string) => {
   const [base, qs] = url.split("?");
@@ -14,6 +15,8 @@ const parse = (url: string) => {
 };
 
 beforeEach(() => {
+  useApiMock.mockReset();
+  useApiMock.mockImplementation(() => ({ loading: false, request: h.request }));
   h.request.mockReset();
   h.request.mockResolvedValue([]);
 });
@@ -114,5 +117,32 @@ describe("useApiMyDatas.getResumeStats", () => {
     const { result } = renderHook(() => useApiMyDatas());
     await result.current.getResumeStats();
     expect(parse(h.request.mock.calls[0][0]).base).toBe(API_ENDPOINTS.SHARE);
+  });
+});
+
+describe("useApiMyDatas - dépendances des callbacks", () => {
+  it("getResumeStats utilise le request courant quand il change", async () => {
+    const r1 = vi.fn().mockResolvedValue("a");
+    const r2 = vi.fn().mockResolvedValue("b");
+    const cur = { request: r1 };
+    useApiMock.mockImplementation(() => ({ loading: false, request: cur.request }));
+    const { result, rerender } = renderHook(() => useApiMyDatas());
+    const first = result.current.getResumeStats;
+    cur.request = r2;
+    rerender();
+    expect(result.current.getResumeStats).not.toBe(first);
+    await result.current.getResumeStats();
+    expect(r2).toHaveBeenCalledTimes(1);
+    expect(r1).not.toHaveBeenCalled();
+  });
+
+  it("toutes les fonctions restent stables entre rendus tant que request ne change pas", () => {
+    const { result, rerender } = renderHook(() => useApiMyDatas());
+    const first = { ...result.current };
+    rerender();
+    rerender();
+    for (const [k, v] of Object.entries(first)) {
+      expect((result.current as any)[k], k).toBe(v);
+    }
   });
 });

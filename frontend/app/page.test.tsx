@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { languages } from "./constants/locales/lang";
@@ -59,6 +59,8 @@ beforeEach(() => {
   h.refreshUserData.mockResolvedValue(undefined);
   h.getTodayStats.mockResolvedValue({ nb_streams: 12, nb_minutes: 3456 });
 });
+
+afterEach(() => { vi.restoreAllMocks(); });
 
 describe("HomePage - visiteur déconnecté", () => {
   it("affiche le hero, les libellés de stats et la section technique", async () => {
@@ -265,19 +267,36 @@ describe("HomePage - visiteur connecté", () => {
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
   });
 
-  it("recharge les stats du jour quand l'objet user change", async () => {
+  it("ne recharge pas les stats du jour quand l'objet user est recréé pour le même utilisateur", async () => {
     const { rerender } = await renderHome();
     expect(h.refreshUserData).toHaveBeenCalledTimes(1);
     h.user = loggedIn();
+    await act(async () => { rerender(<HomePage />); });
+    expect(h.refreshUserData).toHaveBeenCalledTimes(1);
+    expect(h.getTodayStats).toHaveBeenCalledTimes(1);
+  });
+
+  it("recharge les stats du jour quand un autre utilisateur se connecte", async () => {
+    const { rerender } = await renderHome();
+    h.user = { is_logged_in: true, id: 2 };
     await act(async () => { rerender(<HomePage />); });
     expect(h.refreshUserData).toHaveBeenCalledTimes(2);
     expect(h.getTodayStats).toHaveBeenCalledTimes(2);
   });
 
-  it("ne recharge pas si le rerender garde le même objet user", async () => {
+  it("ne reboucle pas : un seul appel de chaque après plusieurs rendus", async () => {
     const { rerender } = await renderHome();
-    await act(async () => { rerender(<HomePage />); });
+    for (let i = 0; i < 3; i++) await act(async () => { rerender(<HomePage />); });
     expect(h.refreshUserData).toHaveBeenCalledTimes(1);
+    expect(h.getTodayStats).toHaveBeenCalledTimes(1);
+  });
+
+  it("se relance quand la référence de getTodayStats change", async () => {
+    const { rerender } = await renderHome();
+    h.getTodayStats = vi.fn().mockResolvedValue({ nb_streams: 99, nb_minutes: 1 });
+    await act(async () => { rerender(<HomePage />); });
+    expect(h.getTodayStats).toHaveBeenCalledTimes(1);
+    expect(statValue("Streams")).toBe("99");
   });
 
   it("charge les stats du jour après une connexion (déconnecté -> connecté)", async () => {
@@ -310,7 +329,54 @@ describe("HomePage - visiteur connecté", () => {
     await renderHome();
     // Les stats globales sont déjà chargées : elles ne devraient pas repasser à '...'
     expect(statValue(dict.stats1)).not.toBe("...");
+    expect(statValue("Streams")).toBe("...");
     await act(async () => { d.resolve(); });
+  });
+
+  it("les chargements sont indépendants : les stats du jour arrivent avant les globales sans les débloquer", async () => {
+    const g = deferred<typeof GLOBAL>();
+    h.getHomeData.mockReturnValue(g.promise);
+    await renderHome();
+    expect(statValue("Streams")).toBe((12).toLocaleString());
+    expect(statValue(dict.stats1)).toBe("...");
+    await act(async () => { g.resolve(GLOBAL); });
+    expect(statValue(dict.stats1).replace(/\s/g, " ")).toBe("9 876 543");
+  });
+
+  it("les stats globales ne repassent pas à '...' lors d'un rechargement des stats du jour", async () => {
+    const { rerender } = await renderHome();
+    const d = deferred<void>();
+    h.refreshUserData.mockReturnValue(d.promise);
+    h.user = { is_logged_in: true, id: 2 };
+    await act(async () => { rerender(<HomePage />); });
+    expect(statValue("Streams")).toBe("...");
+    expect(statValue(dict.stats1)).not.toBe("...");
+    await act(async () => { d.resolve(); });
+  });
+
+  it("journalise l'échec de refreshUserData avec console.error", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const boom = new Error("refresh");
+    h.refreshUserData.mockRejectedValue(boom);
+    await renderHome();
+    expect(err).toHaveBeenCalledWith(expect.any(String), boom);
+  });
+
+  it("journalise l'échec de getTodayStats avec console.error", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const boom = new Error("today");
+    h.getTodayStats.mockRejectedValue(boom);
+    await renderHome();
+    expect(err).toHaveBeenCalledWith(expect.any(String), boom);
+  });
+
+  it("journalise l'échec de getHomeData et garde les valeurs initiales", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const boom = new Error("home");
+    h.getHomeData.mockRejectedValue(boom);
+    await renderHome();
+    expect(err).toHaveBeenCalledWith(expect.any(String), boom);
+    expect(statValue(dict.stats1)).toBe("0");
   });
 });
 

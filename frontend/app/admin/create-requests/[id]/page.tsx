@@ -32,6 +32,15 @@ const formatDuration = (ms: number | undefined) => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 };
 
+// Découpe "Artiste - Titre" au PREMIER " - " seulement (comme AppleMusicWorker._get_parts côté backend) :
+// l'artiste est ce qui précède, le titre tout le reste. Robuste si le titre est absent ou vide.
+const splitTrackTitle = (title: string | null | undefined): { artist: string | undefined, title: string | undefined } => {
+  if (!title) return { artist: undefined, title: undefined };
+  const idx = title.indexOf(" - ");
+  if (idx === -1) return { artist: title, title: undefined };
+  return { artist: title.slice(0, idx), title: title.slice(idx + 3) };
+};
+
 // --- PAGE PRINCIPALE ---
 
 export default function CreateRequestDetailPage() {
@@ -81,6 +90,12 @@ export default function CreateRequestDetailPage() {
       setResolving(false);
     }
   };
+
+  const { artist: trackArtist, title: trackTitle } = splitTrackTitle(request?.track?.title);
+  // Calcul sans spread : Math.max(...tableau) peut dépasser la pile sur un très gros historique
+  const maxMsPlayed = request?.track?.history?.length
+    ? request.track.history.reduce((max, h) => (h.ms_played > max ? h.ms_played : max), 0)
+    : undefined;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center text3 animate-pulse bg-[#0a0a0a]">
@@ -146,10 +161,10 @@ export default function CreateRequestDetailPage() {
             <div className="space-y-6">
               {/* Infos Clés */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoBubble label="Artiste" value={request.track?.title.split(" - ")[0]} />
-                <InfoBubble label="Titre" value={request.track?.title.split(" - ")[1]}/>
+                <InfoBubble label="Artiste" value={trackArtist} />
+                <InfoBubble label="Titre" value={trackTitle}/>
                 <InfoBubble label="ID Interne" value={request.track?.id}/>
-                <InfoBubble label="Durée max écoute" value={formatDuration(request.track?.history?.length ? Math.max(...request.track.history.map(h => h.ms_played)) : undefined)}/>
+                <InfoBubble label="Durée max écoute" value={formatDuration(maxMsPlayed)}/>
               </div>
 
               {/* Mappings Actuels */}
@@ -212,21 +227,25 @@ export default function CreateRequestDetailPage() {
                 <h4 className="font-bold text-white">{s.title} — {s.duration_ms ? formatDuration(s.duration_ms) : '??'}</h4>
                 <p className="text-sm text3 mb-4">{s['artist']} • {s.album}</p>
 
-                {/* LISTE DES ISRCS DE CETTE SUGGESTION */}
-                <div className="flex flex-wrap gap-2">
-                  <button key={s.isrc}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleIsrc(s.isrc);
-                    }}
-                    className={`text-[10px] font-mono px-2 py-1 border rounded transition-all ${
-                      selectedIsrcs.includes(s.isrc) 
-                        ? 'bg-vert/20 border-vert text-white' 
-                        : 'bg-black/20 border-white/10 text-gray-500'
-                    }`}
-                  >{s.isrc}</button>
-                </div>
+                {/* ISRC DE CETTE SUGGESTION (rien si absent). Deux suggestions de même ISRC partagent
+                    le même état : les deux boutons se basculent ensemble, l'ISRC n'étant envoyé qu'une fois. */}
+                {s.isrc && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleIsrc(s.isrc);
+                      }}
+                      aria-pressed={selectedIsrcs.includes(s.isrc)}
+                      className={`text-[10px] font-mono px-2 py-1 border rounded transition-all ${
+                        selectedIsrcs.includes(s.isrc) 
+                          ? 'bg-vert/20 border-vert text-white' 
+                          : 'bg-black/20 border-white/10 text-gray-500'
+                      }`}
+                    >{s.isrc}</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

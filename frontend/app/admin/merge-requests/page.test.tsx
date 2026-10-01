@@ -39,6 +39,29 @@ describe("MergeRequestListPage", () => {
     expect(h.getMergeRequests).toHaveBeenCalledTimes(1);
   });
 
+  it("affiche 'Chargement...' (ni erreur ni état vide) pendant le chargement", () => {
+    h.getMergeRequests.mockReturnValue(new Promise(() => {}));
+    render(<MergeRequestListPage />);
+    expect(screen.getByText("Chargement...")).toBeInTheDocument();
+    expect(screen.queryByText("Erreur")).toBeNull();
+    expect(screen.queryByText(/Aucune merge request/)).toBeNull();
+  });
+
+  it("une liste vide n'affiche ni chargement ni erreur", async () => {
+    await renderPage([]);
+    expect(screen.queryByText("Chargement...")).toBeNull();
+    expect(screen.queryByText("Erreur")).toBeNull();
+    expect(screen.getByText(/Aucune merge request/)).toBeInTheDocument();
+  });
+
+  it("une erreur n'affiche ni chargement ni état vide", async () => {
+    h.getMergeRequests.mockRejectedValue(new Error("boom"));
+    render(<MergeRequestListPage />);
+    await act(async () => {});
+    expect(screen.queryByText("Chargement...")).toBeNull();
+    expect(screen.queryByText(/Aucune merge request/)).toBeNull();
+  });
+
   it("n'affiche pas encore la liste pendant le chargement", () => {
     h.getMergeRequests.mockReturnValue(new Promise(() => {}));
     render(<MergeRequestListPage />);

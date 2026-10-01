@@ -147,6 +147,30 @@ describe("CreateRequestDetailPage - rendu", () => {
     expect(screen.getByText("Titre").nextElementSibling).toHaveTextContent("—");
   });
 
+  it("ne coupe qu'au premier ' - ' : le reste du titre est conservé", async () => {
+    await renderLoaded(makeReq({ track: { ...makeReq().track, title: "Artiste - Titre - Remix - Live" } }));
+    expect(screen.getByText("Artiste", { selector: "div.text-xs" }).nextElementSibling).toHaveTextContent(/^Artiste$/);
+    expect(screen.getByText("Titre").nextElementSibling).toHaveTextContent("Titre - Remix - Live");
+  });
+
+  it.each([undefined, null, ""])("affiche '—' pour artiste et titre quand title vaut %j, sans planter", async (title) => {
+    await renderLoaded(makeReq({ track: { id: 10, title, history: [] } }));
+    expect(screen.getByText("Artiste").nextElementSibling).toHaveTextContent("—");
+    expect(screen.getByText("Titre").nextElementSibling).toHaveTextContent("—");
+  });
+
+  it("calcule la durée max sans passer par Math.max(...spread) (pile)", async () => {
+    // Un rendu DOM de >100 000 lignes est trop lourd pour jsdom : on vérifie donc l'absence de spread
+    const spy = vi.spyOn(Math, "max");
+    const history = Array.from({ length: 300 }, (_, i) => ({
+      id: i, provider: "spotify", played_at: "2025-01-10T10:30:00Z", ms_played: i === 77 ? 245000 : 1000,
+    }));
+    await renderLoaded(makeReq({ track: { id: 10, title: "A - B", history } }));
+    expect(screen.getByText("Durée max écoute").nextElementSibling).toHaveTextContent("4:05");
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
   it("affiche la durée max d'écoute au format m:ss", async () => {
     await renderLoaded();
     expect(screen.getByText("Durée max écoute").nextElementSibling).toHaveTextContent("3:35");
@@ -283,6 +307,40 @@ describe("CreateRequestDetailPage - suggestions", () => {
     expect(btn.className).toMatch(/bg-vert\/20/);
     await user.click(btn);
     expect(btn.className).not.toMatch(/bg-vert\/20/);
+  });
+});
+
+describe("CreateRequestDetailPage - ISRC", () => {
+  const noIsrc = [{ title: "Sans ISRC", artist: "X", album: "Y" }, suggestions[0]];
+
+  it("n'affiche pas de bouton ISRC vide pour une suggestion sans ISRC", async () => {
+    await renderLoaded(makeReq({ match_data: { suggestions: noIsrc } }));
+    const card = screen.getByRole("heading", { name: /Sans ISRC/ }).closest("div.p-4") as HTMLElement;
+    // Seul le bouton « master » existe dans cette carte
+    expect(within(card).getAllByRole("button")).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /FR\d+/ })).toHaveLength(1);
+  });
+
+  it("ne transmet jamais undefined dans les ISRC sélectionnés", async () => {
+    const user = userEvent.setup();
+    h.resolveCreateRequest.mockResolvedValue(undefined);
+    await renderLoaded(makeReq({ match_data: { suggestions: noIsrc } }));
+    await user.click(screen.getByRole("button", { name: "FR0000000001" }));
+    await user.click(screen.getByRole("button", { name: "Approuver" }));
+    expect(h.resolveCreateRequest).toHaveBeenCalledWith(5, true, 0, ["FR0000000001"]);
+  });
+
+  it("deux suggestions de même ISRC se basculent ensemble et l'ISRC n'est envoyé qu'une fois", async () => {
+    const user = userEvent.setup();
+    h.resolveCreateRequest.mockResolvedValue(undefined);
+    const dup = [suggestions[0], { ...suggestions[1], isrc: suggestions[0].isrc }];
+    await renderLoaded(makeReq({ match_data: { suggestions: dup } }));
+    const [b1, b2] = screen.getAllByRole("button", { name: "FR0000000001" });
+    await user.click(b1);
+    expect(b1).toHaveAttribute("aria-pressed", "true");
+    expect(b2).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "Approuver" }));
+    expect(h.resolveCreateRequest).toHaveBeenCalledWith(5, true, 0, ["FR0000000001"]);
   });
 });
 
