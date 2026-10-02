@@ -5,7 +5,7 @@ import {
 } from "./gridLayout";
 import type { PlacedWidget } from "./interfaces";
 
-const pw = (over: Partial<PlacedWidget> = {}): PlacedWidget => ({
+const pw = (over: Record<string, unknown> = {}): PlacedWidget => ({
   id: 1, type: "username", index: 0, w: 1, h: 1, settings: { color: "red" }, ...over,
 });
 const payload = (widgets: unknown, version: unknown = 1) => JSON.stringify({ version, widgets });

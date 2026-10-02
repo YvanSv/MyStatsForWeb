@@ -3,10 +3,8 @@
 import { Trash2 } from 'lucide-react';
 import { useLanguage } from '../context/languageContext';
 import React, { useEffect, useRef, useState } from 'react';
-import { ProfileWidget } from './widgets/ProfileWidgets';
-import { TopFiveWidget } from './widgets/TopFiveWidget';
 import { ProfilePictureWidget } from './widgets/atomic/ProfilePictureWidget';
-import { PlacedWidget, SelectedWidget } from './interfaces';
+import { PlacedWidget, ResumeData, SelectedWidget } from './interfaces';
 import { UsernameWidget } from './widgets/atomic/UsernameWidget';
 import { BackgroundWidget } from './widgets/atomic/BackgroundWidget';
 import { BioWidget } from './widgets/atomic/BioWidget';
@@ -19,7 +17,7 @@ import { GRID_CELLS, GRID_COLS, GRID_ROWS, collides, fitsInGrid, isWidgetType, n
 
 interface ResumeCanvasProps {
   range: string | number;
-  resumeData: any;
+  resumeData: ResumeData;
   widgets: PlacedWidget[];
   setWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>;
   onSelectWidget: (w: SelectedWidget | null) => void;
@@ -36,7 +34,7 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     // Si le widget supprimé est celui sélectionné
     if (selectedId === idToDelete) {
       setSelectedId(null);       // Enlève la bordure verte localement
-      onSelectWidget(null as any); // Vide les propriétés dans le parent (le 'as any' si TS râle)
+      onSelectWidget(null); // Vide les propriétés dans le parent
     }
     
     setWidgets(prev => prev.filter(w => w.id !== idToDelete));
@@ -126,7 +124,7 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', stopResize);
     };
-  }, [resizingConfig, widgets]);
+  }, [resizingConfig, widgets, setWidgets]);
 
 
   const showGrid = () => {
@@ -164,34 +162,16 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
 
   const handleSelect = (w: PlacedWidget) => {
     setSelectedId(w.id);
-    onSelectWidget({
-      id: w.id,
-      type: w.type,
-      settings: w.settings
-    });
+    // TS ne corrèle pas `type` et `settings` à travers l'union : on ne garde que id, type et réglages
+    onSelectWidget({ id: w.id, type: w.type, settings: w.settings } as SelectedWidget);
   };
 
   const deselect = () => {
     setSelectedId(null);
-    onSelectWidget(null as any); // On informe aussi le parent pour vider le panneau "Propriétés"
+    onSelectWidget(null); // On informe aussi le parent pour vider le panneau "Propriétés"
   };
 
   useEffect(() => { deselectRef.current = deselect; });
-
-  const getFreshData = (type: string) => {
-    switch (type) {
-      case 'profile_picture': return resumeData.user;
-      case 'username': return resumeData?.user?.display_name;
-      case 'background': return resumeData?.user?.banner;
-      case 'bio': return resumeData?.user?.bio;
-      case 'minutes': return resumeData.minutes;
-      case 'streams': return resumeData.streams;
-      case 'nb_tracks': return resumeData.distinct_tracks;
-      case 'nb_albums': return resumeData.distinct_albums;
-      case 'nb_artists': return resumeData.distinct_artists;
-      default: return null;
-    }
-  };
 
   return (
     <div id="capture-canvas" className="mt-2 flex flex-col bg-white/[0.02] w-[35%] rounded-xl border border-white/10">
@@ -228,7 +208,6 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
             const colStart = (w.index % 3) + 1;
             const rowStart = Math.floor(w.index / 3) + 1;
             const isSelected = selectedId === w.id;
-            const currentData = getFreshData(w.type);
 
             return (
               <div 
@@ -253,16 +232,16 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
                   />
                 )}
                 <div className="w-full h-full rounded-md text-black font-bold text-[10px] flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-white">
-                  {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={currentData} settings={w.settings}/>}
-                  {w.type === 'username' && <UsernameWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
-                  {w.type === 'background' && <BackgroundWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
-                  {w.type === 'bio' && <BioWidget w={w.w} h={w.h} bio={currentData} settings={w.settings}/>}
+                  {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={resumeData.user} settings={w.settings}/>}
+                  {w.type === 'username' && <UsernameWidget w={w.w} h={w.h} data={resumeData?.user?.display_name} settings={w.settings}/>}
+                  {w.type === 'background' && <BackgroundWidget w={w.w} h={w.h} data={resumeData?.user?.banner} settings={w.settings}/>}
+                  {w.type === 'bio' && <BioWidget w={w.w} h={w.h} bio={resumeData?.user?.bio} settings={w.settings}/>}
                   
-                  {w.type === 'minutes' && <MinutesWidget w={w.w} h={w.h} minutes={currentData} settings={w.settings}/>}
-                  {w.type === 'streams' && <StreamsWidget w={w.w} h={w.h} streams={currentData} settings={w.settings}/>}
-                  {w.type === 'nb_tracks' && <DistinctTracksWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
-                  {w.type === 'nb_albums' && <DistinctAlbumsWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
-                  {w.type === 'nb_artists' && <DistinctArtistsWidget w={w.w} h={w.h} data={currentData} settings={w.settings}/>}
+                  {w.type === 'minutes' && <MinutesWidget w={w.w} h={w.h} minutes={resumeData.minutes} settings={w.settings}/>}
+                  {w.type === 'streams' && <StreamsWidget w={w.w} h={w.h} streams={resumeData.streams} settings={w.settings}/>}
+                  {w.type === 'nb_tracks' && <DistinctTracksWidget w={w.w} h={w.h} data={resumeData.distinct_tracks} settings={w.settings}/>}
+                  {w.type === 'nb_albums' && <DistinctAlbumsWidget w={w.w} h={w.h} data={resumeData.distinct_albums} settings={w.settings}/>}
+                  {w.type === 'nb_artists' && <DistinctArtistsWidget w={w.w} h={w.h} data={resumeData.distinct_artists} settings={w.settings}/>}
 
                   {/* {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data}/>}
                   {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>} */}

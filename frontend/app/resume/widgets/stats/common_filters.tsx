@@ -1,8 +1,12 @@
+import type { StatWidgetSettings } from "../../interfaces";
 import { SettingLabel } from "../SettingLabel";
 import { useId } from "react";
 import { useLanguage } from "../../../context/languageContext";
 
-export function ShortenFilter({update,settings}:{update: (type:string,value:any) => void, settings: any}) {
+/** Met à jour un réglage d'un widget de statistiques (la valeur suit la clé). */
+export type StatUpdate = <K extends keyof StatWidgetSettings>(key: K, value: StatWidgetSettings[K]) => void;
+
+export function ShortenFilter({update,settings}:{update: StatUpdate, settings?: StatWidgetSettings}) {
   const { t } = useLanguage();
   return (
     <button type="button" aria-pressed={!!settings?.shorten} onClick={() => update('shorten', !settings?.shorten)}
@@ -15,7 +19,7 @@ export function ShortenFilter({update,settings}:{update: (type:string,value:any)
   );
 }
 
-export function ShowIconFilter({update,settings}:{update: (type:string,value:any) => void, settings: any}) {
+export function ShowIconFilter({update,settings}:{update: StatUpdate, settings?: StatWidgetSettings}) {
   const { t } = useLanguage();
   return (
     <button type="button" aria-pressed={!!settings?.showIcon} onClick={() => update('showIcon', !settings?.showIcon)}
@@ -29,7 +33,7 @@ export function ShowIconFilter({update,settings}:{update: (type:string,value:any
   );
 }
 
-export function CustomLabel({update,settings,defaultLabel}:{update: (type:string,value:any) => void, settings: any, defaultLabel?: string}) {
+export function CustomLabel({update,settings,defaultLabel}:{update: StatUpdate, settings?: StatWidgetSettings, defaultLabel?: string}) {
   const id = useId();
   const { t } = useLanguage();
   return (

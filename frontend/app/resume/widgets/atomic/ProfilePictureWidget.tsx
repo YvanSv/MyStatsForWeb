@@ -1,13 +1,13 @@
 import { SettingLabel } from "../SettingLabel";
 import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
-import { UserProfile } from '../../interfaces';
+import type { ProfilePictureWidgetSettings, UserProfile } from '../../interfaces';
 
 interface ProfileWidgetProps {
   w: number;
   h: number;
   user: UserProfile;
-  settings: any;
+  settings?: ProfilePictureWidgetSettings;
 }
 
 export function ProfilePictureWidget({ w, h, user, settings }: ProfileWidgetProps) {
@@ -37,9 +37,9 @@ export function ProfilePictureWidget({ w, h, user, settings }: ProfileWidgetProp
   );
 }
 
-export function ProfilePictureSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
+export function ProfilePictureSettings({ settings, onChange }: { settings?: ProfilePictureWidgetSettings, onChange: (s: ProfilePictureWidgetSettings) => void }) {
   // Fonction utilitaire pour simplifier les changements
-  const update = (key: string, value: any) => {
+  const update = <K extends keyof ProfilePictureWidgetSettings>(key: K, value: ProfilePictureWidgetSettings[K]) => {
     onChange({ ...settings, [key]: value });
   };
   const { t } = useLanguage();

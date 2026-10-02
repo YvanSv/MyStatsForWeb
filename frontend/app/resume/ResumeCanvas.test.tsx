@@ -38,11 +38,11 @@ vi.mock("./widgets/stats/DistinctArtistsWidget", async () => await stub("Distinc
 
 // --- Helpers ----------------------------------------------------------------
 const resumeData = {
-  user: { display_name: "Yvan", bio: "Ma bio", banner: "b.png", avatar: "a.png" },
+  user: { display_name: "Yvan", bio: "Ma bio", banner: "b.png", avatar: "a.png", perms: { profile: true, stats: true, favorites: true, history: true, dashboard: true } },
   minutes: 1234, streams: 567, distinct_tracks: 11, distinct_albums: 22, distinct_artists: 33,
 };
 
-const pw = (over: Partial<PlacedWidget> = {}): PlacedWidget => ({
+const pw = (over: Record<string, unknown> = {}): PlacedWidget => ({
   id: 1, type: "username", index: 0, w: 1, h: 1, settings: { color: "red" }, ...over,
 });
 

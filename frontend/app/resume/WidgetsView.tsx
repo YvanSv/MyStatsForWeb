@@ -1,4 +1,4 @@
-import { DataFormat } from "./interfaces";
+import { DataFormat, UserProfile } from "./interfaces";
 import { useLanguage } from "../context/languageContext";
 
 interface WidgetsViewProps {
@@ -36,7 +36,7 @@ export function WidgetsView({resumeData}:WidgetsViewProps) {
 }
 
 // Petit composant interne pour la prévisualisation des éléments
-function DraggablePreview({ title, subtitle, icon, type, data }: { title: string, subtitle?: string, icon: string, type: string, data: any }) {
+function DraggablePreview({ title, subtitle, icon, type, data }: { title: string, subtitle?: string, icon: string, type: string, data: UserProfile | string | number }) {
   const { t } = useLanguage();
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData("widgetType", type);

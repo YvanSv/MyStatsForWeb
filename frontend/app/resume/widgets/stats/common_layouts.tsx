@@ -1,8 +1,17 @@
+import type { ReactNode } from "react";
+import type { StatWidgetSettings } from "../../interfaces";
 import { useLanguage } from "../../../context/languageContext";
 import { formatNumber } from "./utils";
 import { COLORS } from "../../../constants/ui";
 
-export function Layout1x1({data,settings,icon,defaultLabel}:{data:any,settings:any,icon:any,defaultLabel?:string}) {
+interface LayoutProps {
+  data: number | null | undefined;
+  settings?: StatWidgetSettings;
+  icon: ReactNode;
+  defaultLabel?: string;
+}
+
+export function Layout1x1({data,settings,icon,defaultLabel}:LayoutProps) {
   const { t } = useLanguage();
   return (
     <div className="w-full h-full flex flex-col items-center justify-center rounded-xl">
@@ -15,7 +24,7 @@ export function Layout1x1({data,settings,icon,defaultLabel}:{data:any,settings:a
   );
 }
 
-export function Layout2x1({data,settings,icon,defaultLabel}:{data:any,settings:any,icon:any,defaultLabel?:string}) {
+export function Layout2x1({data,settings,icon,defaultLabel}:LayoutProps) {
   const { t } = useLanguage();
   const color = settings?.color || COLORS.SPOTIFY_GREEN;
   return (
@@ -29,7 +38,7 @@ export function Layout2x1({data,settings,icon,defaultLabel}:{data:any,settings:a
   );
 }
 
-export function Layout2x2({data,settings,icon,defaultLabel}:{data:any,settings:any,icon:any,defaultLabel?:string}) {
+export function Layout2x2({data,settings,icon,defaultLabel}:LayoutProps) {
   const { t } = useLanguage();
   const color = settings?.color || COLORS.SPOTIFY_GREEN;
   return (

@@ -15,7 +15,7 @@ beforeEach(() => {
   onChange.mockReset();
 });
 
-const user = (avatar: any) => ({ display_name: "Yvan", bio: "", avatar, banner: "", perms: [] });
+const user = (avatar: any) => ({ display_name: "Yvan", bio: "", avatar, banner: "", perms: { profile: true, stats: true, favorites: true, history: true, dashboard: true } });
 const renderWidget = (settings: any = {}, avatar: any = "https://img/a.png", w = 1, h = 1) =>
   render(<ProfilePictureWidget w={w} h={h} user={user(avatar)} settings={settings} />);
 const img = () => screen.getByRole("img");

@@ -34,7 +34,7 @@ vi.mock("./widgets/stats/DistinctArtistsWidget", async () => ({ DistinctArtistsS
 const hh = await h;
 const TYPES = ["profile_picture", "username", "background", "bio", "minutes", "streams", "nb_tracks", "nb_albums", "nb_artists"];
 
-const sel = (type: string, settings: any = { a: 1 }, id = 2): SelectedWidget => ({ id, type, settings });
+const sel = (type: string, settings: any = { a: 1 }, id = 2): SelectedWidget => ({ id, type, settings }) as SelectedWidget;
 
 const setup = (selectedWidget: SelectedWidget | null) =>
   render(
@@ -117,8 +117,8 @@ describe("PropertiesView – modification des réglages", () => {
     expect(hh.setWidgets).toHaveBeenCalledTimes(1);
     const updater = hh.setWidgets.mock.calls[0][0] as (p: PlacedWidget[]) => PlacedWidget[];
     const prev: PlacedWidget[] = [
-      { id: 1, type: "bio", index: 0, w: 1, h: 1, settings: { k: 1 } },
-      { id: 2, type: "streams", index: 1, w: 2, h: 1, settings: { k: 2 } },
+      { id: 1, type: "bio", index: 0, w: 1, h: 1, settings: { k: 1 } as object },
+      { id: 2, type: "streams", index: 1, w: 2, h: 1, settings: { k: 2 } as object },
     ];
     const next = updater(prev);
     expect(next[0]).toBe(prev[0]);

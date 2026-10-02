@@ -1,6 +1,8 @@
 import { SettingLabel } from "../SettingLabel";
 import { useLanguage } from "../../../context/languageContext";
 import { ColorSwatchPicker } from "../ColorSwatchPicker";
+import type { CSSProperties } from "react";
+import type { TextAlign, UsernameWidgetSettings, VerticalAlign } from "../../interfaces";
 import Widget from "../Widget";
 import { COLORS } from "../../../constants/ui";
 
@@ -8,7 +10,7 @@ interface UsernameWidgetProps {
   w: number;
   h: number;
   data: string;
-  settings: any;
+  settings?: UsernameWidgetSettings;
 }
 
 export function UsernameWidget({ w, h, data, settings }: UsernameWidgetProps) {
@@ -18,21 +20,21 @@ export function UsernameWidget({ w, h, data, settings }: UsernameWidgetProps) {
   const textAlign = settings?.textAlign || "center";
   const verticalAlign = settings?.verticalAlign || "center";
 
-  const vAlignMap: Record<string, string> = {
+  const vAlignMap: Record<VerticalAlign, string> = {
     top: "items-start",
     center: "items-center",
     bottom: "items-end"
   };
 
-  const hAlignMap: Record<string, string> = {
+  const hAlignMap: Record<TextAlign, string> = {
     left: "justify-start text-left",
     center: "justify-center text-center",
     right: "justify-end text-right"
   };
 
-  const textStyle = {
+  const textStyle: CSSProperties = {
     color: color,
-    textAlign: textAlign as any,
+    textAlign: textAlign,
   };
 
   const containerClass = `w-full h-full flex ${vAlignMap[verticalAlign] ?? ""} ${hAlignMap[textAlign] ?? ""}`;
@@ -91,8 +93,8 @@ export function UsernameWidget({ w, h, data, settings }: UsernameWidgetProps) {
   );
 }
 
-export function UsernameSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
-  const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
+export function UsernameSettings({ settings, onChange }: { settings?: UsernameWidgetSettings, onChange: (s: UsernameWidgetSettings) => void }) {
+  const update = <K extends keyof UsernameWidgetSettings>(key: K, value: UsernameWidgetSettings[K]) => onChange({ ...settings, [key]: value });
   const { t } = useLanguage();
 
   const colors = [COLORS.SPOTIFY_GREEN, COLORS.WHITE, "#FF5733", "#3357FF", "#F1C40F"];
@@ -122,7 +124,7 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
       <div className="flex flex-col gap-2">
         <SettingLabel>{t.resume.wAlignH}</SettingLabel>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
-          {['left', 'center', 'right'].map((align) => (
+          {(['left', 'center', 'right'] as const).map((align) => (
             <button key={align} type="button" aria-pressed={settings?.textAlign === align} onClick={() => update('textAlign', align)}
               className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings?.textAlign === align ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500'}`}
             >
@@ -136,11 +138,11 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
       <div className="flex flex-col gap-2">
         <SettingLabel>{t.resume.wAlignV}</SettingLabel>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
-          {[
+          {([
             { id: 'top', label: t.resume.wTop },
             { id: 'center', label: t.resume.wMiddle },
             { id: 'bottom', label: t.resume.wBottom }
-          ].map((v) => (
+          ] as const).map((v) => (
             <button key={v.id} type="button" aria-pressed={settings?.verticalAlign === v.id} onClick={() => update('verticalAlign', v.id)}
               className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings?.verticalAlign === v.id ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500'}`}
             >

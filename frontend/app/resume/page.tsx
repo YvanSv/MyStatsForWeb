@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LoadingSpinner } from '../components/small_elements/CustomSpinner';
 import { WidgetsView } from './WidgetsView';
 import { PropertiesView } from './PropertiesView';
@@ -24,7 +24,7 @@ export default function ResumePage() {
   // États pour les sélecteurs
   const [range, setRange] = useState<RangeOption>("year");
   const [offset, setOffset] = useState(0);
-  const [sortBy, setSortBy] = useState<SortOption>("streams");
+  const [sortBy] = useState<SortOption>("streams");
   // Échec du chargement : sans ça, le spinner tournait indéfiniment quand l'API échouait
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -68,15 +68,20 @@ export default function ResumePage() {
     return range;
   }, [range, offset, t]);
 
+  // Toujours la dernière version de getResumeStats sans relancer le chargement si son identité change
+  const getResumeStatsRef = useRef(getResumeStats);
+  useEffect(() => { getResumeStatsRef.current = getResumeStats; });
+
   useEffect(() => {
     // Une réponse arrivée après un changement de filtre (ou un démontage) ne doit pas écraser la plus récente
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- l'état de chargement doit passer à « occupé » dès que le filtre change, avant la réponse de l'API
     setLoadFailed(false);
     setLoading(true);
 
     const fetchResume = async () => {
       try {
-        const data = await getResumeStats({"range":range,"sort":sortBy,"offset":offset});
+        const data = await getResumeStatsRef.current({"range":range,"sort":sortBy,"offset":offset});
         if (cancelled) return;
         setResumeData(data);
         setLoading(false);

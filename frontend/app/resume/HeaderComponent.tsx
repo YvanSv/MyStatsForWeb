@@ -1,5 +1,5 @@
-import { ListFilter, Minus, Plus } from "lucide-react";
-import { DataFormat, RangeOption, SortOption } from "./interfaces";
+import { Minus, Plus } from "lucide-react";
+import { RangeOption } from "./interfaces";
 import { useLanguage } from "../context/languageContext";
 
 interface HeaderComponentProps {

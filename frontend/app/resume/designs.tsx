@@ -1,13 +1,19 @@
 import { Clock, Mic2, Play, Trophy } from "lucide-react";
 
-type SortOption = "streams" | "minutes" | "rating";
+import type { DataFormat, ItemBrief, SortOption } from "./interfaces";
 
-interface DataFormat {
-  topArtists: any[];
-  topTracks: any[];
-  topAlbums: any[];
-  minutes: number;
-  streams: number;
+type DesignData = Pick<DataFormat, "topArtists" | "topTracks" | "topAlbums" | "minutes" | "streams">;
+
+/** Libellés utilisés par la carte (chacun a une valeur par défaut en français). */
+interface DesignDict {
+  resume: Partial<Record<"topArtist" | "topTrack" | "topAlbum" | "totalTime" | "totalStreams", string>>;
+}
+
+interface RankingItemCellProps {
+  top1?: ItemBrief;
+  color: "blue" | "purple" | "red";
+  sort: SortOption;
+  label: string;
 }
 
 const RESUME_STYLES = {
@@ -18,15 +24,15 @@ const RESUME_STYLES = {
   VALUE: "text-3xl font-black text-white italic",
 };
 
-export function DesignCard({resumeData,t,sort,range}:{resumeData:DataFormat,t:any,sort:SortOption,range:string|number}) {
+export function DesignCard({resumeData,t,sort,range}:{resumeData:DesignData,t:DesignDict,sort:SortOption,range:string|number}) {
   return (
     <div className="max-w-3xl mx-auto grid grid-cols-3 gap-4">
       {/* ARTISTES */}
-      <RankingItemCell dict={t.resume} top1={resumeData.topArtists[0]} top2_5={resumeData.topArtists.slice(1, 5)} color="blue" sort={sort} label={t.resume.topArtist || "Artiste n°1"}/>
+      <RankingItemCell top1={resumeData.topArtists[0]} color="blue" sort={sort} label={t.resume.topArtist || "Artiste n°1"}/>
       {/* TRACKS */}
-      <RankingItemCell dict={t.resume} top1={resumeData.topTracks[0]} top2_5={resumeData.topTracks.slice(1, 5)} color="purple" sort={sort} label={t.resume.topTrack || "Titre n°1"}/>
+      <RankingItemCell top1={resumeData.topTracks[0]} color="purple" sort={sort} label={t.resume.topTrack || "Titre n°1"}/>
       {/* ALBUMS */}
-      <RankingItemCell dict={t.resume} top1={resumeData.topAlbums[0]} top2_5={resumeData.topAlbums.slice(1, 5)} color="red" sort={sort} label={t.resume.topAlbum || "Album n°1"}/>
+      <RankingItemCell top1={resumeData.topAlbums[0]} color="red" sort={sort} label={t.resume.topAlbum || "Album n°1"}/>
       {/* MINUTES TOTALES */}
       <div className={`${RESUME_STYLES.CARD} flex flex-col justify-between`}>
         <div className={"bg-gradient-to-br from-yellow-500/20 via-transparent to-transparent absolute inset-0"}/>
@@ -56,7 +62,7 @@ export function DesignCard({resumeData,t,sort,range}:{resumeData:DataFormat,t:an
   );
 }
 
-function RankingItemCell({dict,top1,top2_5,color,sort,label}:any) {
+function RankingItemCell({top1,color,sort,label}:RankingItemCellProps) {
   // Classement vide : on garde la carte avec son libellé
   if (!top1) return (
     <div className={`${RESUME_STYLES.CARD} col-span-3 flex flex-col justify-center min-h-[200px]`}>

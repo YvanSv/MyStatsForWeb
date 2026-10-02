@@ -5,7 +5,7 @@ import { ProfileWidget } from "./ProfileWidgets";
 import type { UserProfile } from "../interfaces";
 
 const user = (over: Partial<UserProfile> = {}): UserProfile => ({
-  display_name: "Yvan", bio: "", avatar: "", banner: "", perms: [], ...over,
+  display_name: "Yvan", bio: "", avatar: "", banner: "", perms: { profile: true, stats: true, favorites: true, history: true, dashboard: true }, ...over,
 });
 
 describe("ProfileWidget", () => {

@@ -1,6 +1,7 @@
 import { SettingLabel } from "../SettingLabel";
 import { useLanguage } from "../../../context/languageContext";
 import { ColorSwatchPicker } from "../ColorSwatchPicker";
+import type { BioWidgetSettings } from "../../interfaces";
 import Widget from "../Widget";
 import { COLORS } from "../../../constants/ui";
 
@@ -8,7 +9,7 @@ interface BioWidgetProps {
   w: number;
   h: number;
   bio: string;
-  settings: any;
+  settings?: BioWidgetSettings;
 }
 
 const DEFAULT_BIO_COLOR = "#9CA3AF"; // Gris par défaut
@@ -59,8 +60,8 @@ export function BioWidget({ w, h, bio, settings }: BioWidgetProps) {
   );
 }
 
-export function BioSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
-  const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
+export function BioSettings({ settings, onChange }: { settings?: BioWidgetSettings, onChange: (s: BioWidgetSettings) => void }) {
+  const update = <K extends keyof BioWidgetSettings>(key: K, value: BioWidgetSettings[K]) => onChange({ ...settings, [key]: value });
   const { t } = useLanguage();
 
   const fontSizes = [
@@ -95,7 +96,7 @@ export function BioSettings({ settings, onChange }: { settings: any, onChange: (
       <div className="flex flex-col gap-2">
         <SettingLabel>{t.resume.wAlign}</SettingLabel>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
-          {['left', 'center', 'right'].map((align) => (
+          {(['left', 'center', 'right'] as const).map((align) => (
             <button key={align} type="button" aria-pressed={settings?.textAlign === align} onClick={() => update('textAlign', align)}
               className={`flex-1 py-1 rounded-lg text-[9px] uppercase font-bold transition-all ${settings?.textAlign === align ? 'bg-white/10 text-white' : 'text-gray-500'}`}
             >

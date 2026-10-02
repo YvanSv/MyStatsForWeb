@@ -1,13 +1,14 @@
 import { SettingLabel } from "../SettingLabel";
 import { useLanguage } from "../../../context/languageContext";
+import type { BackgroundWidgetSettings } from "../../interfaces";
 import Widget from "../Widget";
-import { Sun, Droplets, Palette, Square } from "lucide-react";
+import { Sun, Droplets } from "lucide-react";
 
 interface BackgroundWidgetProps {
   w: number;
   h: number;
   data: string; // URL de l'image de fond
-  settings: any;
+  settings?: BackgroundWidgetSettings;
 }
 
 // Valeur CSS `url(...)` sûre : seules les URL https, les chemins du site et les images data: usuelles sont acceptées,
@@ -61,9 +62,9 @@ export function BackgroundWidget({ w, h, data, settings }: BackgroundWidgetProps
   );
 }
 
-export function BackgroundSettings({ settings, onChange }: { settings: any, onChange: (s: any) => void }) {
+export function BackgroundSettings({ settings, onChange }: { settings?: BackgroundWidgetSettings, onChange: (s: BackgroundWidgetSettings) => void }) {
   // Fonction utilitaire pour simplifier les changements
-  const update = (key: string, value: any) => {
+  const update = <K extends keyof BackgroundWidgetSettings>(key: K, value: BackgroundWidgetSettings[K]) => {
     onChange({ ...settings, [key]: value });
   };
   const { t } = useLanguage();

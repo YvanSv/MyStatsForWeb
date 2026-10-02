@@ -1,9 +1,10 @@
 import type { ComponentType } from "react";
 import type { LucideProps } from "lucide-react";
 import { useLanguage } from "../../../context/languageContext";
+import type { StatWidgetSettings } from "../../interfaces";
 import Widget from "../Widget";
 import { ColorSwatchPicker } from "../ColorSwatchPicker";
-import { CustomLabel, ShortenFilter, ShowIconFilter } from "./common_filters";
+import { CustomLabel, ShortenFilter, ShowIconFilter, type StatUpdate } from "./common_filters";
 import { Layout1x1, Layout2x1, Layout2x2 } from "./common_layouts";
 import { COLORS } from "../../../constants/ui";
 
@@ -28,7 +29,7 @@ interface StatWidgetProps extends StatConfig {
   w: number;
   h: number;
   data: number;
-  settings: any;
+  settings?: StatWidgetSettings;
 }
 
 export function StatWidget({ w, h, data, settings, Icon, labelKey }: StatWidgetProps) {
@@ -49,8 +50,8 @@ export function StatWidget({ w, h, data, settings, Icon, labelKey }: StatWidgetP
   );
 }
 
-export function StatSettings({ settings, onChange, labelKey, extraColors, colorLabelKey, swatchShadow, rootClassName }: StatSettingsConfig & { settings: any, onChange: (s: any) => void }) {
-  const update = (key: string, value: any) => onChange({ ...settings, [key]: value });
+export function StatSettings({ settings, onChange, labelKey, extraColors, colorLabelKey, swatchShadow, rootClassName }: StatSettingsConfig & { settings?: StatWidgetSettings, onChange: (s: StatWidgetSettings) => void }) {
+  const update: StatUpdate = (key, value) => onChange({ ...settings, [key]: value });
   const { t } = useLanguage();
   const defaultLabel = t.resume[labelKey];
 

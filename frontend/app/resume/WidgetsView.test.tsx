@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, vi } from "vitest";
-import { createEvent, fireEvent, render, screen, within } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WidgetsView } from "./WidgetsView";
 import type { DataFormat } from "./interfaces";
@@ -12,7 +12,7 @@ vi.mock("../context/languageContext", async () => {
 });
 
 const data = (over: Record<string, any> = {}): DataFormat => ({
-  user: { display_name: "Yvan", bio: "Ma bio", avatar: "a.png", banner: "b.png", perms: [] },
+  user: { display_name: "Yvan", bio: "Ma bio", avatar: "a.png", banner: "b.png", perms: { profile: true, stats: true, favorites: true, history: true, dashboard: true } },
   topArtists: [], topTracks: [], topAlbums: [],
   minutes: 1234567, streams: 9876, distinct_tracks: 12, distinct_albums: 3, distinct_artists: 1,
   ...over,

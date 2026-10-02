@@ -1,5 +1,4 @@
-import { Download, Share2 } from "lucide-react";
-import { PlacedWidget, SelectedWidget } from "./interfaces";
+import { AnyWidgetSettings, PlacedWidget, SelectedWidget } from "./interfaces";
 import { ProfilePictureSettings } from "./widgets/atomic/ProfilePictureWidget";
 import { useLanguage } from "../context/languageContext";
 import { UsernameSettings } from "./widgets/atomic/UsernameWidget";
@@ -10,7 +9,6 @@ import { StreamsSettings } from "./widgets/stats/StreamsWidget";
 import { DistinctTracksSettings } from "./widgets/stats/DistinctTracksWidget";
 import { DistinctAlbumsSettings } from "./widgets/stats/DistinctAlbumsWidget";
 import { DistinctArtistsSettings } from "./widgets/stats/DistinctArtistsWidget";
-import { PrimaryButton, SecondaryButton } from "../components/Atomic/Buttons";
 
 interface PropertiesViewProps {
   selectedWidget: SelectedWidget | null;
@@ -19,7 +17,7 @@ interface PropertiesViewProps {
   exportImage: () => void;
 }
 
-export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets, exportImage}:PropertiesViewProps) {
+export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets}:PropertiesViewProps) {
   const { t } = useLanguage();
 
   const labels: Record<string, string> = {
@@ -31,16 +29,17 @@ export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets, e
   const widgetLabel = (type: string) => labels[type] ?? type;
 
   // Fonction pour mettre à jour les réglages d'un widget depuis le panneau de droite
-  const updateWidgetSettings = (newSettings: any) => {
+  const updateWidgetSettings = (newSettings: AnyWidgetSettings) => {
     if (!selectedWidget) return;
 
     // 1. Mettre à jour l'état du widget sélectionné (pour le panneau de droite)
-    setSelectedWidget({ ...selectedWidget, settings: newSettings });
+    // Le panneau affiché correspond au type du widget : les réglages reçus en sont donc bien ceux de ce type
+    setSelectedWidget({ ...selectedWidget, settings: newSettings } as SelectedWidget);
 
     // 2. Mettre à jour le widget correspondant dans la liste du Canvas
     // Si tu as passé setWidgets à ton Canvas ou si l'état est dans la page :
     setWidgets(prev => prev.map(w => 
-      w.id === selectedWidget.id ? { ...w, settings: newSettings } : w
+      w.id === selectedWidget.id ? ({ ...w, settings: newSettings } as PlacedWidget) : w
     ));
   };
 
