@@ -321,7 +321,6 @@ export const en = {
     shareBtn: "Share profile",
     copyError: "Unable to copy link",
     editBtn: "Edit profile",
-    followBtn: "Follow user",
     statTime: "Listening time",
     statTimeSub: "Total cumulative",
     statStreams: "Number of streams",

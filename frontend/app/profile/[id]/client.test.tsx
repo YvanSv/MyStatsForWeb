@@ -344,7 +344,6 @@ describe("ProfilePage - propriétaire", () => {
   it("propose Modifier le profil au propriétaire (slug, insensible à la casse)", async () => {
     await renderPage("YVAN");
     expect(screen.getByRole("button", { name: dict.editBtn })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: dict.followBtn })).toBeNull();
   });
 
   it("reconnaît le propriétaire par son id", async () => {
@@ -353,22 +352,24 @@ describe("ProfilePage - propriétaire", () => {
     expect(screen.getByRole("button", { name: dict.editBtn })).toBeInTheDocument();
   });
 
-  it("propose Suivre à un autre utilisateur", async () => {
+  it("ne propose ni Modifier ni bouton Suivre (fonction inexistante) à un autre utilisateur", async () => {
     await renderPage("autre");
-    expect(screen.getByRole("button", { name: dict.followBtn })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: dict.editBtn })).toBeNull();
+    expect(screen.queryByRole("button", { name: /suivre|follow/i })).toBeNull();
+    expect(screen.getByRole("button", { name: dict.shareBtn })).toBeInTheDocument();
   });
 
-  it("propose Suivre à un visiteur anonyme", async () => {
+  it("ne propose ni Modifier ni Suivre à un visiteur anonyme", async () => {
     h.auth = { user: null };
     await renderPage();
-    expect(screen.getByRole("button", { name: dict.followBtn })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: dict.editBtn })).toBeNull();
+    expect(screen.queryByRole("button", { name: /suivre|follow/i })).toBeNull();
   });
 
   it("un utilisateur sans slug ni id ne devient jamais propriétaire", async () => {
     h.auth = { user: {} };
     await renderPage("undefinedx");
-    expect(screen.getByRole("button", { name: dict.followBtn })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: dict.editBtn })).toBeNull();
   });
 
   it("le bouton Modifier navigue vers l'édition", async () => {

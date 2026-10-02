@@ -321,7 +321,6 @@ export const fr = {
     copyError: "Impossible de copier le lien",
     shareBtn: "Partager le profil",
     editBtn: "Modifier le profil",
-    followBtn: "Suivre l'utilisateur",
     statTime: "Temps d'écoute",
     statTimeSub: "Total cumulé",
     statStreams: "Nombre de streams",

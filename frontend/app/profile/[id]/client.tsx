@@ -150,15 +150,11 @@ export default function ProfilePage({ id }: { id: string }) {
         <AvatarContainer url={profile.avatar} username={profile.display_name} special={!!profile.is_special} additional="mb-12">
           {/* --- ACTIONS --- */}
           <div className={PROFILE_STYLES.ACTION_GROUP}>
-            {isOwner ? (
+            {isOwner && (
               <PrimaryButton onClick={() => router.push(`${FRONT_ROUTES.PROFILE_EDIT}`)} additional="px-8 py-3 gap-2">
                 <EditIcon size={18}/>
                 {dict.editBtn}
               </PrimaryButton>
-            ) : (
-              <SecondaryButton additional="py-3 px-8">
-                {dict.followBtn}
-              </SecondaryButton>
             )}
             <SecondaryButton additional="p-3" onClick={handleShare} ariaLabel={dict.shareBtn}>
               <ShareIcon size={20} />
