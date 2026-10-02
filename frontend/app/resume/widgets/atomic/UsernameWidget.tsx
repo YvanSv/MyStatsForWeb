@@ -1,5 +1,6 @@
+import { SettingLabel } from "../SettingLabel";
 import { useLanguage } from "../../../context/languageContext";
-import { colorLabel } from "../../colorNames";
+import { ColorSwatchPicker } from "../ColorSwatchPicker";
 import Widget from "../Widget";
 import { COLORS } from "../../../constants/ui";
 
@@ -99,19 +100,7 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
   return (
     <div className="space-y-6">
       {/* Couleur */}
-      <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wTextColor}</label>
-        <div className="flex gap-2">
-          {colors.map((c, i) => (
-            <button 
-              key={c} type="button" aria-label={colorLabel(t.resume, c, i)} aria-pressed={settings?.color === c}
-              onClick={() => update('color', c)}
-              className={`w-6 h-6 rounded-full border-2 ${settings?.color === c ? 'border-white' : 'border-transparent'}`}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-        </div>
-      </div>
+      <ColorSwatchPicker colors={colors} value={settings?.color} onChange={(c) => update('color', c)} label={t.resume.wTextColor} />
 
       {/* Style de police */}
       <div className="grid grid-cols-2 gap-2">
@@ -131,7 +120,7 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
 
       {/* Alignement Horizontal */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAlignH}</label>
+        <SettingLabel>{t.resume.wAlignH}</SettingLabel>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {['left', 'center', 'right'].map((align) => (
             <button key={align} type="button" aria-pressed={settings?.textAlign === align} onClick={() => update('textAlign', align)}
@@ -145,7 +134,7 @@ export function UsernameSettings({ settings, onChange }: { settings: any, onChan
 
       {/* Alignement Vertical */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAlignV}</label>
+        <SettingLabel>{t.resume.wAlignV}</SettingLabel>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {[
             { id: 'top', label: t.resume.wTop },

@@ -1,3 +1,4 @@
+import { SettingLabel } from "../SettingLabel";
 import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
 import { Sun, Droplets, Palette, Square } from "lucide-react";
@@ -71,7 +72,7 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
     <div className="space-y-6">
       {/* SECTION EFFETS VISUELS */}
       <div className="flex flex-col gap-4">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAmbiance}</label>
+        <SettingLabel>{t.resume.wAmbiance}</SettingLabel>
         
         {/* Slider Flou */}
         <div className="space-y-2">
@@ -102,7 +103,7 @@ export function BackgroundSettings({ settings, onChange }: { settings: any, onCh
 
       {/* SECTION DÉGRADÉ */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wFinish}</label>
+        <SettingLabel>{t.resume.wFinish}</SettingLabel>
         <button 
           type="button" aria-pressed={settings?.gradient ?? true} onClick={() => update('gradient', !(settings?.gradient ?? true))}
           className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[10px] font-bold"

@@ -1,3 +1,4 @@
+import { SettingLabel } from "../SettingLabel";
 import { useLanguage } from "../../../context/languageContext";
 import Widget from "../Widget";
 import { UserProfile } from '../../interfaces';
@@ -47,7 +48,7 @@ export function ProfilePictureSettings({ settings, onChange }: { settings: any, 
     <div className="space-y-6">
       {/* SECTION FORME */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wStyle}</label>
+        <SettingLabel>{t.resume.wStyle}</SettingLabel>
         
         {/* Toggle Arrondi */}
         <button 
@@ -75,7 +76,7 @@ export function ProfilePictureSettings({ settings, onChange }: { settings: any, 
       {/* SECTION ZOOM */}
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wZoom}</label>
+          <SettingLabel>{t.resume.wZoom}</SettingLabel>
           <span className="text-[10px] font-mono text-vert">{Math.round((settings?.zoom ?? 1) * 100)}%</span>
         </div>
         <input 

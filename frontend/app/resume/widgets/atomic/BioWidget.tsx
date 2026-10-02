@@ -1,5 +1,6 @@
+import { SettingLabel } from "../SettingLabel";
 import { useLanguage } from "../../../context/languageContext";
-import { colorLabel } from "../../colorNames";
+import { ColorSwatchPicker } from "../ColorSwatchPicker";
 import Widget from "../Widget";
 import { COLORS } from "../../../constants/ui";
 
@@ -74,23 +75,11 @@ export function BioSettings({ settings, onChange }: { settings: any, onChange: (
   return (
     <div className="space-y-6">
       {/* Couleur */}
-      <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wTextColor}</label>
-        <div className="flex gap-2">
-          {BIO_COLORS.map((c, i) => (
-            <button
-              key={c} type="button" aria-label={colorLabel(t.resume, c, i)} aria-pressed={currentColor === c}
-              onClick={() => update('color', c)}
-              className={`w-6 h-6 rounded-full border-2 ${currentColor === c ? 'border-white' : 'border-transparent'}`}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-        </div>
-      </div>
+      <ColorSwatchPicker colors={BIO_COLORS} value={currentColor} onChange={(c) => update('color', c)} label={t.resume.wTextColor} />
 
       {/* Taille du texte */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wReadSize}</label>
+        <SettingLabel>{t.resume.wReadSize}</SettingLabel>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {fontSizes.map((f) => (
             <button key={f.id} type="button" title={t.resume.wSizeTitle(f.label)} aria-pressed={settings?.fontSize === f.id} onClick={() => update('fontSize', f.id)}
@@ -104,7 +93,7 @@ export function BioSettings({ settings, onChange }: { settings: any, onChange: (
 
       {/* Alignement Horizontal */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wAlign}</label>
+        <SettingLabel>{t.resume.wAlign}</SettingLabel>
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
           {['left', 'center', 'right'].map((align) => (
             <button key={align} type="button" aria-pressed={settings?.textAlign === align} onClick={() => update('textAlign', align)}

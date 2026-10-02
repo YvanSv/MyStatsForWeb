@@ -1,3 +1,4 @@
+import { SettingLabel } from "../SettingLabel";
 import { useId } from "react";
 import { useLanguage } from "../../../context/languageContext";
 
@@ -33,7 +34,7 @@ export function CustomLabel({update,settings,defaultLabel}:{update: (type:string
   const { t } = useLanguage();
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t.resume.wWidgetTitle}</label>
+      <SettingLabel htmlFor={id}>{t.resume.wWidgetTitle}</SettingLabel>
       <input 
         id={id}
         type="text" 
