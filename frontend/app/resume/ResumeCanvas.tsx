@@ -3,17 +3,9 @@
 import { Trash2 } from 'lucide-react';
 import { useLanguage } from '../context/languageContext';
 import React, { useEffect, useRef, useState } from 'react';
-import { ProfilePictureWidget } from './widgets/atomic/ProfilePictureWidget';
 import { PlacedWidget, ResumeData, SelectedWidget } from './interfaces';
-import { UsernameWidget } from './widgets/atomic/UsernameWidget';
-import { BackgroundWidget } from './widgets/atomic/BackgroundWidget';
-import { BioWidget } from './widgets/atomic/BioWidget';
-import { MinutesWidget } from './widgets/stats/MinutesWidget';
-import { StreamsWidget } from './widgets/stats/StreamsWidget';
-import { DistinctTracksWidget } from './widgets/stats/DistinctTracksWidget';
-import { DistinctAlbumsWidget } from './widgets/stats/DistinctAlbumsWidget';
-import { DistinctArtistsWidget } from './widgets/stats/DistinctArtistsWidget';
-import { GRID_CELLS, GRID_COLS, GRID_ROWS, collides, fitsInGrid, isWidgetType, nextWidgetId } from './gridLayout';
+import { GRID_CELLS, GRID_COLS, GRID_ROWS, collides, fitsInGrid, nextWidgetId } from './gridLayout';
+import { getWidgetDefinition, isWidgetType } from './widgetRegistry';
 
 interface ResumeCanvasProps {
   range: string | number;
@@ -76,8 +68,8 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
       const mouseRow = (e.clientY - gridRect.top) / cellHeight;
 
       // Coordonnées actuelles du widget
-      const oldColStart = widget.index % 3;
-      const oldRowStart = Math.floor(widget.index / 3);
+      const oldColStart = widget.index % GRID_COLS;
+      const oldRowStart = Math.floor(widget.index / GRID_COLS);
       const oldColEnd = oldColStart + widget.w;
       const oldRowEnd = oldRowStart + widget.h;
 
@@ -150,12 +142,13 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     
     const type = e.dataTransfer.getData("widgetType");
     if (!isWidgetType(type)) return; // type vide ou inconnu : pas de widget fantôme
+    const { defaultSize, defaultSettings } = getWidgetDefinition(type);
 
     // Mise à jour fonctionnelle : id calculé et collision vérifiée sur l'état le plus récent
     setWidgets(prev => {
-      const footprint = { index: targetIndex, w: 1, h: 1 };
+      const footprint = { index: targetIndex, ...defaultSize };
       if (!fitsInGrid(footprint) || collides(footprint, prev)) return prev;
-      const newWidget: PlacedWidget = { id: nextWidgetId(prev), type, ...footprint, settings: {} };
+      const newWidget: PlacedWidget = { id: nextWidgetId(prev), type, ...footprint, settings: { ...defaultSettings } } as PlacedWidget;
       return [...prev, newWidget];
     });
   };
@@ -184,7 +177,7 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
         }}
       >
         {/* 1. LA GRILLE DE FOND (Fixe, 15 cases) */}
-        <div className="grid grid-cols-3 gap-2" style={{ opacity: isDragging || widgets.length === 0 ? 1 : 0 }}>
+        <div data-grid="cells" className="grid gap-2" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`, opacity: isDragging || widgets.length === 0 ? 1 : 0 }}>
           {Array.from({ length: GRID_CELLS }).map((_, index) => (
             // La case garde sa taille dans l'export ; seul son visuel (cadre en pointillés, numéro) est ignoré
             <div key={`cell-${index}`} onDragOver={onDragOver} onDrop={(e) => onDrop(e, index)}
@@ -198,15 +191,16 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
         </div>
 
         {/* 2. LE CALQUE DES WIDGETS (Superposé exactement au dessus) */}
-        <div className="absolute inset-2 grid grid-cols-3 gap-2 pointer-events-none"
-          style={{ 
-            // On force la création des 5 lignes, même si elles sont vides
-            gridTemplateRows: 'repeat(5, minmax(0, 1fr))' 
+        <div className="absolute inset-2 grid gap-2 pointer-events-none"
+          style={{
+            gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`,
+            // On force la création de toutes les lignes, même si elles sont vides
+            gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))`,
           }}
         >
           {widgets.map((w) => {
-            const colStart = (w.index % 3) + 1;
-            const rowStart = Math.floor(w.index / 3) + 1;
+            const colStart = (w.index % GRID_COLS) + 1;
+            const rowStart = Math.floor(w.index / GRID_COLS) + 1;
             const isSelected = selectedId === w.id;
 
             return (
@@ -232,19 +226,7 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
                   />
                 )}
                 <div className="w-full h-full rounded-md text-black font-bold text-[10px] flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-white">
-                  {w.type === 'profile_picture' && <ProfilePictureWidget w={w.w} h={w.h} user={resumeData.user} settings={w.settings}/>}
-                  {w.type === 'username' && <UsernameWidget w={w.w} h={w.h} data={resumeData?.user?.display_name} settings={w.settings}/>}
-                  {w.type === 'background' && <BackgroundWidget w={w.w} h={w.h} data={resumeData?.user?.banner} settings={w.settings}/>}
-                  {w.type === 'bio' && <BioWidget w={w.w} h={w.h} bio={resumeData?.user?.bio} settings={w.settings}/>}
-                  
-                  {w.type === 'minutes' && <MinutesWidget w={w.w} h={w.h} minutes={resumeData.minutes} settings={w.settings}/>}
-                  {w.type === 'streams' && <StreamsWidget w={w.w} h={w.h} streams={resumeData.streams} settings={w.settings}/>}
-                  {w.type === 'nb_tracks' && <DistinctTracksWidget w={w.w} h={w.h} data={resumeData.distinct_tracks} settings={w.settings}/>}
-                  {w.type === 'nb_albums' && <DistinctAlbumsWidget w={w.w} h={w.h} data={resumeData.distinct_albums} settings={w.settings}/>}
-                  {w.type === 'nb_artists' && <DistinctArtistsWidget w={w.w} h={w.h} data={resumeData.distinct_artists} settings={w.settings}/>}
-
-                  {/* {w.type === 'top_tracks' && <TopFiveWidget w={w.w} h={w.h} type='tracks' data={w.data}/>}
-                  {w.type === 'profile' && <ProfileWidget w={w.w} h={w.h} user={w.data}/>} */}
+                  <WidgetContent widget={w} resumeData={resumeData} />
 
                   {/* --- BOUTON SUPPRIMER (POUBELLE) --- */}
                   <button data-export-ignore="true" onClick={(e) => {e.stopPropagation();deleteWidget(w.id)}} title={t.resume.deleteWidget} aria-label={t.resume.deleteWidget}
@@ -304,4 +286,12 @@ function ResizeHandle({ position, onMouseDown }: { position: string; onMouseDown
       className={`${baseClass} ${positionClasses[position]}`}
     ><div className={cornerVisuals[position]}/></div>
   );
+}
+
+/** Affiche un widget via le registre (composant et données propres à son type). */
+function WidgetContent({ widget, resumeData }: { widget: PlacedWidget; resumeData: ResumeData }) {
+  if (!isWidgetType(widget.type)) return null; // type inconnu (ancienne mise en page) : boîte vide
+  const def = getWidgetDefinition(widget.type);
+  const { Component } = def;
+  return <Component w={widget.w} h={widget.h} data={def.select(resumeData)} settings={widget.settings} />;
 }

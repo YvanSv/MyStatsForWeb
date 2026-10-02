@@ -123,22 +123,22 @@ describe("WidgetsView – accordéon", () => {
 
 describe("WidgetsView – glisser-déposer", () => {
   it.each([
-    ["Photo de profil", "profile_picture", (d: DataFormat) => d.user],
-    ["Pseudonyme", "username", (d: DataFormat) => d.user.display_name],
-    ["Fond d'écran", "background", (d: DataFormat) => d.user.banner],
-    ["Description", "bio", (d: DataFormat) => d.user.bio],
-    ["Temps d'écoute", "minutes", (d: DataFormat) => d.minutes],
-    ["Nombre de streams", "streams", (d: DataFormat) => d.streams],
-    ["Titres différents", "nb_tracks", (d: DataFormat) => d.distinct_tracks],
-    ["Albums différents", "nb_albums", (d: DataFormat) => d.distinct_albums],
-    ["Artistes différents", "nb_artists", (d: DataFormat) => d.distinct_artists],
-  ])("glisser « %s » transmet le type %s et ses données sérialisées", async (title, type, pick) => {
+    ["Photo de profil", "profile_picture"],
+    ["Pseudonyme", "username"],
+    ["Fond d'écran", "background"],
+    ["Description", "bio"],
+    ["Temps d'écoute", "minutes"],
+    ["Nombre de streams", "streams"],
+    ["Titres différents", "nb_tracks"],
+    ["Albums différents", "nb_albums"],
+    ["Artistes différents", "nb_artists"],
+  ])("glisser « %s » transmet le type %s", async (title, type) => {
     const d = data();
     render(<WidgetsView resumeData={d} />);
     await openAll();
     const dt = drag(card(title));
     expect(dt.getData("widgetType")).toBe(type);
-    expect(JSON.parse(dt.getData("widgetData"))).toEqual(pick(d));
+    expect(dt.getData("widgetData")).toBeUndefined();
     expect(dt.effectAllowed).toBe("move");
   });
 

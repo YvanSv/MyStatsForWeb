@@ -13,9 +13,10 @@ vi.mock("../context/languageContext", async () => {
 });
 
 // --- Mocks : chaque widget expose ses props -----------------------------------
-const stub = vi.hoisted(() => async (name: string, key: string) => {
+const stub = vi.hoisted(() => async (name: string, key: string, actual: object) => {
   const { createElement } = await import("react");
   return {
+    ...actual,
     [name]: (p: any) =>
       createElement(
         "div",
@@ -24,21 +25,21 @@ const stub = vi.hoisted(() => async (name: string, key: string) => {
       ),
   };
 });
-vi.mock("./widgets/ProfileWidgets", () => ({ ProfileWidget: () => null }));
 vi.mock("./widgets/TopFiveWidget", () => ({ TopFiveWidget: () => null }));
-vi.mock("./widgets/atomic/ProfilePictureWidget", async () => await stub("ProfilePictureWidget", "profile_picture"));
-vi.mock("./widgets/atomic/UsernameWidget", async () => await stub("UsernameWidget", "username"));
-vi.mock("./widgets/atomic/BackgroundWidget", async () => await stub("BackgroundWidget", "background"));
-vi.mock("./widgets/atomic/BioWidget", async () => await stub("BioWidget", "bio"));
-vi.mock("./widgets/stats/MinutesWidget", async () => await stub("MinutesWidget", "minutes"));
-vi.mock("./widgets/stats/StreamsWidget", async () => await stub("StreamsWidget", "streams"));
-vi.mock("./widgets/stats/DistinctTracksWidget", async () => await stub("DistinctTracksWidget", "nb_tracks"));
-vi.mock("./widgets/stats/DistinctAlbumsWidget", async () => await stub("DistinctAlbumsWidget", "nb_albums"));
-vi.mock("./widgets/stats/DistinctArtistsWidget", async () => await stub("DistinctArtistsWidget", "nb_artists"));
+vi.mock("./widgets/atomic/ProfilePictureWidget", async (importOriginal) => await stub("ProfilePictureWidget", "profile_picture", await importOriginal()));
+vi.mock("./widgets/atomic/UsernameWidget", async (importOriginal) => await stub("UsernameWidget", "username", await importOriginal()));
+vi.mock("./widgets/atomic/BackgroundWidget", async (importOriginal) => await stub("BackgroundWidget", "background", await importOriginal()));
+vi.mock("./widgets/atomic/BioWidget", async (importOriginal) => await stub("BioWidget", "bio", await importOriginal()));
+vi.mock("./widgets/stats/MinutesWidget", async (importOriginal) => await stub("MinutesWidget", "minutes", await importOriginal()));
+vi.mock("./widgets/stats/StreamsWidget", async (importOriginal) => await stub("StreamsWidget", "streams", await importOriginal()));
+vi.mock("./widgets/stats/DistinctTracksWidget", async (importOriginal) => await stub("DistinctTracksWidget", "nb_tracks", await importOriginal()));
+vi.mock("./widgets/stats/DistinctAlbumsWidget", async (importOriginal) => await stub("DistinctAlbumsWidget", "nb_albums", await importOriginal()));
+vi.mock("./widgets/stats/DistinctArtistsWidget", async (importOriginal) => await stub("DistinctArtistsWidget", "nb_artists", await importOriginal()));
 
 // --- Helpers ----------------------------------------------------------------
 const resumeData = {
   user: { display_name: "Yvan", bio: "Ma bio", banner: "b.png", avatar: "a.png", perms: { profile: true, stats: true, favorites: true, history: true, dashboard: true } },
+  topArtists: [], topTracks: [], topAlbums: [],
   minutes: 1234, streams: 567, distinct_tracks: 11, distinct_albums: 22, distinct_artists: 33,
 };
 
@@ -115,12 +116,12 @@ describe("ResumeCanvas – rendu", () => {
 
   it("rend la grille visible quand il n'y a aucun widget", () => {
     const { container } = renderCanvas([]);
-    expect((container.querySelector(".grid-cols-3") as HTMLElement).style.opacity).toBe("1");
+    expect((container.querySelector('[data-grid="cells"]') as HTMLElement).style.opacity).toBe("1");
   });
 
   it("masque la grille quand des widgets sont placés", () => {
     const { container } = renderCanvas([pw()]);
-    expect((container.querySelector(".grid-cols-3") as HTMLElement).style.opacity).toBe("0");
+    expect((container.querySelector('[data-grid="cells"]') as HTMLElement).style.opacity).toBe("0");
   });
 
   it("ne rend aucun widget pour une liste vide", () => {
@@ -331,7 +332,7 @@ describe("ResumeCanvas – suppression", () => {
 describe("ResumeCanvas – glisser-déposer", () => {
   it("survoler la zone affiche la grille, quitter la masque", () => {
     const { container } = renderCanvas([pw()]);
-    const layer = () => (container.querySelector(".grid-cols-3") as HTMLElement).style.opacity;
+    const layer = () => (container.querySelector('[data-grid="cells"]') as HTMLElement).style.opacity;
     fireEvent.dragOver(gridEl(container));
     expect(layer()).toBe("1");
     fireEvent.dragLeave(gridEl(container));
@@ -340,7 +341,7 @@ describe("ResumeCanvas – glisser-déposer", () => {
 
   it("passer d'une cellule à l'autre (relatedTarget dans la grille) garde la grille visible", () => {
     const { container } = renderCanvas([pw()]);
-    const layer = () => (container.querySelector(".grid-cols-3") as HTMLElement).style.opacity;
+    const layer = () => (container.querySelector('[data-grid="cells"]') as HTMLElement).style.opacity;
     fireEvent.dragOver(gridEl(container));
     dragLeaveTo(cells(container)[3], cells(container)[4]);
     expect(layer()).toBe("1");
@@ -348,7 +349,7 @@ describe("ResumeCanvas – glisser-déposer", () => {
 
   it("quitter vers un élément hors de la grille masque la grille", () => {
     const { container } = renderCanvas([pw()]);
-    const layer = () => (container.querySelector(".grid-cols-3") as HTMLElement).style.opacity;
+    const layer = () => (container.querySelector('[data-grid="cells"]') as HTMLElement).style.opacity;
     fireEvent.dragOver(gridEl(container));
     dragLeaveTo(gridEl(container), document.body);
     expect(layer()).toBe("0");
@@ -433,7 +434,7 @@ describe("ResumeCanvas – glisser-déposer", () => {
     const { container } = renderCanvas([pw()]);
     fireEvent.dragOver(gridEl(container));
     fireEvent.drop(cells(container)[0], { dataTransfer: dataTransfer("bio", "{}") });
-    expect((container.querySelector(".grid-cols-3") as HTMLElement).style.opacity).toBe("0");
+    expect((container.querySelector('[data-grid="cells"]') as HTMLElement).style.opacity).toBe("0");
   });
 
   it("dépôt sur la dernière case (14) et sur la première (0)", () => {

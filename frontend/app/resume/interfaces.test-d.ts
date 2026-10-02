@@ -78,9 +78,9 @@ describe("réglages par widget", () => {
     expectTypeOf<Extract<SelectedWidget, { type: "username" }>["settings"]>().toEqualTypeOf<UsernameWidgetSettings>();
   });
 
-  it("ResumeData est le sous-ensemble de DataFormat lu par le canvas", () => {
+  it("ResumeData est le DataFormat complet mis à disposition des widgets", () => {
     expectTypeOf<DataFormat>().toExtend<ResumeData>();
-    expectTypeOf<ResumeData>().not.toHaveProperty("topArtists");
+    expectTypeOf<ResumeData>().toHaveProperty("topArtists").toEqualTypeOf<ItemBrief[]>();
     expectTypeOf<ResumeData["user"]>().toEqualTypeOf<UserProfile>();
   });
 });

@@ -1,14 +1,7 @@
+import type { ComponentType } from "react";
 import { AnyWidgetSettings, PlacedWidget, SelectedWidget } from "./interfaces";
-import { ProfilePictureSettings } from "./widgets/atomic/ProfilePictureWidget";
 import { useLanguage } from "../context/languageContext";
-import { UsernameSettings } from "./widgets/atomic/UsernameWidget";
-import { BackgroundSettings } from "./widgets/atomic/BackgroundWidget";
-import { BioSettings } from "./widgets/atomic/BioWidget";
-import { MinutesSettings } from "./widgets/stats/MinutesWidget";
-import { StreamsSettings } from "./widgets/stats/StreamsWidget";
-import { DistinctTracksSettings } from "./widgets/stats/DistinctTracksWidget";
-import { DistinctAlbumsSettings } from "./widgets/stats/DistinctAlbumsWidget";
-import { DistinctArtistsSettings } from "./widgets/stats/DistinctArtistsWidget";
+import { getWidgetDefinition, type AnySettingsProps } from "./widgetRegistry";
 
 interface PropertiesViewProps {
   selectedWidget: SelectedWidget | null;
@@ -20,13 +13,10 @@ interface PropertiesViewProps {
 export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets}:PropertiesViewProps) {
   const { t } = useLanguage();
 
-  const labels: Record<string, string> = {
-    profile_picture: t.resume.widgetProfilePicture, username: t.resume.widgetUsername,
-    background: t.resume.widgetBackground, bio: t.resume.widgetBio,
-    minutes: t.resume.totalTime, streams: t.resume.totalStreams,
-    nb_tracks: t.resume.widgetTracks, nb_albums: t.resume.widgetAlbums, nb_artists: t.resume.widgetArtists,
+  const widgetLabel = (type: SelectedWidget["type"]) => {
+    const def = getWidgetDefinition(type);
+    return def ? t.resume[def.labelKey] : type;
   };
-  const widgetLabel = (type: string) => labels[type] ?? type;
 
   // Fonction pour mettre à jour les réglages d'un widget depuis le panneau de droite
   const updateWidgetSettings = (newSettings: AnyWidgetSettings) => {
@@ -60,22 +50,15 @@ export function PropertiesView({selectedWidget, setSelectedWidget, setWidgets}:P
 
           {/* RENDER DES PARAMÈTRES SELON LE TYPE */}
           <div className="flex flex-col gap-4 mb-5">
-            {selectedWidget.type === 'profile_picture' && <ProfilePictureSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            {selectedWidget.type === 'username' && <UsernameSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            {selectedWidget.type === 'background' && <BackgroundSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            {selectedWidget.type === 'bio' && <BioSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            
-            {selectedWidget.type === 'minutes' && <MinutesSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            {selectedWidget.type === 'streams' && <StreamsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            {selectedWidget.type === 'nb_tracks' && <DistinctTracksSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            {selectedWidget.type === 'nb_albums' && <DistinctAlbumsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            {selectedWidget.type === 'nb_artists' && <DistinctArtistsSettings settings={selectedWidget.settings} onChange={updateWidgetSettings}/>}
-            {/* {selectedWidget.type === 'top_tracks' && (
-              <TopTracksSettings settings={selectedWidget.settings} onChange={updateWidgetSettings} />
-            )} */}
+            <WidgetSettingsPanel widget={selectedWidget} onChange={updateWidgetSettings}/>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function WidgetSettingsPanel({ widget, onChange }: { widget: SelectedWidget; onChange: AnySettingsProps["onChange"] }) {
+  const Settings = getWidgetDefinition(widget.type)?.Settings as ComponentType<AnySettingsProps> | null | undefined;
+  return Settings ? <Settings settings={widget.settings} onChange={onChange}/> : null;
 }

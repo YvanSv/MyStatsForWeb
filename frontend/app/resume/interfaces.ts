@@ -19,8 +19,8 @@ export interface ItemBrief {
   image?: string;
 }
 
-/** Partie des données du résumé affichée par le canvas. */
-export type ResumeData = Pick<DataFormat, "user" | "minutes" | "streams" | "distinct_tracks" | "distinct_albums" | "distinct_artists">;
+/** Données du résumé mises à disposition des widgets (via `select` du registre) : tout DataFormat. */
+export type ResumeData = DataFormat;
 
 export interface DataFormat {
   user: UserProfile;

@@ -8,14 +8,9 @@ export const GRID_CELLS = GRID_COLS * GRID_ROWS;
 export const LAYOUT_STORAGE_KEY = STORAGE_KEYS.RESUME_LAYOUT;
 export const LAYOUT_VERSION = 1;
 
-/** Types de widgets que le canvas sait afficher (ceux proposés par WidgetsView / traités par getFreshData). */
-export const WIDGET_TYPES = [
-  "profile_picture", "username", "background", "bio",
-  "minutes", "streams", "nb_tracks", "nb_albums", "nb_artists",
-] as const;
-
-export const isWidgetType = (type: unknown): type is (typeof WIDGET_TYPES)[number] =>
-  typeof type === "string" && (WIDGET_TYPES as readonly string[]).includes(type);
+// Types de widgets valides : dérivés du registre (widgetRegistry.tsx)
+export { WIDGET_TYPES, isWidgetType } from "./widgetRegistry";
+import { isWidgetType } from "./widgetRegistry";
 
 type Footprint = Pick<PlacedWidget, "index" | "w" | "h">;
 

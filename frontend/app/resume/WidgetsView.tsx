@@ -1,8 +1,9 @@
-import { DataFormat, UserProfile } from "./interfaces";
+import type { ResumeData } from "./interfaces";
+import { WIDGET_CATEGORIES, widgetsOfCategory } from "./widgetRegistry";
 import { useLanguage } from "../context/languageContext";
 
 interface WidgetsViewProps {
-  resumeData: DataFormat;
+  resumeData: ResumeData;
 }
 
 export function WidgetsView({resumeData}:WidgetsViewProps) {
@@ -16,31 +17,25 @@ export function WidgetsView({resumeData}:WidgetsViewProps) {
       </p>
 
       <div className="flex-1 pr-2 gap-3 flex flex-col overflow-y-auto custom-scrollbar max-h-[61vh]">
-        <AccordionSection title={r.sectionAccount} defaultOpen={false}>
-          <DraggablePreview title={r.widgetProfilePicture} type='profile_picture' data={resumeData.user} subtitle={r.subtitleAvatar} icon="👤"/>
-          <DraggablePreview title={r.widgetUsername} type='username' data={resumeData.user.display_name} subtitle={r.subtitleUsername} icon="🖋️"/>
-          <DraggablePreview title={r.widgetBackground} type='background' data={resumeData.user.banner} subtitle={r.subtitleBanner} icon="🖼️"/>
-          <DraggablePreview title={r.widgetBio} type='bio' data={resumeData.user.bio} subtitle={r.subtitleBio} icon="📝"/>
-        </AccordionSection>
-
-        <AccordionSection title={r.sectionStats} defaultOpen={false}>
-          <DraggablePreview title={r.totalTime} type='minutes' data={resumeData.minutes} subtitle={`${n(resumeData.minutes)} ${r.unitMinutes}`} icon="⏳"/>
-          <DraggablePreview title={r.totalStreams} type='streams' data={resumeData.streams} subtitle={`${n(resumeData.streams)} ${r.unitStreams}`} icon="▶️​"/>
-          <DraggablePreview title={r.widgetTracks} type='nb_tracks' data={resumeData.distinct_tracks} subtitle={`${n(resumeData.distinct_tracks)} ${r.unitTracks}`} icon="💿"/>
-          <DraggablePreview title={r.widgetAlbums} type='nb_albums' data={resumeData.distinct_albums} subtitle={`${n(resumeData.distinct_albums)} ${r.unitAlbums}`} icon="💽​"/>
-          <DraggablePreview title={r.widgetArtists} type='nb_artists' data={resumeData.distinct_artists} subtitle={`${n(resumeData.distinct_artists)} ${r.unitArtists}`} icon="​🎤​"/>
-        </AccordionSection>
+        {WIDGET_CATEGORIES.map(({ id, titleKey }) => (
+          <AccordionSection key={id} title={r[titleKey]} defaultOpen={false}>
+            {widgetsOfCategory(id).map((def) => {
+              const data = def.select(resumeData);
+              const subtitle = typeof def.subtitle === "function" ? def.subtitle(data, { r, n }) : r[def.subtitle];
+              return <DraggablePreview key={def.type} title={r[def.labelKey]} type={def.type} subtitle={subtitle} icon={def.icon}/>;
+            })}
+          </AccordionSection>
+        ))}
       </div>
     </div>
   );
 }
 
 // Petit composant interne pour la prévisualisation des éléments
-function DraggablePreview({ title, subtitle, icon, type, data }: { title: string, subtitle?: string, icon: string, type: string, data: UserProfile | string | number }) {
+function DraggablePreview({ title, subtitle, icon, type }: { title: string, subtitle?: string, icon: string, type: string }) {
   const { t } = useLanguage();
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData("widgetType", type);
-    e.dataTransfer.setData("widgetData", JSON.stringify(data));
     e.dataTransfer.effectAllowed = "move";
   };
 
