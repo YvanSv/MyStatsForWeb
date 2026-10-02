@@ -1,5 +1,5 @@
 "use client";
-import { TOAST_STYLE } from "@/app/constants/ui";
+import { TOAST_SUCCESS_OPTIONS } from "@/app/constants/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/context/authContext";
@@ -118,10 +118,7 @@ export default function ProfilePage({ id }: { id: string }) {
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      toast.success(dict.copySuccess, {
-        style: TOAST_STYLE,
-        iconTheme: { primary: '#1DD05D', secondary: '#fff' },
-      });
+      toast.success(dict.copySuccess, TOAST_SUCCESS_OPTIONS);
     } catch (err) {toast.error(dict.copyError)}
   };
 

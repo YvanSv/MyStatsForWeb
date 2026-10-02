@@ -1,6 +1,4 @@
-const SkeletonPulse = ({ className }: { className: string }) => (
-  <div className={`animate-pulse bg-white/5 rounded-lg ${className}`} />
-);
+import SkeletonPulse from "../../components/small_elements/Pulse";
 
 const PROFILE_EDIT_STYLES = {
   MAIN: "min-h-screen pb-20 bg-bg1",

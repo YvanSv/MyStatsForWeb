@@ -15,3 +15,14 @@ export const PASSWORD_WARN = 100;
 export const PASSWORD_DANGER = 114;
 
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+// Édition du profil : mêmes règles que le serveur (jamais de SVG)
+export const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+export const RESERVED_SLUGS = ["dashboard", "edit", "settings", "admin", "login", "api"];
+// Seuils propres au slug (compteur : jaune, orange, rouge)
+export const SLUG_WARN = 20;
+export const SLUG_DANGER = 25;
+export const SLUG_MAX = 30;
+
+export const ALL_PERMS = { profile: true, stats: true, favorites: true, history: true, dashboard: true };
+export type PermKey = keyof typeof ALL_PERMS;

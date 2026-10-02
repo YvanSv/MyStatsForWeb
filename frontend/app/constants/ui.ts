@@ -32,3 +32,15 @@ export const TOAST_STYLE = {
   color: "#fff",
   border: "1px solid rgba(255,255,255,0.1)",
 } as const;
+
+// Options communes des toasts de succès et d'erreur (react-hot-toast)
+export const TOAST_SUCCESS_OPTIONS = {
+  style: TOAST_STYLE,
+  iconTheme: { primary: COLORS.SPOTIFY_GREEN_LIGHT, secondary: COLORS.WHITE },
+} as const;
+export const TOAST_ERROR_OPTIONS = { style: TOAST_STYLE } as const;
+
+// Bases de style des formulaires (connexion/inscription et compte) : chaque page ajoute sa couleur de libellé ou ses variantes
+export const INPUT_LABEL_BASE = "text-[10px] uppercase font-bold ml-2";
+export const INPUT_BASE = "text1 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:border-vert/50 outline-none transition-all focus:bg-white/10";
+export const BTN_BASE = "text1 w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold border border-white/5 mt-4 transition-all";

@@ -5,6 +5,7 @@ import { useApiUploadData } from "../hooks/useApiUploadData";
 import { ApiError } from "../services/api";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
+import { FileIcon, QuestionIcon, UploadIcon } from "../components/Atomic/Icons";
 import { DoubleFrame } from "../components/Atomic/DoubleFrame/DoubleFrame";
 import { SkeletonImport } from "./Skeleton";
 import { useAuth } from "../context/authContext";
@@ -318,8 +319,3 @@ export function ImportContent() {
     />
   );
 }
-
-// --- ICONS ---
-const UploadIcon = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-const FileIcon = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14.5 2 14.5 7.5 20 7.5"/></svg>
-const QuestionIcon = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6.1 7c0-3 2.4-5.4 6-5.4s6 2.4 6 5.4c0 3.6-3.6 6.12-6.12 7.8V18" /><line x1="12" y1="23" x2="12.01" y2="23" /></svg>
