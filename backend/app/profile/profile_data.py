@@ -11,6 +11,8 @@ from app.data_import.workers.spotify.utils.api_call import run_spotify_task
 from app.data_import.workers.spotify.utils.spotify_api import get_spotify_users_client
 from app.data_import.workers.spotify.utils.spotify_token import get_valid_access_token
 from app.utils.rating import get_formula
+from app.utils.user_lookup import get_user_by_slug_or_404
+from app.utils.profile_defaults import DEFAULT_BANNER, DEFAULT_PROFILE_BANNER, default_artist_image, default_avatar
 
 def get_optional_user(session_id: Optional[str], db: Session):
     if not session_id: return None
@@ -43,9 +45,7 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
     - **Heure de pointe** : Extraction de l'heure (`func.extract`) la plus fréquente dans l'historique.
     - **Fallback visuel** : Utilisation de DiceBear (avatars) et Unsplash (bannières) si l'utilisateur n'a pas personnalisé son profil.
     """
-    if slug.isdigit(): target_user = session.get(User, int(slug))
-    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
-    if not target_user: raise HTTPException(status_code=404, detail="Profil introuvable")
+    target_user = get_user_by_slug_or_404(session, slug, detail="Profil introuvable")
 
     # Identifier qui regarde (le visiteur)
     visitor = get_optional_user(session_id, session)
@@ -85,7 +85,7 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
         top_artists_raw = get_top_entities(session, Artist, TrackHistory.artist_id,target_user.id,50)
         top_artists = [{
             "name": art.name,
-            "image_url": art.image_url or f"https://api.dicebear.com/7.x/initials/svg?seed={art.name}",
+            "image_url": art.image_url or default_artist_image(art),
             "count": count,
             "minutes": round(m),
             "engagement": round(eng or 0,2),
@@ -100,9 +100,9 @@ async def get_user_profile(slug: str, session: Session = Depends(get_session), s
 
     return {
         "display_name": target_user.display_name,
-        "avatar": target_user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={target_user.id}",
+        "avatar": target_user.avatar_url or default_avatar(target_user),
         "bio": target_user.bio or "Aucune biographie.",
-        "banner": target_user.banner_url or "/banner_template.jpg",
+        "banner": target_user.banner_url or DEFAULT_PROFILE_BANNER,
         "total_minutes": total_minutes,
         "total_streams": total_streams,
         # --- HEURE DE POINTE (Peak Hour) ---
@@ -140,9 +140,7 @@ def get_user_simple_profile(slug: str, session: Session = Depends(get_session), 
     **Calculs SQL à la volée :**
     - **Fallback visuel** : Utilisation de DiceBear (avatars) et Unsplash (bannières) si l'utilisateur n'a pas personnalisé son profil.
     """
-    if slug.isdigit(): target_user = session.get(User, int(slug))
-    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
-    if not target_user: raise HTTPException(status_code=404, detail="Profil introuvable")
+    target_user = get_user_by_slug_or_404(session, slug, detail="Profil introuvable")
 
     # Identifier qui regarde (le visiteur)
     visitor = get_optional_user(session_id, session)
@@ -152,9 +150,9 @@ def get_user_simple_profile(slug: str, session: Session = Depends(get_session), 
 
     return {
         "display_name": target_user.display_name,
-        "avatar": target_user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={target_user.id}",
+        "avatar": target_user.avatar_url or default_avatar(target_user),
         "bio": target_user.bio or "Aucune biographie.",
-        "banner": target_user.banner_url or "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070",
+        "banner": target_user.banner_url or DEFAULT_BANNER,
         "perms": target_user.perms
     }
 
@@ -264,9 +262,7 @@ async def get_top_track_and_artist(slug: str, session: Session = Depends(get_ses
     """
     Fonction générique pour récupérer les Tops (Track, Artist) via l'API Spotify.
     """
-    if slug.isdigit(): target_user = session.get(User, int(slug))
-    else: target_user = session.exec(select(User).where(User.slug == slug)).first()
-    if not target_user: raise HTTPException(status_code=404, detail="Profil introuvable")
+    target_user = get_user_by_slug_or_404(session, slug, detail="Profil introuvable")
 
     # Identifier qui regarde (le visiteur)
     visitor = get_optional_user(session_id, session)

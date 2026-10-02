@@ -7,12 +7,12 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlmodel import Session, select
 from app.database import get_session
 from app.models import MusicProvider, User
-from .utils.auth_utils import create_uuid_session, get_password_hash, verify_password
+from .utils.auth_utils import IS_PRODUCTION, create_uuid_session, get_password_hash, set_session_cookie, verify_password
+from app.utils.profile_defaults import default_avatar
 from app.response_message import BaseResponse, MessageResponse
 
 load_dotenv()
 FRONTEND_URL = os.getenv("FRONTEND_URL")
-IS_PRODUCTION = os.getenv("RENDER") is not None or os.getenv("ENV") == "production"
 router = APIRouter(prefix="/auth")
 
 class LoginSchema(BaseModel):
@@ -107,15 +107,7 @@ async def login_email(data: LoginSchema, response: Response, session: Session = 
         session.rollback()
         raise HTTPException(status_code=500, detail="Erreur lors de la création de la session.")
 
-    response.set_cookie(
-        key="session_id",
-        value=new_session_id,
-        httponly=True,
-        samesite="none" if IS_PRODUCTION else "lax",
-        secure=IS_PRODUCTION,
-        max_age=3600 * 24 * 30,
-        path="/"
-    )
+    set_session_cookie(response, new_session_id)
 
     return LoginSuccessResponse(user_id=user.id)
 
@@ -215,7 +207,7 @@ async def get_me(response: Response, session_id: Optional[str] = Cookie(None), d
         is_logged_in=True,
         isAdmin=user.isadmin,
         email=user.email,
-        avatar=user.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={user.id}",
+        avatar=user.avatar_url or default_avatar(user),
         providers=user_providers
     )
 

@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 import os
 from typing import Optional
 from urllib.parse import urlencode
-import uuid
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
@@ -10,6 +9,7 @@ import httpx
 from sqlmodel import Session, select
 from app.models import MusicProvider, User, UserAccount
 from app.database import get_session
+from .utils.auth_utils import create_uuid_session, set_session_cookie, set_spotify_state_cookie
 
 load_dotenv()
 
@@ -17,7 +17,6 @@ CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
-IS_PRODUCTION = os.getenv("RENDER") is not None or os.getenv("ENV") == "production"
 
 router = APIRouter(prefix="/auth")
 
@@ -51,13 +50,7 @@ def spotify_login(response: Response):
     - `user-top-read` : Utilisé pour générer les classements des 50 meilleurs titres/artistes.
     - `user-read-private` / `user-read-email` : Essentiel pour la création et la liaison du compte MyStatsfy.
     """
-    response.set_cookie(
-        key="spotify_auth_state",
-        httponly=True,
-        max_age=600, 
-        samesite="none",
-        secure=IS_PRODUCTION
-    )
+    set_spotify_state_cookie(response)
 
     # Liste des scopes pour accéder aux données de l'utilisateur
     scopes = [
@@ -178,7 +171,7 @@ async def callback(
         user = User(
             email=spotify_email or f"{spotify_id}@spotify.user",
             display_name=user_info.get("display_name", "Inconnu"),
-            session_id=str(uuid.uuid4())
+            session_id=create_uuid_session()
         )
         session.add(user)
         session.flush() # Pour récupérer user.id
@@ -206,20 +199,12 @@ async def callback(
 
     # On s'assure que l'utilisateur a une session_id pour le cookie
     if not user.session_id:
-        user.session_id = str(uuid.uuid4())
+        user.session_id = create_uuid_session()
         session.add(user)
 
     session.commit()
     
     # --- RÉPONSE ET COOKIE (Inchangé) ---
     response = RedirectResponse(url=f"{FRONTEND_URL}{target_path}")
-    response.set_cookie(
-        key="session_id",
-        value=user.session_id,
-        httponly=True,
-        samesite="none" if IS_PRODUCTION else "lax",
-        secure=IS_PRODUCTION,
-        max_age=3600 * 24 * 30,
-        path="/"
-    )
+    set_session_cookie(response, user.session_id)
     return response

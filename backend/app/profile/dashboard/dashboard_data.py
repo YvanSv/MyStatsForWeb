@@ -5,6 +5,7 @@ import sqlalchemy
 from sqlmodel import Session, col, select, func, desc, distinct, cast, Float, extract
 from app.database import get_session
 from app.models import TrackHistory, Track, Album, Artist, User
+from app.utils.user_lookup import get_user_by_slug_or_404
 
 router = APIRouter()
 
@@ -98,14 +99,8 @@ async def get_dashboard_data(
 
 def get_target_user_and_check_perms(slug: str, session_id: Optional[str], session: Session):
     # 1. Récupération de l'utilisateur cible (Target)
-    # On privilégie select().where() pour plus de cohérence avec SQLModel
-    if slug.isdigit(): statement = select(User).where(User.id == int(slug))
-    else: statement = select(User).where(User.slug == slug)
-    
-    target_user = session.exec(statement).first()
-    
-    if not target_user: raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-        
+    target_user = get_user_by_slug_or_404(session, slug, detail="Utilisateur non trouvé")
+
     # 2. Identification du visiteur
     visitor = None
     if session_id: visitor = session.exec(select(User).where(User.session_id == session_id)).first()

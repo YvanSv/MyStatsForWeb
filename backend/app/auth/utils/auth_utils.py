@@ -1,11 +1,38 @@
+import os
 from typing import Optional
 import uuid
 import bcrypt
-from fastapi import Cookie, Depends, HTTPException
+from dotenv import load_dotenv
+from fastapi import Cookie, Depends, HTTPException, Response
 from sqlalchemy import Row, select
 from sqlmodel import Session
 from app.models import User
 from app.database import get_session
+
+load_dotenv()
+IS_PRODUCTION = os.getenv("RENDER") is not None or os.getenv("ENV") == "production"
+SESSION_MAX_AGE = 3600 * 24 * 30
+SPOTIFY_STATE_MAX_AGE = 600
+
+def set_session_cookie(response: Response, session_id: str) -> None:
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        samesite="none" if IS_PRODUCTION else "lax",
+        secure=IS_PRODUCTION,
+        max_age=SESSION_MAX_AGE,
+        path="/"
+    )
+
+def set_spotify_state_cookie(response: Response) -> None:
+    response.set_cookie(
+        key="spotify_auth_state",
+        httponly=True,
+        max_age=SPOTIFY_STATE_MAX_AGE,
+        samesite="none",
+        secure=IS_PRODUCTION
+    )
 
 async def get_current_user_id(session_id: Optional[str] = Cookie(None), db: Session = Depends(get_session)) -> int:
     if not session_id: raise HTTPException(status_code=401, detail="Non connecté")

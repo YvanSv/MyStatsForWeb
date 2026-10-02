@@ -5,6 +5,7 @@ from fastapi import APIRouter, Cookie, HTTPException, Depends
 from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User
+from app.utils.user_lookup import get_user_by_slug_or_404
 from pydantic import BaseModel, field_validator
 from typing import Dict, Optional
 from app.response_message import UserSettingsResponse, UserUpdateResponse
@@ -55,9 +56,7 @@ def verify_owner(slug: str, session_id: str, db: Session):
     if not current_user: raise HTTPException(status_code=401, detail="Session invalide")
 
     # Profil visé : par identifiant numérique ou par slug
-    if slug.isdigit(): target = db.get(User, int(slug))
-    else: target = db.exec(select(User).where(User.slug == slug)).first()
-    if not target: raise HTTPException(status_code=404, detail="Profil introuvable")
+    target = get_user_by_slug_or_404(db, slug, detail="Profil introuvable")
     # Seul le propriétaire du profil peut le lire ou le modifier
     if target.id != current_user.id: raise HTTPException(status_code=403, detail="Action non autorisée sur ce profil")
     return target
