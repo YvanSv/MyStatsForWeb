@@ -246,6 +246,21 @@ describe("Header – écoute Spotify en direct", () => {
     expect(card).toHaveAttribute("data-size", "xs");
   });
 
+  it("ouvre la page Spotify du titre dans un nouvel onglet", () => {
+    h.spotify.listening = { is_listening: true, data: { cover_url: "c.png", title: "Song", spotify_url: "https://open.spotify.com/track/abc" } };
+    render(<Header />);
+    const link = screen.getByRole("link", { name: languages.fr.a11y.openInSpotify });
+    expect(link).toHaveAttribute("href", "https://open.spotify.com/track/abc");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+  });
+
+  it("ouvre le lecteur web de Spotify quand le titre n'a pas d'adresse, ou une adresse douteuse", () => {
+    h.spotify.listening = { is_listening: true, data: { cover_url: "c.png", title: "Song", spotify_url: "https://evil.example/x" } };
+    render(<Header />);
+    expect(screen.getByRole("link", { name: languages.fr.a11y.openInSpotify })).toHaveAttribute("href", "https://open.spotify.com");
+  });
+
   it("décrit la pochette avec le titre du morceau (texte alternatif)", () => {
     h.spotify.listening = { is_listening: true, data: { cover_url: "https://img/cover.png", title: "Song" } };
     render(<Header />);

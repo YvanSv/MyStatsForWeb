@@ -12,6 +12,7 @@ import { HeaderLogo, MenuButton, MenuButtonDanger, NavButton, PopoverMenu } from
 import { useSpotify } from "../context/currentlyPlayingContext";
 import SpotifyLiveCard from "./small_elements/SpotifyLiveCard";
 import { useLanguage } from "../context/languageContext";
+import { spotifyHref } from "../services/spotifyLink";
 
 // --- ICONS (SVG) ---
 const LogoutIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
@@ -19,6 +20,8 @@ const UploadIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="n
 const EyeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
 
 const HEADER_STYLES = {
+  // Pastille « live » : lien vers la page Spotify du titre en cours (mêmes classes que TertiaryButton)
+  LIVE_LINK: 'block border border-white/10 bg-white/5 rounded-2xl transition-all duration-300 ease-out active:scale-95 cursor-pointer',
   CONTAINER: 'flex justify-between items-center z-50 bg-bg1/60 backdrop-blur-xl px-4 lg:px-6 border-b border-white/10',
   
   NAV_PC: 'hidden md:flex justify-between h-fit font-semibold gap-6 lg:gap-10 2xl:gap-24 3xl:gap-32',  
@@ -120,7 +123,13 @@ export default function Header() {
       <div className={HEADER_STYLES.RIGHT_SECTION}>
         {isLoggedIn && listening.data !== null && (
           <div className={`${HEADER_STYLES.RIGHT_WRAPPER} pt-2`}>
-            <TertiaryButton>
+            <a
+              href={spotifyHref(listening.data?.spotify_url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t.a11y.openInSpotify}
+              className={HEADER_STYLES.LIVE_LINK}
+            >
               <div className="relative flex-shrink-0">
                 {cover ? (
                   <img src={cover} alt={listening.data?.title ?? ""} className="w-10 h-10 rounded-xl"/>
@@ -133,7 +142,7 @@ export default function Header() {
                   {dict.live}
                 </div>
               </div>
-            </TertiaryButton>
+            </a>
 
             <div className="transition-all rounded-2xl shadow-2xl opacity-0 duration-200 absolute top-full left-1/2 -translate-x-1/2 z-50 overflow-hidden whitespace-nowrap invisible group-hover:opacity-100 group-hover:visible bg-bg1">
               <SpotifyLiveCard isListening={listening.is_listening} data={listening.data} currentProgress={localProgress} size='xs'/>

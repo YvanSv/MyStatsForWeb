@@ -14,6 +14,7 @@ export interface SpotifyListeningData {
     album_name: string;
     artist_name: string;
     cover_url: string;
+    spotify_url?: string;
 }
 
 interface SpotifyContextType {

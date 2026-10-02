@@ -307,6 +307,7 @@ export const fr = {
     defaultUsername: "Nom d'utilisateur",
     brandTagline: "Analytics Studio",
     unitSeconds: "s",
+    openInSpotify: "Ouvrir dans Spotify",
   },
   rankingcategories: {
     tracks: "Titres",

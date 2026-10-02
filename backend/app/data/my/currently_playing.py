@@ -17,6 +17,8 @@ class TrackData(BaseModel):
     album_name: str
     artist_name: str
     cover_url: str
+    # Page Spotify du titre ou de l'épisode en cours (vide si Spotify ne la fournit pas)
+    spotify_url: str = ""
 
 class CurrentlyPlaying(BaseModel):
     is_listening: bool
@@ -54,7 +56,8 @@ async def get_today(user_id: int = Depends(get_current_user_id), db: Session = D
         "progress_ms": data.get("progress_ms", 0),
         "album_name": "Podcast",
         "artist_name": "Animateur inconnu",
-        "cover_url": ""
+        "cover_url": "",
+        "spotify_url": (item.get("external_urls") or {}).get("spotify", "")
     }
 
     if playing_type == "track":
