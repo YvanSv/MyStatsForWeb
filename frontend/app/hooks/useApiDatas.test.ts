@@ -113,6 +113,15 @@ describe("useApiMyDatas.getResumeStats", () => {
     });
   });
 
+  it("renvoie tels quels les champs de période précédente, de séries et de nouveaux artistes (null conservé)", async () => {
+    const payload = { minutes: 5, previous_minutes: 4, previous_streams: null, longest_streak_days: 30, current_streak_days: 0, new_artists: 7 };
+    h.request.mockResolvedValue(payload);
+    const { result } = renderHook(() => useApiMyDatas());
+    const res = await result.current.getResumeStats({ range: "lifetime" });
+    expect(res).toEqual(payload);
+    expect(res.previous_streams).toBeNull();
+  });
+
   it("fonctionne sans filtres", async () => {
     const { result } = renderHook(() => useApiMyDatas());
     await result.current.getResumeStats();

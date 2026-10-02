@@ -8,7 +8,7 @@ import { CustomLabel, ShortenFilter, ShowIconFilter, type StatUpdate } from "./c
 import { Layout1x1, Layout2x1, Layout2x2 } from "./common_layouts";
 import { COLORS } from "../../../constants/ui";
 
-export type StatLabelKey = "labelStreams" | "labelMinutes" | "labelAlbums" | "labelArtists" | "labelTracks";
+export type StatLabelKey = "labelStreams" | "labelMinutes" | "labelAlbums" | "labelArtists" | "labelTracks" | "labelNewArtists" | "labelStreak" | "labelStreakCurrent";
 
 interface StatConfig {
   Icon: ComponentType<LucideProps>;

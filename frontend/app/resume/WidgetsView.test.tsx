@@ -47,12 +47,16 @@ describe("WidgetsView – rendu", () => {
     expect(section("Stats")).toBeInTheDocument();
   });
 
-  it("affiche les 4 cartes du compte et 5 cartes de stats", () => {
+  it("affiche les cartes de chaque section (compte, stats, classements, divers)", () => {
     render(<WidgetsView resumeData={data()} />);
     ["Photo de profil", "Pseudonyme", "Fond d'écran", "Description",
-      "Temps d'écoute", "Nombre de streams", "Titres différents", "Albums différents", "Artistes différents"]
+      "Temps d'écoute", "Nombre de streams", "Titres différents", "Albums différents", "Artistes différents",
+      "Évolution", "Série de jours", "Nouveaux artistes",
+      "Top 5 titres", "Top 5 albums", "Top 5 artistes", "N°1",
+      "Période", "Texte libre", "En écoute", "Logo"]
       .forEach((t) => expect(screen.getByText(t)).toBeInTheDocument());
-    expect(document.querySelectorAll("[draggable=true]")).toHaveLength(9);
+    ["Classements", "Divers"].forEach((s) => expect(section(s)).toBeInTheDocument());
+    expect(document.querySelectorAll("[draggable=true]")).toHaveLength(20);
   });
 
   it("affiche les sous-titres calculés à partir des données", () => {

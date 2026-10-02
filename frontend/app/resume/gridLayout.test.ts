@@ -17,7 +17,7 @@ afterEach(() => {
 
 describe("isWidgetType", () => {
   it.each(WIDGET_TYPES)("accepte %s", (t) => expect(isWidgetType(t)).toBe(true));
-  it.each(["", "inconnu", "top_tracks", null, undefined, 3, {}])("refuse %j", (t) => expect(isWidgetType(t)).toBe(false));
+  it.each(["", "inconnu", "top_inconnu", null, undefined, 3, {}])("refuse %j", (t) => expect(isWidgetType(t)).toBe(false));
 });
 
 describe("fitsInGrid", () => {

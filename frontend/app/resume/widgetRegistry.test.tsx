@@ -6,17 +6,57 @@ import { WIDGET_CATEGORIES, WIDGET_REGISTRY, WIDGET_TYPES, getWidgetDefinition, 
 
 const sample: ResumeData = {
   user: { display_name: "Yvan", bio: "Ma bio", avatar: "a.png", banner: "b.png", perms: { profile: true, stats: true, favorites: true, history: true, dashboard: true } },
-  topArtists: [{ name: "A", minutes: 1, rating: 1, streams: 1 }], topTracks: [], topAlbums: [],
+  topArtists: [{ name: "A", minutes: 1, rating: 1, streams: 1 }], topTracks: [{ name: "T", minutes: 2, rating: 1, streams: 2 }], topAlbums: [],
   minutes: 1234, streams: 567, distinct_tracks: 11, distinct_albums: 22, distinct_artists: 33,
+  previous_minutes: 1000, previous_streams: 500, longest_streak_days: 9, current_streak_days: 3, new_artists: 4, periodLabel: "2026",
 };
+/** Réponse minimale d'un ancien backend : aucun champ optionnel. */
+const bare: ResumeData = { ...sample, topArtists: [], topTracks: [], topAlbums: [] };
+delete bare.previous_minutes; delete bare.previous_streams; delete bare.longest_streak_days; delete bare.current_streak_days; delete bare.new_artists; delete bare.periodLabel;
 
 const defs = WIDGET_TYPES.map((t) => [t, getWidgetDefinition(t)] as const);
 
 describe("registre des widgets", () => {
   it("contient les 9 types historiques (ids persistés inchangés)", () => {
-    expect([...WIDGET_TYPES].sort()).toEqual(
-      ["background", "bio", "minutes", "nb_albums", "nb_artists", "nb_tracks", "profile_picture", "streams", "username"],
-    );
+    for (const id of ["background", "bio", "minutes", "nb_albums", "nb_artists", "nb_tracks", "profile_picture", "streams", "username"])
+      expect(WIDGET_TYPES).toContain(id);
+  });
+
+  it("contient les 11 nouveaux types", () => {
+    for (const id of ["top_tracks", "top_albums", "top_artists", "top_one", "period", "free_text", "comparison", "streak", "new_artists", "now_playing", "logo"])
+      expect(WIDGET_TYPES).toContain(id);
+    expect(WIDGET_TYPES).toHaveLength(20);
+  });
+
+  it("catégorie « top » pour les classements, titre traduit en fr et en", () => {
+    expect(WIDGET_CATEGORIES.map((c) => c.id)).toEqual(["account", "stats", "top", "other"]);
+    expect(widgetsOfCategory("top").map((d) => d.type)).toEqual(["top_tracks", "top_albums", "top_artists", "top_one"]);
+    for (const lang of ["fr", "en"] as const)
+      for (const c of WIDGET_CATEGORIES) expect((languages[lang].resume as Record<string, unknown>)[c.titleKey]).toEqual(expect.any(String));
+  });
+
+  it.each(defs)("%s : select() ne renvoie jamais undefined, même sans champs optionnels", (_t, def) => {
+    expect(def.select(bare)).not.toBeUndefined();
+  });
+
+  it("select() des nouveaux widgets", () => {
+    expect(WIDGET_REGISTRY.top_tracks.select(sample)).toBe(sample.topTracks);
+    expect(WIDGET_REGISTRY.top_artists.select(sample)).toBe(sample.topArtists);
+    expect(WIDGET_REGISTRY.top_albums.select(bare)).toEqual([]);
+    expect(WIDGET_REGISTRY.top_one.select(sample)).toEqual({ tracks: sample.topTracks[0], albums: undefined, artists: sample.topArtists[0] });
+    expect(WIDGET_REGISTRY.period.select(sample)).toBe("2026");
+    expect(WIDGET_REGISTRY.period.select(bare)).toBeNull();
+    expect(WIDGET_REGISTRY.comparison.select(sample)).toEqual({ minutes: 1234, previous_minutes: 1000, streams: 567, previous_streams: 500 });
+    expect(WIDGET_REGISTRY.streak.select(sample)).toEqual({ longest_streak_days: 9, current_streak_days: 3 });
+    expect(WIDGET_REGISTRY.new_artists.select(sample)).toBe(4);
+    expect(WIDGET_REGISTRY.new_artists.select(bare)).toBeNull();
+  });
+
+  it("sous-titres calculés des classements", () => {
+    const ctx = { r: languages.fr.resume, n: (v: number) => String(v) };
+    const sub = WIDGET_REGISTRY.top_tracks.subtitle as (d: unknown, c: typeof ctx) => string | undefined;
+    expect(sub(sample.topTracks, ctx)).toBe("T");
+    expect(sub([], ctx)).toBeUndefined();
   });
 
   it.each(defs)("%s : définition cohérente", (type, def) => {

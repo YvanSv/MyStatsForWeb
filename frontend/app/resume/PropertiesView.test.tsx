@@ -74,9 +74,9 @@ describe("PropertiesView – rendu", () => {
   });
 
   it("n'affiche aucun panneau pour un type inconnu mais garde l'en-tête", () => {
-    setup(sel("top_tracks"));
+    setup(sel("top_inconnu" as any));
     expect(screen.queryByTestId(/^settings-/)).not.toBeInTheDocument();
-    expect(screen.getByText("top_tracks")).toBeInTheDocument();
+    expect(screen.getByText("top_inconnu")).toBeInTheDocument();
   });
 
   it("ne plante pas avec un type vide (initiale indéfinie)", () => {

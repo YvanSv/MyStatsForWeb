@@ -29,11 +29,11 @@ vi.mock("./WidgetsView", () => ({
 }));
 vi.mock("./PropertiesView", () => ({ PropertiesView: () => <div data-testid="properties" /> }));
 vi.mock("./ResumeCanvas", () => ({
-  default: ({ range, widgets, setWidgets }: {
-    range: string | number; widgets: { id: number }[];
+  default: ({ range, widgets, setWidgets, resumeData }: {
+    range: string | number; widgets: { id: number }[]; resumeData: object;
     setWidgets: (u: (p: { id: number; type: string; index: number; w: number; h: number; settings: object }[]) => unknown[]) => void;
   }) => (
-    <div id="capture-canvas" data-testid="canvas" data-widgets={widgets.map((w) => w.id).join(",")}>
+    <div id="capture-canvas" data-testid="canvas" data-resume={JSON.stringify(resumeData)} data-widgets={widgets.map((w) => w.id).join(",")}>
       {String(range)}
       <button onClick={() => setWidgets((p) => [...p, { id: p.length + 1, type: "bio", index: p.length, w: 1, h: 1, settings: {} }])}>ajouter</button>
     </div>
@@ -105,6 +105,24 @@ describe("ResumePage – chargement", () => {
     expect(screen.getByTestId("properties")).toBeInTheDocument();
     expect(screen.getByText(dict.title)).toBeInTheDocument();
     expect(spinner()).not.toBeInTheDocument();
+  });
+
+  it("transmet au canvas les nouveaux champs de l'API et le libellé de la période (periodLabel)", async () => {
+    const extra = { previous_minutes: 8, previous_streams: null, longest_streak_days: 12, current_streak_days: 2, new_artists: 5 };
+    h.getResumeStats.mockResolvedValue({ ...resume("Yvan"), ...extra });
+    render(<ResumePage />);
+    const canvas = await screen.findByTestId("canvas");
+    const data = JSON.parse(canvas.dataset.resume!);
+    expect(data).toMatchObject(extra);
+    expect(data.periodLabel).toBe(new Date().getFullYear());
+    expect(canvas).toHaveTextContent(String(data.periodLabel));
+  });
+
+  it("le libellé transmis suit la période choisie", async () => {
+    render(<ResumePage />);
+    await screen.findByTestId("canvas");
+    await userEvent.click(screen.getByText("tout"));
+    await waitFor(() => expect(JSON.parse(screen.getByTestId("canvas").dataset.resume!).periodLabel).toBe(languages.fr.dashboard.lifetime));
   });
 
   it("affiche l'année courante comme libellé de période", async () => {

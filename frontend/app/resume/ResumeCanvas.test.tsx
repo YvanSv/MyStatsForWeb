@@ -25,7 +25,7 @@ const stub = vi.hoisted(() => async (name: string, key: string, actual: object) 
       ),
   };
 });
-vi.mock("./widgets/TopFiveWidget", () => ({ TopFiveWidget: () => null }));
+vi.mock("./widgets/TopFiveWidget", () => ({ TopFiveWidget: () => null, TopFiveSettings: () => null, Thumb: () => null }));
 vi.mock("./widgets/atomic/ProfilePictureWidget", async (importOriginal) => await stub("ProfilePictureWidget", "profile_picture", await importOriginal()));
 vi.mock("./widgets/atomic/UsernameWidget", async (importOriginal) => await stub("UsernameWidget", "username", await importOriginal()));
 vi.mock("./widgets/atomic/BackgroundWidget", async (importOriginal) => await stub("BackgroundWidget", "background", await importOriginal()));
@@ -399,7 +399,7 @@ describe("ResumeCanvas – glisser-déposer", () => {
     expect(h.setWidgets).not.toHaveBeenCalled();
   });
 
-  it.each(["inconnu", "top_tracks", "profile"])("ne crée pas de widget pour le type inconnu %s", (type) => {
+  it.each(["inconnu", "top_inconnu", "profile"])("ne crée pas de widget pour le type inconnu %s", (type) => {
     const { container } = renderCanvas([]);
     fireEvent.drop(cells(container)[0], { dataTransfer: dataTransfer(type, "{}") });
     expect(h.setWidgets).not.toHaveBeenCalled();

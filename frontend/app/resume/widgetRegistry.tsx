@@ -11,7 +11,7 @@
  */
 import type { ComponentType } from "react";
 import type { fr } from "../constants/locales/fr";
-import type { AnyWidgetSettings, ResumeData, UserProfile, WidgetSettingsMap, WidgetType } from "./interfaces";
+import type { AnyWidgetSettings, ItemBrief, ResumeData, UserProfile, WidgetSettingsMap, WidgetType } from "./interfaces";
 import { ProfilePictureSettings, ProfilePictureWidget } from "./widgets/atomic/ProfilePictureWidget";
 import { UsernameSettings, UsernameWidget } from "./widgets/atomic/UsernameWidget";
 import { BackgroundSettings, BackgroundWidget } from "./widgets/atomic/BackgroundWidget";
@@ -21,12 +21,23 @@ import { StreamsSettings, StreamsWidget } from "./widgets/stats/StreamsWidget";
 import { DistinctTracksSettings, DistinctTracksWidget } from "./widgets/stats/DistinctTracksWidget";
 import { DistinctAlbumsSettings, DistinctAlbumsWidget } from "./widgets/stats/DistinctAlbumsWidget";
 import { DistinctArtistsSettings, DistinctArtistsWidget } from "./widgets/stats/DistinctArtistsWidget";
+import { TopFiveSettings, TopFiveWidget } from "./widgets/TopFiveWidget";
+import { TopOneSettings, TopOneWidget, type TopOneData } from "./widgets/extra/TopOneWidget";
+import { PeriodSettings, PeriodWidget } from "./widgets/extra/PeriodWidget";
+import { FreeTextSettings, FreeTextWidget } from "./widgets/extra/FreeTextWidget";
+import { ComparisonSettings, ComparisonWidget, type ComparisonData } from "./widgets/extra/ComparisonWidget";
+import { StreakSettings, StreakWidget, type StreakData } from "./widgets/extra/StreakWidget";
+import { NewArtistsSettings, NewArtistsWidget } from "./widgets/extra/NewArtistsWidget";
+import { NowPlayingWidget } from "./widgets/extra/NowPlayingWidget";
+import { LogoSettings, LogoWidget } from "./widgets/extra/LogoWidget";
 
-export type WidgetCategory = "account" | "stats";
+export type WidgetCategory = "account" | "stats" | "top" | "other";
 /** Ordre d'affichage des catégories dans la liste « Widgets » et clé de leur titre (t.resume). */
 export const WIDGET_CATEGORIES: { id: WidgetCategory; titleKey: ResumeKey }[] = [
   { id: "account", titleKey: "sectionAccount" },
   { id: "stats", titleKey: "sectionStats" },
+  { id: "top", titleKey: "sectionTop" },
+  { id: "other", titleKey: "sectionOther" },
 ];
 
 type ResumeDict = typeof fr.resume;
@@ -73,6 +84,9 @@ export type AnyWidgetDefinition<K extends WidgetType = WidgetType> = WidgetDefin
 
 const defineWidget = <K extends WidgetType, D>(def: WidgetDefinition<K, D>): AnyWidgetDefinition<K> =>
   def as unknown as AnyWidgetDefinition<K>;
+
+/** Premier nom d'un classement (sous-titre de la carte). */
+const firstName = (items: ItemBrief[]) => items?.[0]?.name;
 
 const stat = (n: (v: number) => string, v: number, unit: string) => `${n(v)} ${unit}`;
 
@@ -145,6 +159,86 @@ export const WIDGET_REGISTRY: { [K in WidgetType]: AnyWidgetDefinition<K> } = {
     Component: ({ w, h, data, settings }) => <DistinctArtistsWidget w={w} h={h} data={data} settings={settings} />,
     Settings: DistinctArtistsSettings,
     select: (d) => d.distinct_artists,
+  }),
+  top_tracks: defineWidget<"top_tracks", ItemBrief[]>({
+    type: "top_tracks", category: "top", labelKey: "widgetTopTracks", icon: "🏆",
+    subtitle: firstName,
+    defaultSettings: {}, defaultSize: { w: 2, h: 2 },
+    Component: ({ w, h, data, settings }) => <TopFiveWidget w={w} h={h} type="tracks" data={data} settings={settings} />,
+    Settings: TopFiveSettings,
+    select: (d) => d.topTracks ?? [],
+  }),
+  top_albums: defineWidget<"top_albums", ItemBrief[]>({
+    type: "top_albums", category: "top", labelKey: "widgetTopAlbums", icon: "🥇",
+    subtitle: firstName,
+    defaultSettings: {}, defaultSize: { w: 2, h: 2 },
+    Component: ({ w, h, data, settings }) => <TopFiveWidget w={w} h={h} type="albums" data={data} settings={settings} />,
+    Settings: TopFiveSettings,
+    select: (d) => d.topAlbums ?? [],
+  }),
+  top_artists: defineWidget<"top_artists", ItemBrief[]>({
+    type: "top_artists", category: "top", labelKey: "widgetTopArtists", icon: "👑",
+    subtitle: firstName,
+    defaultSettings: {}, defaultSize: { w: 2, h: 2 },
+    Component: ({ w, h, data, settings }) => <TopFiveWidget w={w} h={h} type="artists" data={data} settings={settings} />,
+    Settings: TopFiveSettings,
+    select: (d) => d.topArtists ?? [],
+  }),
+  top_one: defineWidget<"top_one", TopOneData>({
+    type: "top_one", category: "top", labelKey: "widgetTopOne", subtitle: "subtitleTopOne", icon: "🥇",
+    defaultSettings: {}, defaultSize: { w: 2, h: 1 },
+    Component: ({ w, h, data, settings }) => <TopOneWidget w={w} h={h} data={data} settings={settings} />,
+    Settings: TopOneSettings,
+    select: (d) => ({ tracks: d.topTracks?.[0], albums: d.topAlbums?.[0], artists: d.topArtists?.[0] }),
+  }),
+  comparison: defineWidget<"comparison", ComparisonData>({
+    type: "comparison", category: "stats", labelKey: "widgetComparison", subtitle: "subtitleComparison", icon: "📈",
+    defaultSettings: {}, defaultSize: { w: 1, h: 1 },
+    Component: ({ w, h, data, settings }) => <ComparisonWidget w={w} h={h} data={data} settings={settings} />,
+    Settings: ComparisonSettings,
+    select: (d) => ({ minutes: d.minutes, previous_minutes: d.previous_minutes, streams: d.streams, previous_streams: d.previous_streams }),
+  }),
+  streak: defineWidget<"streak", StreakData>({
+    type: "streak", category: "stats", labelKey: "widgetStreak", subtitle: "subtitleStreak", icon: "🔥",
+    defaultSettings: {}, defaultSize: { w: 1, h: 1 },
+    Component: ({ w, h, data, settings }) => <StreakWidget w={w} h={h} data={data} settings={settings} />,
+    Settings: StreakSettings,
+    select: (d) => ({ longest_streak_days: d.longest_streak_days, current_streak_days: d.current_streak_days }),
+  }),
+  new_artists: defineWidget<"new_artists", number | null>({
+    type: "new_artists", category: "stats", labelKey: "widgetNewArtists", subtitle: "subtitleNewArtists", icon: "✨",
+    defaultSettings: {}, defaultSize: { w: 1, h: 1 },
+    Component: ({ w, h, data, settings }) => <NewArtistsWidget w={w} h={h} data={data} settings={settings} />,
+    Settings: NewArtistsSettings,
+    select: (d) => d.new_artists ?? null,
+  }),
+  period: defineWidget<"period", string | number | null>({
+    type: "period", category: "other", labelKey: "widgetPeriod", subtitle: "subtitlePeriod", icon: "📅",
+    defaultSettings: {}, defaultSize: { w: 2, h: 1 },
+    Component: ({ w, h, data, settings }) => <PeriodWidget w={w} h={h} data={data} settings={settings} />,
+    Settings: PeriodSettings,
+    select: (d) => d.periodLabel ?? null,
+  }),
+  free_text: defineWidget<"free_text", null>({
+    type: "free_text", category: "other", labelKey: "widgetFreeText", subtitle: "subtitleFreeText", icon: "✍️",
+    defaultSettings: {}, defaultSize: { w: 2, h: 1 },
+    Component: ({ w, h, settings }) => <FreeTextWidget w={w} h={h} settings={settings} />,
+    Settings: FreeTextSettings,
+    select: () => null,
+  }),
+  now_playing: defineWidget<"now_playing", null>({
+    type: "now_playing", category: "other", labelKey: "widgetNowPlaying", subtitle: "subtitleNowPlaying", icon: "🎧",
+    defaultSettings: {}, defaultSize: { w: 3, h: 1 },
+    Component: ({ w, h }) => <NowPlayingWidget w={w} h={h} />,
+    Settings: null,
+    select: () => null,
+  }),
+  logo: defineWidget<"logo", null>({
+    type: "logo", category: "other", labelKey: "widgetLogo", subtitle: "subtitleLogo", icon: "🎵",
+    defaultSettings: {}, defaultSize: { w: 1, h: 1 },
+    Component: ({ w, h, settings }) => <LogoWidget w={w} h={h} settings={settings} />,
+    Settings: LogoSettings,
+    select: () => null,
   }),
 };
 

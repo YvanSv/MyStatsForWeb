@@ -68,6 +68,9 @@ export default function ResumePage() {
     return range;
   }, [range, offset, t]);
 
+  // Données du canvas : réponse de l'API + libellé de la période affichée (widget « Période »)
+  const canvasData = useMemo(() => (resumeData ? { ...resumeData, periodLabel: displayLabel } : null), [resumeData, displayLabel]);
+
   // Toujours la dernière version de getResumeStats sans relancer le chargement si son identité change
   const getResumeStatsRef = useRef(getResumeStats);
   useEffect(() => { getResumeStatsRef.current = getResumeStats; });
@@ -123,7 +126,7 @@ export default function ResumePage() {
     }
   };
 
-  if (!resumeData) {
+  if (!resumeData || !canvasData) {
     if (!loadFailed) return <LoadingSpinner />;
     return (
       <div role="alert" className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
@@ -164,7 +167,7 @@ export default function ResumePage() {
           setOffset={setOffset} displayLabel={displayLabel}
         />
 
-        <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget} resumeData={resumeData}/>
+        <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget} resumeData={canvasData}/>
       </div>
 
       <div className="flex flex-col flex-5 border-r border-white/10 min-h-0">

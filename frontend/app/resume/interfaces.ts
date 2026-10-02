@@ -32,6 +32,16 @@ export interface DataFormat {
   distinct_tracks: number;
   distinct_albums: number;
   distinct_artists: number;
+  /** Période précédente (null : période « tout » ou aucune donnée). */
+  previous_minutes?: number | null;
+  previous_streams?: number | null;
+  /** Séries de jours consécutifs avec au moins une écoute (null : inconnues). */
+  longest_streak_days?: number | null;
+  current_streak_days?: number | null;
+  /** Artistes écoutés pour la première fois sur la période. */
+  new_artists?: number | null;
+  /** Libellé de la période affichée (« 2026 », « Été 2025 »…) : ajouté côté client, absent de la réponse de l'API. */
+  periodLabel?: string | number;
 }
 
 export type TextAlign = "left" | "center" | "right";
@@ -49,6 +59,40 @@ export type StreamsWidgetSettings = StatWidgetSettings;
 export type DistinctTracksWidgetSettings = StatWidgetSettings;
 export type DistinctAlbumsWidgetSettings = StatWidgetSettings;
 export type DistinctArtistsWidgetSettings = StatWidgetSettings;
+
+/** Réglages des trois classements « top 5 ». */
+export interface TopFiveWidgetSettings {
+  color?: string;
+}
+export type TopEntity = "tracks" | "albums" | "artists";
+export interface TopOneWidgetSettings {
+  entity?: TopEntity;
+  color?: string;
+}
+export type TextSize = "sm" | "md" | "lg";
+export interface PeriodWidgetSettings {
+  color?: string;
+  size?: TextSize;
+}
+export interface FreeTextWidgetSettings {
+  text?: string;
+  color?: string;
+  textAlign?: TextAlign;
+  size?: TextSize;
+}
+export type ComparisonMetric = "minutes" | "streams";
+export interface ComparisonWidgetSettings extends StatWidgetSettings {
+  metric?: ComparisonMetric;
+}
+export interface StreakWidgetSettings extends StatWidgetSettings {
+  /** Afficher la série en cours à la place de la plus longue. */
+  showCurrent?: boolean;
+}
+export type NewArtistsWidgetSettings = StatWidgetSettings;
+export type NowPlayingWidgetSettings = Record<string, unknown>;
+export interface LogoWidgetSettings {
+  opacity?: number;
+}
 
 export interface UsernameWidgetSettings {
   color?: string;
@@ -86,6 +130,17 @@ export interface WidgetSettingsMap {
   nb_tracks: DistinctTracksWidgetSettings;
   nb_albums: DistinctAlbumsWidgetSettings;
   nb_artists: DistinctArtistsWidgetSettings;
+  top_tracks: TopFiveWidgetSettings;
+  top_albums: TopFiveWidgetSettings;
+  top_artists: TopFiveWidgetSettings;
+  top_one: TopOneWidgetSettings;
+  period: PeriodWidgetSettings;
+  free_text: FreeTextWidgetSettings;
+  comparison: ComparisonWidgetSettings;
+  streak: StreakWidgetSettings;
+  new_artists: NewArtistsWidgetSettings;
+  now_playing: NowPlayingWidgetSettings;
+  logo: LogoWidgetSettings;
 }
 export type WidgetType = keyof WidgetSettingsMap;
 export type AnyWidgetSettings = WidgetSettingsMap[WidgetType];
