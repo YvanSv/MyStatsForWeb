@@ -1,5 +1,6 @@
 import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { useLanguage } from "@/app/context/languageContext";
+import type { TopItem } from "./utils";
 
 const TOP_ITEMS_STYLES = {
   CARD: "group relative flex items-center gap-2 md:gap-3 lg:gap-4 p-2 md:p-3 lg:p-4 bg-white/[0.03] border border-white/5 rounded-2xl hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300",
@@ -13,7 +14,7 @@ const TOP_ITEMS_STYLES = {
 };
 
 export default function TopMediaCard({label,item,loading,type,metric}:
-  {label:string,item:any,loading:boolean,type:'track'|'album'|'artist',metric:string})
+  {label:string,item:TopItem[]|null|undefined,loading:boolean,type:'track'|'album'|'artist',metric:string})
 {
   const { t } = useLanguage();
   // Selon la métrique, l'élément à afficher est le premier (minutes) ou le second (streams) du couple renvoyé par l'API

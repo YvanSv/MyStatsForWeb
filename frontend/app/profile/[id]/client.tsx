@@ -1,5 +1,5 @@
 "use client";
-import { TOAST_SUCCESS_OPTIONS } from "@/app/constants/ui";
+import { TOAST_ERROR_OPTIONS, TOAST_SUCCESS_OPTIONS } from "@/app/constants/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/context/authContext";
@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import { GENERAL_STYLES } from "@/app/styles/general";
 import { FRONT_ROUTES } from "@/app/constants/routes";
 import { ApiError } from "../../services/api";
+import { errorMessage } from "../../services/errors";
 import { ProfileSkeleton } from "./Skeleton";
 import { HorizontalTopSection, StatCard, TopStatCard } from "./components";
 import Image from 'next/image';
@@ -93,8 +94,8 @@ export default function ProfilePage({ id }: { id: string }) {
         setProfile(data);
         loadTops(id);
       }
-      catch (err: any) {
-        if (!cancelled) setError(err instanceof ApiError ? err : new ApiError(err?.status ?? 500, dict.unknownError));
+      catch (err: unknown) {
+        if (!cancelled) setError(err instanceof ApiError ? err : new ApiError((err as { status?: number })?.status ?? 500, dict.unknownError));
       }
       finally {if (!cancelled) setLoading(false)}
     };
@@ -104,7 +105,10 @@ export default function ProfilePage({ id }: { id: string }) {
         const tops = await getTopDataProfile(profileId);
         if (!cancelled) setTopData(tops);
       }
-      catch (err) {console.error("Erreur lors du chargement des tops", err)}
+      catch (err) {
+        console.error("Erreur lors du chargement des tops", err);
+        if (!cancelled) toast.error(errorMessage(err, t), TOAST_ERROR_OPTIONS);
+      }
       finally {if (!cancelled) setTopsLoading(false)}
     };
 
@@ -125,7 +129,7 @@ export default function ProfilePage({ id }: { id: string }) {
   if (error) {
     return error.status === 404
       ? <ErrorState title={dict.notFound} status={error.status}/>
-      : <ErrorState status={error.status} message={error.message}/>;
+      : <ErrorState status={error.status} message={errorMessage(error, t)}/>;
   }
   if (loading || !profile) return <ProfileSkeleton/>;
   // Profil non public : seul le propriétaire le voit

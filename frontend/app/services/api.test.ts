@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, apiRequest, setUnauthorizedHandler } from "./api";
 
+/** Exécute la requête et renvoie l'erreur levée (échoue si la requête réussit). */
+const caught = async (request: Promise<unknown>): Promise<ApiError> => {
+  try { await request } catch (e) { return e as ApiError }
+  throw new Error("une erreur était attendue");
+};
+
 // --- ApiError --------------------------------------------------------------
 
 describe("ApiError – message", () => {
@@ -114,7 +120,7 @@ describe("apiRequest – réponse", () => {
 
   it("lève une ApiError avec le statut et le détail JSON quand la réponse est en erreur", async () => {
     fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({ detail: "Non connecté" })));
-    const err = await apiRequest("http://api/test").catch((e) => e);
+    const err = await caught(apiRequest("http://api/test"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(401);
     expect(err.detail).toEqual({ detail: "Non connecté" });
@@ -123,7 +129,7 @@ describe("apiRequest – réponse", () => {
 
   it("utilise le statusText quand le corps d'erreur n'est pas du JSON", async () => {
     fetchMock.mockResolvedValue(errResponse(502, () => Promise.reject(new SyntaxError("pas du json")), "Bad Gateway"));
-    const err = await apiRequest("http://api/test").catch((e) => e);
+    const err = await caught(apiRequest("http://api/test"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(502);
     expect(err.detail).toBe("Bad Gateway");
@@ -214,7 +220,7 @@ describe("apiRequest – réponses particulières", () => {
 
   it.each([400, 403, 404, 409, 422, 429, 500, 503])("transforme le statut %i en ApiError", async (status) => {
     fetchMock.mockResolvedValue(errResponse(status, () => Promise.resolve({ detail: "x" })));
-    const err = await apiRequest("http://api/test").catch((e) => e);
+    const err = await caught(apiRequest("http://api/test"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(status);
   });
@@ -222,7 +228,7 @@ describe("apiRequest – réponses particulières", () => {
   it("garde le code générique quand l'erreur est une liste de validation 422", async () => {
     const detail = [{ loc: ["body", "email"], msg: "invalide" }];
     fetchMock.mockResolvedValue(errResponse(422, () => Promise.resolve({ detail })));
-    const err = await apiRequest("http://api/test").catch((e) => e);
+    const err = await caught(apiRequest("http://api/test"));
     expect(err.message).toBe("API_ERROR");
     expect(err.detail).toEqual({ detail });
   });
@@ -253,7 +259,7 @@ describe("apiRequest – gestion globale du 401", () => {
 
   it("lève quand même l'ApiError 401 à l'appelant", async () => {
     fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({ detail: "Non connecté" })));
-    const err = await apiRequest("http://api/data").catch((e) => e);
+    const err = await caught(apiRequest("http://api/data"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(401);
     expect(err.message).toBe("Non connecté");
@@ -280,7 +286,7 @@ describe("apiRequest – gestion globale du 401", () => {
 
   it("appelle le gestionnaire même quand le corps de l'erreur n'est pas du JSON", async () => {
     fetchMock.mockResolvedValue(errResponse(401, () => Promise.reject(new SyntaxError("x")), "Unauthorized"));
-    const err = await apiRequest("http://api/data").catch((e) => e);
+    const err = await caught(apiRequest("http://api/data"));
     expect(handler).toHaveBeenCalledTimes(1);
     expect(err.message).toBe("Unauthorized");
   });
@@ -288,7 +294,7 @@ describe("apiRequest – gestion globale du 401", () => {
   it("un gestionnaire qui plante ne masque pas l'erreur d'origine", async () => {
     handler.mockImplementation(() => { throw new Error("boom du gestionnaire"); });
     fetchMock.mockResolvedValue(errResponse(401, () => Promise.resolve({ detail: "Non connecté" })));
-    const err = await apiRequest("http://api/data").catch((e) => e);
+    const err = await caught(apiRequest("http://api/data"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.message).toBe("Non connecté");
   });

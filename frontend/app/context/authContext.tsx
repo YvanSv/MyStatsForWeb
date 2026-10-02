@@ -36,7 +36,7 @@ interface AuthContextType {
   register: (username: string, email: string, password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (data: {}) => Promise<void>;
+  updateUserProfile: (data: Record<string, unknown>) => Promise<void>;
   loginSpotify: () => void;
   deleteAccount: () => Promise<void>;
   clearAccount: () => Promise<void>;
@@ -70,8 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       setLoading(true);
-      setUser(await request(API_ENDPOINTS.ME));
-    } catch (err) {setUser(null)}
+      setUser(await request<AuthResponse>(API_ENDPOINTS.ME));
+    } catch {setUser(null)}
     finally {setLoading(false)}
   }, [request]);
 
@@ -79,25 +79,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {refreshUser()}, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await request(API_ENDPOINTS.LOGIN, {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-      if (response.user) setUser(response.user)
-      else await refreshUser()
-    } catch (err) {throw err}
+    const response = await request<{ user?: AuthResponse }>(API_ENDPOINTS.LOGIN, {
+      method: 'POST',
+      body: { email, password },
+    });
+    if (response?.user) setUser(response.user)
+    else await refreshUser()
   };
 
   const register = async (username: string, email: string, password: string) => {
-    try {
-      await request(API_ENDPOINTS.REGISTER, {
-        method: 'POST',
-        body: JSON.stringify({ username, email, password }),
-      });
-      // Auto-login après inscription
-      await login(email, password);
-    } catch (err) {throw err}
+    await request(API_ENDPOINTS.REGISTER, {
+      method: 'POST',
+      body: { username, email, password },
+    });
+    // Auto-login après inscription
+    await login(email, password);
   };
 
   // Fonction de déconnexion
@@ -107,14 +103,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     finally {setUser(null); router.push(FRONT_ROUTES.ACCUEIL);}
   };
 
-  const updateUserProfile = async (data: {}) => {
-    try {
-      await request(API_ENDPOINTS.EDIT_INFOS, {
-        method: 'PATCH',
-        body: JSON.stringify(data)
-      });
-      await refreshUser(); 
-    } catch (err) {throw err}
+  const updateUserProfile = async (data: Record<string, unknown>) => {
+    await request(API_ENDPOINTS.EDIT_INFOS, {
+      method: 'PATCH',
+      body: data,
+    });
+    await refreshUser();
   };
 
   const loginSpotify = () => {window.location.href = API_ENDPOINTS.SPOTIFY_LOGIN};
@@ -124,9 +118,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await request(API_ENDPOINTS.DELETE_ACCOUNT, {method: 'DELETE'});
       setUser(null);
       router.push(FRONT_ROUTES.ACCUEIL);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Si l'erreur est une 401, le compte est probablement déjà supprimé ou la session expirée
-      if (err.status === 401) {
+      if ((err as { status?: number } | null)?.status === 401) {
         setUser(null);
         router.push(FRONT_ROUTES.ACCUEIL);
       }
@@ -140,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await request(API_ENDPOINTS.CLEAR_ACCOUNT, {method: 'DELETE'});
       await refreshUser();
     }
-    catch (err: any) {
+    catch (err: unknown) {
       console.error("Erreur nettoyage compte:", err);
       throw err;
     }

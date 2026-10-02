@@ -1,13 +1,13 @@
 import { RATING_GOOD, RATING_AVERAGE } from "@/app/constants/ui";
 import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { useLanguage } from "@/app/context/languageContext";
-import { TopStatCardProps } from "@/app/data/DataInfos";
+import { ProfileItem, TopStatCardProps } from "@/app/data/DataInfos";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import { useFocusTrap } from "@/app/hooks/useFocusTrap";
 
-export function HorizontalTopSection({ title, items }: { title: string, items: any[] }) {
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+export function HorizontalTopSection({ title, items }: { title: string, items: ProfileItem[] }) {
+  const [selectedItem, setSelectedItem] = useState<ProfileItem | null>(null);
   const { t } = useLanguage();
   const dict = t.common;
   // Focus piégé dans la modale, Échap la ferme, le focus revient au déclencheur

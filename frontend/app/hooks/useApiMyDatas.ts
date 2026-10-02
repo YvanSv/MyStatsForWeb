@@ -3,6 +3,8 @@
 import { useCallback, useMemo } from "react";
 import { API_ENDPOINTS } from "../constants/routes";
 import { useApi } from "./useApi";
+import type { QueryFilters, RankingItem, RankingMetadata, TodayStats } from "./apiTypes";
+import type { DataFormat } from "../resume/interfaces";
 import { DEFAULT_DIRECTION, DEFAULT_PAGE_OFFSET, DEFAULT_PAGE_SIZE, DEFAULT_SORT } from "../constants/ui";
 
 export const useApiMyDatas = () => {
@@ -11,7 +13,7 @@ export const useApiMyDatas = () => {
   /**
    * Helper pour construire les query params de manière uniforme
    */
-  const buildParams = useCallback((filters?: Record<string, any>) => {
+  const buildParams = useCallback((filters?: QueryFilters) => {
     const params = new URLSearchParams();
     params.set('offset', String(DEFAULT_PAGE_OFFSET));
     params.set('limit', String(DEFAULT_PAGE_SIZE));
@@ -35,23 +37,23 @@ export const useApiMyDatas = () => {
   //   request(API_ENDPOINTS.SPOTIFY_IMPORT, { method: 'POST', body: formData }), [request]);
 
   // --- DATA LISTS ---
-  const getTracks = useCallback((filters?: Record<string, any>) => 
-    request(`${API_ENDPOINTS.TRACKS}?${buildParams(filters)}`), [request, buildParams]);
+  const getTracks = useCallback((filters?: QueryFilters) => 
+    request<RankingItem[]>(`${API_ENDPOINTS.TRACKS}?${buildParams(filters)}`), [request, buildParams]);
 
-  const getArtists = useCallback((filters?: Record<string, any>) => 
-    request(`${API_ENDPOINTS.ARTISTS}?${buildParams(filters)}`), [request, buildParams]);
+  const getArtists = useCallback((filters?: QueryFilters) => 
+    request<RankingItem[]>(`${API_ENDPOINTS.ARTISTS}?${buildParams(filters)}`), [request, buildParams]);
 
-  const getAlbums = useCallback((filters?: Record<string, any>) => 
-    request(`${API_ENDPOINTS.ALBUMS}?${buildParams(filters)}`), [request, buildParams]);
+  const getAlbums = useCallback((filters?: QueryFilters) => 
+    request<RankingItem[]>(`${API_ENDPOINTS.ALBUMS}?${buildParams(filters)}`), [request, buildParams]);
 
   // --- METADATA ---
-  const getTracksMetadata = useCallback(() => request(API_ENDPOINTS.TRACKS_METADATA), [request]);
-  const getArtistsMetadata = useCallback(() => request(API_ENDPOINTS.ARTISTS_METADATA), [request]);
-  const getAlbumsMetadata = useCallback(() => request(API_ENDPOINTS.ALBUMS_METADATA), [request]);
+  const getTracksMetadata = useCallback(() => request<RankingMetadata>(API_ENDPOINTS.TRACKS_METADATA), [request]);
+  const getArtistsMetadata = useCallback(() => request<RankingMetadata>(API_ENDPOINTS.ARTISTS_METADATA), [request]);
+  const getAlbumsMetadata = useCallback(() => request<RankingMetadata>(API_ENDPOINTS.ALBUMS_METADATA), [request]);
 
   const refreshUserData = useCallback(() => request(API_ENDPOINTS.REFRESH_USER_DATA), [request]);
-  const getTodayStats = useCallback(() => request(API_ENDPOINTS.TODAY_STATS), [request]);
-  const getResumeStats = useCallback((filters?: Record<string, any>) => request(`${API_ENDPOINTS.SHARE}?${buildParams(filters)}`), [request, buildParams]);
+  const getTodayStats = useCallback(() => request<TodayStats>(API_ENDPOINTS.TODAY_STATS), [request]);
+  const getResumeStats = useCallback((filters?: QueryFilters) => request<DataFormat>(`${API_ENDPOINTS.SHARE}?${buildParams(filters)}`), [request, buildParams]);
 
   return useMemo(() => ({
     loading, getTracks, getArtists, getAlbums, getResumeStats,

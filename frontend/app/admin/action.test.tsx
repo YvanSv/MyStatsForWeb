@@ -88,7 +88,7 @@ describe("useApiAdmin", () => {
     const [url, opts] = h.apiRequest.mock.calls[0];
     expect(url).toBe(API_ENDPOINTS.ERRORS);
     expect(opts.method).toBe("POST");
-    expect(JSON.parse(opts.body)).toEqual(track);
+    expect(opts.body).toEqual(track);
   });
 
   it("updateTrack renvoie une promesse qui rejette si l'API échoue (sinon l'appelant affiche un faux succès)", async () => {
@@ -108,14 +108,13 @@ describe("useApiAdmin", () => {
     const [url, opts] = h.apiRequest.mock.calls[0];
     expect(url).toBe(`${API_ENDPOINTS.CREATE_REQUESTS}/7/resolve`);
     expect(opts.method).toBe("POST");
-    expect(opts.headers).toEqual({ "Content-Type": "application/json" });
-    expect(JSON.parse(opts.body)).toEqual({ approve: true, master_index: 2, selected_isrcs: ["A", "B"] });
+    expect(opts.body).toEqual({ approve: true, master_index: 2, selected_isrcs: ["A", "B"] });
   });
 
   it("resolveCreateRequest gère un rejet avec liste vide et index 0", async () => {
     const { result } = renderHook(() => useApiAdmin());
     await act(async () => { await result.current.resolveCreateRequest(1, false, 0, []); });
-    expect(JSON.parse(h.apiRequest.mock.calls[0][1].body)).toEqual({ approve: false, master_index: 0, selected_isrcs: [] });
+    expect(h.apiRequest.mock.calls[0][1].body).toEqual({ approve: false, master_index: 0, selected_isrcs: [] });
   });
 
   it("resolveCreateRequest renvoie une promesse qui rejette si l'API échoue", async () => {
@@ -136,7 +135,7 @@ describe("useApiAdmin", () => {
     const [url, opts] = h.apiRequest.mock.calls[0];
     expect(url).toBe(`${API_ENDPOINTS.MERGE_REQUESTS}/5/resolve`);
     expect(opts.method).toBe("POST");
-    expect(JSON.parse(opts.body)).toEqual({ approve: false });
+    expect(opts.body).toEqual({ approve: false });
   });
 
   it("loading passe à true pendant la requête puis retombe à false", async () => {

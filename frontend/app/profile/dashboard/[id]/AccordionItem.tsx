@@ -35,7 +35,17 @@ const COMPONENT_STYLES = {
   },
 }
 
-export default function AccordionItem({ title, isOpen, onClick, icon, children, switchOption }: any) {
+interface AccordionItemProps {
+  id?: string;
+  title: React.ReactNode;
+  isOpen: boolean;
+  onClick?: () => void;
+  icon?: React.ReactElement<{ className?: string }>;
+  children?: React.ReactNode;
+  switchOption?: React.ReactNode;
+}
+
+export default function AccordionItem({ title, isOpen, onClick, icon, children, switchOption }: AccordionItemProps) {
   const contentId = useId();
   // Ouvert : le conteneur n'est plus interactif (pas de handler sur le contenu) ; fermé : il sert de bouton pour ouvrir
   const triggerProps = isOpen ? {} : {

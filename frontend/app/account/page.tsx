@@ -1,4 +1,5 @@
 "use client";
+import { errorMessage } from "@/app/services/errors";
 import { INPUT_BASE, INPUT_LABEL_BASE, BTN_BASE, TOAST_SUCCESS_OPTIONS } from "@/app/constants/ui";
 import { NAME_MIN, NAME_MAX, NAME_WARN, NAME_DANGER, PASSWORD_MIN, PASSWORD_MAX, PASSWORD_WARN, PASSWORD_DANGER } from "@/app/constants/validation";
 import { useEffect, useRef, useState } from "react";
@@ -88,7 +89,7 @@ function AccountContent() {
       await updateUserProfile(updateData);
       toast.success(dict.successToast, TOAST_SUCCESS_OPTIONS);
     } catch (err) {
-      setErrorApi(err instanceof Error ? err.message : dict.errorDeleteMessage);
+      setErrorApi(errorMessage(err, t, dict.errorDeleteMessage));
     } finally {setUpdating(false)}
   };
 

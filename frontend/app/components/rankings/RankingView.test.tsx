@@ -71,7 +71,7 @@ const baseProps = (): Props => ({
   loading: false,
   hasMore: false,
   loadMore: vi.fn(),
-  filterConfig: { foo: "bar" },
+  filterConfig: { foo: "bar" } as unknown as Props["filterConfig"], // contenu opaque pour la barre latérale simulée
 });
 
 const renderView = (over: Partial<Props> = {}) => {
@@ -109,7 +109,7 @@ describe("RankingView – en-tête", () => {
 
 describe("RankingView – filtres", () => {
   it("transmet config, loading et visibilité à la barre latérale", () => {
-    renderView({ loading: true, filterConfig: { a: 1 } });
+    renderView({ loading: true, filterConfig: { a: 1 } as unknown as Props["filterConfig"] });
     expect(h.sidebar).toHaveBeenLastCalledWith(
       expect.objectContaining({ config: { a: 1 }, loading: true, isVisible: false, toggleShowFilters: h.toggleShowFilters }),
     );
@@ -354,7 +354,7 @@ describe("RankingView – menu de changement de vue", () => {
 
 describe("RankingView – éléments", () => {
   it("transmet élément (type injecté), index et tri à chaque cellule", () => {
-    renderView({ type: "album", items: [{ id: "x", name: "A" }, { id: "y", name: "B", type: "track" }], sortConfig: { sort: "rating", direction: "asc" } });
+    renderView({ type: "album", items: [{ id: "x", name: "A" }, { id: "y", name: "B", type: "track" }] as unknown as Props["items"], sortConfig: { sort: "rating", direction: "asc" } });
     const cells = screen.getAllByTestId("cell-grid");
     expect(cells.map((c) => c.getAttribute("data-index"))).toEqual(["0", "1"]);
     expect(cells.map((c) => c.getAttribute("data-sort"))).toEqual(["rating", "rating"]);

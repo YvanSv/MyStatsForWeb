@@ -90,11 +90,12 @@ describe("ConflitsPage", () => {
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
   });
 
-  it("n'affiche pas d'erreur utilisateur quand le chargement échoue (aucun toast)", async () => {
+  it("affiche un toast d'erreur quand le chargement échoue", async () => {
     h.getTracksError.mockRejectedValue(new Error("boom"));
     render(<ConflitsPage />);
     await act(async () => {});
-    expect(h.toast.error).not.toHaveBeenCalled();
+    expect(h.toast.error).toHaveBeenCalledTimes(1);
+    expect(h.toast.error.mock.calls[0][0]).toBe("boom");
   });
 
   it("affiche titre, artiste, album et durée de chaque piste", async () => {

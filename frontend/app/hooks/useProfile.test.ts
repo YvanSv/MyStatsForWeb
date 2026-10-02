@@ -36,8 +36,7 @@ describe("useProfile", () => {
     const [url, options] = h.apiRequest.mock.calls[0];
     expect(url).toBe(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/7`);
     expect(options.method).toBe("PATCH");
-    expect(JSON.parse(options.body)).toEqual({ display_name: "Neo" });
-    expect(options.headers).toEqual({ "Content-Type": "application/json" });
+    expect(options.body).toEqual({ display_name: "Neo" });
   });
 
   describe("getDashboard", () => {

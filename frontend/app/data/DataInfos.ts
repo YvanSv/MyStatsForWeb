@@ -14,6 +14,9 @@ export interface DataInfo {
   type: 'track' | 'album' | 'artist';
 }
 
+/** Élément de classement tel que renvoyé par l'API, avant l'ajout de son type par RankingView. */
+export type RankingItem = Omit<DataInfo, 'type'>;
+
 export interface TopStatCardProps {
   name: string;
   img_url: string;
@@ -21,6 +24,27 @@ export interface TopStatCardProps {
   isTrack: boolean;
   artist_name: string;
   album_name: string;
+}
+
+/** Élément d'un top 50 du profil public (titre, album ou artiste). */
+export interface ProfileItem {
+  name: string;
+  album_name?: string | null;
+  artist_name?: string | null;
+  image_url?: string | null;
+  count: number;
+  minutes: number;
+  engagement: number;
+  rating: number;
+}
+
+/** Écoute récente affichée sur le profil public. */
+export interface RecentTrack {
+  id: number;
+  title: string;
+  artist: string;
+  image_url?: string | null;
+  played_at: string; // Date ISO
 }
 
 export interface UserProfile {
@@ -33,10 +57,10 @@ export interface UserProfile {
   total_minutes: number;
   total_streams: number;
   peak_hour: number;
-  top_50_tracks: any[];
-  top_50_albums: any[];
-  top_50_artists: any[];
-  recent_tracks: any[];
+  top_50_tracks: ProfileItem[];
+  top_50_albums: ProfileItem[];
+  top_50_artists: ProfileItem[];
+  recent_tracks: RecentTrack[];
   perms: {
     profile: boolean,
     stats: boolean,

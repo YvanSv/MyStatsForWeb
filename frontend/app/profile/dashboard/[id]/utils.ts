@@ -7,31 +7,54 @@ export interface HourlyData {
   streams: number;
 }
 
+/** Activité (minutes en `value`, streams) regroupée par jour de la semaine, mois ou année : la clé de regroupement varie. */
+export interface WeekdayPoint { day: string; value: number; streams: number }
+export interface MonthPoint { month: string; value: number; streams: number }
+export interface YearPoint { year: string; value: number; streams: number }
+
+/** Point de la courbe cumulée d'écoute (date AAAA-MM-JJ). */
+export interface CumulativePoint {
+  date: string;
+  minutes: number;
+  streams: number;
+}
+
+/** Point de la courbe de découvertes (cumul de titres, albums et artistes distincts). */
+export interface DiscoveryPoint {
+  date: string;
+  tracks: number;
+  albums: number;
+  artists: number;
+}
+
+/** Libellés du pic en minutes puis du pic en streams (« N/A » sans donnée) ; vide avant le premier chargement. */
+export type PeakLabels = string[];
+
 export interface DashboardStats {
   totalTime: number;
   avgTimePerDay: number;
   totalStreams: number;
   avgStreamsPerDay: number;
-  peakHour: any[];
-  peakDay: any[];
-  peakMonth: any[];
+  peakHour: PeakLabels;
+  peakDay: PeakLabels;
+  peakMonth: PeakLabels;
   ratio: string;
-  clockData: any[];
-  weeklyData: any[];
-  monthlyData: any[];
-  annualData: any[];
-  cumulativeData: any[];
+  clockData: HourlyData[];
+  weeklyData: WeekdayPoint[];
+  monthlyData: MonthPoint[];
+  annualData: YearPoint[];
+  cumulativeData: CumulativePoint[];
   uniqueTracks: number;
   uniqueAlbums: number;
   uniqueArtists: number;
   topTrack: TopItem[] | null;
   topAlbum: TopItem[] | null;
   topArtist: TopItem[] | null;
-  entityEvolution: any[];
-  streamsEvolution: any[];
+  entityEvolution: DiscoveryPoint[];
+  streamsEvolution: CumulativePoint[];
 }
 
-export const INITIAL_STATS = {
+export const INITIAL_STATS: DashboardStats = {
   totalTime: 0,
   avgTimePerDay: 0,
   totalStreams: 0,
@@ -55,7 +78,8 @@ export const INITIAL_STATS = {
   streamsEvolution: [],
 };
 
-interface TopItem {
+/** Élément le plus écouté : le backend renvoie le couple [par minutes, par streams]. */
+export interface TopItem {
   name: string;
   artist?: string;
   album?: string;

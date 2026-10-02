@@ -3,6 +3,7 @@ import { useState } from "react";
 import { BASE_UI } from "../styles/general";
 import { useApiUploadData } from "../hooks/useApiUploadData";
 import { ApiError } from "../services/api";
+import { errorMessage } from "../services/errors";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { PrimaryButton } from "../components/Atomic/Buttons";
 import { FileIcon, QuestionIcon, UploadIcon } from "../components/Atomic/Icons";
@@ -167,7 +168,7 @@ export function ImportContent() {
       setSuccess(res.message || dict.successImport(res.added ?? res.count ?? 0));
       setFiles([]);
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message);
+      if (err instanceof ApiError) setError(errorMessage(err, t));
       else if (err instanceof AppleRowError) setError(err.kind === "date" ? dict.errorAppleDate(err.value) : dict.errorAppleHour(err.value));
       else setError((err as Error)?.message === dict.errorWs ? dict.errorWs : dict.errorGeneric);
       if (ws.readyState === WebSocket.OPEN) ws.close();

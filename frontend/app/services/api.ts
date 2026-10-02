@@ -41,9 +41,12 @@ export const setUnauthorizedHandler = (handler: UnauthorizedHandler) => {
   return () => { if (unauthorizedHandler === handler) unauthorizedHandler = null };
 };
 
-export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+/** Options de fetch : le corps peut aussi être un objet simple ou un tableau, sérialisé en JSON par apiRequest. */
+export type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: RequestInit["body"] | object };
+
+export const apiRequest = async <T = unknown>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> => {
   const headers = new Headers(options.headers);
-  let finalBody = options.body;
+  let finalBody = options.body as RequestInit["body"];
   
   // Seuls les objets simples et les tableaux sont sérialisés (FormData, URLSearchParams, Blob, ArrayBuffer… partent tels quels)
   if (isPlainBody(options.body)) {
@@ -72,6 +75,6 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     throw new ApiError(response.status, errorDetail);
   }
   // Réponse sans contenu : il n'y a pas de JSON à lire
-  if (response.status === 204) return null;
+  if (response.status === 204) return null as T;
   return response.json();
 };

@@ -1,4 +1,4 @@
-export default function AvatarContainer({url,username,additional = "",title,special = false}:{url:string|undefined,username?:string,additional?:string,title?:any,special?:boolean}) {
+export default function AvatarContainer({url,username,additional = "",title,special = false}:{url:string|undefined,username?:string,additional?:string,title?:React.ReactNode,special?:boolean}) {
   const isSpecial = special;
   const styleImg = `w-full h-full rounded-[26px] lg:rounded-[31px] bg-bg2 object-cover ${isSpecial ? '' : 'border-4 border-bg1'}`;
 

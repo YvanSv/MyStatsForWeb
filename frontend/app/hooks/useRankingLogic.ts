@@ -2,12 +2,28 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { DEFAULT_DIRECTION, DEFAULT_PAGE_SIZE, DEFAULT_SORT } from "../constants/ui";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | 'album' | 'artist') {
+import type { QueryFilters } from "./apiTypes";
+import type { RankingItem } from "../data/DataInfos";
+
+/** Bornes renvoyées par l'API pour les filtres d'un classement. */
+export interface RankingMetadata {
+  max_streams: number;
+  max_minutes: number;
+  max_rating: number;
+  date_min: string | null;
+  date_max: string | null;
+}
+
+export function useRankingLogic(
+  fetchFn: (filters: QueryFilters) => Promise<RankingItem[] | null | undefined>,
+  metadataFn: () => Promise<RankingMetadata | null | undefined>,
+  type: 'track' | 'album' | 'artist',
+) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<RankingItem[]>([]);
   const [status, setStatus] = useState({ loading: false, hasMore: true, offset: 0 });
   const [metadata, setMetadata] = useState({
     max_streams: 0,
@@ -17,7 +33,7 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
     date_max: new Date().toISOString().split('T')[0]
   });
 
-  const cleanDate = (date: any, fallback: string) => {
+  const cleanDate = (date: string | null | undefined, fallback: string) => {
     const isValid = date && /^\d{4}-\d{2}-\d{2}$/.test(date);
     if (!isValid || date === "date_min" || date === "date_max") return fallback;
     return date;
@@ -94,7 +110,7 @@ export function useRankingLogic(fetchFn: any, metadataFn: any, type: 'track' | '
 
   // CHARGEMENT DES METADATA
   useEffect(() => {
-    metadataFn().then((data: any) => {
+    metadataFn().then((data) => {
       if (data) {
         setMetadata(prev => ({
           ...prev,

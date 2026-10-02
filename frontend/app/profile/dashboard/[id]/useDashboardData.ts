@@ -45,7 +45,7 @@ export function useDashboardData({ id, range, offset, customStart, customEnd }: 
         setProfileError(null);
         const data = await getProfile(id+'');
         if (!cancelled) setProfile(data);
-      } catch (err: any) {if (!cancelled) setProfileError(err)}
+      } catch (err) {if (!cancelled) setProfileError(err as ApiError)}
       finally {if (!cancelled) setLoadingProfile(false)}
     };
     loadData();
@@ -77,10 +77,10 @@ export function useDashboardData({ id, range, offset, customStart, customEnd }: 
         const stats = await getDashboard(`${id}`, start, end);
         if (cancelled) return;
         setExtendedStats(stats);
-      } catch (err: any) {
+      } catch (err) {
         if (cancelled) return;
         // Les dernières stats valides sont conservées : l'erreur est affichée dans le bandeau
-        setStatsError(err ?? new ApiError(0, "stats"));
+        setStatsError((err as ApiError | undefined) ?? new ApiError(0, "stats"));
       } finally {
         if (!cancelled) timer = setTimeout(() => setLoadingStats(false), 150);
       }

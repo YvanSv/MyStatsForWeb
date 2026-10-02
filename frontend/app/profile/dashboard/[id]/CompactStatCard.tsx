@@ -6,7 +6,14 @@ const COMPONENT_STYLES = {
   },
 };
 
-export default function CompactStatCard({ icon, label, value, subValue }: any) {
+interface CompactStatCardProps {
+  icon?: React.ReactNode;
+  label: React.ReactNode;
+  value: React.ReactNode;
+  subValue?: React.ReactNode;
+}
+
+export default function CompactStatCard({ icon, label, value, subValue }: CompactStatCardProps) {
   return (
     <div className={COMPONENT_STYLES.statCard.base}>
       <div className="flex items-center gap-2 lg:gap-4">

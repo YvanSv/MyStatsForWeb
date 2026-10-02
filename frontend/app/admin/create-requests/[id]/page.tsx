@@ -173,7 +173,7 @@ export default function CreateRequestDetailPage() {
           <div className="space-y-4">
             <SectionTitle icon={CheckCircle} title={t.admin.createDetail.chooseMaster} />
             
-            {request.match_data?.suggestions?.map((s:any, idx:number) => (
+            {request.match_data?.suggestions?.map((s, idx) => (
               <div key={idx} className={`p-4 rounded-xl border-2 transition-all ${
                 selectedMasterIndex === idx ? 'border-vert bg-vert/5' : 'border-white/5 bg-white/5'
               }`} onClick={() => setSelectedMasterIndex(idx)}>
@@ -198,11 +198,11 @@ export default function CreateRequestDetailPage() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        toggleIsrc(s.isrc);
+                        toggleIsrc(s.isrc as string); // non nul : le bouton n'est rendu que si l'ISRC existe
                       }}
-                      aria-pressed={selectedIsrcs.includes(s.isrc)}
+                      aria-pressed={selectedIsrcs.includes(s.isrc as string)}
                       className={`text-[10px] font-mono px-2 py-1 border rounded transition-all ${
-                        selectedIsrcs.includes(s.isrc) 
+                        selectedIsrcs.includes(s.isrc as string) 
                           ? 'bg-vert/20 border-vert text-white' 
                           : 'bg-black/20 border-white/10 text-gray-500'
                       }`}

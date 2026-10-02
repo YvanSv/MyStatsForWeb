@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { AppleCSVRow, CleanAppleData, DataInfo, EditableProfile, TopStatCardProps, UserProfile, UserProfileTops } from "./DataInfos";
+import type { AppleCSVRow, CleanAppleData, DataInfo, EditableProfile, ProfileItem, RankingItem, RecentTrack, TopStatCardProps, UserProfile, UserProfileTops } from "./DataInfos";
 
 /** Retire la signature d'index pour ne garder que les clés explicitement déclarées. */
 type KnownKeys<T> = { [K in keyof T as string extends K ? never : K]: T[K] };
@@ -156,5 +156,37 @@ describe("profils", () => {
 
   it("EditableProfile : les quatre champs modifiables", () => {
     expectTypeOf<keyof EditableProfile>().toEqualTypeOf<"display_name" | "bio" | "avatar" | "banner">();
+  });
+});
+
+describe("ProfileItem et RecentTrack – tops et historique du profil public", () => {
+  it("ProfileItem : statistiques numériques, images et noms d'artiste/album facultatifs", () => {
+    expectTypeOf<ProfileItem["count"]>().toBeNumber();
+    expectTypeOf<ProfileItem["minutes"]>().toBeNumber();
+    expectTypeOf<ProfileItem["engagement"]>().toBeNumber();
+    expectTypeOf<ProfileItem["rating"]>().toBeNumber();
+    expectTypeOf<ProfileItem["name"]>().toBeString();
+    expectTypeOf<ProfileItem["image_url"]>().toEqualTypeOf<string | null | undefined>();
+    expectTypeOf<ProfileItem["artist_name"]>().toEqualTypeOf<string | null | undefined>();
+    expectTypeOf<{ name: string }>().not.toMatchTypeOf<ProfileItem>();
+  });
+
+  it("RecentTrack : identifiant, titre, artiste et date ISO", () => {
+    expectTypeOf<RecentTrack["id"]>().toBeNumber();
+    expectTypeOf<RecentTrack["title"]>().toBeString();
+    expectTypeOf<RecentTrack["artist"]>().toBeString();
+    expectTypeOf<RecentTrack["played_at"]>().toBeString();
+  });
+
+  it("UserProfile : les tops sont des ProfileItem et l'historique des RecentTrack", () => {
+    expectTypeOf<UserProfile["top_50_tracks"]>().toEqualTypeOf<ProfileItem[]>();
+    expectTypeOf<UserProfile["top_50_albums"]>().toEqualTypeOf<ProfileItem[]>();
+    expectTypeOf<UserProfile["top_50_artists"]>().toEqualTypeOf<ProfileItem[]>();
+    expectTypeOf<UserProfile["recent_tracks"]>().toEqualTypeOf<RecentTrack[]>();
+  });
+
+  it("RankingItem : un DataInfo sans son type", () => {
+    expectTypeOf<RankingItem>().not.toHaveProperty("type");
+    expectTypeOf<RankingItem["play_count"]>().toBeNumber();
   });
 });

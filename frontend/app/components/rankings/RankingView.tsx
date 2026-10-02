@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import SidebarFilters from "../SidebarFilters";
+import SidebarFilters, { type SidebarFiltersConfig } from "../SidebarFilters";
 import { useViewMode } from "../../context/viewModeContext";
 import { useShowFilters } from "../../context/showFiltersContext";
-import { DataInfo } from "@/app/data/DataInfos";
+import { DataInfo, RankingItem } from "@/app/data/DataInfos";
 import GridCell from "./GridCell";
 import ListCell from "./ListCell";
 import SmallGridCell from "./SmallGridCell";
@@ -17,17 +17,13 @@ interface RankingViewProps {
   title: string;
   type: 'track' | 'album' | 'artist';
   // Les éléments arrivent de l'API (éventuellement partiels) : les cellules tolèrent les valeurs absentes
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  items: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  sortConfig: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSort: (key: any) => void;
+  items: Partial<RankingItem>[];
+  sortConfig: { sort: string; direction: 'asc' | 'desc' };
+  onSort: (key: string) => void;
   loading: boolean;
   hasMore: boolean;
   loadMore: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  filterConfig: any;
+  filterConfig: SidebarFiltersConfig;
 }
 
 const RANKING_VIEW_STYLES = {
@@ -61,7 +57,8 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
   const { t } = useLanguage();
   const dict = t.ranking;
 
-  const normalizedItems: DataInfo[] = items.map(item => ({ ...item, type }));
+  // Les cellules tolèrent les statistiques absentes des éléments partiels
+  const normalizedItems = items.map(item => ({ ...item, type })) as DataInfo[];
 
   const views = [
     { id: 'grid_sm', label: dict.viewGridSm, icon: <Grid3X3/>, hideMobile: true },

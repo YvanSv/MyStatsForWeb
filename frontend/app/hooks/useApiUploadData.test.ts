@@ -45,7 +45,7 @@ describe("useApiUploadData", () => {
     const [endpoint, options] = h.request.mock.calls[0];
     expect(endpoint).toBe(API_ENDPOINTS.APPLE_IMPORT);
     expect(options.method).toBe("POST");
-    expect(JSON.parse(options.body)).toEqual(rows);
+    expect(options.body).toEqual(rows);
   });
 
   it("propage les erreurs de la requête", async () => {

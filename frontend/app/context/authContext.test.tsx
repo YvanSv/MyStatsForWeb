@@ -141,7 +141,7 @@ describe("AuthProvider – login", () => {
     await act(async () => { await result.current.login("yvan@example.com", "motdepasse"); });
     const [, opts] = callsTo(API_ENDPOINTS.LOGIN)[0];
     expect(opts.method).toBe("POST");
-    expect(JSON.parse(opts.body)).toEqual({ email: "yvan@example.com", password: "motdepasse" });
+    expect(opts.body).toEqual({ email: "yvan@example.com", password: "motdepasse" });
   });
 
   it("recharge l'utilisateur via /auth/me quand la réponse ne le contient pas", async () => {
@@ -181,9 +181,9 @@ describe("AuthProvider – register", () => {
 
     const [, registerOpts] = callsTo(API_ENDPOINTS.REGISTER)[0];
     expect(registerOpts.method).toBe("POST");
-    expect(JSON.parse(registerOpts.body)).toEqual({ username: "Yvan", email: "yvan@example.com", password: "motdepasse" });
+    expect(registerOpts.body).toEqual({ username: "Yvan", email: "yvan@example.com", password: "motdepasse" });
     const [, loginOpts] = callsTo(API_ENDPOINTS.LOGIN)[0];
-    expect(JSON.parse(loginOpts.body)).toEqual({ email: "yvan@example.com", password: "motdepasse" });
+    expect(loginOpts.body).toEqual({ email: "yvan@example.com", password: "motdepasse" });
     expect(result.current.user).toEqual(USER);
   });
 
@@ -249,7 +249,7 @@ describe("AuthProvider – updateUserProfile", () => {
     await act(async () => { await result.current.updateUserProfile({ username: "Nouveau" }); });
     const [, opts] = callsTo(API_ENDPOINTS.EDIT_INFOS)[0];
     expect(opts.method).toBe("PATCH");
-    expect(JSON.parse(opts.body)).toEqual({ username: "Nouveau" });
+    expect(opts.body).toEqual({ username: "Nouveau" });
     expect(result.current.user?.user_name).toBe("Nouveau");
   });
 

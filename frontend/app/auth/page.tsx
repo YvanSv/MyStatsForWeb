@@ -1,4 +1,5 @@
 "use client";
+import { errorMessage } from "@/app/services/errors";
 import { INPUT_BASE, INPUT_LABEL_BASE, BTN_BASE, TOAST_SUCCESS_OPTIONS } from "@/app/constants/ui";
 import { useEffect, useId, useState } from "react";
 import { useAuth } from "../context/authContext";
@@ -84,7 +85,7 @@ function AuthContent() {
       // Utilise le message extrait par ApiError (ex: "Email ou mot de passe incorrect")
       setLoginMessage({ 
         type: "error", 
-        text: (err instanceof Error && err.message) || dict.errorOccured 
+        text: errorMessage(err, t, dict.errorOccured)
       });
     } finally {setLoading(false)}
   };
@@ -116,7 +117,7 @@ function AuthContent() {
     } catch (err) {
       const status = (err as { status?: number }).status;
       if (status === 422) setRegisterMessage({type: "error",text: dict.errorRegisterInvalid});
-      else if (status === 400) setRegisterMessage({type: "error",text: err instanceof Error ? err.message : dict.errorPw2});
+      else if (status === 400) setRegisterMessage({type: "error",text: errorMessage(err, t, dict.errorPw2)});
       else setRegisterMessage({type: "error",text: dict.errorPw2});
     } finally {setLoading(false)}
   };

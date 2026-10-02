@@ -1,13 +1,14 @@
 "use client";
 
-import { TOAST_SUCCESS_OPTIONS } from "@/app/constants/ui";
+import { TOAST_ERROR_OPTIONS, TOAST_SUCCESS_OPTIONS } from "@/app/constants/ui";
 import { useEffect, useState } from "react";
 import { TrackInfo, useApiAdmin } from "../action";
 import toast from "react-hot-toast";
+import { errorMessage } from "../../services/errors";
 import { useLanguage } from "../../context/languageContext";
 
 export default function ConflitsPage() {
-  const { t: dict } = useLanguage();
+  const { t, t: dict } = useLanguage();
   const [tracks,setTracks] = useState<TrackInfo[] | null>(null);
 
   const { loading, getTracksError, updateTrack } = useApiAdmin();
@@ -16,7 +17,7 @@ export default function ConflitsPage() {
     const fetchData = async () => {
       try {
         setTracks(await getTracksError());
-      } catch {}
+      } catch (e) {toast.error(errorMessage(e, t), TOAST_ERROR_OPTIONS)}
     }
 
     fetchData();

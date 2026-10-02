@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { API_ENDPOINTS } from '../constants/routes';
 import { CURRENTLY_PLAYING_POLL_MS, PLAYBACK_TICK_MS, REFRESH_AFTER_ACTION_MS, SPOTIFY_ERROR_TOAST_MS } from '../constants/timing';
@@ -43,7 +43,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const fetchCurrent = useCallback(async () => {
         if (!isLoggedIn) return;
         try {
-            const res = await request(API_ENDPOINTS.CURRENTLY_PLAYING);
+            const res = await request<{ is_listening: boolean; data: SpotifyListeningData | null } | null>(API_ENDPOINTS.CURRENTLY_PLAYING);
             // SI ON REÇOIT DE LA DATA (Lecture ou Pause)
             if (res && res.data) {
                 setListening(res);
@@ -83,17 +83,18 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }, PLAYBACK_TICK_MS);
 
         return () => clearInterval(timer);
-    }, [listening.is_listening, listening.data, fetchCurrent]);
+    }, [listening.is_listening, listening.data, paused, fetchCurrent]);
 
     // Fonction utilitaire pour rafraîchir après une action
     const refreshAfterAction = useCallback(() => {
         setTimeout(fetchCurrent, REFRESH_AFTER_ACTION_MS);
     }, [fetchCurrent]);
 
-    const handleSpotifyError = useCallback((error: any) => {
-        const status = error.status || error.response?.status;
-        if (status === 403) toast.error(t.api.spotifyPremiumRequired, {duration: SPOTIFY_ERROR_TOAST_MS});
-        else if (status === 404) toast.error(t.api.spotifyNoDevice);
+    const handleSpotifyError = useCallback((error: unknown) => {
+        const { status, response } = (error ?? {}) as { status?: number; response?: { status?: number } };
+        const code = status || response?.status;
+        if (code === 403) toast.error(t.api.spotifyPremiumRequired, {duration: SPOTIFY_ERROR_TOAST_MS});
+        else if (code === 404) toast.error(t.api.spotifyNoDevice);
         else toast.error(t.api.spotifyError);
     }, [t]);
 

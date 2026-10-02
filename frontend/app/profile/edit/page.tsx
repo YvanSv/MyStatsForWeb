@@ -18,6 +18,7 @@ import { BannerEditor, AvatarEditor } from "./ProfileImages";
 import { useImageUpload } from "./useImageUpload";
 import { CharCounter } from "@/app/components/Atomic/CharCounter";
 import { FormField } from "@/app/components/Atomic/FormField";
+import { errorMessage } from "@/app/services/errors";
 import { normalizeSlug, slugError } from "@/app/services/validation";
 import { useLanguage } from "@/app/context/languageContext";
 import { ErrorState } from "@/app/components/Atomic/Error/Error";
@@ -165,9 +166,9 @@ function EditProfileContent() {
       await refreshUser();
       router.push(`${FRONT_ROUTES.PROFILE}/${finalSlug === "" ? user.id : finalSlug}`);
     } catch (e) {
-      const err = e as { status?: number; message?: string };
       // Les erreurs de validation (422) n'ont pas de message lisible : on affiche le texte générique
-      toast.error(err?.status && err.status !== 422 && err.message ? err.message : dict.errorSave);
+      const status = (e as { status?: number })?.status;
+      toast.error(status && status !== 422 ? errorMessage(e, t) : dict.errorSave);
       savingRef.current = false;
       setSaving(false);
     }

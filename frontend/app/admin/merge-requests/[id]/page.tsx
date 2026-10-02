@@ -11,9 +11,16 @@ import {
 } from 'lucide-react';
 import { useLanguage } from "../../../context/languageContext";
 
+// Structure des entités affichées (données d'exemple en attendant l'API de détail)
+interface MergeMapping { provider: string; id: string }
+interface MergeHistoryEntry { id: string; date: string; provider: string }
+interface MergeTrack { id: string; title: string; mapping?: MergeMapping | null; history?: MergeHistoryEntry[] }
+interface MergeAlbum { id: string; title: string; mapping?: MergeMapping | null; tracks?: MergeTrack[] }
+interface MergeEntityTree { id: string; name: string; image: string; mapping?: MergeMapping | null; albums?: MergeAlbum[] }
+
 export default function MergeRequestPage() {
   const { t } = useLanguage();
-  const [data] = useState({
+  const [data] = useState<{ type: string; duplicate: MergeEntityTree; target: MergeEntityTree }>({
     type: 'artist',
     duplicate: {
       id: "dup_123",
@@ -105,13 +112,13 @@ export default function MergeRequestPage() {
   );
 }
 
-function EntityExplorer({ title, entity, variant }: { title: string, entity: any, variant: 'red' | 'vert' }) {
+function EntityExplorer({ title, entity, variant }: { title: string, entity: MergeEntityTree | null | undefined, variant: 'red' | 'vert' }) {
   const { t } = useLanguage();
   if (!entity) return null;
 
   // Calcul des listes "à plat" pour l'artiste
-  const allTracks = entity.albums?.flatMap((a: any) => a.tracks) || [];
-  const allHistory = allTracks.flatMap((tr: any) => tr.history) || [];
+  const allTracks = entity.albums?.flatMap(a => a.tracks ?? []) ?? [];
+  const allHistory = allTracks.flatMap(tr => tr.history ?? []);
 
   return (
     <section className={`p-6 bg-white/5 rounded-2xl border-2 border-transparent transition-all ${variant === 'red' ? 'hover:border-red-500/20' : 'hover:border-vert/20'}`}>
@@ -130,14 +137,14 @@ function EntityExplorer({ title, entity, variant }: { title: string, entity: any
       <div className="space-y-2">
         {/* AXE 1 : ALBUMS (Hiérarchique) */}
         <ExpandableRow icon={<Disc size={16}/>} label={t.admin.mergeDetail.albums} count={entity.albums?.length}>
-          {entity.albums?.map((album: any) => (
+          {entity.albums?.map(album => (
             <AlbumNode key={album.id} album={album} />
           ))}
         </ExpandableRow>
 
         {/* AXE 2 : TRACKS (Vue à plat) */}
         <ExpandableRow icon={<Music size={16}/>} label={t.admin.mergeDetail.allTracks} count={allTracks.length}>
-          {allTracks.map((track: any) => (
+          {allTracks.map(track => (
             <TrackNode key={track.id} track={track} />
           ))}
         </ExpandableRow>
@@ -145,7 +152,7 @@ function EntityExplorer({ title, entity, variant }: { title: string, entity: any
         {/* AXE 3 : HISTORY (Vue à plat) */}
         <ExpandableRow icon={<History size={16}/>} label={t.admin.mergeDetail.allHistory} count={allHistory.length}>
           <div className="grid grid-cols-1 gap-1 py-2">
-            {allHistory.map((h: any) => (
+            {allHistory.map(h => (
               <div key={h.id} className="flex justify-between items-center p-2 bg-white/[0.02] rounded border border-white/5">
                 <span className="text-[10px] text-gray-400 font-mono italic">{h.date}</span>
                 <span className="text-[9px] font-bold text-vert/70">{h.provider}</span>
@@ -160,7 +167,7 @@ function EntityExplorer({ title, entity, variant }: { title: string, entity: any
 
 // --- NODES DE L'ARBRE ---
 
-function AlbumNode({ album }: { album: any }) {
+function AlbumNode({ album }: { album: MergeAlbum }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="ml-2 border-l border-white/10 pl-4 py-1">
@@ -171,12 +178,12 @@ function AlbumNode({ album }: { album: any }) {
         </button>
         <MappingBadge mapping={album.mapping} />
       </div>
-      {isOpen && album.tracks?.map((t: any) => <TrackNode key={t.id} track={t} />)}
+      {isOpen && album.tracks?.map(t => <TrackNode key={t.id} track={t} />)}
     </div>
   );
 }
 
-function TrackNode({ track }: { track: any }) {
+function TrackNode({ track }: { track: MergeTrack }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -190,7 +197,7 @@ function TrackNode({ track }: { track: any }) {
       </div>
       {isOpen && (
         <div className="mt-2 space-y-1">
-          {track.history?.map((h: any) => (
+          {track.history?.map(h => (
             <div key={h.id} className="text-[9px] text-gray-500 pl-6 flex justify-between italic">
               <span>{t.admin.mergeDetail.playedOn(h.date)}</span>
               <span>{t.admin.mergeDetail.via(h.provider)}</span>
@@ -204,7 +211,7 @@ function TrackNode({ track }: { track: any }) {
 
 // --- COMPOSANTS UI ATOMIQUES ---
 
-function ExpandableRow({ icon, label, count, children }: { icon: any, label: string, count: number, children: React.ReactNode }) {
+function ExpandableRow({ icon, label, count, children }: { icon: React.ReactNode, label: string, count?: number, children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="bg-bg2/50 rounded-xl border border-white/5 overflow-hidden">
@@ -221,7 +228,7 @@ function ExpandableRow({ icon, label, count, children }: { icon: any, label: str
   );
 }
 
-function MappingBadge({ mapping }: { mapping: any }) {
+function MappingBadge({ mapping }: { mapping: MergeMapping | null | undefined }) {
   const { t } = useLanguage();
   if (!mapping) return <span className="text-[9px] text-gray-600 italic">{t.admin.mergeDetail.noMapping}</span>;
   return (

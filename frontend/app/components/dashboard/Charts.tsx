@@ -3,6 +3,7 @@ import { CHART_HEIGHT_DESKTOP, CHART_HEIGHT_MOBILE, COLORS, DESKTOP_BREAKPOINT }
 import { useId } from 'react';
 import { useScreenWidth } from '@/app/hooks/useScreenWidth';
 import { formatDate } from '@/app/services/formatDate';
+import type { CumulativePoint, DiscoveryPoint, HourlyData, MonthPoint, WeekdayPoint, YearPoint } from '@/app/profile/dashboard/[id]/utils';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarAngleAxis, PolarGrid, Radar, PolarRadiusAxis } from 'recharts';
 import { LineChart, Line, Legend } from 'recharts';
 
@@ -17,28 +18,40 @@ const parseChartDate = (value: string | number) => {
 const MIN_BAR_HEIGHT = 3;
 
 // Vrai quand aucune des clés ne porte de valeur non nulle (ou quand il n'y a aucune donnée)
-const hasNoData = (data: Record<string, unknown>[] | undefined, keys: string[]) =>
+const hasNoData = <T extends object>(data: readonly T[] | undefined, keys: (keyof T)[]) =>
   !data?.length || !data.some(row => keys.some(key => Number(row?.[key]) > 0));
 
-const CustomBar = (props: any) => {
+// Propriétés injectées par recharts dans la forme d'une barre
+interface CustomBarProps { x?: number; y?: number; width?: number; height?: number; value?: number }
+
+const CustomBar = (props: CustomBarProps) => {
   const { x, y, width, height, value } = props;
   if (value === 0) {
     // Valeur nulle : la hauteur calculée est nulle, on dessine une petite barre discrète posée sur la ligne de base
     return (<rect x={x} y={(y ?? 0) - MIN_BAR_HEIGHT} width={width} height={MIN_BAR_HEIGHT} fill="#ffffff10" rx={1.5} ry={1.5}/>);
   }
   if (!height || height < 0) return null;
-  return (<rect x={x} y={y} width={width} height={height} fill={value > 0 ? COLORS.PURPLE : '#ffffff10'} rx={6} ry={6}/>);
+  return (<rect x={x} y={y} width={width} height={height} fill={(value ?? 0) > 0 ? COLORS.PURPLE : '#ffffff10'} rx={6} ry={6}/>);
 };
 
-const ChartToolTip = ({ active, payload }: any) => {
+// Entrée du tooltip : la valeur affichée et le point de données d'origine
+interface ToolTipEntry {
+  value: number;
+  name?: string | number;
+  color?: string;
+  fill?: string;
+  payload?: Record<string, string | number | undefined>;
+}
+
+const ChartToolTip = ({ active, payload }: { active?: boolean; payload?: ToolTipEntry[] }) => {
   const { t } = useLanguage();
   if (!active || !payload?.length) return null;
   
-  const data = payload[0].payload;
+  const data = payload[0].payload ?? {};
   const rawDate = data.full_date || data.date || data.hour || data.day || data.month || data.year;
   
   // Formatage de date dynamique selon la langue
-  const formattedDate = rawDate && /^\d{4}-\d{2}-\d{2}/.test(rawDate)
+  const formattedDate = typeof rawDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawDate)
     ? formatDate(parseChartDate(rawDate), t.common.locale, {day:'2-digit', month:'2-digit', year:'numeric'})
     : rawDate;
     
@@ -51,7 +64,7 @@ const ChartToolTip = ({ active, payload }: any) => {
       </p>
       
       <div className="flex flex-col gap-1">
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index) => (
           <p key={index} className="text-white font-mono font-bold text-sm flex items-center justify-between gap-4">
             <span>{formatter.format(entry.value)}</span>
             <span className="text-[10px] uppercase tracking-tighter opacity-80"
@@ -71,7 +84,9 @@ const ChartToolTip = ({ active, payload }: any) => {
   );
 };
 
-function CustomBarChart({data, type, metric}:{data:any[], type:string, metric: 'streams' | 'minutes'}) {
+type BarChartPoint = WeekdayPoint | MonthPoint | YearPoint;
+
+function CustomBarChart({data, type, metric}:{data: BarChartPoint[], type: 'day' | 'month' | 'year', metric: 'streams' | 'minutes'}) {
   const { t } = useLanguage();
   const screenWidth = useScreenWidth();
   
@@ -79,7 +94,7 @@ function CustomBarChart({data, type, metric}:{data:any[], type:string, metric: '
   const title = type === "day" ? t.charts.weekly : type === "month" ? t.charts.monthly : t.charts.annual;
   
   return (
-    <GraphContainer height={screenWidth < DESKTOP_BREAKPOINT ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP} title={title} additional={"flex flex-col"} empty={hasNoData(data, [metric === 'streams' ? 'streams' : 'value'])}>
+    <GraphContainer height={screenWidth < DESKTOP_BREAKPOINT ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP} title={title} additional={"flex flex-col"} empty={hasNoData<BarChartPoint>(data, [metric === 'streams' ? 'streams' : 'value'])}>
       <BarChart data={data} margin={{ top: 0, right: 0, left: -25, bottom: 0 }} barGap={0}>
           <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#ffffff05" />
           <XAxis dataKey={type} axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }} dy={10}/>
@@ -94,15 +109,15 @@ function CustomBarChart({data, type, metric}:{data:any[], type:string, metric: '
   );
 }
 
-export function WeeklyChart({ data, metric }: { data: any[], metric: 'streams' | 'minutes' }) {
+export function WeeklyChart({ data, metric }: { data: WeekdayPoint[], metric: 'streams' | 'minutes' }) {
   return <CustomBarChart data={data} type="day" metric={metric}/>;
 };
 
-export function MonthlyChart({ data, metric }: { data: any[], metric: 'streams' | 'minutes' }) {
+export function MonthlyChart({ data, metric }: { data: MonthPoint[], metric: 'streams' | 'minutes' }) {
   return <CustomBarChart data={data} type="month" metric={metric}/>;
 };
 
-export function AnnualChart({ data, metric }: { data: any[], metric: 'streams' | 'minutes' }) {
+export function AnnualChart({ data, metric }: { data: YearPoint[], metric: 'streams' | 'minutes' }) {
   return <CustomBarChart data={data} type="year" metric={metric}/>;
 };
 
@@ -111,7 +126,7 @@ const formatTicks = (hour: string) => {
   return keys.includes(hour) ? hour : "";
 };
 
-export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: any[], metric?: 'streams' | 'minutes', daysCount?: number}) {
+export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: HourlyData[], metric?: 'streams' | 'minutes', daysCount?: number}) {
   const { t } = useLanguage();
   const screenWidth = useScreenWidth();
 
@@ -134,7 +149,7 @@ export function ClockChart({ data, metric = 'streams', daysCount = 0 }: { data: 
   );
 }
 
-export function CumulativeChart({ data }:{ data: any[] }) {
+export function CumulativeChart({ data }:{ data: CumulativePoint[] }) {
   const { t } = useLanguage();
   const color1 = COLORS.SPOTIFY_GREEN_LIGHT, color2 = COLORS.SPOTIFY_GREEN_DARK;
   // Ids de dégradé uniques par instance (les « : » de useId sont inutilisables dans url(#...))
@@ -166,7 +181,7 @@ export function CumulativeChart({ data }:{ data: any[] }) {
   );
 }
 
-export const EvolutionChart = ({ data }:{data: any[]}) => {
+export const EvolutionChart = ({ data }:{data: DiscoveryPoint[]}) => {
   const { t } = useLanguage();
   const color1 = COLORS.SPOTIFY_GREEN, color2 = "#60a5fa", color3 = "#a78bfa";
   return (
@@ -185,7 +200,7 @@ export const EvolutionChart = ({ data }:{data: any[]}) => {
   );
 };
 
-export const EvolutionStreamsChart = ({ data }:{data: any[]}) => {
+export const EvolutionStreamsChart = ({ data }:{data: CumulativePoint[]}) => {
   const { t } = useLanguage();
   const color1 = COLORS.SPOTIFY_GREEN_LIGHT, color2 = COLORS.SPOTIFY_GREEN_DARK;
   return (
@@ -212,7 +227,7 @@ const GraphLegend = () => (
   />
 );
 
-const GraphXAxis = ({data}:any) => {
+const GraphXAxis = ({data}: {data: string}) => {
   const { t } = useLanguage();
   return (
     <XAxis dataKey={data} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }} minTickGap={30}
@@ -235,7 +250,15 @@ const GraphYAxis = () => {
   );
 };
 
-function GraphContainer({children, height, title, additional, empty}:any) {
+interface GraphContainerProps {
+  children: React.ReactElement;
+  height: number;
+  title: string;
+  additional?: string;
+  empty: boolean;
+}
+
+function GraphContainer({children, height, title, additional, empty}: GraphContainerProps) {
   const { t } = useLanguage();
   return (
     <div style={{ height: `${height}px` }} className={`flex flex-col w-full bg-white/[0.02] border border-white/5 px-2 py-4 md:p-4 rounded-2xl ${additional}`}>

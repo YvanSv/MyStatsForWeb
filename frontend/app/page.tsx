@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BASE_UI } from "./styles/general";
 import { useApiAllDatas } from "./hooks/useApiAllDatas";
 import { PrimaryButton, SecondaryButton } from "./components/Atomic/Buttons";
@@ -10,6 +10,9 @@ import { useLanguage } from "./context/languageContext";
 import { FRONT_ROUTES } from "./constants/routes";
 import { TECHNOS } from "./constants/technos";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { errorMessage } from "./services/errors";
+import { TOAST_ERROR_OPTIONS } from "./constants/ui";
 
 const INITIALS_STATS = {
   users: 0,
@@ -35,6 +38,9 @@ export default function HomePage() {
   // Primitifs : l'effet ne se relance pas à chaque rafraîchissement du même utilisateur
   const isLoggedIn = !!user?.is_logged_in;
   const userId = user?.id;
+  // Les messages d'erreur utilisent la langue courante sans relancer les chargements quand elle change
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +51,7 @@ export default function HomePage() {
         if (!cancelled) setStats(data ?? INITIALS_STATS);
       } catch (e) {
         console.error("Erreur lors du chargement des stats globales", e);
+        if (!cancelled) toast.error(errorMessage(e, tRef.current), TOAST_ERROR_OPTIONS);
       } finally {
         if (!cancelled) setLoadingGlobal(false);
       }
@@ -65,6 +72,7 @@ export default function HomePage() {
         if (!cancelled) setUserStats({ nb_streams: today?.nb_streams ?? 0, nb_minutes: today?.nb_minutes ?? 0 });
       } catch (e) {
         console.error("Erreur lors du chargement des stats du jour", e);
+        if (!cancelled) toast.error(errorMessage(e, tRef.current), TOAST_ERROR_OPTIONS);
       } finally {
         if (!cancelled) setLoadingToday(false);
       }

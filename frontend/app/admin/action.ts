@@ -2,7 +2,8 @@
 import { useCallback, useMemo } from "react";
 import { useApi } from "../hooks/useApi";
 import { API_ENDPOINTS } from "../constants/routes";
-import type { MergeRequest as BaseMergeRequest } from "../data/admin-interfaces";
+import type { CreateRequest, MergeRequest as BaseMergeRequest } from "../data/admin-interfaces";
+import type { Album, Artist, Track } from "../data/interfaces";
 
 export interface TrackInfo {
   id: number;
@@ -58,32 +59,34 @@ export interface MergeRequest extends Omit<BaseMergeRequest, "entity_type" | "st
  * Interface étendue pour l'affichage (Frontend uniquement)
  * Utile pour stocker les objets complets après un second fetch
  */
+export type MergeEntity = Artist | Album | Track;
+
 export interface MergeRequestWithDetails extends MergeRequest {
-  duplicate_data?: any; // Artist | Album | Track
-  target_data?: any;    // Artist | Album | Track
+  duplicate_data?: MergeEntity;
+  target_data?: MergeEntity;
 }
 
 export const useApiAdmin = () => {
   const { loading, request } = useApi();
 
-  const getTracksError = useCallback(() => request(`${API_ENDPOINTS.ERRORS}`), [request]);
+  const getTracksError = useCallback(() => request<TrackInfo[]>(`${API_ENDPOINTS.ERRORS}`), [request]);
   const updateTrack = useCallback((data:TrackInfo) => {
     return request(API_ENDPOINTS.ERRORS, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data,
     });
   }, [request]);
 
-  const getMergeRequests = useCallback(() => request(`${API_ENDPOINTS.MERGE_REQUESTS}`), [request]);
+  const getMergeRequests = useCallback(() => request<MergeRequest[]>(`${API_ENDPOINTS.MERGE_REQUESTS}`), [request]);
   const resolveMergeRequest = useCallback((id: number, approve: boolean) => {
     return request(`${API_ENDPOINTS.MERGE_REQUESTS}/${id}/resolve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ approve }),
+      body: { approve },
     });
   }, [request]);
 
-  const getCreateRequests = useCallback(() => request(`${API_ENDPOINTS.CREATE_REQUESTS}`), [request]);
+  const getCreateRequests = useCallback(() => request<CreateRequest[]>(`${API_ENDPOINTS.CREATE_REQUESTS}`), [request]);
   const resolveCreateRequest = useCallback((
     id: number, 
     approve: boolean, 
@@ -92,16 +95,15 @@ export const useApiAdmin = () => {
   ) => {
     return request(`${API_ENDPOINTS.CREATE_REQUESTS}/${id}/resolve`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         approve, 
         master_index: masterIndex, 
         selected_isrcs: isrcs
-      }),
+      },
     });
   }, [request]);
 
-  const getCreateRequestById = useCallback((id: number) => request(`${API_ENDPOINTS.CREATE_REQUESTS}/${id}`), [request]);
+  const getCreateRequestById = useCallback((id: number) => request<CreateRequest | null>(`${API_ENDPOINTS.CREATE_REQUESTS}/${id}`), [request]);
 
   return useMemo(() => ({loading, getTracksError, updateTrack, getMergeRequests, resolveMergeRequest, getCreateRequests, getCreateRequestById, resolveCreateRequest}),
   [loading, getTracksError, updateTrack, getMergeRequests, resolveMergeRequest, getCreateRequests, getCreateRequestById, resolveCreateRequest]);

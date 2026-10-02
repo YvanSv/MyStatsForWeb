@@ -2,26 +2,28 @@ import { useState, useCallback } from "react";
 import { API_ENDPOINTS } from "../constants/routes";
 import { apiRequest } from "../services/api";
 import { pathSegment } from "../services/url";
-import { EditableProfile } from "../data/DataInfos";
+import type { EditableProfileData } from "./apiTypes";
+import type { DashboardStats } from "../profile/dashboard/[id]/utils";
+import { EditableProfile, UserProfile, UserProfileTops } from "../data/DataInfos";
 
 export const useProfile = () => {
   const [loading, setLoading] = useState(false);
 
   const getProfile = useCallback(async (id: string) => {
     setLoading(true);
-    try {return await apiRequest(`${API_ENDPOINTS.PROFILE_DATA}/${pathSegment(id)}`)}
+    try {return await apiRequest<UserProfile>(`${API_ENDPOINTS.PROFILE_DATA}/${pathSegment(id)}`)}
     finally {setLoading(false)}
   }, []);
 
   const getTopDataProfile = useCallback(async (id: string) => {
     setLoading(true);
-    try {return await apiRequest(`${API_ENDPOINTS.PROFILE_DATA_TOPS}/${pathSegment(id)}`)}
+    try {return await apiRequest<UserProfileTops>(`${API_ENDPOINTS.PROFILE_DATA_TOPS}/${pathSegment(id)}`)}
     finally {setLoading(false)}
   }, []);
 
   const getEditableProfile = useCallback(async (id: string) => {
     setLoading(true);
-    try {return await apiRequest(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${pathSegment(id)}`)}
+    try {return await apiRequest<EditableProfileData>(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${pathSegment(id)}`)}
     finally {setLoading(false)}
   }, []);
 
@@ -30,8 +32,7 @@ export const useProfile = () => {
     try {
       return await apiRequest(`${API_ENDPOINTS.EDITABLE_PROFILE_DATA}/${pathSegment(id)}`, {
         method: 'PATCH',
-        body: JSON.stringify(data),
-        headers: {'Content-Type': 'application/json',}
+        body: data
       });
     } finally {setLoading(false)}
   }, []);
@@ -42,7 +43,7 @@ export const useProfile = () => {
       const params = new URLSearchParams();
       if (start) params.append("start_date", start);
       if (end) params.append("end_date", end);
-      return await apiRequest(`${API_ENDPOINTS.DASHBOARD_DATA}/${pathSegment(id)}${params.toString() && `?${params.toString()}`}`);
+      return await apiRequest<DashboardStats>(`${API_ENDPOINTS.DASHBOARD_DATA}/${pathSegment(id)}${params.toString() && `?${params.toString()}`}`);
     } finally {
       setLoading(false);
     }
