@@ -2,6 +2,7 @@
 import { useCallback, useMemo } from "react";
 import { useApi } from "../hooks/useApi";
 import { API_ENDPOINTS } from "../constants/routes";
+import type { MergeRequest as BaseMergeRequest } from "../data/admin-interfaces";
 
 export interface TrackInfo {
   id: number;
@@ -38,19 +39,16 @@ export enum MergeStatus {
 
 export type MergePriority = "low" | "medium" | "high";
 
-export interface MergeRequest {
-  id: number;
+// Champs communs définis dans data/admin-interfaces ; ici, types énumérés et champs supplémentaires du backend
+export interface MergeRequest extends Omit<BaseMergeRequest, "entity_type" | "status" | "priority" | "reason"> {
   entity_type: MergeEntityType;
   status: MergeStatus;
   priority: MergePriority;
-  
-  duplicate_id: number;
+
   duplicate_name: string;
-  target_id: number;
   target_name: string;
-  
+
   // Métadonnées
-  created_at: string;
   resolved_at?: string | null;
   created_by_id?: number | null;
   reason?: string | null;

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PrimaryButton } from "./Atomic/Buttons";
-import { DESKTOP_BREAKPOINT } from "../constants/ui";
+import { isMobileViewport } from "../hooks/useScreenWidth";
 import { useLanguage } from "../context/languageContext";
 
 const SIDEBAR_STYLES = {
@@ -122,14 +122,14 @@ export default function SidebarFilters({ config, loading, isVisible, toggleShowF
     // Pas de « ? » orphelin quand aucun filtre n'est renseigné
     router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
     // Fermer la sidebar sur mobile après application
-    if (window.innerWidth < DESKTOP_BREAKPOINT) toggleShowFilters();
+    if (isMobileViewport()) toggleShowFilters();
   };
 
   const resetFilters = () => {
     setLocalFilters({});
     router.push(pathname, { scroll: false });
     // Fermer la sidebar sur mobile, comme après application
-    if (window.innerWidth < DESKTOP_BREAKPOINT) toggleShowFilters();
+    if (isMobileViewport()) toggleShowFilters();
   };
 
   return (

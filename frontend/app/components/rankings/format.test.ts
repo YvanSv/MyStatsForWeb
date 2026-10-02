@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  RATING_AVERAGE, RATING_GOOD, formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, safeNumber, withUnit,
+  RATING_AVERAGE, RATING_GOOD, formatMinutes, formatPercent, formatStat, formatStreams, getCellDisplay, isValidNumber, ratingColorClass, safeNumber, withUnit,
 } from "./format";
 
 describe("isValidNumber", () => {
@@ -93,5 +93,17 @@ describe("seuils de note", () => {
     [undefined, "text-rouge"], [null, "text-rouge"], [NaN, "text-rouge"],
   ])("note %s -> %s", (rating, cls) => {
     expect(ratingColorClass(rating as number | null | undefined)).toBe(cls);
+  });
+});
+
+describe("getCellDisplay", () => {
+  it("artiste : nom, image_url et drapeau", () => {
+    expect(getCellDisplay({ type: "artist", name: "A", image_url: "i.jpg" }, "?")).toEqual({ isArtist: true, displayName: "A", displayImage: "i.jpg" });
+  });
+  it("titre prioritaire sur le nom, cover prioritaire sur image_url", () => {
+    expect(getCellDisplay({ type: "track", title: "T", name: "N", cover: "c", image_url: "i" }, "?")).toEqual({ isArtist: false, displayName: "T", displayImage: "c" });
+  });
+  it("repli sur le libellé inconnu et image absente", () => {
+    expect(getCellDisplay({ type: "album", cover: null }, "Inconnu")).toEqual({ isArtist: false, displayName: "Inconnu", displayImage: undefined });
   });
 });

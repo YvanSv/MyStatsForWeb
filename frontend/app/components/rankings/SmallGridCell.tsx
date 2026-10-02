@@ -1,7 +1,9 @@
 import { useLanguage } from "@/app/context/languageContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import Image from "next/image";
-import { formatMinutes, formatStat, formatStreams, isValidNumber, ratingColorClass, withUnit } from "./format";
+import { renderCellSubtitle } from "./CellSubtitle";
+import StatBlocks from "./StatBlock";
+import { getCellDisplay, formatStat, ratingColorClass, withUnit } from "./format";
 
 interface SmallGridCellProps {
   element: DataInfo;
@@ -62,27 +64,9 @@ const SMALL_GRID_STYLES = {
 export default function SmallGridCell({ element, index, sort }: SmallGridCellProps) {
   const { t } = useLanguage();
   const dict = t.rankingcell;
-  const isArtist = element.type === 'artist';
-  const displayName = element.title || element.name || dict.unknown;
-  const displayImage = element.cover || element.image_url;
+  const { isArtist, displayName, displayImage } = getCellDisplay(element, dict.unknown);
 
-  const displaySub = () => {
-    if (element.type === 'artist') return null;
-    if (element.type === 'track') {
-      return (
-        <>
-          {element.artist}
-          {element.album && (
-            <>
-              <span> ● </span>
-              <span className="italic opacity-80">{element.album}</span>
-            </>
-          )}
-        </>
-      );
-    }
-    return element.artist;
-  };
+  const subtitle = renderCellSubtitle(element, "small");
 
   return (
     <div className={SMALL_GRID_STYLES.WRAPPER(isArtist)}>
@@ -110,37 +94,15 @@ export default function SmallGridCell({ element, index, sort }: SmallGridCellPro
       <div className={SMALL_GRID_STYLES.TEXT_CONTENT}>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <h3 className={SMALL_GRID_STYLES.TITLE(isArtist)}>{displayName}</h3>
-          {displaySub() && (
-            <p className={SMALL_GRID_STYLES.SUBTITLE}>{displaySub()}</p>
+          {subtitle && (
+            <p className={SMALL_GRID_STYLES.SUBTITLE}>{subtitle}</p>
           )}
         </div>
       </div>
 
       {/* FOOTER STATS (Compact) */}
       <div className={SMALL_GRID_STYLES.FOOTER}>
-        {/* Streams */}
-        <div className={SMALL_GRID_STYLES.STAT_BLOCK}>
-          <span className={SMALL_GRID_STYLES.STAT_VALUE(sort === 'play_count')}>
-            {formatStreams(element.play_count, dict.locale)}
-          </span>
-          {isValidNumber(element.play_count) && <span className={SMALL_GRID_STYLES.STAT_LABEL}>{dict.unitStreams}</span>}
-        </div>
-
-        {/* Minutes */}
-        <div className={SMALL_GRID_STYLES.STAT_BLOCK}>
-          <span className={SMALL_GRID_STYLES.STAT_VALUE(sort === 'total_minutes')}>
-              {formatMinutes(element.total_minutes, dict.locale)}
-            </span>
-            {isValidNumber(element.total_minutes) && <span className={SMALL_GRID_STYLES.STAT_LABEL}>{dict.unitMinutes}</span>}
-        </div>
-
-        {/* Engagement */}
-        <div className={SMALL_GRID_STYLES.STAT_BLOCK}>
-          <span className={SMALL_GRID_STYLES.STAT_VALUE(sort === 'engagement')}>
-            {formatStat(element.engagement, dict.locale)}
-          </span>
-          {isValidNumber(element.engagement) && <span className={SMALL_GRID_STYLES.STAT_LABEL}>%</span>}
-        </div>
+        <StatBlocks element={element} sort={sort} locale={dict.locale} unitStreams={dict.unitStreams} unitMinutes={dict.unitMinutes} styles={SMALL_GRID_STYLES} />
       </div>
     </div>
   );

@@ -4,29 +4,20 @@ import { FRONT_ROUTES } from "@/app/constants/routes";
 import Link from 'next/link';
 import { GitPullRequest, ArrowRight, Disc, Mic2, Music, Calendar, ChevronRight } from 'lucide-react';
 import { MergeEntityType, MergeRequest, useApiAdmin } from '../action';
-import { useEffect, useState } from 'react';
+import { useAsyncData } from '@/app/hooks/useAsyncData';
 import { useLanguage } from "../../context/languageContext";
 
 export default function MergeRequestListPage() {
   const { t } = useLanguage();
   const { getMergeRequests } = useApiAdmin();
-  const [requests,setRequests] = useState<MergeRequest[] | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getMergeRequests();
-        if (data) setRequests(data); else setFailed(true);
-      }
-      catch { setFailed(true) }
-    };
-
-    fetchData();
+  const { data: requests, error } = useAsyncData<MergeRequest[]>(async () => {
+    const data = await getMergeRequests();
+    if (!data) throw new Error("Aucune demande de fusion reçue");
+    return data;
   }, [getMergeRequests]);
 
   if (!requests) return (
-    <div className="p-8 text3">{failed ? t.admin.mergeList.error : t.admin.mergeList.loading}</div>
+    <div className="p-8 text3">{error ? t.admin.mergeList.error : t.admin.mergeList.loading}</div>
   );
 
   return (

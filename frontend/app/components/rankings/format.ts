@@ -33,3 +33,14 @@ export const formatPercent = (value: number | null | undefined, locale: string):
 
 /** Accole une unité à une valeur déjà formatée, sauf si elle est absente (« - » reste « - »). */
 export const withUnit = (formatted: string, unit: string): string => (formatted === "-" ? formatted : `${formatted}${unit}`);
+
+
+/** Infos d'affichage communes aux cellules de classement (nom, image, artiste ou non). */
+export const getCellDisplay = (
+  element: { type: string; title?: string; name?: string; cover?: string | null; image_url?: string | null },
+  unknownLabel: string,
+) => ({
+  isArtist: element.type === "artist",
+  displayName: element.title || element.name || unknownLabel,
+  displayImage: element.cover || element.image_url,
+});

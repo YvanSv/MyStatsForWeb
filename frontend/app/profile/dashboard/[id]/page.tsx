@@ -2,20 +2,18 @@
 
 import { useParams } from "next/navigation";
 import { Timer, Music2, Mic2, Calendar, Disc, Play, Clock, Zap, CalendarIcon, Percent, CalendarDays } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useProfile } from "@/app/hooks/useProfile";
+import { useMemo, useState } from "react";
 import {WeeklyChart, MonthlyChart, ClockChart, CumulativeChart, EvolutionChart, AnnualChart, EvolutionStreamsChart} from "@/app/components/dashboard/Charts";
 import { MetricSwitch } from "./MetricSwitch";
 import CompactStatCard from "./CompactStatCard";
 import AccordionItem from "./AccordionItem";
 import IntervalsSelector from "./IntervalSelector";
 import TopMediaCard from "./TopMediaCard";
-import { DashboardStats, formatToInputDate, getDateRange, getRangeLabel, INITIAL_STATS, smoothHourlyData } from "./utils";
-import { UserProfile } from "@/app/data/DataInfos";
-// import { AvatarContainer } from "@/app/components/Atomic/Profile/Profile";
+import { getRangeLabel, smoothHourlyData } from "./utils";
+import { useDashboardData } from "./useDashboardData";
+import AvatarContainer from "./AvatarContainer";
 import { SecondaryButton } from "@/app/components/Atomic/Buttons";
 import { ErrorState } from "@/app/components/Atomic/Error/Error";
-import { ApiError } from "@/app/services/api";
 import { useLanguage } from "@/app/context/languageContext";
 import { eachDayOfInterval, format, isAfter, min, parseISO } from 'date-fns';
 
@@ -60,45 +58,20 @@ export const FILTER_BAR_STYLES = {
     m-0 p-0 w-[90px]`,
 };
 
-function AvatarContainer({url,username,additional = "",title,special = false}:{url:string|undefined,username?:string,additional?:string,title?:any,special?:boolean}) {
-  const isSpecial = special;
-  const styleImg = `w-full h-full rounded-[26px] lg:rounded-[31px] bg-bg2 object-cover ${isSpecial ? '' : 'border-4 border-bg1'}`;
-
-  return (
-    <div className={`flex flex-row lg:items-end gap-4 lg:gap-6 ${additional}`}>
-      <div className={`
-        w-20 h-20 lg:w-40 lg:h-40 rounded-[30px] lg:rounded-[35px] shadow-2xl flex items-center justify-center
-        ${isSpecial ? 'p-[4px] bg-gradient-to-tr from-red-500 via-purple-500 to-blue-500 animate-gradient-xy' : ''}
-      `}><img src={url || undefined} className={styleImg} alt="Avatar"/></div>
-      <div className="flex flex-1 flex-col gap-4 lg:gap-6 mb-5">{title}</div>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const { id } = useParams();
   const { t } = useLanguage();
   const dict = t.dashboard;
-  const [loadingProfile, setLoadingProfile] = useState(!!id);
-  const [loadingStats, setLoadingStats] = useState(!!id);
-  const loading = loadingProfile || loadingStats;
   // Bornes saisies à la main (période personnalisée), au format AAAA-MM-JJ
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [range, setRange] = useState('lifetime');
   const [offset, setOffset] = useState(0);
-  const [extendedStats, setExtendedStats] = useState(INITIAL_STATS as DashboardStats);
+  const { profile, profileError, statsError, extendedStats, startDate, endDate, loading, retry } = useDashboardData({
+    id: id ? `${id}` : undefined, range, offset, customStart, customEnd,
+  });
   const [activeTab, setActiveTab] = useState<'activite' | 'diversite' | 'habitudes'>("activite");
   const [metric, setMetric] = useState<'streams' | 'minutes'>('minutes');
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [profileError, setProfileError] = useState<ApiError | null>(null);
-  const [statsError, setStatsError] = useState<ApiError | null>(null);
-  // Incrémentés par « Réessayer » pour relancer le chargement du profil ou des stats
-  const [profileAttempt, setProfileAttempt] = useState(0);
-  const [statsAttempt, setStatsAttempt] = useState(0);
-  const { getDashboard, getProfile } = useProfile();
 
   const formatter = new Intl.NumberFormat(t.common.locale, { maximumFractionDigits: 0 });
 
@@ -133,68 +106,6 @@ export default function DashboardPage() {
   };
   const label = getRangeLabel(range, offset, t);
   const isCustom = range === 'custom';
-  const retry = () => {
-    if (profileError) setProfileAttempt(n => n + 1);
-    if (statsError) setStatsAttempt(n => n + 1);
-  };
-
-  useEffect(() => {
-    if (!id) return;
-    let cancelled = false;
-    const loadData = async () => {
-      try {
-        setLoadingProfile(true);
-        setProfileError(null);
-        const data = await getProfile(id+'');
-        if (!cancelled) setProfile(data);
-      } catch (err: any) {if (!cancelled) setProfileError(err)}
-      finally {if (!cancelled) setLoadingProfile(false)}
-    };
-    loadData();
-    return () => { cancelled = true };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, profileAttempt]);
-
-  useEffect(() => {
-    if (!id) return;
-    // Une réponse arrivée après un changement de période est ignorée
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const fetchStats = async () => {
-      setLoadingStats(true);
-      setStatsError(null);
-
-      let start: string | null, end: string | null;
-      if (range === 'custom' && customStart && customEnd) {
-        const from = new Date(`${customStart}T00:00:00`);
-        const to = new Date(`${customEnd}T23:59:59.999`);
-        start = isNaN(from.getTime()) ? null : from.toISOString();
-        end = isNaN(to.getTime()) ? null : to.toISOString();
-      } else ({ start, end } = getDateRange(range, offset));
-      setStartDate(formatToInputDate(start));
-      setEndDate(formatToInputDate(end));
-
-      try {
-        const stats = await getDashboard(`${id}`, start, end);
-        if (cancelled) return;
-        setExtendedStats(stats);
-      } catch (err: any) {
-        if (cancelled) return;
-        // Les dernières stats valides sont conservées : l'erreur est affichée dans le bandeau
-        setStatsError(err ?? new ApiError(0, "stats"));
-      } finally {
-        if (!cancelled) timer = setTimeout(() => setLoadingStats(false), 150);
-      }
-    };
-
-    fetchStats();
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, range, offset, customStart, customEnd, statsAttempt]);
 
   const filledEvolutionData = useMemo(() => {
     const rawData = extendedStats.streamsEvolution;

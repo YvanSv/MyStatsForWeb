@@ -4,40 +4,23 @@ import { FRONT_ROUTES } from "@/app/constants/routes";
 import Link from 'next/link';
 import { GitPullRequest, Music, Calendar, User, Info, ChevronRight, History } from 'lucide-react';
 import { useApiAdmin } from '../action';
-import { useEffect, useState } from 'react';
+import { useAsyncData } from '@/app/hooks/useAsyncData';
+import { formatDate } from '@/app/services/formatDate';
+import AdminPageState from '../AdminPageState';
 import { CreateRequest } from '@/app/data/admin-interfaces';
 import { useLanguage } from '@/app/context/languageContext';
 
 export default function CreateRequestListPage() {
   const { t } = useLanguage();
   const { getCreateRequests } = useApiAdmin();
-  const [requests, setRequests] = useState<CreateRequest[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: requests, loading } = useAsyncData<CreateRequest[]>(() => getCreateRequests(), [getCreateRequests]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try { 
-        const data = await getCreateRequests();
-        setRequests(data);
-      } catch (err) {
-        console.error("Erreur chargement:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [getCreateRequests]);
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center text3 animate-pulse">
-      {t.admin.createList.loading}
-    </div>
-  );
+  if (loading) return <AdminPageState variant="loading">{t.admin.createList.loading}</AdminPageState>;
 
   if (!requests) return (
-    <div className="min-h-screen flex items-center justify-center text-red-400">
-      <Info className="mr-2" /> {t.admin.createList.error}
-    </div>
+    <AdminPageState variant="error" icon={<Info className="mr-2" />}>
+      {" "}{t.admin.createList.error}
+    </AdminPageState>
   );
 
   return (
@@ -86,7 +69,7 @@ export default function CreateRequestListPage() {
                   <div className="flex items-center gap-4 text-[10px] text3 uppercase tracking-widest font-semibold">
                     <span className="flex items-center gap-1.5">
                       <Calendar size={12} className="text-vert" /> 
-                      {new Date(mr.created_at).toLocaleDateString(t.common.locale, { day: '2-digit', month: 'short' })}
+                      {formatDate(mr.created_at, t.common.locale, { day: '2-digit', month: 'short' })}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <User size={12} className="text-vert" />

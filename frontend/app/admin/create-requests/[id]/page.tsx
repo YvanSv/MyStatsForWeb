@@ -2,48 +2,22 @@
 
 import { FRONT_ROUTES } from "@/app/constants/routes";
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { GitPullRequest, Music, Link as LinkIcon, History, CheckCircle, XCircle, ArrowLeft, Loader2, AlertTriangle, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useApiAdmin } from '../../action';
 import { CreateRequest } from '@/app/data/admin-interfaces';
 import { TrackHistory, TrackMapping } from '@/app/data/interfaces';
 import { useLanguage } from '@/app/context/languageContext';
-import { TOAST_STYLE } from "@/app/constants/ui";
+import { TOAST_ERROR_OPTIONS } from "@/app/constants/ui";
+import { useAsyncData } from "@/app/hooks/useAsyncData";
+import { formatDate } from "@/app/services/formatDate";
+import AdminPageState from "../../AdminPageState";
+import InfoBubble from "./InfoBubble";
+import SectionTitle from "./SectionTitle";
+import { formatDuration } from "./formatDuration";
+import { splitTrackTitle } from "./splitTrackTitle";
 import toast from "react-hot-toast";
-
-// --- COMPOSANTS UI UTILITAIRES ---
-
-const SectionTitle = ({ icon: Icon, title }: { icon: any, title: string }) => (
-  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/5">
-    <Icon className="w-5 h-5 text-vert" />
-    <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">{title}</h3>
-  </div>
-);
-
-const InfoBubble = ({ label, value }: { label: string, value: string | number | undefined }) => (
-  <div className="bg-bg2 p-3 rounded-lg border border-white/5">
-    <div className="text-xs text3 uppercase tracking-widest mb-1">{label}</div>
-    <div className="text-white font-medium">{value || "—"}</div>
-  </div>
-);
-
-// Formatage mm:ss pour la durée
-const formatDuration = (ms: number | undefined) => {
-  if (!ms || !Number.isFinite(ms)) return "—";
-  // On arrondit d'abord à la seconde : 59,5 s doit donner 1:00 et non 0:60
-  const total = Math.round(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-};
-
-// Découpe "Artiste - Titre" au PREMIER " - " seulement (comme AppleMusicWorker._get_parts côté backend) :
-// l'artiste est ce qui précède, le titre tout le reste. Robuste si le titre est absent ou vide.
-const splitTrackTitle = (title: string | null | undefined): { artist: string | undefined, title: string | undefined } => {
-  if (!title) return { artist: undefined, title: undefined };
-  const idx = title.indexOf(" - ");
-  if (idx === -1) return { artist: title, title: undefined };
-  return { artist: title.slice(0, idx), title: title.slice(idx + 3) };
-};
 
 // --- PAGE PRINCIPALE ---
 
@@ -54,8 +28,10 @@ export default function CreateRequestDetailPage() {
   const cr_id = Number(params.id);
   
   const { getCreateRequestById, resolveCreateRequest } = useApiAdmin();
-  const [request, setRequest] = useState<CreateRequest | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: request, loading } = useAsyncData<CreateRequest | null>(
+    async () => (cr_id ? await getCreateRequestById(cr_id) : null),
+    [cr_id, getCreateRequestById],
+  );
   const [resolving, setResolving] = useState(false);
   const [selectedMasterIndex, setSelectedMasterIndex] = useState<number>(0);
   const [selectedIsrcs, setSelectedIsrcs] = useState<string[]>([]);
@@ -66,20 +42,6 @@ export default function CreateRequestDetailPage() {
     );
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (!cr_id) return;
-        setRequest(await getCreateRequestById(cr_id));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [cr_id, getCreateRequestById]);
-
   // Gestion de l'approbation / rejet
   const handleResolve = async (approve: boolean) => {
     if (!cr_id || resolving) return;
@@ -89,7 +51,7 @@ export default function CreateRequestDetailPage() {
       router.push(FRONT_ROUTES.ADMIN_CREATE_REQUESTS); 
       router.refresh();
     } catch (err) {
-      toast.error(t.admin.createDetail.resolveError, { style: TOAST_STYLE });
+      toast.error(t.admin.createDetail.resolveError, TOAST_ERROR_OPTIONS);
       console.error(err);
     } finally {
       setResolving(false);
@@ -102,16 +64,12 @@ export default function CreateRequestDetailPage() {
     ? request.track.history.reduce((max, h) => (h.ms_played > max ? h.ms_played : max), 0)
     : undefined;
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center text3 animate-pulse bg-[#0a0a0a]">
-      {t.admin.createDetail.loading}
-    </div>
-  );
+  if (loading) return <AdminPageState variant="loading" className="bg-[#0a0a0a]">{t.admin.createDetail.loading}</AdminPageState>;
 
   if (!request) return (
-    <div className="min-h-screen flex items-center justify-center text-red-400 bg-[#0a0a0a]">
-      <AlertTriangle className="mr-2" /> {t.admin.createDetail.notFound(cr_id)}
-    </div>
+    <AdminPageState variant="error" className="bg-[#0a0a0a]" icon={<AlertTriangle className="mr-2" />}>
+      {" "}{t.admin.createDetail.notFound(cr_id)}
+    </AdminPageState>
   );
 
   return (
@@ -138,7 +96,7 @@ export default function CreateRequestDetailPage() {
             <div>
               <h1 className="text-3xl font-bold text-white tracking-tight">{t.admin.createDetail.title}</h1>
               <p className="text3 mt-1">
-                {t.admin.createDetail.createdOn(new Date(request.created_at).toLocaleDateString(t.common.locale, { day: '2-digit', month: 'long', year: 'numeric' }))}
+                {t.admin.createDetail.createdOn(formatDate(request.created_at, t.common.locale, { day: '2-digit', month: 'long', year: 'numeric' }))}
               </p>
             </div>
           </div>
@@ -198,7 +156,7 @@ export default function CreateRequestDetailPage() {
                       <div key={h.id} className="text-xs bg-bg2 p-2.5 rounded flex items-center gap-3 justify-between">
                         <span className="text-white font-medium">{h.provider}</span>
                         <span className="text-gray-400 italic">
-                          {new Date(h.played_at).toLocaleDateString(t.common.locale)} {new Date(h.played_at).toLocaleTimeString(t.common.locale, { hour: '2-digit', minute: '2-digit' })}
+                          {formatDate(h.played_at, t.common.locale)} {new Date(h.played_at).toLocaleTimeString(t.common.locale, { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <span className="text-gray-500 font-mono">{formatDuration(h.ms_played)}</span>
                       </div>

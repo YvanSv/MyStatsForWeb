@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { DataInfo } from "@/app/data/DataInfos";
 import { useLanguage } from "@/app/context/languageContext";
-import { formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, safeNumber, withUnit } from "./format";
+import { renderCellSubtitle } from "./CellSubtitle";
+import { getCellDisplay, formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, safeNumber, withUnit } from "./format";
 
 interface ListCellProps {
   element: DataInfo;
@@ -51,27 +52,9 @@ const LIST_CELL_STYLES = {
 export default function ListCell({ element, index, sort }: ListCellProps) {
   const { t } = useLanguage();
   const dict = t.rankingcell;
-  const isArtist = element.type === 'artist';
-  const displayName = element.title || element.name || dict.unknown;
-  const displayImage = element.cover || element.image_url;
+  const { isArtist, displayName, displayImage } = getCellDisplay(element, dict.unknown);
 
-  const displaySub = () => {
-    if (isArtist) return null;
-    if (element.type === 'track') {
-      return (
-        <>
-          {element.artist}
-          {element.album && (
-            <>
-              {" ●"}
-              <span className="italic opacity-80"> {element.album}</span>
-            </>
-          )}
-        </>
-      );
-    }
-    return element.artist;
-  };
+  const subtitle = renderCellSubtitle(element, "list");
 
   const renderMobileStat = () => {
     if (sort === 'rating') return <div className="h-5 md:hidden"/>;
@@ -105,7 +88,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
         </div>
         <div className="min-w-0">
           <h3 className={LIST_CELL_STYLES.TITLE}>{displayName}</h3>
-          {!isArtist && <p className={LIST_CELL_STYLES.SUBTITLE}>{displaySub()}</p>}
+          {!isArtist && <p className={LIST_CELL_STYLES.SUBTITLE}>{subtitle}</p>}
         </div>
       </div>
 

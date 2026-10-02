@@ -1,6 +1,8 @@
 import { useLanguage } from '@/app/context/languageContext';
 import { CHART_HEIGHT_DESKTOP, CHART_HEIGHT_MOBILE, COLORS, DESKTOP_BREAKPOINT } from '@/app/constants/ui';
-import { useId, useLayoutEffect, useState } from 'react';
+import { useId } from 'react';
+import { useScreenWidth } from '@/app/hooks/useScreenWidth';
+import { formatDate } from '@/app/services/formatDate';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarAngleAxis, PolarGrid, Radar, PolarRadiusAxis } from 'recharts';
 import { LineChart, Line, Legend } from 'recharts';
 
@@ -10,19 +12,6 @@ const parseChartDate = (value: string | number) => {
   const match = typeof value === 'string' ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null;
   return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : new Date(value);
 };
-
-// Largeur de la fenêtre, mise à jour au redimensionnement.
-// Valeur initiale « desktop » (rendu serveur sûr), remplacée par la mesure réelle avant la première peinture : pas de saut visible.
-function useScreenWidth(initial = 1280) {
-  const [width, setWidth] = useState(initial);
-  useLayoutEffect(() => {
-    const update = () => setWidth(window.innerWidth);
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-  return width;
-}
 
 // Hauteur (px) de la barre discrète affichée pour une valeur nulle
 const MIN_BAR_HEIGHT = 3;
@@ -50,7 +39,7 @@ const ChartToolTip = ({ active, payload }: any) => {
   
   // Formatage de date dynamique selon la langue
   const formattedDate = rawDate && /^\d{4}-\d{2}-\d{2}/.test(rawDate)
-    ? parseChartDate(rawDate).toLocaleDateString(t.common.locale, {day:'2-digit', month:'2-digit', year:'numeric'})
+    ? formatDate(parseChartDate(rawDate), t.common.locale, {day:'2-digit', month:'2-digit', year:'numeric'})
     : rawDate;
     
   const formatter = new Intl.NumberFormat(t.common.locale, { maximumFractionDigits: 0 });
@@ -228,8 +217,7 @@ const GraphXAxis = ({data}:any) => {
   return (
     <XAxis dataKey={data} tickLine={false} tick={{ fill: '#4B5563', fontSize: 10 }} minTickGap={30}
       tickFormatter={(str) => {
-        const date = parseChartDate(str);
-        return date.toLocaleDateString(t.common.locale, { day: '2-digit', month: '2-digit', year: '2-digit' });
+        return formatDate(parseChartDate(str), t.common.locale, { day: '2-digit', month: '2-digit', year: '2-digit' });
       }}
     />
   );

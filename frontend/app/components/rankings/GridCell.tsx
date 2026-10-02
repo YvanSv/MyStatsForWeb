@@ -1,7 +1,9 @@
 import { useLanguage } from "@/app/context/languageContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import Image from "next/image";
-import { formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, withUnit } from "./format";
+import { renderCellSubtitle } from "./CellSubtitle";
+import StatBlocks from "./StatBlock";
+import { getCellDisplay, formatMinutes, formatPercent, formatStat, formatStreams, ratingColorClass, withUnit } from "./format";
 
 interface GridCellProps {
   element: DataInfo;
@@ -66,27 +68,9 @@ const GRID_CELL_STYLES = {
 export default function GridCell({ element, index, sort }: GridCellProps) {
   const { t } = useLanguage();
   const dict = t.rankingcell;
-  const isArtist = element.type === 'artist';
-  const displayName = element.title || element.name || dict.unknown;
-  const displayImage = element.cover || element.image_url;
+  const { isArtist, displayName, displayImage } = getCellDisplay(element, dict.unknown);
 
-  const displaySub = () => {
-    if (element.type === 'artist') return null;
-    if (element.type === 'track') {
-      return (
-        <>
-          {element.artist}
-          {element.album && (
-            <>
-              <span className="hidden md:inline"> ● </span>
-              <span className="hidden md:inline italic opacity-80">{element.album}</span>
-            </>
-          )}
-        </>
-      );
-    }
-    return element.artist;
-  };
+  const subtitle = renderCellSubtitle(element, "grid");
 
   return (
     <div className={GRID_CELL_STYLES.WRAPPER(isArtist)}>
@@ -114,34 +98,15 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
       <div className={GRID_CELL_STYLES.TEXT_CONTENT}>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <h3 className={GRID_CELL_STYLES.TITLE(isArtist)}>{displayName}</h3>
-          {displaySub() && (
-            <p className={GRID_CELL_STYLES.SUBTITLE}>{displaySub()}</p>
+          {subtitle && (
+            <p className={GRID_CELL_STYLES.SUBTITLE}>{subtitle}</p>
           )}
         </div>
       </div>
 
       {/* FOOTER DESKTOP */}
       <div className={GRID_CELL_STYLES.FOOTER_PC}>
-        <div className={GRID_CELL_STYLES.STAT_BLOCK}>
-          <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'play_count')}>
-            {formatStreams(element.play_count, dict.locale)}
-          </span>
-          {isValidNumber(element.play_count) && <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitStreams}</span>}
-        </div>
-
-        <div className={GRID_CELL_STYLES.STAT_BLOCK}>
-          <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'total_minutes')}>
-              {formatMinutes(element.total_minutes, dict.locale)}
-            </span>
-            {isValidNumber(element.total_minutes) && <span className={GRID_CELL_STYLES.STAT_LABEL}>{dict.unitMinutes}</span>}
-        </div>
-
-        <div className={GRID_CELL_STYLES.STAT_BLOCK}>
-          <span className={GRID_CELL_STYLES.STAT_VALUE(sort === 'engagement')}>
-            {formatStat(element.engagement, dict.locale)}
-          </span>
-          {isValidNumber(element.engagement) && <span className={GRID_CELL_STYLES.STAT_LABEL}>%</span>}
-        </div>
+        <StatBlocks element={element} sort={sort} locale={dict.locale} unitStreams={dict.unitStreams} unitMinutes={dict.unitMinutes} styles={GRID_CELL_STYLES} />
       </div>
 
       {/* FOOTER MOBILE */}
