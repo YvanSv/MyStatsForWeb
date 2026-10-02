@@ -129,6 +129,11 @@ class ResumeDataResponse(BaseModel):
     distinct_tracks: int
     distinct_albums: int
     distinct_artists: int
+    previous_minutes: Optional[int] = None
+    previous_streams: Optional[int] = None
+    longest_streak_days: Optional[int] = None
+    current_streak_days: Optional[int] = None
+    new_artists: Optional[int] = None
 
 # --- 5. SYSTÈME & MAINTENANCE ---
 

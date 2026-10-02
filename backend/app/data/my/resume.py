@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException
 from sqlalchemy import Integer, cast, func, desc
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from app.auth.utils.auth_utils import get_current_user_id
 from app.database import get_session
 from app.models import Album, Artist, Track, TrackHistory
@@ -56,7 +56,8 @@ async def get_resume_data(
         "streams": total_stats.total_streams or 0,
         "distinct_tracks": distincts.nb_tracks,
         "distinct_albums": distincts.nb_albums,
-        "distinct_artists": distincts.nb_artists
+        "distinct_artists": distincts.nb_artists,
+        **get_extra_stats(db, user_id, range, offset, start_date, end_date),
     }
 
 def get_range_dates(range,offset,now=None):
@@ -156,3 +157,74 @@ def get_global_stats(db,user_id,range,start_date,end_date):
     
     if range != "lifetime": stats_query = stats_query.filter(TrackHistory.played_at >= start_date, TrackHistory.played_at < end_date)
     return stats_query.first()
+
+
+def compute_streaks(dates, today):
+    """Séries de jours consécutifs à partir de dates distinctes (objets date).
+
+    Retourne (plus longue série, série en cours). La série en cours se termine au dernier jour
+    d'écoute et ne compte que si ce jour est aujourd'hui ou hier (sinon 0).
+    """
+    days = sorted(set(dates))
+    if not days:
+        return 0, 0
+    longest = run = 1
+    for prev, cur in zip(days, days[1:]):
+        run = run + 1 if (cur - prev).days == 1 else 1
+        longest = max(longest, run)
+    current = run if (today - days[-1]).days in (0, 1) else 0
+    return longest, current
+
+
+def _to_date(value):
+    # func.date renvoie une chaîne sous SQLite et un objet date sous PostgreSQL
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return date.fromisoformat(str(value)[:10])
+
+
+def get_extra_stats(db, user_id, range, offset, start_date, end_date, today=None):
+    """Champs additionnels du résumé : période précédente, séries, nouveaux artistes."""
+    today = today or datetime.utcnow().date()
+    lifetime = range == "lifetime" or not (start_date and end_date)
+    base = TrackHistory.user_id == user_id
+
+    # Période précédente (None pour lifetime ou sans aucune donnée)
+    previous_minutes = previous_streams = None
+    if not lifetime:
+        prev_start, prev_end = get_range_dates(range, offset + 1)
+        if prev_start and prev_end:
+            prev = get_global_stats(db, user_id, range, prev_start, prev_end)
+            if prev and prev.total_streams:
+                previous_minutes = int((prev.total_ms or 0) / 60000)
+                previous_streams = prev.total_streams
+
+    # Séries : calculées sur des dates UTC (played_at est stocké en UTC), donc une écoute
+    # tardive peut compter pour la veille ou le lendemain selon le fuseau de l'utilisateur.
+    day = func.date(TrackHistory.played_at)
+    q = db.query(day).filter(base)
+    if not lifetime:
+        q = q.filter(TrackHistory.played_at >= start_date, TrackHistory.played_at < end_date)
+    longest, current = compute_streaks([_to_date(r[0]) for r in q.distinct().all()], today)
+
+    # Artistes dont la première écoute (toutes périodes confondues) tombe dans la période
+    first = (
+        db.query(func.min(TrackHistory.played_at).label("first_at"))
+        .filter(base, TrackHistory.artist_id.isnot(None))
+        .group_by(TrackHistory.artist_id)
+        .subquery()
+    )
+    nq = db.query(func.count()).select_from(first)
+    if not lifetime:
+        nq = nq.filter(first.c.first_at >= start_date, first.c.first_at < end_date)
+    new_artists = nq.scalar() or 0
+
+    return {
+        "previous_minutes": previous_minutes,
+        "previous_streams": previous_streams,
+        "longest_streak_days": longest,
+        "current_streak_days": current,
+        "new_artists": new_artists,
+    }
