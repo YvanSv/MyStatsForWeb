@@ -41,6 +41,9 @@ describe("registre des widgets", () => {
 
   it("select() des nouveaux widgets", () => {
     expect(WIDGET_REGISTRY.top_five.select(sample)).toEqual({ tracks: sample.topTracks, albums: [], artists: sample.topArtists });
+    const tops = { tracks: { streams: [], minutes: sample.topTracks, rating: [] }, albums: { streams: [], minutes: [], rating: [] }, artists: { streams: [], minutes: [], rating: [] } };
+    expect(WIDGET_REGISTRY.top_five.select({ ...sample, tops_by_sort: tops })).toEqual({ tracks: sample.topTracks, albums: [], artists: sample.topArtists, bySort: tops });
+    expect(WIDGET_REGISTRY.top_five.defaultSettings.sort).toBeUndefined();
     expect(WIDGET_REGISTRY.top_five.select(bare)).toEqual({ tracks: [], albums: [], artists: [] });
     expect(WIDGET_REGISTRY.top_one.select(sample)).toEqual({ tracks: sample.topTracks[0], albums: undefined, artists: sample.topArtists[0] });
     expect(WIDGET_REGISTRY.period.select(sample)).toBe("2026");

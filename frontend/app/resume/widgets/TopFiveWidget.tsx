@@ -1,4 +1,4 @@
-import type { ItemBrief, TopEntity, TopFiveWidgetSettings } from "../interfaces";
+import type { ItemBrief, SortOption, TopEntity, TopFiveWidgetSettings } from "../interfaces";
 import Widget from "./Widget";
 import { useLanguage } from "../../context/languageContext";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
@@ -6,9 +6,24 @@ import { SegmentedPicker } from "./SegmentedPicker";
 import { COLORS } from "../../constants/ui";
 import { WIDGET_COLORS, finiteOrNull } from "./common";
 import { formatNumber } from "./stats/utils";
+import { formatMinutes, ratingColorClass } from "../../components/rankings/format";
 
 /** Les trois classements : le widget affiche celui du réglage `entity`. */
-export type TopFiveData = Record<TopEntity, ItemBrief[]>;
+export type TopFiveData = Record<TopEntity, ItemBrief[]> & { bySort?: Partial<Record<TopEntity, Partial<Record<SortOption, ItemBrief[]>>>> };
+const SORTS: SortOption[] = ["streams", "minutes", "rating"];
+export const isSortOption = (v: unknown): v is SortOption => SORTS.includes(v as SortOption);
+
+/**
+ * Liste à afficher pour un élément et un tri. Repli sans `tops_by_sort` (ancien backend) :
+ * « streams » prend les topX existants (déjà triés par streams) ; « minutes » et « rating »
+ * donnent une liste vide (état vide) : retrier les 5 premiers par streams afficherait un
+ * faux classement, puisque le vrai n°1 en minutes ou en note peut ne pas y figurer.
+ */
+export function pickTopFive(data: TopFiveData, entity: TopEntity, sort: SortOption): ItemBrief[] {
+  const sorted = data.bySort?.[entity]?.[sort];
+  if (Array.isArray(sorted) && sorted.length > 0) return sorted;
+  return sort === "streams" ? data[entity] : [];
+}
 const ENTITIES: TopEntity[] = ["tracks", "albums", "artists"];
 export const isTopEntity = (v: unknown): v is TopEntity => ENTITIES.includes(v as TopEntity);
 
@@ -17,6 +32,8 @@ interface TopFiveProps {
   h: number;
   type: TopEntity;
   data: ItemBrief[];
+  /** Critère affiché sous chaque élément (défaut : streams). */
+  sort?: SortOption;
   settings?: TopFiveWidgetSettings;
 }
 
@@ -31,12 +48,17 @@ export function Thumb({ item, round, className }: { item: ItemBrief; round: bool
   );
 }
 
-export function TopFiveWidget({ w, h, type, data, settings }: TopFiveProps) {
+export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: TopFiveProps) {
   const { t } = useLanguage();
   const color = settings?.color || COLORS.SPOTIFY_GREEN;
   const typeLabel = t.common[type];
   const round = type === "artists";
-  const streamsText = (n?: number) => (finiteOrNull(n) === null ? null : `${formatNumber(n, false, t.common.locale)} ${t.common.streams}`);
+  // Critère affiché sous chaque élément, selon le tri
+  const criterion = (item: ItemBrief) => {
+    if (sort === "minutes") return finiteOrNull(item.minutes) === null ? null : { text: `${formatMinutes(item.minutes, t.common.locale)} ${t.resume.unitMinutes}`, cls: "" };
+    if (sort === "rating") return finiteOrNull(item.rating) === null ? null : { text: item.rating.toFixed(2), cls: ratingColorClass(item.rating) };
+    return finiteOrNull(item.streams) === null ? null : { text: `${formatNumber(item.streams, false, t.common.locale)} ${t.common.streams}`, cls: "" };
+  };
   const items = Array.isArray(data) ? data.slice(0, 5) : [];
   // Sans élément, rien à afficher (les layouts lisent items[0])
   if (items.length === 0) return <div className="w-full h-full text1"/>;
@@ -110,7 +132,7 @@ export function TopFiveWidget({ w, h, type, data, settings }: TopFiveProps) {
           </div>
           <div className="space-y-1 w-full px-4 overflow-hidden min-h-12">
             <h3 className="text-xl font-black uppercase text-white tracking-tight leading-none truncate">{first.name}</h3>
-            <p className="text-[10px] text-gray-400 font-bold uppercase truncate tracking-widest leading-none">{streamsText(first.streams)}</p>
+            <p className={`text-[10px] font-bold uppercase truncate tracking-widest leading-none ${criterion(first)?.cls || "text-gray-400"}`}>{criterion(first)?.text}</p>
           </div>
         </div>
 
@@ -122,7 +144,7 @@ export function TopFiveWidget({ w, h, type, data, settings }: TopFiveProps) {
               <Thumb item={item} round={round} className="w-10 h-10"/>
               <div className="w-full overflow-hidden mt-0.5 px-0.5">
                 <p className="text-[8px] font-bold text-white truncate uppercase tracking-tighter leading-none mb-0.5">{item.name}</p>
-                <p className="text-[7px] text-gray-500 font-medium truncate uppercase tracking-tighter leading-none opacity-80">{streamsText(item.streams)}</p>
+                <p className={`text-[7px] font-medium truncate uppercase tracking-tighter leading-none opacity-80 ${criterion(item)?.cls || "text-gray-500"}`}>{criterion(item)?.text}</p>
               </div>
             </div>
           ))}
@@ -144,6 +166,9 @@ export function TopFiveSettings({ settings, onChange }: { settings?: TopFiveWidg
       <SegmentedPicker label={t.resume.wEntity} value={isTopEntity(settings?.entity) ? settings.entity : "tracks"}
         options={[{ id: "tracks", label: t.resume.labelTracks }, { id: "albums", label: t.resume.labelAlbums }, { id: "artists", label: t.resume.labelArtists }]}
         onChange={(entity) => onChange({ ...settings, entity })}/>
+      <SegmentedPicker label={t.resume.wSort} value={isSortOption(settings?.sort) ? settings.sort : "streams"}
+        options={[{ id: "streams", label: t.ranking.sortOptions.play_count }, { id: "minutes", label: t.resume.wListeningTime }, { id: "rating", label: t.ranking.sortOptions.rating }]}
+        onChange={(sort) => onChange({ ...settings, sort })}/>
       <ColorSwatchPicker colors={WIDGET_COLORS} value={settings?.color} onChange={(c) => onChange({ ...settings, color: c })} label={t.resume.wAccentColor} />
     </div>
   );

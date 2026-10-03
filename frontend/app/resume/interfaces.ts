@@ -27,6 +27,8 @@ export interface DataFormat {
   topArtists: ItemBrief[];
   topTracks: ItemBrief[];
   topAlbums: ItemBrief[];
+  /** Tops (5 max) par critère de tri et par élément ; absent sur un ancien backend. */
+  tops_by_sort?: Record<"tracks" | "albums" | "artists", Record<SortOption, ItemBrief[]>>;
   minutes: number;
   streams: number;
   distinct_tracks: number;
@@ -64,6 +66,8 @@ export type TopEntity = "tracks" | "albums" | "artists";
 /** Réglages du classement « top 5 » (élément affiché : titres par défaut). */
 export interface TopFiveWidgetSettings {
   entity?: TopEntity;
+  /** Critère de classement (absent = « streams »). */
+  sort?: SortOption;
   color?: string;
 }
 export interface TopOneWidgetSettings {

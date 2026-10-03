@@ -21,7 +21,7 @@ import { StreamsSettings, StreamsWidget } from "./widgets/stats/StreamsWidget";
 import { DistinctTracksSettings, DistinctTracksWidget } from "./widgets/stats/DistinctTracksWidget";
 import { DistinctAlbumsSettings, DistinctAlbumsWidget } from "./widgets/stats/DistinctAlbumsWidget";
 import { DistinctArtistsSettings, DistinctArtistsWidget } from "./widgets/stats/DistinctArtistsWidget";
-import { TopFiveSettings, TopFiveWidget, isTopEntity, type TopFiveData } from "./widgets/TopFiveWidget";
+import { TopFiveSettings, TopFiveWidget, isSortOption, isTopEntity, pickTopFive, type TopFiveData } from "./widgets/TopFiveWidget";
 import { TopOneSettings, TopOneWidget, type TopOneData } from "./widgets/extra/TopOneWidget";
 import { PeriodSettings, PeriodWidget } from "./widgets/extra/PeriodWidget";
 import { FreeTextSettings, FreeTextWidget } from "./widgets/extra/FreeTextWidget";
@@ -162,10 +162,11 @@ export const WIDGET_REGISTRY: { [K in WidgetType]: AnyWidgetDefinition<K> } = {
     defaultSettings: {}, defaultSize: { w: 2, h: 2 },
     Component: ({ w, h, data, settings }) => {
       const entity = isTopEntity(settings?.entity) ? settings.entity : "tracks";
-      return <TopFiveWidget w={w} h={h} type={entity} data={data[entity]} settings={settings} />;
+      const sort = isSortOption(settings?.sort) ? settings.sort : "streams";
+      return <TopFiveWidget w={w} h={h} type={entity} data={pickTopFive(data, entity, sort)} sort={sort} settings={settings} />;
     },
     Settings: TopFiveSettings,
-    select: (d) => ({ tracks: d.topTracks ?? [], albums: d.topAlbums ?? [], artists: d.topArtists ?? [] }),
+    select: (d) => ({ tracks: d.topTracks ?? [], albums: d.topAlbums ?? [], artists: d.topArtists ?? [], bySort: d.tops_by_sort }),
   }),
   top_one: defineWidget<"top_one", TopOneData>({
     type: "top_one", category: "top", labelKey: "widgetTopOne", subtitle: "subtitleTopOne", icon: "🥇",

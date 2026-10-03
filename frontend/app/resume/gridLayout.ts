@@ -21,6 +21,31 @@ export const fitsInGrid = ({ index, w, h }: Footprint): boolean => {
   return (index % GRID_COLS) + w <= GRID_COLS && Math.floor(index / GRID_COLS) + h <= GRID_ROWS;
 };
 
+export interface GridCell { col: number; row: number }
+
+/** Position du pointeur en coordonnées de grille fractionnaires (ex. 1.5 = milieu de la 2e colonne) ; partagé par le redimensionnement et le déplacement. */
+export const pointerToGrid = (rect: Pick<DOMRect, "left" | "top" | "width" | "height">, clientX: number, clientY: number): GridCell => ({
+  col: (clientX - rect.left) / (rect.width / GRID_COLS),
+  row: (clientY - rect.top) / (rect.height / GRID_ROWS),
+});
+
+/** Case (entière) sous le pointeur, bornée à la grille. */
+export const pointerToCell = (rect: Pick<DOMRect, "left" | "top" | "width" | "height">, clientX: number, clientY: number): GridCell => {
+  const { col, row } = pointerToGrid(rect, clientX, clientY);
+  return { col: Math.min(GRID_COLS - 1, Math.max(0, Math.floor(col))), row: Math.min(GRID_ROWS - 1, Math.max(0, Math.floor(row))) };
+};
+
+/**
+ * Déplace un widget : son coin haut-gauche va sous le pointeur moins `grabOffset` (case saisie dans le widget),
+ * borné pour rester entièrement dans la grille. Taille inchangée ; renvoie le même objet si l'index ne change pas.
+ */
+export const moveWidgetTo = <T extends Footprint>(widget: T, pointerCell: GridCell, grabOffset: GridCell = { col: 0, row: 0 }): T => {
+  const col = Math.min(GRID_COLS - widget.w, Math.max(0, pointerCell.col - grabOffset.col));
+  const row = Math.min(GRID_ROWS - widget.h, Math.max(0, pointerCell.row - grabOffset.row));
+  const index = row * GRID_COLS + col;
+  return index === widget.index ? widget : { ...widget, index };
+};
+
 /**
  * Ordre d'empilement : l'ordre du tableau `widgets` (le dernier est au-dessus). Les quatre fonctions
  * sont pures ; sans changement possible (id inconnu, déjà à l'extrémité), elles renvoient le même tableau.

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   LAYOUT_STORAGE_KEY, WIDGET_TYPES, exportFileName, fitsInGrid, isWidgetType, loadLayout,
-  moveBackward, moveForward, moveToBack, moveToFront, nextWidgetId, parseLayout, saveLayout, serializeLayout, slugifyName,
+  GRID_COLS, moveWidgetTo, pointerToCell, moveBackward, moveForward, moveToBack, moveToFront, nextWidgetId, parseLayout, saveLayout, serializeLayout, slugifyName,
 } from "./gridLayout";
 import type { PlacedWidget } from "./interfaces";
 
@@ -186,5 +186,34 @@ describe("slugifyName / exportFileName", () => {
     expect(exportFileName("year", undefined, 123)).toBe("mystats-year-profil-123.png");
     expect(exportFileName("month", "Élodie M.", 5)).toBe("mystats-month-elodie-m-5.png");
     expect(exportFileName("year", undefined, 1)).not.toContain("undefined");
+  });
+});
+
+describe("moveWidgetTo", () => {
+  const w = (index: number, ww = 1, h = 1) => ({ id: 1, type: "username" as const, index, w: ww, h, settings: {} }) as never as PlacedWidget;
+  it("place le coin sous le pointeur moins le décalage", () => {
+    expect(moveWidgetTo(w(0, 2, 2), { col: 1, row: 3 }, { col: 1, row: 1 }).index).toBe(2 * GRID_COLS + 0);
+  });
+  it("sans décalage, le widget va sous le pointeur", () => {
+    expect(moveWidgetTo(w(0), { col: 2, row: 4 }).index).toBe(14);
+  });
+  it("borne aux limites (taille 1x1)", () => {
+    expect(moveWidgetTo(w(7), { col: -3, row: -2 }).index).toBe(0);
+    expect(moveWidgetTo(w(0), { col: 9, row: 9 }).index).toBe(14);
+  });
+  it("borne selon la taille du widget pour rester entièrement dans la grille", () => {
+    const m = moveWidgetTo(w(0, 2, 3), { col: 2, row: 4 });
+    expect(m.index).toBe(2 * GRID_COLS + 1);
+    expect(fitsInGrid(m)).toBe(true);
+    expect(m.w).toBe(2); expect(m.h).toBe(3);
+  });
+  it("renvoie le même objet si rien ne change", () => {
+    const x = w(4);
+    expect(moveWidgetTo(x, { col: 1, row: 1 })).toBe(x);
+  });
+  it("pointerToCell borne et floor", () => {
+    const r = { left: 10, top: 20, width: 300, height: 500 };
+    expect(pointerToCell(r, 10 + 150, 20 + 250)).toEqual({ col: 1, row: 2 });
+    expect(pointerToCell(r, -50, 9999)).toEqual({ col: 0, row: 4 });
   });
 });

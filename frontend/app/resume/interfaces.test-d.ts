@@ -2,7 +2,7 @@ import type { PermKey } from "../constants/validation";
 import { describe, expectTypeOf, it } from "vitest";
 import type {
   AnyWidgetSettings, BackgroundWidgetSettings, BioWidgetSettings, DataFormat, ItemBrief, ProfilePictureWidgetSettings,
-  ResumeData, StatWidgetSettings, TextAlign, UsernameWidgetSettings, VerticalAlign, WidgetSettingsMap, WidgetType, PlacedWidget, RangeOption, SelectedWidget, SortOption, UserProfile,
+  ResumeData, StatWidgetSettings, TopFiveWidgetSettings, TextAlign, UsernameWidgetSettings, VerticalAlign, WidgetSettingsMap, WidgetType, PlacedWidget, RangeOption, SelectedWidget, SortOption, UserProfile,
 } from "./interfaces";
 
 describe("interfaces – types", () => {
@@ -48,6 +48,8 @@ describe("réglages par widget", () => {
   });
 
   it("chaque type de widget a ses réglages", () => {
+    expectTypeOf<TopFiveWidgetSettings["sort"]>().toEqualTypeOf<SortOption | undefined>();
+    expectTypeOf<DataFormat["tops_by_sort"]>().toEqualTypeOf<Record<"tracks" | "albums" | "artists", Record<SortOption, ItemBrief[]>> | undefined>();
     expectTypeOf<WidgetSettingsMap["username"]>().toEqualTypeOf<UsernameWidgetSettings>();
     expectTypeOf<WidgetSettingsMap["bio"]>().toEqualTypeOf<BioWidgetSettings>();
     expectTypeOf<WidgetSettingsMap["background"]>().toEqualTypeOf<BackgroundWidgetSettings>();

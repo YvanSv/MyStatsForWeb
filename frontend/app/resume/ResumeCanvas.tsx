@@ -4,7 +4,7 @@ import { Trash2 } from 'lucide-react';
 import { useLanguage } from '../context/languageContext';
 import React, { useEffect, useRef, useState } from 'react';
 import { PlacedWidget, ResumeData, SelectedWidget } from './interfaces';
-import { GRID_CELLS, GRID_COLS, GRID_ROWS, fitsInGrid, nextWidgetId } from './gridLayout';
+import { GRID_CELLS, GRID_COLS, GRID_ROWS, fitsInGrid, nextWidgetId, moveWidgetTo, pointerToCell, pointerToGrid, type GridCell } from './gridLayout';
 import { getWidgetDefinition, isWidgetType } from './widgetRegistry';
 
 interface ResumeCanvasProps {
@@ -25,6 +25,11 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
   const selectedId = controlledId !== undefined ? controlledId : localId;
   const gridRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLDivElement>(null);
+  const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  // Glisser en cours (ref : lu par les gestionnaires sans re-rendu). `active` passe à vrai après le seuil de 4 px.
+  const dragRef = useRef<{ id: number; pointerId: number; startX: number; startY: number; grab: GridCell; origIndex: number; active: boolean } | null>(null);
+  const suppressClickRef = useRef(false);
 
   const deleteWidget = (idToDelete: number) => {
     // Si le widget supprimé est celui sélectionné
@@ -45,10 +50,13 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
 
   // Toujours la dernière version de deselect (donc du onSelectWidget courant) sans réabonner l'écouteur
   const deselectRef = useRef<() => void>(() => {});
+  const cancelDragRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") deselectRef.current();
+      if (e.key !== "Escape") return;
+      if (dragRef.current) cancelDragRef.current(); // Échap pendant un glisser : annule le déplacement, sans désélectionner
+      else deselectRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -63,13 +71,8 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
       const widget = widgets.find(w => w.id === id);
       if (!widget) return;
 
-      const gridRect = gridRef.current.getBoundingClientRect();
-      const cellWidth = gridRect.width / GRID_COLS;
-      const cellHeight = gridRect.height / GRID_ROWS;
-
       // Position de la souris convertie en index de grille (ex: 1.5, 2.2)
-      const mouseCol = (e.clientX - gridRect.left) / cellWidth;
-      const mouseRow = (e.clientY - gridRect.top) / cellHeight;
+      const { col: mouseCol, row: mouseRow } = pointerToGrid(gridRef.current.getBoundingClientRect(), e.clientX, e.clientY);
 
       // Coordonnées actuelles du widget
       const oldColStart = widget.index % GRID_COLS;
@@ -167,6 +170,97 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     onDrop(e, row * GRID_COLS + col);
   };
 
+  const gridMetrics = () => {
+    const layer = layerRef.current?.getBoundingClientRect();
+    return layer && layer.width > 0 && layer.height > 0 ? layer : gridRef.current?.getBoundingClientRect() ?? null;
+  };
+
+  const widgetLabel = (w: PlacedWidget) => (isWidgetType(w.type) ? t.resume[getWidgetDefinition(w.type).labelKey] : String(w.type));
+  const announceMove = (w: PlacedWidget, index: number) => setAnnouncement(`${widgetLabel(w)} ${t.resume.widgetMoved}, ${t.resume.layerCell} ${index}`);
+
+  // DÉPLACEMENT (Pointer Events : souris et tactile). Un clic sans mouvement reste une simple sélection.
+  const onWidgetPointerDown = (e: React.PointerEvent<HTMLDivElement>, w: PlacedWidget) => {
+    if (e.button !== 0 || !e.isPrimary) return;
+    const rect = gridMetrics();
+    if (!rect) return;
+    suppressClickRef.current = false;
+    const cell = pointerToCell(rect, e.clientX, e.clientY);
+    const col0 = w.index % GRID_COLS, row0 = Math.floor(w.index / GRID_COLS);
+    const grab = { col: Math.min(w.w - 1, Math.max(0, cell.col - col0)), row: Math.min(w.h - 1, Math.max(0, cell.row - row0)) };
+    dragRef.current = { id: w.id, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, grab, origIndex: w.index, active: false };
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* capture indisponible : le glisser fonctionne tant que le pointeur reste sur le widget */ }
+  };
+
+  const onWidgetPointerMove = (e: React.PointerEvent<HTMLDivElement>, w: PlacedWidget) => {
+    const d = dragRef.current;
+    if (!d || d.id !== w.id || d.pointerId !== e.pointerId) return;
+    if (!d.active) {
+      if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < 4) return;
+      d.active = true;
+      setIsDragging(true);
+      setDraggedId(w.id);
+      handleSelect(w);
+    }
+    const rect = gridMetrics();
+    if (!rect) return;
+    const cell = pointerToCell(rect, e.clientX, e.clientY);
+    // Mise à jour fonctionnelle : seule la position change, l'ordre du tableau (empilement) reste intact
+    setWidgets(prev => prev.map(x => {
+      if (x.id !== d.id) return x;
+      const moved = moveWidgetTo(x, cell, d.grab);
+      return moved === x ? x : moved;
+    }));
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>, w: PlacedWidget, cancelled: boolean) => {
+    const d = dragRef.current;
+    if (!d || d.id !== w.id || d.pointerId !== e.pointerId) return;
+    dragRef.current = null;
+    try { e.currentTarget.releasePointerCapture?.(e.pointerId); } catch { /* déjà relâchée */ }
+    if (!d.active) return;
+    setIsDragging(false);
+    setDraggedId(null);
+    suppressClickRef.current = true; // le clic qui suit le relâchement ne doit pas re-sélectionner
+    if (cancelled) restoreOrigin(d.id, d.origIndex);
+    else {
+      const final = widgetsRef.current.find(x => x.id === d.id);
+      if (final) announceMove(final, final.index);
+    }
+  };
+
+  const restoreOrigin = (id: number, index: number) => {
+    setWidgets(prev => prev.map(x => (x.id === id && x.index !== index ? { ...x, index } : x)));
+    setAnnouncement(t.resume.moveCancelled);
+  };
+
+  const widgetsRef = useRef(widgets);
+  useEffect(() => { widgetsRef.current = widgets; });
+  useEffect(() => {
+    cancelDragRef.current = () => {
+      const d = dragRef.current;
+      dragRef.current = null;
+      if (!d || !d.active) return;
+      setIsDragging(false);
+      setDraggedId(null);
+      suppressClickRef.current = true;
+      restoreOrigin(d.id, d.origIndex);
+    };
+  });
+
+  // CLAVIER : flèches d'une case, seulement si le focus est sur le widget lui-même (pas dans un champ de réglages)
+  const onWidgetKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, w: PlacedWidget) => {
+    if (e.target !== e.currentTarget || e.ctrlKey || e.metaKey || e.altKey) return;
+    const delta = ({ ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] } as Record<string, [number, number]>)[e.key];
+    if (!delta) return;
+    e.preventDefault();
+    const origin = { col: (w.index % GRID_COLS) + delta[0], row: Math.floor(w.index / GRID_COLS) + delta[1] };
+    const moved = moveWidgetTo(w, origin);
+    if (moved === w) return;
+    setWidgets(prev => prev.map(x => (x.id === w.id ? moveWidgetTo(x, origin) : x)));
+    handleSelect(w);
+    announceMove(w, moved.index);
+  };
+
   const handleSelect = (w: PlacedWidget) => {
     setSelectedId(w.id);
     // TS ne corrèle pas `type` et `settings` à travers l'union : on ne garde que id, type et réglages
@@ -220,11 +314,18 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
                 key={w.id}
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (suppressClickRef.current) { suppressClickRef.current = false; return; }
                   handleSelect(w);
                 }}
+                tabIndex={0} role="group" aria-label={`${widgetLabel(w)}, ${t.resume.layerCell} ${w.index}`}
+                onKeyDown={(e) => onWidgetKeyDown(e, w)}
+                onPointerDown={(e) => onWidgetPointerDown(e, w)}
+                onPointerMove={(e) => onWidgetPointerMove(e, w)}
+                onPointerUp={(e) => endDrag(e, w, false)}
+                onPointerCancel={(e) => endDrag(e, w, true)}
                 data-selected={isSelected ? "true" : undefined}
                 onDragOver={onDragOver} onDrop={onDropOnWidget}
-                className="pointer-events-auto group relative cursor-pointer"
+                className={`pointer-events-auto group relative touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-vert ${draggedId === w.id ? "cursor-grabbing" : "cursor-grab"}`}
                 style={{
                   ...gridPlacement(w),
                   // Ordre d'empilement = ordre du tableau ; la sélection ou le survol ne le modifient jamais
@@ -263,6 +364,8 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
           </div>
         )}
       </div>
+
+      <div data-export-ignore="true" aria-live="polite" className="sr-only">{announcement}</div>
 
       {/* BRANDING */}
       <div className={`px-2 py-1 flex items-center justify-center`}>

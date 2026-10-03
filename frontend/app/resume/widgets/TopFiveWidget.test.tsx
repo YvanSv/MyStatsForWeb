@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { TopFiveSettings, TopFiveWidget } from "./TopFiveWidget";
+import { TopFiveSettings, TopFiveWidget, pickTopFive } from "./TopFiveWidget";
 
 vi.mock("../../context/languageContext", async () => {
   const { languages } = await import("../../constants/locales/lang");
@@ -84,7 +84,7 @@ describe("TopFiveWidget", () => {
   it("réglages : choisir une couleur", async () => {
     const onChange = vi.fn();
     render(<TopFiveSettings settings={{}} onChange={onChange} />);
-    await userEvent.click(screen.getAllByRole("button")[4]);
+    await userEvent.click(screen.getAllByRole("button")[7]);
     expect(onChange).toHaveBeenCalledWith({ color: "#FFFFFF" });
   });
 
@@ -93,5 +93,53 @@ describe("TopFiveWidget", () => {
     render(<TopFiveSettings settings={{ color: "#F87171" }} onChange={onChange} />);
     await userEvent.click(screen.getByRole("button", { name: "Albums" }));
     expect(onChange).toHaveBeenCalledWith({ color: "#F87171", entity: "albums" });
+  });
+
+  it("réglages : choisir le tri (défaut streams, couleur conservée)", async () => {
+    const onChange = vi.fn();
+    render(<TopFiveSettings settings={{ color: "#F87171" }} onChange={onChange} />);
+    expect(screen.getByRole("button", { name: "Streams" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Temps d'écoute" }));
+    expect(onChange).toHaveBeenCalledWith({ color: "#F87171", sort: "minutes" });
+    await userEvent.click(screen.getByRole("button", { name: "Rating" }));
+    expect(onChange).toHaveBeenLastCalledWith({ color: "#F87171", sort: "rating" });
+  });
+
+  it("3x3 : le critère affiché suit le tri", () => {
+    const { container, rerender } = render(<TopFiveWidget w={3} h={3} type="tracks" data={five} />);
+    expect(container.textContent).toContain(fmt(1000));
+    rerender(<TopFiveWidget w={3} h={3} type="tracks" data={five} sort="minutes" />);
+    expect(container.textContent).toContain("1 min");
+    expect(container.textContent).not.toContain("streams");
+    rerender(<TopFiveWidget w={3} h={3} type="tracks" data={five} sort="rating" />);
+    expect(container.textContent).toContain("1.00");
+    expect(container.textContent).toContain("5.00");
+  });
+});
+
+describe("pickTopFive", () => {
+  const mk = (p: string) => [item(1, { name: `${p}1` })];
+  const base = { tracks: mk("T"), albums: mk("A"), artists: mk("R") };
+  const bySort = { tracks: { streams: mk("TS"), minutes: mk("TM"), rating: mk("TR") }, albums: { minutes: mk("AM") } };
+  const names = (l: any[]) => l.map((i) => i.name);
+
+  it("chaque tri choisit la bonne liste", () => {
+    const d = { ...base, bySort };
+    expect(names(pickTopFive(d, "tracks", "streams"))).toEqual(["TS1"]);
+    expect(names(pickTopFive(d, "tracks", "minutes"))).toEqual(["TM1"]);
+    expect(names(pickTopFive(d, "tracks", "rating"))).toEqual(["TR1"]);
+    expect(names(pickTopFive(d, "albums", "minutes"))).toEqual(["AM1"]);
+  });
+
+  it("repli sans tops_by_sort : streams = topX, minutes/rating = vide", () => {
+    expect(names(pickTopFive(base, "artists", "streams"))).toEqual(["R1"]);
+    expect(pickTopFive(base, "artists", "minutes")).toEqual([]);
+    expect(pickTopFive(base, "artists", "rating")).toEqual([]);
+  });
+
+  it("repli quand la liste du tri est vide", () => {
+    const d = { ...base, bySort: { tracks: { streams: [], minutes: [] } } };
+    expect(names(pickTopFive(d, "tracks", "streams"))).toEqual(["T1"]);
+    expect(pickTopFive(d, "tracks", "minutes")).toEqual([]);
   });
 });

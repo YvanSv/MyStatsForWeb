@@ -719,7 +719,7 @@ describe("ResumeCanvas – éléments exclus de l'export image", () => {
     const { container } = renderCanvas([pw({ type: "bio" })]);
     expect(screen.getByTestId("w-bio").closest('[data-export-ignore="true"]')).toBeNull();
     expect(screen.getByText("Propulsé par MyStats").closest('[data-export-ignore="true"]')).toBeNull();
-    expect(ignored(container).length).toBe(15);
+    expect(ignored(container).length).toBe(16);
   });
 });
 
@@ -734,5 +734,138 @@ describe("ResumeCanvas – anglais", () => {
     } finally {
       lang.current = "fr";
     }
+  });
+});
+
+describe("ResumeCanvas - déplacement", () => {
+  // Grille simulée 300 x 500 : cases de 100 x 100, origine (0, 0)
+  const mockGrid = (c: HTMLElement) => {
+    gridEl(c).getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 500, right: 300, bottom: 500, x: 0, y: 0, toJSON: () => ({}) });
+  };
+  const setup = (widgets: PlacedWidget[], selected?: number | null) => {
+    const utils = render(<Stateful initial={widgets} selected={selected} />);
+    mockGrid(utils.container);
+    const box = widgetBox(utils.container);
+    box.setPointerCapture = vi.fn();
+    box.releasePointerCapture = vi.fn();
+    return { ...utils, box };
+  };
+  const ptr = (type: "pointerDown" | "pointerMove" | "pointerUp" | "pointerCancel", el: Element, x: number, y: number) =>
+    fireEvent[type](el, { clientX: x, clientY: y, pointerId: 1, button: 0, isPrimary: true });
+
+  beforeEach(() => { h.onSelect.mockClear(); latest = []; });
+
+  it("déplace le widget en suivant le décalage de saisie et la grille", () => {
+    const { box } = setup([pw({ w: 2, h: 1 })]);
+    ptr("pointerDown", box, 150, 50); // case 1 : décalage de 1 colonne dans le widget
+    ptr("pointerMove", box, 150, 250); // case (1,2) -> coin en (0,2)
+    expect(latest[0].index).toBe(6);
+    ptr("pointerMove", box, 250, 450); // case (2,4) -> coin (1,4)
+    expect(latest[0].index).toBe(13);
+    ptr("pointerUp", box, 250, 450);
+    expect(latest[0].index).toBe(13);
+    expect(latest[0].w).toBe(2);
+    expect(box.setPointerCapture).toHaveBeenCalledWith(1);
+    expect(h.onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
+    expect(screen.getByText(/déplacé, Case 13/)).toBeInTheDocument();
+  });
+
+  it("affiche la grille pendant le glisser et la masque ensuite", () => {
+    const { box, container } = setup([pw()]);
+    const grid = () => (container.querySelector('[data-grid="cells"]') as HTMLElement).style.opacity;
+    ptr("pointerDown", box, 50, 50);
+    ptr("pointerMove", box, 150, 50);
+    expect(grid()).toBe("1");
+    expect(box.className).toContain("cursor-grabbing");
+    ptr("pointerUp", box, 150, 50);
+    expect(grid()).toBe("0");
+  });
+
+  it("un clic sans mouvement sélectionne sans déplacer", () => {
+    const { box } = setup([pw()], null);
+    ptr("pointerDown", box, 50, 50);
+    ptr("pointerMove", box, 52, 51);
+    ptr("pointerUp", box, 52, 51);
+    fireEvent.click(box);
+    expect(latest[0]?.index ?? 0).toBe(0);
+    expect(h.onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("le clic qui suit un glisser ne re-sélectionne pas", () => {
+    const { box } = setup([pw()], null);
+    ptr("pointerDown", box, 50, 50);
+    ptr("pointerMove", box, 150, 50);
+    ptr("pointerUp", box, 150, 50);
+    h.onSelect.mockClear();
+    fireEvent.click(box);
+    expect(h.onSelect).not.toHaveBeenCalled();
+  });
+
+  it("Échap annule le glisser et restaure la position", async () => {
+    const { box } = setup([pw({ index: 4 })]);
+    ptr("pointerDown", box, 150, 150);
+    ptr("pointerMove", box, 250, 450);
+    expect(latest[0].index).toBe(14);
+    h.onSelect.mockClear();
+    await userEvent.keyboard("{Escape}");
+    expect(latest[0].index).toBe(4);
+    expect(h.onSelect).not.toHaveBeenCalledWith(null); // pas de désélection
+    ptr("pointerMove", box, 50, 50); // glisser terminé : ignoré
+    expect(latest[0].index).toBe(4);
+  });
+
+  it("pointercancel restaure la position", () => {
+    const { box } = setup([pw({ index: 4 })]);
+    ptr("pointerDown", box, 150, 150);
+    ptr("pointerMove", box, 250, 450);
+    ptr("pointerCancel", box, 250, 450);
+    expect(latest[0].index).toBe(4);
+  });
+
+  it("le glisser garde l'ordre d'empilement et autorise le chevauchement", () => {
+    const { container } = setup([pw({ id: 1, index: 0 }), pw({ id: 2, index: 1 })]);
+    const boxes = container.querySelectorAll<HTMLElement>(".pointer-events-auto.group");
+    boxes[0].setPointerCapture = vi.fn();
+    ptr("pointerDown", boxes[0], 50, 50);
+    ptr("pointerMove", boxes[0], 150, 50);
+    expect(latest.map(w => w.id)).toEqual([1, 2]);
+    expect(latest[0].index).toBe(1);
+  });
+
+  it("une poignée de redimensionnement ne lance pas de glisser", () => {
+    const { container } = setup([pw()]);
+    const hd = handle(container, "se");
+    ptr("pointerDown", hd, 50, 50);
+    ptr("pointerMove", hd, 250, 450);
+    expect(latest[0]?.index ?? 0).toBe(0);
+  });
+
+  it("flèches : déplace d'une case seulement si le focus est sur le widget", () => {
+    const { box } = setup([pw({ index: 4 })]);
+    fireEvent.keyDown(box, { key: "ArrowRight" });
+    expect(latest[0].index).toBe(5);
+    fireEvent.keyDown(box, { key: "ArrowRight" }); // bord droit : bloqué
+    expect(latest[0].index).toBe(5);
+    fireEvent.keyDown(box, { key: "ArrowUp" });
+    expect(latest[0].index).toBe(2);
+    fireEvent.keyDown(box, { key: "ArrowLeft" });
+    fireEvent.keyDown(box, { key: "ArrowDown" });
+    expect(latest[0].index).toBe(4);
+    expect(screen.getByText(/déplacé, Case 4/)).toBeInTheDocument();
+    const child = box.firstElementChild as HTMLElement;
+    fireEvent.keyDown(child, { key: "ArrowRight" }); // cible différente du widget : ignoré
+    expect(latest[0].index).toBe(4);
+  });
+
+  it("le widget est focalisable avec un libellé traduit et sa position", () => {
+    const { box } = setup([pw({ index: 4 })]);
+    expect(box).toHaveAttribute("tabindex", "0");
+    expect(box).toHaveAttribute("role", "group");
+    expect(box.getAttribute("aria-label")).toMatch(/, Case 4$/);
+  });
+
+  it("l'annonce et la région live sont exclues de l'export", () => {
+    const { container } = setup([pw()]);
+    expect(container.querySelector('[aria-live="polite"]')).toHaveAttribute("data-export-ignore", "true");
   });
 });
