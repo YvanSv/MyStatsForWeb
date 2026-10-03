@@ -40,6 +40,7 @@ async def get_resume_data(
     top_artists = get_top_entities(db, user_id, range, start_date, end_date, f_artist, artist_sort, Artist, Artist.id)
     top_albums = get_top_entities(db, user_id, range, start_date, end_date, f_album, album_sort, Album, Album.id)
     top_tracks = get_top_entities(db, user_id, range, start_date, end_date, f_track, track_sort, Track, Track.id)
+    tops_by_sort = get_tops_by_sort(db, user_id, range, start_date, end_date)
 
     # STATS GLOBALES
     total_stats = get_global_stats(db,user_id,range,start_date,end_date)
@@ -52,6 +53,7 @@ async def get_resume_data(
         "topArtists": top_artists,
         "topTracks": top_tracks,
         "topAlbums": top_albums,
+        "tops_by_sort": tops_by_sort,
         "minutes": int(total_stats.total_ms / 60000) if total_stats.total_ms else 0,
         "streams": total_stats.total_streams or 0,
         "distinct_tracks": distincts.nb_tracks,
@@ -93,6 +95,38 @@ def get_range_dates(range,offset,now=None):
         end_date = datetime(target_year + 1, 1, 1)
     
     return start_date, end_date
+
+def get_tops_by_sort(db, user_id, range, start, end, limit=5):
+    """Top `limit` de chaque entité pour chacun des trois critères (streams, minutes, rating).
+
+    Retourne {"tracks"|"albums"|"artists": {"streams"|"minutes"|"rating": [lignes]}}.
+    9 requêtes (3 entités x 3 critères) : le tri par minutes ou rating ne peut pas se déduire d'un
+    top streams plus large, donc chaque critère passe par get_top_entities (filtré par user_id).
+
+    Rating : mêmes règles que les classements du site (/data/my/tracks, albums, artists), qui
+    utilisent la formule de get_formulas() sans seuil minimum d'écoutes. La formule inclut déjà
+    log(nombre d'écoutes) : une seule écoute donne log(1)=0, donc un rating de 0 et ces éléments
+    ne remontent pas. Égalités départagées par streams décroissants puis id (voir get_top_entities).
+    """
+    f_track, f_album, f_artist = get_formulas()
+    sorts = {
+        "streams": func.count(TrackHistory.id),
+        "minutes": func.sum(TrackHistory.ms_played),
+    }
+    entities = {
+        "tracks": (f_track, Track),
+        "albums": (f_album, Album),
+        "artists": (f_artist, Artist),
+    }
+    result = {}
+    for key, (formula, model) in entities.items():
+        criteria = {**sorts, "rating": formula}
+        result[key] = {
+            name: get_top_entities(db, user_id, range, start, end, formula, column, model, model.id, limit)
+            for name, column in criteria.items()
+        }
+    return result
+
 
 def get_top_entities(db, user_id, range, start, end, rating_f, sort_column, model, id_field, limit=5):
     # 1. On détermine la clé étrangère correcte dans TrackHistory (Integer PK)
@@ -136,7 +170,7 @@ def get_top_entities(db, user_id, range, start, end, rating_f, sort_column, mode
     if range != "lifetime" and start and end:
         query = query.filter(TrackHistory.played_at >= start, TrackHistory.played_at < end)
     
-    return query.group_by(id_field, name_column, img_column).order_by(desc(sort_column)).limit(limit).all()
+    return query.group_by(id_field, name_column, img_column).order_by(desc(sort_column), desc(func.count(TrackHistory.id)), id_field).limit(limit).all()
 
 def get_distinct_entities(db, user_id, range, start_date, end_date):
     stats_query = db.query(

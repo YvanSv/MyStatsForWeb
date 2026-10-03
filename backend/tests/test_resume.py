@@ -120,3 +120,96 @@ def test_retro_compatibilite(client, setup):
               "distinct_tracks", "distinct_albums", "distinct_artists"):
         assert k in j
     assert j["streams"] == 1 and j["distinct_artists"] == 1
+
+
+# --- tops_by_sort ---
+
+@pytest.fixture
+def tops_data(db, make_user):
+    user = make_user(session_id="sid-r")
+    ar = Artist(name="AR")
+    db.add(ar)
+    db.commit()
+    al = Album(name="AL", artist_id=ar.id)
+    db.add(al)
+    db.commit()
+    mk = lambda title, dur: Track(title=title, duration_ms=dur, artist_id=ar.id, album_id=al.id)
+    tracks = {"court": mk("Court", 30000), "long": mk("Long", 600000), "note": mk("Note", 240000)}
+    db.add_all(tracks.values())
+    db.commit()
+    y = datetime.utcnow().year
+
+    def listen(t, n, ms, year=y):
+        for i in range(n):
+            db.add(TrackHistory(played_at=datetime(year, 2, 1 + i % 20, 10), ms_played=ms, provider=MusicProvider.SPOTIFY,
+                                user_id=user.id, track_id=t.id, artist_id=ar.id, album_id=al.id))
+        db.commit()
+
+    listen(tracks["court"], 20, 30000)      # 20 streams, 10 min, écouté en entier
+    listen(tracks["long"], 3, 600000)       # 3 streams, 30 min
+    listen(tracks["note"], 8, 240000)       # 8 streams, 32 min, écouté en entier
+    listen(tracks["court"], 2, 30000, y - 1)  # hors période
+    return {"tracks": tracks}
+
+
+def names(items):
+    return [i["name"] for i in items]
+
+
+def test_tops_by_sort_ordres_differents(client, tops_data):
+    j = get_resume(client, range="lifetime").json()
+    t = j["tops_by_sort"]["tracks"]
+    assert names(t["streams"]) == ["Court", "Note", "Long"]
+    assert names(t["minutes"])[0] == "Note" and names(t["minutes"])[1] == "Long"
+    assert names(t["minutes"]) != names(t["streams"])
+    assert names(t["rating"]) == ["Note", "Court", "Long"]
+    for crit in ("streams", "minutes", "rating"):
+        vals = [i[crit] for i in t[crit]]
+        assert vals == sorted(vals, reverse=True)
+        assert set(t[crit][0]) >= {"id", "name", "image", "streams", "minutes", "rating"}
+    assert set(j["tops_by_sort"]) == {"tracks", "albums", "artists"}
+    assert set(j["tops_by_sort"]["albums"]) == {"streams", "minutes", "rating"}
+
+
+def test_tops_by_sort_periode(client, tops_data):
+    y = datetime.utcnow().year
+    j = get_resume(client, range="year").json()
+    assert names(j["tops_by_sort"]["tracks"]["streams"]) == ["Court", "Note", "Long"]
+    assert j["tops_by_sort"]["tracks"]["streams"][0]["streams"] == 20
+    j = get_resume(client, range="year", offset=1).json()
+    assert names(j["tops_by_sort"]["tracks"]["streams"]) == ["Court"]
+    assert j["tops_by_sort"]["tracks"]["streams"][0]["streams"] == 2
+
+
+def test_tops_by_sort_tie_break_et_limite(client, db, make_user):
+    user = make_user(session_id="sid-r")
+    ar = Artist(name="AR")
+    db.add(ar)
+    db.commit()
+    al = Album(name="AL", artist_id=ar.id)
+    db.add(al)
+    db.commit()
+    ts = [Track(title=f"T{i}", duration_ms=180000, artist_id=ar.id, album_id=al.id) for i in range(7)]
+    db.add_all(ts)
+    db.commit()
+    for t in ts:  # tous strictement égaux
+        db.add(TrackHistory(played_at=datetime(2026, 1, 1), ms_played=60000, provider=MusicProvider.SPOTIFY,
+                            user_id=user.id, track_id=t.id, artist_id=ar.id, album_id=al.id))
+    db.commit()
+    ids = sorted(t.id for t in ts)
+    for _ in range(2):
+        j = get_resume(client, range="lifetime").json()
+        for crit in ("streams", "minutes", "rating"):
+            lst = j["tops_by_sort"]["tracks"][crit]
+            assert len(lst) == 5
+            assert [i["id"] for i in lst] == ids[:5]
+
+
+def test_tops_by_sort_retro_compatibilite(client, tops_data):
+    j = get_resume(client, range="lifetime", sort="minutes").json()
+    assert names(j["topTracks"]) == ["Note", "Long", "Court"]
+    assert j["topTracks"] == j["tops_by_sort"]["tracks"]["minutes"]
+    j = get_resume(client, range="lifetime").json()
+    assert j["topTracks"] == j["tops_by_sort"]["tracks"]["streams"]
+    j = get_resume(client, range="lifetime", sort="rating").json()
+    assert j["topTracks"] == j["tops_by_sort"]["tracks"]["rating"]

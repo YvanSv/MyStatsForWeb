@@ -113,17 +113,29 @@ class UserUpdateResponse(BaseResponse):
     user: UserSettingsResponse
 
 class ItemBrief(BaseModel):
+    id: Optional[int] = None
     name: str
     minutes: int
     rating: float
     streams: int
     image: Optional[str]
 
+class TopsBySort(BaseModel):
+    streams: List[ItemBrief] = []
+    minutes: List[ItemBrief] = []
+    rating: List[ItemBrief] = []
+
+class TopsBySortByEntity(BaseModel):
+    tracks: TopsBySort
+    albums: TopsBySort
+    artists: TopsBySort
+
 class ResumeDataResponse(BaseModel):
     user: BaseUserProfile
     topArtists: List[ItemBrief]
     topTracks: List[ItemBrief]
     topAlbums: List[ItemBrief]
+    tops_by_sort: Optional[TopsBySortByEntity] = None
     minutes: int
     streams: int
     distinct_tracks: int
