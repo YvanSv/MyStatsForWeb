@@ -161,7 +161,7 @@ describe("TopFiveWidget : critère et valeurs par layout", () => {
   it("en-tête : titre centré au milieu, critère à droite (3 zones)", () => {
     for (const [w, h] of [[2, 1], [2, 2], [3, 2], [1, 3], [3, 3]]) {
       const { container, unmount } = render(<TopFiveWidget w={w} h={h} type="albums" data={five} sort="rating" />);
-      const grid = container.querySelector(".grid-cols-\\[1fr_auto_1fr\\]")!;
+      const grid = container.querySelector('[class*="max-content"]')!;
       expect(grid).not.toBeNull();
       expect(grid.children).toHaveLength(3);
       expect(grid.children[1].textContent).toMatch(/albums/);
@@ -170,6 +170,32 @@ describe("TopFiveWidget : critère et valeurs par layout", () => {
       expect(grid.children[2].textContent).toBe("Rating");
       unmount();
     }
+  });
+
+  // jsdom ne mesure aucune largeur : structure (classes) seulement. À vérifier dans le navigateur :
+  // pastille complète en 3x3/3x2/2x2 (fr et en), titre non recouvert, nom du n°1 sur 2 lignes sans débordement en 3x3.
+  it.each([[3, 3], [3, 2], [2, 2]])("%ix%i : pastille du critère jamais tronquée", (w, h) => {
+    render(<TopFiveWidget w={w} h={h} type="albums" data={five} sort="minutes" />);
+    const pill = screen.getAllByText(w === 3 ? "Temps d'écoute" : "Temps d'écoute (min)")[0];
+    expect(pill.className).toContain("whitespace-nowrap");
+    expect(pill.className).not.toContain("truncate");
+    expect(pill.className).not.toMatch(/max-w/);
+    expect(pill.parentElement!.className).not.toContain("max-w-full");
+  });
+
+  it("1x3 : pastille encore tronquable (très étroit)", () => {
+    render(<TopFiveWidget w={1} h={3} type="albums" data={five} sort="minutes" />);
+    expect(screen.getAllByText("Temps d'écoute (min)")[0].className).toContain("truncate");
+  });
+
+  it("3x3 : nom du n°1 sur 2 lignes (line-clamp-2, sans truncate), noms des rangs 2 à 5 sur une ligne", () => {
+    render(<TopFiveWidget w={3} h={3} type="tracks" data={five} />);
+    const h3 = screen.getByRole("heading", { name: "Item 1" });
+    expect(h3.className).toContain("line-clamp-2");
+    expect(h3.className).toContain("break-words");
+    expect(h3.className).toContain("text-center");
+    expect(h3.className).not.toContain("truncate");
+    for (let n = 2; n <= 5; n++) expect(screen.getByText(`Item ${n}`).className).toContain("truncate");
   });
 
   it("note colorée selon le seuil", () => {

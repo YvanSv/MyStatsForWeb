@@ -75,8 +75,8 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
     return <span className={`shrink-0 whitespace-nowrap text-right tabular-nums font-semibold leading-tight ${size} ${c?.cls || base}`}>{c ? c.text : "–"}</span>;
   };
   /** Pastille du critère actif. */
-  const pill = (size: string, short = false) => (
-    <span className={`truncate max-w-full uppercase tracking-wider text-gray-400 leading-none ${size}`}>{short && sort === "minutes" ? `${label} (${t.resume.unitMinutes})` : label}</span>
+  const pill = (size: string, short = false, full = false) => (
+    <span className={`${full ? "whitespace-nowrap" : "truncate max-w-full"} uppercase tracking-wider text-gray-400 leading-none ${size}`}>{short && sort === "minutes" ? `${label} (${t.resume.unitMinutes})` : label}</span>
   );
   const items = Array.isArray(data) ? data.slice(0, 5) : [];
   // Sans élément, rien à afficher (les layouts lisent items[0])
@@ -84,13 +84,13 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
   const first = items[0];
 
   // Liste 2x2 / 1x3 (étroite : nombres abrégés) et 3x2 (large : nombres complets), valeur à droite de chaque nom
-  const makeList = (short: boolean) => (
+  const makeList = (short: boolean, full = false) => (
     <div className="w-full h-full p-1 flex flex-col">
       {/* En-tête en 3 zones : espaceur, titre centré, critère à droite */}
-      <div className="mb-0.5 border-b border-white/10 pb-0.5 grid grid-cols-[1fr_auto_1fr] items-center gap-1 min-w-0">
+      <div className="mb-0.5 border-b border-white/10 pb-0.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-1 min-w-0">
         <span aria-hidden="true"/>
         <p className="text-[7px] uppercase tracking-[0.3em] italic text-center truncate max-w-full" style={{ color }}>{typeLabel}</p>
-        <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[6px]", short)}</span>
+        <span className={`justify-self-end flex ${full ? "" : "min-w-0 max-w-full"}`}>{pill("text-[6px]", short, full)}</span>
       </div>
       <div className="flex-1 flex flex-col justify-between min-h-0">
         {items.map((item, index) => (
@@ -104,8 +104,9 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
       </div>
     </div>
   );
-  const narrow = makeList(true);
-  const wide = makeList(false);
+  // 2x2 et 3x2 : pastille jamais tronquée ; 1x3 (très étroit) : tronquée si besoin
+  const narrow = makeList(true, true);
+  const wide = makeList(false, true);
 
   // Clés au format attendu par Widget (`${w}x${h}`)
   const layouts = {
@@ -128,7 +129,7 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
         </div>
         <div className="flex flex-col border border-white/10 bg-white/5 rounded-xl w-[60%] justify-between h-full p-1">
           {/* Même en-tête 3 zones, en 5px : le titre garde sa place centrale, le critère est tronqué si besoin */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-0.5 border-b border-white/10 pb-px min-w-0">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-0.5 border-b border-white/10 pb-px min-w-0">
             <span aria-hidden="true"/>
             <p className="text-[5px] uppercase tracking-widest italic text-center truncate max-w-full leading-none" style={{ color }}>{typeLabel}</p>
             <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[5px]", true)}</span>
@@ -177,23 +178,23 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
         )}
 
         {/* N°1 */}
-        <div className="relative flex flex-col items-center justify-center text-center mt-3 mb-6 flex-1 z-10">
+        <div className="relative flex flex-col items-center justify-center text-center mt-1 mb-3 flex-1 min-h-0 z-10">
           {/* Titre centré, critère à droite sur la même ligne */}
-          <div className="w-full grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-4 min-w-0">
+          <div className="w-full grid grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 mb-3 min-w-0">
             <span aria-hidden="true"/>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-center truncate max-w-full" style={{ color }}>
               {typeLabel}
             </p>
-            <span className="justify-self-end min-w-0 max-w-full flex px-2 py-0.5 rounded-full border border-white/10 bg-white/5">{pill("text-[8px]")}</span>
+            <span className="justify-self-end flex px-2 py-0.5 rounded-full border border-white/10 bg-white/5">{pill("text-[8px]", false, true)}</span>
           </div>
-          <div className="relative mb-4">
-            <Thumb item={first} round={round} className="w-32 h-32 border-4 text-4xl"/>
+          <div className="relative mb-4 shrink-0">
+            <Thumb item={first} round={round} className="w-28 h-28 border-4 text-4xl"/>
             <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center text-black font-black italic text-xl shadow-xl" style={{ backgroundColor: color }}>
               1
             </div>
           </div>
-          <div className="space-y-1 w-full px-4 overflow-hidden min-h-12">
-            <h3 className="text-xl font-black uppercase text-white tracking-tight leading-none truncate">{first.name}</h3>
+          <div className="space-y-1 w-full min-w-0 px-4 overflow-hidden min-h-12">
+            <h3 className="text-xl font-black uppercase text-white tracking-tight line-clamp-2 break-words text-center leading-tight min-w-0">{first.name}</h3>
             <p className={`text-[10px] font-bold uppercase truncate tracking-widest leading-none tabular-nums ${criterion(first)?.cls || "text-gray-400"}`}>{criterion(first)?.text ?? "–"}</p>
           </div>
         </div>
