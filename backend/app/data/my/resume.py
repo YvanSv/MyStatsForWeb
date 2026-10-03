@@ -148,7 +148,9 @@ def get_top_entities(db, user_id, range, start, end, rating_f, sort_column, mode
             name_column.label("name"), 
             img_column.label("image"),
             func.count(TrackHistory.id).label("streams"),
-            func.sum(cast(TrackHistory.ms_played / 60000, Integer)).label("minutes"),
+            # Minutes = somme exacte des ms puis division entière : tronquer chaque écoute avant d'additionner
+            # perdrait jusqu'à 59 s par écoute (et ne correspondrait plus au tri par temps d'écoute)
+            func.sum(TrackHistory.ms_played).op("/")(60000).label("minutes"),
             rating_f.label("rating")
         )
     )

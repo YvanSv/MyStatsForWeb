@@ -213,3 +213,31 @@ def test_tops_by_sort_retro_compatibilite(client, tops_data):
     assert j["topTracks"] == j["tops_by_sort"]["tracks"]["streams"]
     j = get_resume(client, range="lifetime", sort="rating").json()
     assert j["topTracks"] == j["tops_by_sort"]["tracks"]["rating"]
+
+
+def test_minutes_affichees_coherentes_avec_le_tri(client, db, make_user):
+    """Le tri par temps d'écoute (somme exacte des ms) et la valeur affichée doivent concorder :
+    beaucoup d'écoutes courtes (< 1 min) ne doivent pas être comptées 0 minute chacune."""
+    user = make_user(session_id="sid-r")
+    rows = {}
+    for name, plays, ms in (("Courtes", 300, 59_000), ("Longues", 10, 1_500_000)):
+        ar = Artist(name=name)
+        db.add(ar)
+        db.commit()
+        al = Album(name=f"AL-{name}", artist_id=ar.id)
+        db.add(al)
+        db.commit()
+        tr = Track(title=f"T-{name}", duration_ms=ms, artist_id=ar.id, album_id=al.id)
+        db.add(tr)
+        db.commit()
+        for _ in range(plays):
+            db.add(TrackHistory(played_at=datetime(2026, 1, 1), ms_played=ms, provider=MusicProvider.SPOTIFY,
+                                user_id=user.id, track_id=tr.id, artist_id=ar.id, album_id=al.id))
+        db.commit()
+        rows[name] = plays * ms // 60_000
+    j = get_resume(client, range="lifetime").json()
+    artists = j["tops_by_sort"]["artists"]["minutes"]
+    assert [a["name"] for a in artists] == ["Courtes", "Longues"]  # 295 min contre 250 min
+    assert [a["minutes"] for a in artists] == [rows["Courtes"], rows["Longues"]]
+    values = [a["minutes"] for a in artists]
+    assert values == sorted(values, reverse=True)
