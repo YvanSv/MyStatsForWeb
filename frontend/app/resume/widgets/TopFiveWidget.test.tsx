@@ -11,7 +11,7 @@ vi.mock("../../context/languageContext", async () => {
 
 const item = (n: number, over: Record<string, any> = {}) => ({ name: `Item ${n}`, minutes: n, rating: n, streams: n * 1000, image: `img${n}.png`, ...over });
 const five = [1, 2, 3, 4, 5].map((n) => item(n));
-const fmt = (n: number) => `${n.toLocaleString("fr-FR")} streams`;
+const fmt = (n: number) => n.toLocaleString("fr-FR");
 
 describe("TopFiveWidget", () => {
   it("1x1 : nom et image du n°1 seulement", () => {
@@ -108,12 +108,82 @@ describe("TopFiveWidget", () => {
   it("3x3 : le critère affiché suit le tri", () => {
     const { container, rerender } = render(<TopFiveWidget w={3} h={3} type="tracks" data={five} />);
     expect(container.textContent).toContain(fmt(1000));
+    expect(container.textContent).not.toContain("1 000 streams");
     rerender(<TopFiveWidget w={3} h={3} type="tracks" data={five} sort="minutes" />);
     expect(container.textContent).toContain("1 min");
-    expect(container.textContent).not.toContain("streams");
     rerender(<TopFiveWidget w={3} h={3} type="tracks" data={five} sort="rating" />);
     expect(container.textContent).toContain("1.00");
     expect(container.textContent).toContain("5.00");
+  });
+});
+
+describe("TopFiveWidget : critère et valeurs par layout", () => {
+  const LAYOUTS: [number, number][] = [[1, 1], [2, 1], [2, 2], [3, 2], [1, 3], [3, 3]];
+  const LABELS = { streams: "Streams", minutes: "Temps d'écoute", rating: "Rating" } as const;
+  const SORTS = ["streams", "minutes", "rating"] as const;
+  const cases = LAYOUTS.flatMap(([w, h]) => SORTS.map((sort) => [w, h, sort] as const));
+
+  it.each(cases)("%ix%i, tri %s : pastille du critère et valeurs rendues", (w, h, sort) => {
+    const { container } = render(<TopFiveWidget w={w} h={h} type="tracks" data={five} sort={sort} />);
+    expect(screen.getAllByText(LABELS[sort]).length).toBeGreaterThan(0);
+    const text = container.textContent!;
+    // Le n°1 a toujours une valeur ; les listes en ont une par élément
+    const full = w === 3; // 3x2 et 3x3 : nombres complets ; autres : abrégés
+    const val = (n: number) => ({ streams: full ? (n * 1000).toLocaleString("fr-FR") : `${n}.0k`, minutes: `${n} min`, rating: `${n}.00` }[sort]);
+    expect(text).toContain(val(1));
+    if (!(w === 1 && h === 1)) expect(text).toContain(val(3));
+    if (sort === "streams") expect(text).not.toMatch(/streams/);
+    expect(text).not.toMatch(/NaN|undefined/);
+  });
+
+  it("listes : valeur alignée à droite en chiffres tabulaires ; « min » seulement pour le temps d'écoute", () => {
+    render(<TopFiveWidget w={3} h={2} type="tracks" data={five} sort="minutes" />);
+    const v = screen.getByText("3 min");
+    expect(v.className).toContain("tabular-nums");
+    expect(v.className).toContain("text-right");
+    expect(v.className).toContain("truncate");
+    render(<TopFiveWidget w={3} h={2} type="tracks" data={five} sort="streams" />);
+    expect(screen.queryByText(/streams$/)).toBeNull();
+  });
+
+  it("liste étroite : nombres abrégés, liste large : nombres complets", () => {
+    const big = [item(1, { streams: 1234567 }), item(2, { streams: 2500 })];
+    const { container, unmount } = render(<TopFiveWidget w={1} h={3} type="tracks" data={big} />);
+    expect(container.textContent).toContain("1.2M");
+    expect(container.textContent).toContain("2.5k");
+    unmount();
+    const r = render(<TopFiveWidget w={3} h={2} type="tracks" data={big} />);
+    expect(r.container.textContent).toContain((1234567).toLocaleString("fr-FR"));
+  });
+
+  it("en-tête : titre centré au milieu, critère à droite (3 zones)", () => {
+    for (const [w, h] of [[2, 1], [2, 2], [3, 2], [1, 3], [3, 3]]) {
+      const { container, unmount } = render(<TopFiveWidget w={w} h={h} type="albums" data={five} sort="rating" />);
+      const grid = container.querySelector(".grid-cols-\\[1fr_auto_1fr\\]")!;
+      expect(grid).not.toBeNull();
+      expect(grid.children).toHaveLength(3);
+      expect(grid.children[1].textContent).toMatch(/albums/);
+      expect(grid.children[1].className).toContain("text-center");
+      expect(grid.children[2].className).toContain("justify-self-end");
+      expect(grid.children[2].textContent).toBe("Rating");
+      unmount();
+    }
+  });
+
+  it("note colorée selon le seuil", () => {
+    render(<TopFiveWidget w={2} h={2} type="tracks" data={[item(1, { rating: 9 }), item(2, { rating: 0.5 })]} sort="rating" />);
+    expect(screen.getByText("9.00").className).toContain("text2");
+    expect(screen.getByText("0.50").className).toContain("text-rouge");
+  });
+
+  it.each(LAYOUTS)("%ix%i : valeur absente ou invalide -> tiret, jamais NaN/undefined", (w, h) => {
+    for (const sort of SORTS) {
+      const bad = [item(1, { streams: NaN, minutes: undefined, rating: null }), item(2, { streams: Infinity, minutes: "x", rating: NaN }), item(3, { streams: undefined, minutes: NaN, rating: undefined })];
+      const { container, unmount } = render(<TopFiveWidget w={w} h={h} type="tracks" data={bad} sort={sort} />);
+      expect(container.textContent).toContain("–");
+      expect(container.textContent).not.toMatch(/NaN|undefined|Infinity|null/);
+      unmount();
+    }
   });
 });
 

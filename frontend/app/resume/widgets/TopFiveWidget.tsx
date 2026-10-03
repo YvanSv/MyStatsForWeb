@@ -32,7 +32,7 @@ interface TopFiveProps {
   h: number;
   type: TopEntity;
   data: ItemBrief[];
-  /** Critère affiché sous chaque élément (défaut : streams). */
+  /** Critère de classement (défaut : streams), affiché en pastille et en valeur par élément. */
   sort?: SortOption;
   settings?: TopFiveWidgetSettings;
 }
@@ -53,62 +53,100 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
   const color = settings?.color || COLORS.SPOTIFY_GREEN;
   const typeLabel = t.common[type];
   const round = type === "artists";
-  // Critère affiché sous chaque élément, selon le tri
-  const criterion = (item: ItemBrief) => {
-    if (sort === "minutes") return finiteOrNull(item.minutes) === null ? null : { text: `${formatMinutes(item.minutes, t.common.locale)} ${t.resume.unitMinutes}`, cls: "" };
+  // Libellé court du critère actif (dictionnaires existants)
+  const label = sort === "minutes" ? t.resume.wListeningTime : sort === "rating" ? t.ranking.sortOptions.rating : t.ranking.sortOptions.play_count;
+  /**
+   * Valeur de l'élément selon le tri, ou null si absente/invalide (affichée « – »).
+   * `short` : nombres abrégés (k/M) pour les petites cases. Streams sans unité, minutes avec « min ».
+   */
+  const criterion = (item: ItemBrief, short = false) => {
+    const loc = t.common.locale;
     if (sort === "rating") return finiteOrNull(item.rating) === null ? null : { text: item.rating.toFixed(2), cls: ratingColorClass(item.rating) };
-    return finiteOrNull(item.streams) === null ? null : { text: `${formatNumber(item.streams, false, t.common.locale)} ${t.common.streams}`, cls: "" };
+    const raw = finiteOrNull(sort === "minutes" ? item.minutes : item.streams);
+    if (raw === null) return null;
+    const num = sort === "minutes" ? (short ? formatNumber(Math.round(raw), true, loc) : formatMinutes(raw, loc)) : formatNumber(raw, short, loc);
+    // L'en-tête dit déjà « Streams » : valeur seule ; « Temps d'écoute » ne dit pas l'unité : on garde « min »
+    return { text: sort === "minutes" ? `${num} ${t.resume.unitMinutes}` : num, cls: "" };
   };
+  /** Valeur alignée à droite (chiffres tabulaires), « – » quand elle manque. */
+  const value = (item: ItemBrief, short: boolean, size: string, base = "text-gray-400") => {
+    const c = criterion(item, short);
+    return <span className={`shrink-0 max-w-[50%] truncate text-right tabular-nums font-semibold leading-tight ${size} ${c?.cls || base}`}>{c ? c.text : "–"}</span>;
+  };
+  /** Pastille du critère actif. */
+  const pill = (size: string) => (
+    <span className={`truncate max-w-full uppercase tracking-wider text-gray-400 leading-none ${size}`}>{label}</span>
+  );
   const items = Array.isArray(data) ? data.slice(0, 5) : [];
   // Sans élément, rien à afficher (les layouts lisent items[0])
   if (items.length === 0) return <div className="w-full h-full text1"/>;
   const first = items[0];
 
-  const list = (
+  // Liste 2x2 / 1x3 (étroite : nombres abrégés) et 3x2 (large : nombres complets), valeur à droite de chaque nom
+  const makeList = (short: boolean) => (
     <div className="w-full h-full p-1 flex flex-col">
-      <p className="mb-0.5 border-b border-white/10 pb-0.5 text-[7px] uppercase tracking-[0.3em] italic text-center" style={{ color }}>
-        {typeLabel}
-      </p>
+      {/* En-tête en 3 zones : espaceur, titre centré, critère à droite */}
+      <div className="mb-0.5 border-b border-white/10 pb-0.5 grid grid-cols-[1fr_auto_1fr] items-center gap-1 min-w-0">
+        <span aria-hidden="true"/>
+        <p className="text-[7px] uppercase tracking-[0.3em] italic text-center truncate max-w-full" style={{ color }}>{typeLabel}</p>
+        <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[6px]")}</span>
+      </div>
       <div className="flex-1 flex flex-col justify-between min-h-0">
         {items.map((item, index) => (
           <div key={index} className="flex items-center gap-1.5 min-w-0">
             <span className="text-[10px] font-black italic text-white/30 leading-none w-3 shrink-0 text-center">{index + 1}</span>
             <Thumb item={item} round={round} className="w-6 h-6 shrink-0"/>
             <span className="flex-1 min-w-0 text-[8px] font-semibold text-white leading-tight truncate">{item.name}</span>
+            {value(item, short, "text-[7px]")}
           </div>
         ))}
       </div>
     </div>
   );
+  const narrow = makeList(true);
+  const wide = makeList(false);
 
   // Clés au format attendu par Widget (`${w}x${h}`)
   const layouts = {
     "1x1":
       <div className="w-full h-full flex flex-col items-center justify-between py-1">
-        <p className="truncate max-w-[70px] text-[9px] text-white">{first.name}</p>
-        <Thumb item={first} round={true} className="w-12 h-12"/>
+        <p className="truncate max-w-[70px] text-[9px] text-white leading-none">{first.name}</p>
+        <Thumb item={first} round={true} className="w-10 h-10"/>
+        {/* Valeur seule (abrégée, sans unité) + critère en texte minuscule : tient dans 70px */}
+        <div className="flex flex-col items-center max-w-[70px] gap-0.5">
+          {value(first, true, "text-[7px]", "text-white")}
+          {pill("text-[5px]")}
+        </div>
       </div>,
     "2x1":
       <div className="flex justify-center h-full items-center gap-1">
         <div className="flex flex-col items-center justify-between h-[90%]">
-          <p className="truncate max-w-[54px] text-[8px] text-white">{first.name}</p>
-          <Thumb item={first} round={true} className="w-12 h-12"/>
+          <p className="truncate max-w-[54px] text-[8px] text-white leading-none">{first.name}</p>
+          <Thumb item={first} round={true} className="w-10 h-10"/>
+          {value(first, true, "text-[6px]", "text-white")}
         </div>
         <div className="flex flex-col border border-white/10 bg-white/5 rounded-xl w-[60%] justify-between h-full p-1">
+          {/* Même en-tête 3 zones, en 5px : le titre garde sa place centrale, le critère est tronqué si besoin */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-0.5 border-b border-white/10 pb-px min-w-0">
+            <span aria-hidden="true"/>
+            <p className="text-[5px] uppercase tracking-widest italic text-center truncate max-w-full leading-none" style={{ color }}>{typeLabel}</p>
+            <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[5px]")}</span>
+          </div>
           {items.slice(1, 4).map((item, i) => (
-            <div key={i} className="flex items-center gap-1">
+            <div key={i} className="flex items-center gap-1 min-w-0">
               <div className="w-3 h-3 text-[5px] rounded-full bg-white/10 flex items-center justify-center text-gray-500 font-bold shrink-0">
                 {i + 2}
               </div>
               <p className="flex-1 min-w-0 text-[6px] font-semibold text-white leading-tight truncate">{item.name}</p>
-              <Thumb item={item} round={true} className="w-5 h-5 shrink-0"/>
+              {value(item, true, "text-[5px]")}
+              <Thumb item={item} round={true} className="w-4 h-4 shrink-0"/>
             </div>
           ))}
         </div>
       </div>,
-    "2x2": list,
-    "3x2": list,
-    "1x3": list,
+    "2x2": narrow,
+    "3x2": wide,
+    "1x3": makeList(true),
     "3x3":
       <div className="w-full h-full bg-neutral-950 p-3 rounded-2xl flex flex-col border border-white/10 shadow-2xl relative overflow-hidden">
         {/* Fond flou à partir de la pochette du n°1 */}
@@ -121,9 +159,14 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
 
         {/* N°1 */}
         <div className="relative flex flex-col items-center justify-center text-center mt-3 mb-6 flex-1 z-10">
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] italic mb-4" style={{ color }}>
-            {t.resume.wUnchallenged(typeLabel)}
-          </p>
+          {/* Titre centré, critère à droite sur la même ligne */}
+          <div className="w-full grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-4 min-w-0">
+            <span aria-hidden="true"/>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-center truncate max-w-full" style={{ color }}>
+              {t.resume.wUnchallenged(typeLabel)}
+            </p>
+            <span className="justify-self-end min-w-0 max-w-full flex px-2 py-0.5 rounded-full border border-white/10 bg-white/5">{pill("text-[8px]")}</span>
+          </div>
           <div className="relative mb-4">
             <Thumb item={first} round={round} className="w-32 h-32 border-4 text-4xl"/>
             <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center text-black font-black italic text-xl shadow-xl" style={{ backgroundColor: color }}>
@@ -132,7 +175,7 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
           </div>
           <div className="space-y-1 w-full px-4 overflow-hidden min-h-12">
             <h3 className="text-xl font-black uppercase text-white tracking-tight leading-none truncate">{first.name}</h3>
-            <p className={`text-[10px] font-bold uppercase truncate tracking-widest leading-none ${criterion(first)?.cls || "text-gray-400"}`}>{criterion(first)?.text}</p>
+            <p className={`text-[10px] font-bold uppercase truncate tracking-widest leading-none tabular-nums ${criterion(first)?.cls || "text-gray-400"}`}>{criterion(first)?.text ?? "–"}</p>
           </div>
         </div>
 
@@ -144,7 +187,7 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
               <Thumb item={item} round={round} className="w-10 h-10"/>
               <div className="w-full overflow-hidden mt-0.5 px-0.5">
                 <p className="text-[8px] font-bold text-white truncate uppercase tracking-tighter leading-none mb-0.5">{item.name}</p>
-                <p className={`text-[7px] font-medium truncate uppercase tracking-tighter leading-none opacity-80 ${criterion(item)?.cls || "text-gray-500"}`}>{criterion(item)?.text}</p>
+                <p className={`text-[7px] font-medium truncate uppercase tracking-tighter leading-none opacity-80 tabular-nums ${criterion(item)?.cls || "text-gray-500"}`}>{criterion(item)?.text ?? "–"}</p>
               </div>
             </div>
           ))}

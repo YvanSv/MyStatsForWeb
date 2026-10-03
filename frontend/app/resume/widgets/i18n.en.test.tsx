@@ -81,8 +81,8 @@ describe("panneaux de réglages en anglais", () => {
     const { container } = render(<TopFiveWidget w={3} h={3} type="tracks" data={data} />);
     const root = within(container);
     expect(root.getByText("Undisputed #1 tracks")).toBeInTheDocument();
-    expect(root.getByText("1,234,567 streams")).toBeInTheDocument();
-    expect(root.getByText("2,469,134 streams")).toBeInTheDocument();
+    expect(root.getByText("1,234,567")).toBeInTheDocument();
+    expect(root.getByText("2,469,134")).toBeInTheDocument();
   });
 });
 
