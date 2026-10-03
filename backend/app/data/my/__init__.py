@@ -7,6 +7,7 @@ from .today import router as today_router
 from .refresh import router as refresh_router
 from .currently_playing import router as currently_playing_router
 from .resume import router as resume_router
+from .item_detail import router as item_detail_router
 
 router = APIRouter(prefix="/data/my", tags=["My datas"])
 router.include_router(albums_router, prefix="/albums")
@@ -17,3 +18,5 @@ router.include_router(today_router, prefix="/today")
 router.include_router(refresh_router, prefix="/refresh")
 router.include_router(currently_playing_router, prefix="/currently-playing")
 router.include_router(resume_router, prefix="/resume")
+# Chemin /{entity}/{id}/detail (entity limité à tracks|albums|artists) : aucun conflit avec /tracks, /albums, /artists ni /metadata
+router.include_router(item_detail_router)

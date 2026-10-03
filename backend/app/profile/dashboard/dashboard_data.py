@@ -50,17 +50,7 @@ async def get_dashboard_data(
     hours_labels = [f"{i}h" for i in range(24)]
 
     # 4. Finalisation de CumulativeData (Running total pour le graph)
-    cumulative_data = []
-    running_ms, running_streams = 0, 0
-    for d_str in sorted(day_map.keys()):
-        day_info = day_map[d_str]
-        running_ms += day_info["ms"]
-        running_streams += day_info["streams"]
-        cumulative_data.append({
-            "date": d_str,
-            "minutes": round(running_ms / 60000, 1),
-            "streams": running_streams
-        })
+    cumulative_data = build_cumulative(day_map)
 
     # 5. Construction de la réponse finale
     return {
@@ -96,6 +86,21 @@ async def get_dashboard_data(
         "entityEvolution": fetch_discovery_evolution(session, target_user.id, filters),
         "streamsEvolution": await get_streams_evolution(target_user.id, start_date, end_date, session)
     }
+
+def build_cumulative(day_map: Dict) -> List[Dict]:
+    """Courbe cumulée (minutes, streams) à partir de la day_map de process_temporal_data."""
+    cumulative_data = []
+    running_ms, running_streams = 0, 0
+    for d_str in sorted(day_map.keys()):
+        day_info = day_map[d_str]
+        running_ms += day_info["ms"]
+        running_streams += day_info["streams"]
+        cumulative_data.append({
+            "date": d_str,
+            "minutes": round(running_ms / 60000, 1),
+            "streams": running_streams
+        })
+    return cumulative_data
 
 def get_target_user_and_check_perms(slug: str, session_id: Optional[str], session: Session):
     # 1. Récupération de l'utilisateur cible (Target)
