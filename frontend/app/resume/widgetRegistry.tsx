@@ -1,6 +1,6 @@
 /**
  * REGISTRE DES WIDGETS : chaque type de widget est décrit ici, une seule fois.
- * Pour ajouter un widget (ex. « top_artists ») :
+ * Pour ajouter un widget (ex. « top_five ») :
  *  1. Écrire widgets/.../MonWidget.tsx : le composant d'affichage ({w,h,data,settings}) et son composant de réglages ({settings,onChange}).
  *  2. interfaces.ts : ajouter son interface de réglages et l'entrée dans WidgetSettingsMap (le compilateur exige alors l'étape 4).
  *  3. Locales fr.ts ET en.ts (mêmes clés) : libellé (labelKey) et sous-titre (subtitleKey) dans `resume`.
@@ -11,7 +11,7 @@
  */
 import type { ComponentType } from "react";
 import type { fr } from "../constants/locales/fr";
-import type { AnyWidgetSettings, ItemBrief, ResumeData, UserProfile, WidgetSettingsMap, WidgetType } from "./interfaces";
+import type { AnyWidgetSettings, ResumeData, UserProfile, WidgetSettingsMap, WidgetType } from "./interfaces";
 import { ProfilePictureSettings, ProfilePictureWidget } from "./widgets/atomic/ProfilePictureWidget";
 import { UsernameSettings, UsernameWidget } from "./widgets/atomic/UsernameWidget";
 import { BackgroundSettings, BackgroundWidget } from "./widgets/atomic/BackgroundWidget";
@@ -21,7 +21,7 @@ import { StreamsSettings, StreamsWidget } from "./widgets/stats/StreamsWidget";
 import { DistinctTracksSettings, DistinctTracksWidget } from "./widgets/stats/DistinctTracksWidget";
 import { DistinctAlbumsSettings, DistinctAlbumsWidget } from "./widgets/stats/DistinctAlbumsWidget";
 import { DistinctArtistsSettings, DistinctArtistsWidget } from "./widgets/stats/DistinctArtistsWidget";
-import { TopFiveSettings, TopFiveWidget } from "./widgets/TopFiveWidget";
+import { TopFiveSettings, TopFiveWidget, isTopEntity, type TopFiveData } from "./widgets/TopFiveWidget";
 import { TopOneSettings, TopOneWidget, type TopOneData } from "./widgets/extra/TopOneWidget";
 import { PeriodSettings, PeriodWidget } from "./widgets/extra/PeriodWidget";
 import { FreeTextSettings, FreeTextWidget } from "./widgets/extra/FreeTextWidget";
@@ -84,9 +84,6 @@ export type AnyWidgetDefinition<K extends WidgetType = WidgetType> = WidgetDefin
 
 const defineWidget = <K extends WidgetType, D>(def: WidgetDefinition<K, D>): AnyWidgetDefinition<K> =>
   def as unknown as AnyWidgetDefinition<K>;
-
-/** Premier nom d'un classement (sous-titre de la carte). */
-const firstName = (items: ItemBrief[]) => items?.[0]?.name;
 
 const stat = (n: (v: number) => string, v: number, unit: string) => `${n(v)} ${unit}`;
 
@@ -160,29 +157,15 @@ export const WIDGET_REGISTRY: { [K in WidgetType]: AnyWidgetDefinition<K> } = {
     Settings: DistinctArtistsSettings,
     select: (d) => d.distinct_artists,
   }),
-  top_tracks: defineWidget<"top_tracks", ItemBrief[]>({
-    type: "top_tracks", category: "top", labelKey: "widgetTopTracks", icon: "🏆",
-    subtitle: firstName,
+  top_five: defineWidget<"top_five", TopFiveData>({
+    type: "top_five", category: "top", labelKey: "widgetTopFive", subtitle: "subtitleTopFive", icon: "🏆",
     defaultSettings: {}, defaultSize: { w: 2, h: 2 },
-    Component: ({ w, h, data, settings }) => <TopFiveWidget w={w} h={h} type="tracks" data={data} settings={settings} />,
+    Component: ({ w, h, data, settings }) => {
+      const entity = isTopEntity(settings?.entity) ? settings.entity : "tracks";
+      return <TopFiveWidget w={w} h={h} type={entity} data={data[entity]} settings={settings} />;
+    },
     Settings: TopFiveSettings,
-    select: (d) => d.topTracks ?? [],
-  }),
-  top_albums: defineWidget<"top_albums", ItemBrief[]>({
-    type: "top_albums", category: "top", labelKey: "widgetTopAlbums", icon: "🥇",
-    subtitle: firstName,
-    defaultSettings: {}, defaultSize: { w: 2, h: 2 },
-    Component: ({ w, h, data, settings }) => <TopFiveWidget w={w} h={h} type="albums" data={data} settings={settings} />,
-    Settings: TopFiveSettings,
-    select: (d) => d.topAlbums ?? [],
-  }),
-  top_artists: defineWidget<"top_artists", ItemBrief[]>({
-    type: "top_artists", category: "top", labelKey: "widgetTopArtists", icon: "👑",
-    subtitle: firstName,
-    defaultSettings: {}, defaultSize: { w: 2, h: 2 },
-    Component: ({ w, h, data, settings }) => <TopFiveWidget w={w} h={h} type="artists" data={data} settings={settings} />,
-    Settings: TopFiveSettings,
-    select: (d) => d.topArtists ?? [],
+    select: (d) => ({ tracks: d.topTracks ?? [], albums: d.topAlbums ?? [], artists: d.topArtists ?? [] }),
   }),
   top_one: defineWidget<"top_one", TopOneData>({
     type: "top_one", category: "top", labelKey: "widgetTopOne", subtitle: "subtitleTopOne", icon: "🥇",

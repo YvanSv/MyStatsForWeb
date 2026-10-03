@@ -2,9 +2,15 @@ import type { ItemBrief, TopEntity, TopFiveWidgetSettings } from "../interfaces"
 import Widget from "./Widget";
 import { useLanguage } from "../../context/languageContext";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
+import { SegmentedPicker } from "./SegmentedPicker";
 import { COLORS } from "../../constants/ui";
 import { WIDGET_COLORS, finiteOrNull } from "./common";
 import { formatNumber } from "./stats/utils";
+
+/** Les trois classements : le widget affiche celui du réglage `entity`. */
+export type TopFiveData = Record<TopEntity, ItemBrief[]>;
+const ENTITIES: TopEntity[] = ["tracks", "albums", "artists"];
+export const isTopEntity = (v: unknown): v is TopEntity => ENTITIES.includes(v as TopEntity);
 
 interface TopFiveProps {
   w: number;
@@ -135,6 +141,9 @@ export function TopFiveSettings({ settings, onChange }: { settings?: TopFiveWidg
   const { t } = useLanguage();
   return (
     <div className="space-y-6">
+      <SegmentedPicker label={t.resume.wEntity} value={isTopEntity(settings?.entity) ? settings.entity : "tracks"}
+        options={[{ id: "tracks", label: t.resume.labelTracks }, { id: "albums", label: t.resume.labelAlbums }, { id: "artists", label: t.resume.labelArtists }]}
+        onChange={(entity) => onChange({ ...settings, entity })}/>
       <ColorSwatchPicker colors={WIDGET_COLORS} value={settings?.color} onChange={(c) => onChange({ ...settings, color: c })} label={t.resume.wAccentColor} />
     </div>
   );

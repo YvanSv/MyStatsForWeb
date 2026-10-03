@@ -60,11 +60,12 @@ export type DistinctTracksWidgetSettings = StatWidgetSettings;
 export type DistinctAlbumsWidgetSettings = StatWidgetSettings;
 export type DistinctArtistsWidgetSettings = StatWidgetSettings;
 
-/** Réglages des trois classements « top 5 ». */
+export type TopEntity = "tracks" | "albums" | "artists";
+/** Réglages du classement « top 5 » (élément affiché : titres par défaut). */
 export interface TopFiveWidgetSettings {
+  entity?: TopEntity;
   color?: string;
 }
-export type TopEntity = "tracks" | "albums" | "artists";
 export interface TopOneWidgetSettings {
   entity?: TopEntity;
   color?: string;
@@ -130,9 +131,7 @@ export interface WidgetSettingsMap {
   nb_tracks: DistinctTracksWidgetSettings;
   nb_albums: DistinctAlbumsWidgetSettings;
   nb_artists: DistinctArtistsWidgetSettings;
-  top_tracks: TopFiveWidgetSettings;
-  top_albums: TopFiveWidgetSettings;
-  top_artists: TopFiveWidgetSettings;
+  top_five: TopFiveWidgetSettings;
   top_one: TopOneWidgetSettings;
   period: PeriodWidgetSettings;
   free_text: FreeTextWidgetSettings;

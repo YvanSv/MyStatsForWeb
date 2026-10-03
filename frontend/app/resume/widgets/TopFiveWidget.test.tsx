@@ -84,7 +84,14 @@ describe("TopFiveWidget", () => {
   it("réglages : choisir une couleur", async () => {
     const onChange = vi.fn();
     render(<TopFiveSettings settings={{}} onChange={onChange} />);
-    await userEvent.click(screen.getAllByRole("button")[1]);
+    await userEvent.click(screen.getAllByRole("button")[4]);
     expect(onChange).toHaveBeenCalledWith({ color: "#FFFFFF" });
+  });
+
+  it("réglages : choisir l'élément conserve la couleur", async () => {
+    const onChange = vi.fn();
+    render(<TopFiveSettings settings={{ color: "#F87171" }} onChange={onChange} />);
+    await userEvent.click(screen.getByRole("button", { name: "Albums" }));
+    expect(onChange).toHaveBeenCalledWith({ color: "#F87171", entity: "albums" });
   });
 });

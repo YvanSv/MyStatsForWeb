@@ -69,6 +69,21 @@ describe("parseLayout", () => {
     expect(parseLayout(serializeLayout(widgets))).toEqual(widgets);
   });
 
+  it.each([["top_tracks", "tracks"], ["top_albums", "albums"], ["top_artists", "artists"]])("migre %s en top_five (entity %s) en gardant id, place, taille et réglages", (old, entity) => {
+    const [w] = parseLayout(payload([pw({ id: 7, type: old, index: 3, w: 2, h: 2, settings: { color: "#F87171", autre: 1 } })]));
+    expect(w).toEqual({ id: 7, type: "top_five", index: 3, w: 2, h: 2, settings: { color: "#F87171", autre: 1, entity } });
+  });
+
+  it("migration : réglages absents, ordre conservé, round-trip n'écrit que top_five", () => {
+    const raw = payload([pw({ id: 1, type: "top_artists", settings: undefined }), pw({ id: 2, type: "bio", index: 6 }), pw({ id: 3, type: "top_albums", index: 7 })]);
+    const parsed = parseLayout(raw);
+    expect(parsed.map((x) => [x.id, x.type])).toEqual([[1, "top_five"], [2, "bio"], [3, "top_five"]]);
+    expect(parsed[0].settings).toEqual({ entity: "artists" });
+    const out = serializeLayout(parsed);
+    expect(out).not.toMatch(/top_(tracks|albums|artists)/);
+    expect(parseLayout(out)).toEqual(parsed);
+  });
+
   it.each([null, "", "pas du json", "{", "null", "42", '"x"', "[]", "{}"])("retourne [] pour %j", (raw) => {
     expect(parseLayout(raw)).toEqual([]);
   });

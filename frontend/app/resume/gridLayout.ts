@@ -48,6 +48,9 @@ export const nextWidgetId = (widgets: PlacedWidget[]): number =>
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
+/** Anciens types « top 5 » (un par élément), fusionnés en `top_five` + réglage `entity`. */
+const LEGACY_TOP_FIVE = { top_tracks: "tracks", top_albums: "albums", top_artists: "artists" } as const;
+
 /**
  * Relit une mise en page sérialisée (les chevauchements sont permis : l'ordre du tableau est l'ordre d'empilement). Jamais d'exception : JSON invalide, version inconnue ou
  * widget invalide (type inconnu, hors grille, id dupliqué) donnent une liste
@@ -64,9 +67,13 @@ export const parseLayout = (raw: string | null): PlacedWidget[] => {
     if (!isPlainObject(item)) continue;
     const { id, type, index, w, h, settings } = item;
     if (typeof id !== "number" || !Number.isInteger(id) || id < 1) continue;
-    if (!isWidgetType(type)) continue;
+    const legacy = typeof type === "string" && Object.hasOwn(LEGACY_TOP_FIVE, type) ? LEGACY_TOP_FIVE[type as keyof typeof LEGACY_TOP_FIVE] : null;
+    if (!legacy && !isWidgetType(type)) continue;
     if (typeof index !== "number" || typeof w !== "number" || typeof h !== "number") continue;
-    const widget: PlacedWidget = { id, type, index, w, h, settings: isPlainObject(settings) ? settings : {} };
+    const base = isPlainObject(settings) ? settings : {};
+    const widget = (legacy
+      ? { id, type: "top_five", index, w, h, settings: { ...base, entity: legacy } }
+      : { id, type, index, w, h, settings: base }) as PlacedWidget;
     if (!fitsInGrid(widget)) continue;
     if (result.some((r) => r.id === id)) continue;
     result.push(widget);

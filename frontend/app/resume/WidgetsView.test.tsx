@@ -52,11 +52,11 @@ describe("WidgetsView – rendu", () => {
     ["Photo de profil", "Pseudonyme", "Fond d'écran", "Description",
       "Temps d'écoute", "Nombre de streams", "Titres différents", "Albums différents", "Artistes différents",
       "Évolution", "Série de jours", "Nouveaux artistes",
-      "Top 5 titres", "Top 5 albums", "Top 5 artistes", "N°1",
+      "Top 5", "N°1",
       "Période", "Texte libre", "En écoute", "Logo"]
       .forEach((t) => expect(screen.getByText(t)).toBeInTheDocument());
     ["Classements", "Divers"].forEach((s) => expect(section(s)).toBeInTheDocument());
-    expect(document.querySelectorAll("[draggable=true]")).toHaveLength(20);
+    expect(document.querySelectorAll("[draggable=true]")).toHaveLength(18);
   });
 
   it("affiche les sous-titres calculés à partir des données", () => {

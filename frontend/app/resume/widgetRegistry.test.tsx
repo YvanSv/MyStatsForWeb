@@ -22,15 +22,15 @@ describe("registre des widgets", () => {
       expect(WIDGET_TYPES).toContain(id);
   });
 
-  it("contient les 11 nouveaux types", () => {
-    for (const id of ["top_tracks", "top_albums", "top_artists", "top_one", "period", "free_text", "comparison", "streak", "new_artists", "now_playing", "logo"])
+  it("contient les 9 nouveaux types", () => {
+    for (const id of ["top_five", "top_one", "period", "free_text", "comparison", "streak", "new_artists", "now_playing", "logo"])
       expect(WIDGET_TYPES).toContain(id);
-    expect(WIDGET_TYPES).toHaveLength(20);
+    expect(WIDGET_TYPES).toHaveLength(18);
   });
 
   it("catégorie « top » pour les classements, titre traduit en fr et en", () => {
     expect(WIDGET_CATEGORIES.map((c) => c.id)).toEqual(["account", "stats", "top", "other"]);
-    expect(widgetsOfCategory("top").map((d) => d.type)).toEqual(["top_tracks", "top_albums", "top_artists", "top_one"]);
+    expect(widgetsOfCategory("top").map((d) => d.type)).toEqual(["top_five", "top_one"]);
     for (const lang of ["fr", "en"] as const)
       for (const c of WIDGET_CATEGORIES) expect((languages[lang].resume as Record<string, unknown>)[c.titleKey]).toEqual(expect.any(String));
   });
@@ -40,9 +40,8 @@ describe("registre des widgets", () => {
   });
 
   it("select() des nouveaux widgets", () => {
-    expect(WIDGET_REGISTRY.top_tracks.select(sample)).toBe(sample.topTracks);
-    expect(WIDGET_REGISTRY.top_artists.select(sample)).toBe(sample.topArtists);
-    expect(WIDGET_REGISTRY.top_albums.select(bare)).toEqual([]);
+    expect(WIDGET_REGISTRY.top_five.select(sample)).toEqual({ tracks: sample.topTracks, albums: [], artists: sample.topArtists });
+    expect(WIDGET_REGISTRY.top_five.select(bare)).toEqual({ tracks: [], albums: [], artists: [] });
     expect(WIDGET_REGISTRY.top_one.select(sample)).toEqual({ tracks: sample.topTracks[0], albums: undefined, artists: sample.topArtists[0] });
     expect(WIDGET_REGISTRY.period.select(sample)).toBe("2026");
     expect(WIDGET_REGISTRY.period.select(bare)).toBeNull();
@@ -52,11 +51,9 @@ describe("registre des widgets", () => {
     expect(WIDGET_REGISTRY.new_artists.select(bare)).toBeNull();
   });
 
-  it("sous-titres calculés des classements", () => {
-    const ctx = { r: languages.fr.resume, n: (v: number) => String(v) };
-    const sub = WIDGET_REGISTRY.top_tracks.subtitle as (d: unknown, c: typeof ctx) => string | undefined;
-    expect(sub(sample.topTracks, ctx)).toBe("T");
-    expect(sub([], ctx)).toBeUndefined();
+  it("top_five : sous-titre générique traduit", () => {
+    expect(WIDGET_REGISTRY.top_five.subtitle).toBe("subtitleTopFive");
+    expect(WIDGET_REGISTRY.top_five.labelKey).toBe("widgetTopFive");
   });
 
   it.each(defs)("%s : définition cohérente", (type, def) => {

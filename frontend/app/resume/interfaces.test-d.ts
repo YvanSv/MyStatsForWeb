@@ -43,7 +43,7 @@ describe("réglages par widget", () => {
   it("WidgetType est la clé de WidgetSettingsMap (les types du canvas)", () => {
     expectTypeOf<WidgetType>().toEqualTypeOf<
       "profile_picture" | "username" | "background" | "bio" | "minutes" | "streams" | "nb_tracks" | "nb_albums" | "nb_artists"
-      | "top_tracks" | "top_albums" | "top_artists" | "top_one" | "period" | "free_text" | "comparison" | "streak" | "new_artists" | "now_playing" | "logo"
+      | "top_five" | "top_one" | "period" | "free_text" | "comparison" | "streak" | "new_artists" | "now_playing" | "logo"
     >();
   });
 
