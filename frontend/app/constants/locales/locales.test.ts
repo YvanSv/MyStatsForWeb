@@ -112,10 +112,12 @@ describe.each(dictionaries)("dictionnaire %s – qualité des textes", (_lang, d
       "importData.errorAppleDate",
       "importData.errorAppleHour",
       "importData.successImport",
+      "itemDetail.rankOf",
       "meta.bannerAlt",
       "meta.profileDescription",
       "meta.profileTitle",
       "profilePage.unitDays",
+      "rankingcell.openDetail",
       "resume.wSizeTitle",
     ]);
   });

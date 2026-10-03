@@ -2,6 +2,7 @@ import { useLanguage } from "@/app/context/languageContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import Image from "next/image";
 import { renderCellSubtitle } from "./CellSubtitle";
+import CellName from "./CellLink";
 import StatBlocks from "./StatBlock";
 import { getCellDisplay, formatMinutes, formatPercent, formatStat, formatStreams, ratingColorClass, withUnit } from "./format";
 
@@ -9,6 +10,8 @@ interface GridCellProps {
   element: DataInfo;
   index: number;
   sort: string;
+  /** Rend la cellule cliquable vers la page de détail (classements « /my » uniquement). */
+  linkTo?: boolean;
 }
 
 const GRID_CELL_STYLES = {
@@ -65,7 +68,7 @@ const GRID_CELL_STYLES = {
   MOBILE_VALUE: (isActive: boolean) => isActive ? `text2` : `text3`
 };
 
-export default function GridCell({ element, index, sort }: GridCellProps) {
+export default function GridCell({ element, index, sort, linkTo }: GridCellProps) {
   const { t } = useLanguage();
   const dict = t.rankingcell;
   const { isArtist, displayName, displayImage } = getCellDisplay(element, dict.unknown);
@@ -97,7 +100,7 @@ export default function GridCell({ element, index, sort }: GridCellProps) {
       {/* SECTION TEXTE */}
       <div className={GRID_CELL_STYLES.TEXT_CONTENT}>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h3 className={GRID_CELL_STYLES.TITLE(isArtist)}>{displayName}</h3>
+          <h3 className={GRID_CELL_STYLES.TITLE(isArtist)}><CellName element={element} name={displayName} linkTo={linkTo}/></h3>
           {subtitle && (
             <p className={GRID_CELL_STYLES.SUBTITLE}>{subtitle}</p>
           )}

@@ -129,6 +129,30 @@ describe("useApiMyDatas.getResumeStats", () => {
   });
 });
 
+describe("useApiMyDatas.getItemDetail", () => {
+  it.each([
+    ["track", "tracks"], ["album", "albums"], ["artist", "artists"],
+  ] as const)("appelle /data/my/%s/{id}/detail sans période (tout l'historique)", async (type, entity) => {
+    const { result } = renderHook(() => useApiMyDatas());
+    await result.current.getItemDetail(type, 42);
+    expect(h.request).toHaveBeenCalledWith(`${API_ENDPOINTS.TRACKS.replace("/tracks", `/${entity}`)}/42/detail`);
+  });
+
+  it("transmet les bornes de période comme le dashboard (start_date / end_date)", async () => {
+    const { result } = renderHook(() => useApiMyDatas());
+    await result.current.getItemDetail("track", 7, "2026-01-01T00:00:00.000Z", "2026-01-31T23:59:59.999Z");
+    const { base, params } = parse(h.request.mock.calls[0][0]);
+    expect(base).toBe(`${API_ENDPOINTS.TRACKS}/7/detail`);
+    expect(Object.fromEntries(params)).toEqual({ start_date: "2026-01-01T00:00:00.000Z", end_date: "2026-01-31T23:59:59.999Z" });
+  });
+
+  it("encode l'identifiant", async () => {
+    const { result } = renderHook(() => useApiMyDatas());
+    await result.current.getItemDetail("album", "a/b");
+    expect(h.request.mock.calls[0][0]).toBe(`${API_ENDPOINTS.ALBUMS}/a%2Fb/detail`);
+  });
+});
+
 describe("useApiMyDatas - dépendances des callbacks", () => {
   it("getResumeStats utilise le request courant quand il change", async () => {
     const r1 = vi.fn().mockResolvedValue("a");

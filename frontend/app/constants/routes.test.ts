@@ -24,6 +24,21 @@ describe("FRONT_ROUTES – pages existantes", () => {
   });
 });
 
+describe("FRONT_ROUTES – pages de détail", () => {
+  const appDir = path.resolve(import.meta.dirname, "..");
+  it.each(["tracks", "albums", "artists"])("/my/%s/[id] a une page", (segment) => {
+    expect(fs.existsSync(path.join(appDir, "my", segment, "[id]", "page.tsx"))).toBe(true);
+  });
+
+  it.each([
+    ["MY_TRACKS", "/my/tracks"],
+    ["MY_ALBUMS", "/my/albums"],
+    ["MY_ARTISTS", "/my/artists"],
+  ] as const)("%s mène vers %s", (key, route) => {
+    expect(FRONT_ROUTES[key]).toBe(route);
+  });
+});
+
 describe("FRONT_ROUTES", () => {
   it("expose des chemins de classements sans slash final (pour éviter « /my//tracks »)", () => {
     expect(FRONT_ROUTES.MY_RANKINGS).toBe("/my");
@@ -188,6 +203,7 @@ describe("API_ENDPOINTS – contrat avec le backend", () => {
     NEXT: "/data/my/currently-playing/next",
     PREVIOUS: "/data/my/currently-playing/previous",
     SHARE: "/data/my/resume",
+    ITEM_DETAIL: "/data/my/{entity}/{id}/detail",
     ERRORS: "/admin/errors",
     MERGE_REQUESTS: "/admin/merge-requests",
     CREATE_REQUESTS: "/admin/create-requests",

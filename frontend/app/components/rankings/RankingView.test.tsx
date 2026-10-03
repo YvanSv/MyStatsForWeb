@@ -43,10 +43,10 @@ vi.mock("lucide-react", () => ({
 // Les cellules ont leurs propres tests : ici de simples stubs qui exposent leurs props.
 // `instance` permet de vérifier qu'une cellule est conservée (clé stable) d'un rendu à l'autre.
 function makeCell(kind: string) {
-  return function Cell({ element, index, sort }: { element: { title?: string; name?: string; type: string }; index: number; sort: string }) {
+  return function Cell({ element, index, sort, linkTo }: { element: { title?: string; name?: string; type: string }; index: number; sort: string; linkTo?: boolean }) {
     const [instance] = useState(() => ++h.instances);
     return (
-      <div data-testid={`cell-${kind}`} data-instance={instance} data-index={index} data-sort={sort} data-type={element.type}>
+      <div data-testid={`cell-${kind}`} data-instance={instance} data-index={index} data-sort={sort} data-type={element.type} data-link={String(!!linkTo)}>
         {element.title ?? element.name}
       </div>
     );
@@ -89,6 +89,19 @@ beforeEach(() => {
 });
 
 // --- Tests -----------------------------------------------------------------
+
+describe("RankingView – liens vers la page de détail", () => {
+  it("n'active pas les liens par défaut (classements publics /all)", () => {
+    renderView();
+    for (const c of screen.getAllByTestId(/^cell-/)) expect(c).toHaveAttribute("data-link", "false");
+  });
+
+  it.each(["grid", "grid_sm", "list"])("transmet linkTo aux cellules en vue %s", (mode) => {
+    h.viewMode = mode;
+    renderView({ linkTo: true });
+    for (const c of screen.getAllByTestId(/^cell-/)) expect(c).toHaveAttribute("data-link", "true");
+  });
+});
 
 describe("RankingView – en-tête", () => {
   it.each([

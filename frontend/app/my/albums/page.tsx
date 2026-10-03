@@ -26,7 +26,7 @@ function AlbumsContent() {
         title={t.ranking.allmy} type="album" items={items}
         sortConfig={currentSort} onSort={handleSort} loading={status.loading}
         hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
-        filterConfig={filterConfig}
+        filterConfig={filterConfig} linkTo
       />
     );
 }

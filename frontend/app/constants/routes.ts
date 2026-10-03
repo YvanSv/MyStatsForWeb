@@ -54,6 +54,8 @@ export const API_ENDPOINTS = {
   NEXT: `${API_MY_DATA}/currently-playing/next`,
   PREVIOUS: `${API_MY_DATA}/currently-playing/previous`,
   SHARE: `${API_MY_DATA}/resume`,
+  // Gabarit : {entity} vaut tracks | albums | artists (voir hooks/useApiMyDatas.getItemDetail)
+  ITEM_DETAIL: `${API_MY_DATA}/{entity}/{id}/detail`,
 
   ERRORS: `${API_ADMIN}/errors`,
   MERGE_REQUESTS: `${API_ADMIN}/merge-requests`,
@@ -64,6 +66,9 @@ export const FRONT_ROUTES = {
   ACCUEIL: '/',
   AUTH: '/auth',
   MY_RANKINGS: '/my',
+  MY_TRACKS: '/my/tracks',
+  MY_ALBUMS: '/my/albums',
+  MY_ARTISTS: '/my/artists',
   IMPORT: '/import',
   ACCOUNT: '/account',
   DASHBOARD: '/profile/dashboard',

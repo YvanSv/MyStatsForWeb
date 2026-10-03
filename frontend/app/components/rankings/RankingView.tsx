@@ -24,6 +24,8 @@ interface RankingViewProps {
   hasMore: boolean;
   loadMore: () => void;
   filterConfig: SidebarFiltersConfig;
+  /** Les cellules deviennent des liens vers la page de détail (classements « /my » uniquement). */
+  linkTo?: boolean;
 }
 
 const RANKING_VIEW_STYLES = {
@@ -51,7 +53,7 @@ const RANKING_VIEW_STYLES = {
   GRID_CONTAINER: "grid grid-cols-3 md:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6",
 };
 
-export default function RankingView({ title, type, items, sortConfig, onSort, loading, hasMore, loadMore, filterConfig }: RankingViewProps) {
+export default function RankingView({ title, type, items, sortConfig, onSort, loading, hasMore, loadMore, filterConfig, linkTo = false }: RankingViewProps) {
   const { showFilters, toggleShowFilters } = useShowFilters();
   const { viewMode, toggleViewMode } = useViewMode();
   const { t } = useLanguage();
@@ -175,7 +177,7 @@ export default function RankingView({ title, type, items, sortConfig, onSort, lo
             RANKING_VIEW_STYLES.GRID_CONTAINER
           }>
             {normalizedItems.map((item, i) => {
-              const commonProps = { element: item, index: i, sort: sortConfig.sort };
+              const commonProps = { element: item, index: i, sort: sortConfig.sort, linkTo };
               // id interne renvoyé par l'API (le spotify_id n'existe plus depuis le passage aux identifiants entiers)
               const itemKey = item.id;
               if (viewMode === 'list') return <ListCell key={itemKey} {...commonProps} />;

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { DataInfo } from "@/app/data/DataInfos";
 import { useLanguage } from "@/app/context/languageContext";
+import CellName from "./CellLink";
 import { renderCellSubtitle } from "./CellSubtitle";
 import { getCellDisplay, formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, safeNumber, withUnit } from "./format";
 
@@ -8,11 +9,13 @@ interface ListCellProps {
   element: DataInfo;
   index: number;
   sort: string;
+  /** Rend la ligne cliquable vers la page de détail (classements « /my » uniquement). */
+  linkTo?: boolean;
 }
 
 const LIST_CELL_STYLES = {
   // Conteneur de la ligne
-  WRAPPER: `group flex lg:grid lg:grid-cols-[45px_2fr_120px_120px_140px_100px_60px] 
+  WRAPPER: `group relative flex lg:grid lg:grid-cols-[45px_2fr_120px_120px_140px_100px_60px] 
             items-center gap-3 md:gap-4 bg-bg2/25 backdrop-blur-sm px-2 py-1.5 rounded-2xl 
             border border-white/5 hover:border-vert/30 transition-all hover:translate-x-1`,
 
@@ -49,7 +52,7 @@ const LIST_CELL_STYLES = {
   }
 };
 
-export default function ListCell({ element, index, sort }: ListCellProps) {
+export default function ListCell({ element, index, sort, linkTo }: ListCellProps) {
   const { t } = useLanguage();
   const dict = t.rankingcell;
   const { isArtist, displayName, displayImage } = getCellDisplay(element, dict.unknown);
@@ -87,7 +90,7 @@ export default function ListCell({ element, index, sort }: ListCellProps) {
           : <div className={`text3 w-full h-full flex items-center justify-center`}>?</div>}
         </div>
         <div className="min-w-0">
-          <h3 className={LIST_CELL_STYLES.TITLE}>{displayName}</h3>
+          <h3 className={LIST_CELL_STYLES.TITLE}><CellName element={element} name={displayName} linkTo={linkTo}/></h3>
           {!isArtist && <p className={LIST_CELL_STYLES.SUBTITLE}>{subtitle}</p>}
         </div>
       </div>

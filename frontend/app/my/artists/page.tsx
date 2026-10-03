@@ -26,7 +26,7 @@ function ArtistsContent() {
       title={t.ranking.allmy} type="artist" items={items}
       sortConfig={currentSort} onSort={handleSort} loading={status.loading}
       hasMore={status.hasMore} loadMore={() => fetchData(status.offset + 50, false)} 
-      filterConfig={filterConfig}
+      filterConfig={filterConfig} linkTo
     />
   );
 }

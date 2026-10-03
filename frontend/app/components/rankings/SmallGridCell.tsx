@@ -2,6 +2,7 @@ import { useLanguage } from "@/app/context/languageContext";
 import { DataInfo } from "@/app/data/DataInfos";
 import Image from "next/image";
 import { renderCellSubtitle } from "./CellSubtitle";
+import CellName from "./CellLink";
 import StatBlocks from "./StatBlock";
 import { getCellDisplay, formatStat, ratingColorClass, withUnit } from "./format";
 
@@ -9,6 +10,8 @@ interface SmallGridCellProps {
   element: DataInfo;
   index: number;
   sort: string;
+  /** Rend la cellule cliquable vers la page de détail (classements « /my » uniquement). */
+  linkTo?: boolean;
 }
 
 const SMALL_GRID_STYLES = {
@@ -61,7 +64,7 @@ const SMALL_GRID_STYLES = {
   STAT_LABEL: `text3 text-[7px] uppercase tracking-widest font-medium`
 };
 
-export default function SmallGridCell({ element, index, sort }: SmallGridCellProps) {
+export default function SmallGridCell({ element, index, sort, linkTo }: SmallGridCellProps) {
   const { t } = useLanguage();
   const dict = t.rankingcell;
   const { isArtist, displayName, displayImage } = getCellDisplay(element, dict.unknown);
@@ -93,7 +96,7 @@ export default function SmallGridCell({ element, index, sort }: SmallGridCellPro
       {/* SECTION TEXTE */}
       <div className={SMALL_GRID_STYLES.TEXT_CONTENT}>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h3 className={SMALL_GRID_STYLES.TITLE(isArtist)}>{displayName}</h3>
+          <h3 className={SMALL_GRID_STYLES.TITLE(isArtist)}><CellName element={element} name={displayName} linkTo={linkTo}/></h3>
           {subtitle && (
             <p className={SMALL_GRID_STYLES.SUBTITLE}>{subtitle}</p>
           )}

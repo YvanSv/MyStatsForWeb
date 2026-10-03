@@ -86,6 +86,11 @@ describe.each([
     expect(l.fetchData).toHaveBeenCalledWith(100, false);
   });
 
+  it("active les liens vers la page de détail de chaque élément", () => {
+    render(<Page />);
+    expect(h.props.current!.linkTo).toBe(true);
+  });
+
   it("affiche le squelette sans utilisateur connecté", () => {
     h.user = null;
     render(<Page />);

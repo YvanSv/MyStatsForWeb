@@ -3,7 +3,8 @@
 import { useCallback, useMemo } from "react";
 import { API_ENDPOINTS } from "../constants/routes";
 import { useApi } from "./useApi";
-import type { QueryFilters, RankingItem, RankingMetadata, TodayStats } from "./apiTypes";
+import type { ItemDetail, ItemType, QueryFilters, RankingItem, RankingMetadata, TodayStats } from "./apiTypes";
+import { pathSegment } from "../services/url";
 import type { DataFormat } from "../resume/interfaces";
 import { DEFAULT_DIRECTION, DEFAULT_PAGE_OFFSET, DEFAULT_PAGE_SIZE, DEFAULT_SORT } from "../constants/ui";
 
@@ -55,11 +56,21 @@ export const useApiMyDatas = () => {
   const getTodayStats = useCallback(() => request<TodayStats>(API_ENDPOINTS.TODAY_STATS), [request]);
   const getResumeStats = useCallback((filters?: QueryFilters) => request<DataFormat>(`${API_ENDPOINTS.SHARE}?${buildParams(filters)}`), [request, buildParams]);
 
+  /** Statistiques détaillées d'un élément de l'utilisateur sur une période (bornes ISO ; absentes = tout l'historique). */
+  const getItemDetail = useCallback((type: ItemType, id: string | number, start?: string | null, end?: string | null) => {
+    const params = new URLSearchParams();
+    if (start) params.set("start_date", start);
+    if (end) params.set("end_date", end);
+    const query = params.toString();
+    const url = API_ENDPOINTS.ITEM_DETAIL.replace("{entity}", `${type}s`).replace("{id}", pathSegment(id));
+    return request<ItemDetail>(query ? `${url}?${query}` : url);
+  }, [request]);
+
   return useMemo(() => ({
-    loading, getTracks, getArtists, getAlbums, getResumeStats,
+    loading, getItemDetail, getTracks, getArtists, getAlbums, getResumeStats,
     getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   }), [
-    loading, getTracks, getArtists, getAlbums, getResumeStats,
+    loading, getItemDetail, getTracks, getArtists, getAlbums, getResumeStats,
     getTracksMetadata, getArtistsMetadata, getAlbumsMetadata, refreshUserData, getTodayStats
   ]);
 };

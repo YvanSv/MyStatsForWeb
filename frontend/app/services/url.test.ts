@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pathSegment } from "./url";
+import { itemDetailPath, itemRankingPath, pathSegment } from "./url";
 
 describe("pathSegment", () => {
   it.each([["yvan", "yvan"], ["mon-slug-2", "mon-slug-2"], ["42", "42"]])("laisse %s inchangé", (value, expected) => {
@@ -38,4 +38,22 @@ describe("pathSegment", () => {
   it("renvoie une chaîne vide pour une valeur vide", () => {
     expect(pathSegment("")).toBe("");
   });
+});
+
+describe("itemDetailPath / itemRankingPath", () => {
+  it.each([
+    ["track", 12, "/my/tracks/12"],
+    ["album", "7", "/my/albums/7"],
+    ["artist", 3, "/my/artists/3"],
+  ] as const)("%s %s -> %s", (type, id, expected) => {
+    expect(itemDetailPath(type, id)).toBe(expected);
+  });
+
+  it("encode l'identifiant sans le ré-encoder", () => {
+    expect(itemDetailPath("track", "a/b")).toBe("/my/tracks/a%2Fb");
+    expect(itemDetailPath("track", "caf%C3%A9")).toBe("/my/tracks/caf%C3%A9");
+  });
+
+  it.each([["track", "/my/tracks"], ["album", "/my/albums"], ["artist", "/my/artists"]] as const)(
+    "classement de %s : %s", (type, expected) => expect(itemRankingPath(type)).toBe(expected));
 });
