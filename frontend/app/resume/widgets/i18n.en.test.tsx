@@ -80,7 +80,7 @@ describe("panneaux de réglages en anglais", () => {
     const data = [1, 2].map((n) => ({ name: `Item ${n}`, minutes: n, rating: n, streams: n * 1234567, image: "i.png" })) as any;
     const { container } = render(<TopFiveWidget w={3} h={3} type="tracks" data={data} />);
     const root = within(container);
-    expect(root.getByText("Undisputed #1 tracks")).toBeInTheDocument();
+    expect(root.getByText("tracks")).toBeInTheDocument();
     expect(root.getByText("1,234,567")).toBeInTheDocument();
     expect(root.getByText("2,469,134")).toBeInTheDocument();
   });

@@ -508,7 +508,6 @@ export const en = {
     wShorten: "Shorten (1.2M)",
     wShowIcon: "Show icon",
     wWidgetTitle: "Widget title",
-    wUnchallenged: (type: string) => `Undisputed #1 ${type}`,
     sectionTop: "Rankings",
     sectionOther: "Other",
     widgetTopFive: "Top 5",

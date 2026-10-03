@@ -117,7 +117,6 @@ describe.each(dictionaries)("dictionnaire %s – qualité des textes", (_lang, d
       "meta.profileTitle",
       "profilePage.unitDays",
       "resume.wSizeTitle",
-      "resume.wUnchallenged",
     ]);
   });
 });

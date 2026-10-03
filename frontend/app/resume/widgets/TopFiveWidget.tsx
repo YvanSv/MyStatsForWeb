@@ -182,7 +182,7 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
           <div className="w-full grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-4 min-w-0">
             <span aria-hidden="true"/>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-center truncate max-w-full" style={{ color }}>
-              {t.resume.wUnchallenged(typeLabel)}
+              {typeLabel}
             </p>
             <span className="justify-self-end min-w-0 max-w-full flex px-2 py-0.5 rounded-full border border-white/10 bg-white/5">{pill("text-[8px]")}</span>
           </div>

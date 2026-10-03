@@ -508,7 +508,6 @@ export const fr = {
     wShorten: "Abréger (1.2M)",
     wShowIcon: "Afficher l'icône",
     wWidgetTitle: "Titre du widget",
-    wUnchallenged: (type: string) => `N°1 Incontesté ${type}`,
     sectionTop: "Classements",
     sectionOther: "Divers",
     widgetTopFive: "Top 5",

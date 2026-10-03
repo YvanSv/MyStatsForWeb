@@ -38,7 +38,7 @@ describe("TopFiveWidget", () => {
 
   it("3x3 : n°1 en avant, streams formatés, rangs 2 à 5, rien au-delà", () => {
     render(<TopFiveWidget w={3} h={3} type="artists" data={[...five, item(6)]} />);
-    expect(screen.getByText(/N°1 Incontesté artistes/)).toBeInTheDocument();
+    expect(screen.getByText(/^artistes$/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Item 1" })).toBeInTheDocument();
     for (let n = 1; n <= 5; n++) expect(screen.getByText(fmt(n * 1000).replace(/\s/g, " "))).toBeInTheDocument();
     expect(screen.queryByText("Item 6")).toBeNull();
