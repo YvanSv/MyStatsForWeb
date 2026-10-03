@@ -83,6 +83,15 @@ describe("WidgetsView – rendu", () => {
 
 });
 
+describe("WidgetsView – hauteur bornée", () => {
+  it("le panneau est une colonne flex min-h-0 et seule la liste défile (plus de max-h-[61vh])", () => {
+    render(<WidgetsView resumeData={data()} />);
+    expect(screen.getByTestId("widgets-panel")).toHaveClass("flex", "flex-col", "flex-1", "min-h-0");
+    expect(screen.getByTestId("widgets-scroll")).toHaveClass("flex-1", "min-h-0", "overflow-y-auto", "pl-1", "pr-2"); // marge pour les contours
+    expect(screen.getByTestId("widgets-panel").innerHTML).not.toContain("61vh");
+  });
+});
+
 describe("WidgetsView – accordéon", () => {
   it("les sections sont repliées par défaut", () => {
     render(<WidgetsView resumeData={data()} />);

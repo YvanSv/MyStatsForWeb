@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, createEvent, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ResumeCanvas from "./ResumeCanvas";
 import type { PlacedWidget } from "./interfaces";
@@ -49,17 +49,19 @@ const pw = (over: Record<string, unknown> = {}): PlacedWidget => ({
 
 const h = vi.hoisted(() => ({ onSelect: vi.fn(), setWidgets: vi.fn() }));
 
-const renderCanvas = (widgets: PlacedWidget[], data: any = resumeData, range: string | number = "2025") =>
+// `selectedId` (facultatif) pilote la sélection comme le fait la page ; poubelle et poignées n'existent que pour le widget sélectionné
+const renderCanvas = (widgets: PlacedWidget[], data: any = resumeData, range: string | number = "2025", selectedId?: number | null) =>
   render(
-    <ResumeCanvas range={range} resumeData={data} widgets={widgets} setWidgets={h.setWidgets} onSelectWidget={h.onSelect} />,
+    <ResumeCanvas range={range} resumeData={data} widgets={widgets} setWidgets={h.setWidgets} onSelectWidget={h.onSelect} selectedId={selectedId} />,
   );
+const renderSelected = (widgets: PlacedWidget[], selectedId = widgets[0]?.id ?? null) => renderCanvas(widgets, resumeData, "2025", selectedId);
 
 // Version avec état réel pour les redimensionnements et suppressions
 let latest: PlacedWidget[] = [];
-function Stateful({ initial }: { initial: PlacedWidget[] }) {
+function Stateful({ initial, selected }: { initial: PlacedWidget[]; selected?: number | null }) {
   const [widgets, setWidgets] = useState(initial);
   useEffect(() => { latest = widgets; }, [widgets]);
-  return <ResumeCanvas range="y" resumeData={resumeData} widgets={widgets} setWidgets={setWidgets} onSelectWidget={h.onSelect} />;
+  return <ResumeCanvas range="y" resumeData={resumeData} widgets={widgets} setWidgets={setWidgets} onSelectWidget={h.onSelect} selectedId={selected === undefined ? initial[0]?.id ?? null : selected} />;
 }
 
 const gridEl = (c: HTMLElement) => c.querySelector(".relative.p-2") as HTMLElement;
@@ -200,6 +202,64 @@ describe("ResumeCanvas – positionnement", () => {
   });
 });
 
+describe("ResumeCanvas – empilement", () => {
+  const boxes = (c: HTMLElement) => Array.from(c.querySelectorAll<HTMLElement>(".pointer-events-auto.group"));
+  const stack = [pw({ id: 10, index: 0, w: 2, h: 2 }), pw({ id: 20, index: 1 }), pw({ id: 30, index: 0 })];
+
+  it("chaque widget a un z-index égal à sa position dans le tableau + 1 (le dernier est au-dessus)", () => {
+    const { container } = renderCanvas(stack);
+    expect(boxes(container).map((b) => b.style.zIndex)).toEqual(["1", "2", "3"]);
+  });
+
+  it("le DOM suit l'ordre du tableau", () => {
+    const { container } = renderCanvas([stack[2], stack[0], stack[1]]);
+    expect(boxes(container).map((b) => b.style.zIndex)).toEqual(["1", "2", "3"]);
+    expect(boxes(container)[0].style.gridColumn).toBe("1 / span 1"); // le widget 30 (1x1 en case 0) est dessous
+  });
+
+  it("sélectionner un widget n'altère jamais l'ordre d'empilement visible (pas de z-50)", async () => {
+    const { container } = renderCanvas(stack);
+    await userEvent.click(boxes(container)[0]);
+    expect(boxes(container)[0]).toHaveAttribute("data-selected", "true");
+    expect(boxes(container).map((b) => b.style.zIndex)).toEqual(["1", "2", "3"]);
+    expect(container.querySelector(".z-50")).not.toBeInTheDocument();
+    expect(container.querySelector(".hover\\:z-30")).not.toBeInTheDocument();
+  });
+
+  it("anneau, poubelle et poignées du widget recouvert sont dans une surimpression au-dessus de tous les widgets, exclue de l'export", () => {
+    const { container } = renderSelected(stack, 10);
+    const overlay = screen.getByTestId("selection-overlay");
+    expect(overlay).toHaveAttribute("data-export-ignore", "true");
+    expect(Number(overlay.style.zIndex)).toBeGreaterThan(Math.max(...boxes(container).map((b) => Number(b.style.zIndex))));
+    expect(overlay.querySelector(".ring-2")).toBeInTheDocument();
+    expect(overlay.querySelector(".cursor-se-resize")).toBeInTheDocument();
+    expect(overlay.querySelector('[title="Supprimer le widget"]')).toBeInTheDocument();
+    // même emplacement que le widget 10 (2x2 en case 0)
+    expect((overlay.firstElementChild as HTMLElement).style.gridColumn).toBe("1 / span 2");
+    expect((overlay.firstElementChild as HTMLElement).style.gridRow).toBe("1 / span 2");
+  });
+
+  it("pas de surimpression sans sélection, ni pour un id absent", () => {
+    renderCanvas(stack);
+    expect(screen.queryByTestId("selection-overlay")).not.toBeInTheDocument();
+    cleanup();
+    renderCanvas(stack, resumeData, "2025", 999);
+    expect(screen.queryByTestId("selection-overlay")).not.toBeInTheDocument();
+  });
+
+  it("la sélection pilotée par le parent (liste des calques) met en évidence le widget, sans clic", () => {
+    const { container } = renderCanvas(stack, resumeData, "2025", 20);
+    expect(boxes(container).map((b) => b.getAttribute("data-selected"))).toEqual([null, "true", null]);
+  });
+
+  it("l'export ne contient que les widgets dans l'ordre réel : tout le reste est exclu", () => {
+    const { container } = renderSelected(stack, 10);
+    const kept = boxes(container);
+    for (const b of kept) expect(b.closest('[data-export-ignore="true"]')).toBeNull();
+    expect(kept.map((b) => b.style.zIndex)).toEqual(["1", "2", "3"]);
+  });
+});
+
 describe("ResumeCanvas – sélection", () => {
   it("cliquer un widget le sélectionne et notifie le parent", async () => {
     const { container } = renderCanvas([pw({ id: 7, type: "bio", settings: { s: 1 } })]);
@@ -287,8 +347,11 @@ describe("ResumeCanvas – sélection", () => {
 });
 
 describe("ResumeCanvas – suppression", () => {
-  it("le bouton supprimer a un titre accessible", () => {
+  it("le bouton supprimer a un titre accessible (et n'existe que pour le widget sélectionné)", () => {
     renderCanvas([pw()]);
+    expect(screen.queryByRole("button", { name: "Supprimer le widget" })).not.toBeInTheDocument();
+    cleanup();
+    renderSelected([pw()]);
     expect(screen.getByRole("button", { name: "Supprimer le widget" })).toBeInTheDocument();
   });
 
@@ -299,9 +362,10 @@ describe("ResumeCanvas – suppression", () => {
   });
 
   it("n'appelle pas la sélection quand on supprime (stopPropagation)", async () => {
-    renderCanvas([pw()]);
+    renderSelected([pw()]);
     await userEvent.click(screen.getByTitle("Supprimer le widget"));
-    expect(h.onSelect).not.toHaveBeenCalled();
+    // seule la désélection (null) est notifiée, jamais une sélection du widget
+    expect(h.onSelect.mock.calls.every(([arg]) => arg === null)).toBe(true);
   });
 
   it("supprimer le widget sélectionné vide les propriétés du parent", async () => {
@@ -312,16 +376,14 @@ describe("ResumeCanvas – suppression", () => {
     expect(h.onSelect).toHaveBeenCalledWith(null);
   });
 
-  it("supprimer un widget non sélectionné ne touche pas la sélection", async () => {
-    const { container } = renderCanvas([pw({ id: 1 }), pw({ id: 2, index: 1 })]);
-    await userEvent.click(container.querySelectorAll(".pointer-events-auto")[0]);
-    h.onSelect.mockClear();
-    await userEvent.click(screen.getAllByTitle("Supprimer le widget")[1]);
-    expect(h.onSelect).not.toHaveBeenCalled();
+  it("la poubelle ne supprime que le widget sélectionné, pas ceux qui le recouvrent", async () => {
+    render(<Stateful initial={[pw({ id: 1 }), pw({ id: 2 })]} selected={1} />);
+    await userEvent.click(screen.getByTitle("Supprimer le widget"));
+    expect(latest.map((w) => w.id)).toEqual([2]);
   });
 
   it("setWidgets reçoit un updater qui filtre par id", async () => {
-    renderCanvas([pw({ id: 5 })]);
+    renderSelected([pw({ id: 5 })]);
     await userEvent.click(screen.getByTitle("Supprimer le widget"));
     const updater = h.setWidgets.mock.calls[0][0];
     expect(updater([pw({ id: 5 }), pw({ id: 6 })])).toEqual([pw({ id: 6 })]);
@@ -405,16 +467,29 @@ describe("ResumeCanvas – glisser-déposer", () => {
     expect(h.setWidgets).not.toHaveBeenCalled();
   });
 
-  it("ignore un dépôt sur une cellule occupée par un autre widget", () => {
-    render(<Stateful initial={[pw({ id: 1, index: 4 })]} />);
+  it("dépôt sur une cellule occupée accepté (règle changée : l'empilement est permis) : créé au-dessus de tous les autres", () => {
+    render(<Stateful initial={[pw({ id: 1, index: 4 }), pw({ id: 2, index: 0 })]} />);
     fireEvent.drop(document.querySelectorAll(".aspect-square")[4], { dataTransfer: dataTransfer("bio", "") });
-    expect(latest).toEqual([pw({ id: 1, index: 4 })]);
+    expect(latest.map((w) => w.id)).toEqual([1, 2, 3]);
+    expect(latest[2]).toMatchObject({ type: "bio", index: 4, w: 1, h: 1 });
   });
 
-  it("ignore un dépôt sur une cellule couverte par un widget plus grand", () => {
+  it("dépôt sur une cellule couverte par un widget plus grand accepté, en fin de tableau", () => {
     render(<Stateful initial={[pw({ id: 1, index: 0, w: 2, h: 2 })]} />);
     fireEvent.drop(document.querySelectorAll(".aspect-square")[4], { dataTransfer: dataTransfer("bio", "") });
-    expect(latest).toHaveLength(1);
+    expect(latest).toHaveLength(2);
+    expect(latest[1]).toMatchObject({ id: 2, index: 4 });
+  });
+
+  it("déposer sur un widget (qui recouvre les cases) vise la case située sous le curseur", () => {
+    const { container } = renderCanvas([pw({ id: 1, index: 0, w: 3, h: 5 })]);
+    // grille mockée 300x500 : (150, 250) = colonne 1, ligne 2 = case 7
+    // jsdom n'a pas de DragEvent : on pose les coordonnées à la main
+    const ev = createEvent.drop(widgetBox(container), { dataTransfer: dataTransfer("bio", "") });
+    Object.defineProperties(ev, { clientX: { value: 150 }, clientY: { value: 250 } });
+    fireEvent(widgetBox(container), ev);
+    const updater = h.setWidgets.mock.calls[0][0];
+    expect(updater([pw({ id: 1, index: 0, w: 3, h: 5 })])[1]).toMatchObject({ type: "bio", index: 7 });
   });
 
   it("accepte un dépôt sur une cellule libre voisine", () => {
@@ -423,11 +498,12 @@ describe("ResumeCanvas – glisser-déposer", () => {
     expect(latest.map((w) => w.index)).toEqual([4, 5]);
   });
 
-  it("rend la prop setWidgets inchangée si l'index visé est hors grille", () => {
+  it("rend la liste inchangée si le widget déposé sortirait de la grille", () => {
     const { container } = renderCanvas([]);
-    fireEvent.drop(cells(container)[0], { dataTransfer: dataTransfer("bio", "") });
+    fireEvent.drop(cells(container)[2], { dataTransfer: dataTransfer("period", "") }); // 2x1 à la colonne 3
     const updater = h.setWidgets.mock.calls[0][0];
-    expect(updater([pw({ id: 1, index: 0 })])).toEqual([pw({ id: 1, index: 0 })]);
+    const prev = [pw({ id: 1, index: 0 })];
+    expect(updater(prev)).toBe(prev);
   });
 
   it("déposer masque la grille", () => {
@@ -466,9 +542,12 @@ describe("ResumeCanvas – redimensionnement", () => {
   };
   const move = (x: number, y: number) => fireEvent.mouseMove(window, { clientX: x, clientY: y });
 
-  it("affiche 4 poignées par widget", () => {
+  it("affiche 4 poignées pour le widget sélectionné seulement", () => {
     const { container } = renderCanvas([pw()]);
-    for (const p of ["nw", "ne", "sw", "se"]) expect(handle(container, p)).toBeInTheDocument();
+    expect(handle(container, "se")).not.toBeInTheDocument();
+    cleanup();
+    const sel = renderSelected([pw({ id: 1 }), pw({ id: 2, index: 1 })]);
+    for (const p of ["nw", "ne", "sw", "se"]) expect(sel.container.querySelectorAll(`.cursor-${p}-resize`)).toHaveLength(1);
   });
 
   it("mouseDown sur une poignée ne sélectionne pas le widget", () => {
@@ -531,7 +610,7 @@ describe("ResumeCanvas – redimensionnement", () => {
   });
 
   it("n'appelle pas setWidgets si la taille ne change pas", () => {
-    render(<ResumeCanvas range="y" resumeData={resumeData} widgets={[pw({ index: 4 })]} setWidgets={h.setWidgets} onSelectWidget={h.onSelect} />);
+    render(<ResumeCanvas range="y" resumeData={resumeData} widgets={[pw({ index: 4 })]} setWidgets={h.setWidgets} onSelectWidget={h.onSelect} selectedId={1} />);
     fireEvent.mouseDown(document.querySelector(".cursor-se-resize")!);
     fireEvent.mouseMove(window, { clientX: 150, clientY: 150 });
     expect(h.setWidgets).not.toHaveBeenCalled();
@@ -575,30 +654,30 @@ describe("ResumeCanvas – redimensionnement", () => {
     expect(latest.find((w) => w.id === 1)).toMatchObject({ w: 2, h: 2 });
   });
 
-  it("refuse un agrandissement qui chevaucherait un autre widget", () => {
+  it("agrandissement par-dessus un autre widget accepté (règle changée : l'empilement est permis), ordre inchangé", () => {
     const utils = render(<Stateful initial={[pw({ id: 1, index: 0 }), pw({ id: 2, index: 1 })]} />);
     fireEvent.mouseDown(utils.container.querySelectorAll(".cursor-se-resize")[0]);
-    move(150, 50); // 2x1 : chevauche le widget 2
-    expect(latest.find((w) => w.id === 1)).toMatchObject({ index: 0, w: 1, h: 1 });
-    move(50, 150); // 1x2 : libre
-    expect(latest.find((w) => w.id === 1)).toMatchObject({ index: 0, w: 1, h: 2 });
+    move(150, 50); // 2x1 : recouvre le widget 2
+    expect(latest.find((w) => w.id === 1)).toMatchObject({ index: 0, w: 2, h: 1 });
+    expect(latest.map((w) => w.id)).toEqual([1, 2]);
   });
 
-  it("refuse un agrandissement vers le haut/gauche qui chevaucherait un autre widget", () => {
+  it("agrandissement vers le haut/gauche par-dessus un autre widget accepté", () => {
     const utils = render(<Stateful initial={[pw({ id: 1, index: 4 }), pw({ id: 2, index: 3 })]} />);
     fireEvent.mouseDown(utils.container.querySelectorAll(".cursor-nw-resize")[0]);
-    move(10, 150); // tenterait de couvrir la cellule 3
-    expect(latest.find((w) => w.id === 1)).toMatchObject({ index: 4, w: 1, h: 1 });
+    move(10, 150); // couvre la cellule 3
+    expect(latest.find((w) => w.id === 1)).toMatchObject({ index: 3, w: 2, h: 1 });
   });
 
-  it("l'updater de redimensionnement vérifie la collision sur l'état le plus récent", () => {
-    render(<ResumeCanvas range="y" resumeData={resumeData} widgets={[pw({ index: 0 })]} setWidgets={h.setWidgets} onSelectWidget={h.onSelect} />);
+  it("l'updater de redimensionnement ne modifie que le widget visé, sur l'état le plus récent", () => {
+    render(<ResumeCanvas range="y" resumeData={resumeData} widgets={[pw({ index: 0 })]} setWidgets={h.setWidgets} onSelectWidget={h.onSelect} selectedId={1} />);
     fireEvent.mouseDown(document.querySelector(".cursor-se-resize")!);
     move(150, 50);
     const updater = h.setWidgets.mock.calls[0][0];
     const prev = [pw({ id: 1, index: 0 }), pw({ id: 2, index: 1 })];
-    expect(updater(prev)).toBe(prev);
-    expect(updater([pw({ id: 1, index: 0 })])[0]).toMatchObject({ w: 2 });
+    const next = updater(prev);
+    expect(next[0]).toMatchObject({ id: 1, w: 2 });
+    expect(next[1]).toBe(prev[1]);
   });
 
   it("ne plante pas si la grille a une taille nulle", () => {
@@ -622,7 +701,7 @@ describe("ResumeCanvas – éléments exclus de l'export image", () => {
   });
 
   it("marque le bouton de suppression et les 4 poignées", () => {
-    renderCanvas([pw()]);
+    renderSelected([pw()]);
     expect(screen.getByTitle("Supprimer le widget")).toHaveAttribute("data-export-ignore", "true");
     for (const p of ["nw", "ne", "sw", "se"]) {
       expect(document.querySelector(`.cursor-${p}-resize`)).toHaveAttribute("data-export-ignore", "true");
@@ -640,7 +719,7 @@ describe("ResumeCanvas – éléments exclus de l'export image", () => {
     const { container } = renderCanvas([pw({ type: "bio" })]);
     expect(screen.getByTestId("w-bio").closest('[data-export-ignore="true"]')).toBeNull();
     expect(screen.getByText("Propulsé par MyStats").closest('[data-export-ignore="true"]')).toBeNull();
-    expect(ignored(container).length).toBe(15 + 1 + 4);
+    expect(ignored(container).length).toBe(15);
   });
 });
 
@@ -649,7 +728,7 @@ describe("ResumeCanvas – anglais", () => {
   it("traduit le branding et le bouton de suppression (la marque reste littérale)", () => {
     lang.current = "en";
     try {
-      renderCanvas([{ id: 1, type: "minutes", index: 0, w: 1, h: 1, settings: {} } as PlacedWidget]);
+      renderSelected([{ id: 1, type: "minutes", index: 0, w: 1, h: 1, settings: {} } as PlacedWidget]);
       expect(screen.getByText("Powered by MyStats")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Delete widget" })).toBeInTheDocument();
     } finally {

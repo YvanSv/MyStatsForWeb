@@ -131,6 +131,48 @@ describe("ResumePage – chargement", () => {
   });
 });
 
+describe("ResumePage – hauteur bornée (jsdom ne mesure rien : rendu réel à vérifier dans un navigateur)", () => {
+  it("la racine est bornée par la hauteur de la fenêtre et masque son débordement ; les colonnes ont min-h-0", async () => {
+    const { container } = render(<ResumePage />);
+    const root = await screen.findByTestId("resume-root");
+    expect(root).toHaveClass("min-h-0", "overflow-hidden");
+    expect(root.style.height).toMatch(/^calc\(100dvh - \d+px\)$/);
+    expect(root.className).not.toContain("h-full");
+    const columns = container.querySelectorAll("[data-testid='resume-root'] > div > div");
+    expect(columns).toHaveLength(3);
+    for (const c of columns) expect(c).toHaveClass("min-h-0");
+    expect(screen.getByTestId("resume-canvas-column")).toHaveClass("overflow-y-auto");
+    // encarts verts : une seule bordure, en haut, identique à gauche et à droite
+    for (const hint of [dict.dropHint, dict.selectHint]) {
+      const el = screen.getByText(hint);
+      expect(el).toHaveClass("border-t", "border-vert/20", "shrink-0");
+      expect(el.className).not.toMatch(/(^|\s)border(\s|$)/);
+    }
+  });
+});
+
+describe("ResumePage – pied de site visible sous la page", () => {
+  it("réserve la hauteur de l'en-tête (haut de la racine) et du <footer> du layout : ni scrollbar de page, ni pied rogné", async () => {
+    const footer = document.createElement("footer");
+    document.body.appendChild(footer);
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ top: 64, height: 120 } as DOMRect);
+    try {
+      render(<ResumePage />);
+      const root = await screen.findByTestId("resume-root");
+      await waitFor(() => expect(root.style.height).toBe("calc(100dvh - 184px)"));
+      expect(root).toHaveClass("min-h-0", "overflow-hidden");
+    } finally {
+      spy.mockRestore();
+      footer.remove();
+    }
+  });
+
+  it("sans <footer> dans le document (tests), seule la position de la racine est retranchée", async () => {
+    render(<ResumePage />);
+    expect((await screen.findByTestId("resume-root")).style.height).toBe("calc(100dvh - 0px)");
+  });
+});
+
 describe("ResumePage – échec du chargement", () => {
   it("affiche un message d'erreur au lieu d'un spinner infini", async () => {
     h.getResumeStats.mockRejectedValue(new Error("Erreur 500"));

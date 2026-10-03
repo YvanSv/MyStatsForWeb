@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  LAYOUT_STORAGE_KEY, WIDGET_TYPES, collides, exportFileName, fitsInGrid, isWidgetType, loadLayout,
-  nextWidgetId, overlaps, parseLayout, saveLayout, serializeLayout, slugifyName,
+  LAYOUT_STORAGE_KEY, WIDGET_TYPES, exportFileName, fitsInGrid, isWidgetType, loadLayout,
+  moveBackward, moveForward, moveToBack, moveToFront, nextWidgetId, parseLayout, saveLayout, serializeLayout, slugifyName,
 } from "./gridLayout";
 import type { PlacedWidget } from "./interfaces";
 
@@ -31,20 +31,28 @@ describe("fitsInGrid", () => {
   ])("index %s %sx%s sort de la grille ou est invalide", (index, w, h) => expect(fitsInGrid({ index, w, h })).toBe(false));
 });
 
-describe("overlaps / collides", () => {
-  it("détecte un chevauchement partiel et l'inclusion", () => {
-    expect(overlaps({ index: 0, w: 2, h: 2 }, { index: 4, w: 1, h: 1 })).toBe(true);
-    expect(overlaps({ index: 0, w: 3, h: 5 }, { index: 7, w: 1, h: 1 })).toBe(true);
+describe("ordre d'empilement (l'ordre du tableau, le dernier est au-dessus)", () => {
+  const list = [pw({ id: 1 }), pw({ id: 2 }), pw({ id: 3 }), pw({ id: 4 })];
+  const ids = (l: PlacedWidget[]) => l.map((w) => w.id);
+
+  it("moveToFront place le widget en dernier", () => expect(ids(moveToFront(list, 2))).toEqual([1, 3, 4, 2]));
+  it("moveToBack place le widget en premier", () => expect(ids(moveToBack(list, 3))).toEqual([3, 1, 2, 4]));
+  it("moveForward avance d'un cran vers le dessus", () => expect(ids(moveForward(list, 2))).toEqual([1, 3, 2, 4]));
+  it("moveBackward recule d'un cran vers le dessous", () => expect(ids(moveBackward(list, 3))).toEqual([1, 3, 2, 4]));
+
+  it("renvoie le même tableau aux extrémités ou pour un id inconnu", () => {
+    expect(moveToFront(list, 4)).toBe(list);
+    expect(moveForward(list, 4)).toBe(list);
+    expect(moveToBack(list, 1)).toBe(list);
+    expect(moveBackward(list, 1)).toBe(list);
+    expect(moveToFront(list, 99)).toBe(list);
+    expect(moveBackward([], 1)).toEqual([]);
   });
-  it("des rectangles côte à côte ne se chevauchent pas", () => {
-    expect(overlaps({ index: 0, w: 1, h: 1 }, { index: 1, w: 1, h: 1 })).toBe(false);
-    expect(overlaps({ index: 0, w: 2, h: 1 }, { index: 3, w: 2, h: 1 })).toBe(false);
-  });
-  it("collides ignore le widget d'id donné (pour le redimensionnement)", () => {
-    const others = [pw({ id: 1, index: 0 }), pw({ id: 2, index: 1 })];
-    expect(collides({ index: 0, w: 2, h: 1 }, others)).toBe(true);
-    expect(collides({ index: 0, w: 2, h: 1 }, others, 2)).toBe(true); // touche toujours le 1
-    expect(collides({ index: 0, w: 1, h: 2 }, others, 1)).toBe(false);
+
+  it("ne mute pas le tableau d'origine et conserve les mêmes objets", () => {
+    const next = moveToFront(list, 1);
+    expect(ids(list)).toEqual([1, 2, 3, 4]);
+    expect(next[3]).toBe(list[0]);
   });
 });
 
@@ -94,9 +102,15 @@ describe("parseLayout", () => {
     expect(parseLayout(payload([item, pw()]))).toEqual([pw()]);
   });
 
-  it("ignore un widget qui chevauche un précédent", () => {
+  it("accepte les widgets qui se chevauchent (règle changée : l'empilement est permis) et garde leur ordre", () => {
     const res = parseLayout(payload([pw({ id: 1, w: 2, h: 2 }), pw({ id: 2, index: 4 }), pw({ id: 3, index: 2 })]));
-    expect(res.map((w) => w.id)).toEqual([1, 3]);
+    expect(res.map((w) => w.id)).toEqual([1, 2, 3]);
+  });
+
+  it("serialize puis parse conserve l'ordre d'empilement avec chevauchements", () => {
+    const widgets = [pw({ id: 5, index: 0, w: 2, h: 2 }), pw({ id: 2, index: 1 }), pw({ id: 9, index: 0, w: 3, h: 1 })];
+    expect(parseLayout(serializeLayout(widgets))).toEqual(widgets);
+    expect(parseLayout(serializeLayout(widgets)).map((w) => w.id)).toEqual([5, 2, 9]);
   });
 
   it("ignore un id dupliqué (le premier est conservé)", () => {

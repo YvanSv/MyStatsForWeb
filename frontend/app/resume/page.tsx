@@ -32,6 +32,25 @@ export default function ResumePage() {
   const [loading, setLoading] = useState(true);
   // Évite d'écrire l'état vide initial avant d'avoir restauré la mise en page enregistrée
   const [layoutRestored, setLayoutRestored] = useState(false);
+  // Hauteur disponible : le layout laisse la page grandir (zone défilante contenant la page PUIS le pied de site),
+  // donc on la borne ici à « fenêtre - ce qui est au-dessus (en-tête) - pied de site » : le pied reste visible
+  // sous la page, sans barre de défilement, et seuls les contenus internes défilent
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [reserved, setReserved] = useState(0);
+  const ready = resumeData !== null;
+  useEffect(() => {
+    const footer = document.querySelector('footer');
+    const measure = () => {
+      const node = rootRef.current;
+      if (!node) return;
+      setReserved(Math.max(0, Math.round(node.getBoundingClientRect().top + (footer?.getBoundingClientRect().height ?? 0))));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    const observer = typeof ResizeObserver !== 'undefined' && footer ? new ResizeObserver(measure) : null;
+    if (footer) observer?.observe(footer);
+    return () => { window.removeEventListener('resize', measure); observer?.disconnect(); };
+  }, [ready]);
 
   // Restauration côté client uniquement (après l'hydratation)
   useEffect(() => {
@@ -139,13 +158,15 @@ export default function ResumePage() {
   }
 
   return (
-    <div className="relative flex flex-1 h-full min-h-0" aria-busy={loading}>
+    <div ref={rootRef} data-testid="resume-root" className="relative flex min-h-0 overflow-hidden" aria-busy={loading}
+      style={{ height: `calc(100dvh - ${reserved}px)` }}
+    >
       {loading && (
         <div data-testid="resume-reloading" className="absolute top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none rounded-full bg-black/70 p-2">
           <LoadingSpinner size="sm" />
         </div>
       )}
-      <div className={`flex flex-1 h-full min-h-0 w-full transition-opacity duration-200 ${loading ? 'opacity-60' : 'opacity-100'}`}>
+      <div className={`flex flex-1 h-full min-h-0 overflow-hidden w-full transition-opacity duration-200 ${loading ? 'opacity-60' : 'opacity-100'}`}>
       <div className="flex flex-col flex-5 border-r border-white/10 min-h-0">
         {/* HEADER FIXE */}
         <p className="pt-4 px-4 pb-3 text-4xl font-black tracking-tighter uppercase italic shrink-0">
@@ -161,18 +182,18 @@ export default function ResumePage() {
         </div>
       </div>
 
-      <div className='flex flex-col flex-13 items-center'>
+      <div data-testid="resume-canvas-column" className='flex flex-col flex-13 items-center min-h-0 overflow-y-auto'>
         {/* BARRE DE FILTRES */}
         <HeaderComponent range={range} setRange={setRange} offset={offset}
           setOffset={setOffset} displayLabel={displayLabel}
         />
 
-        <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget} resumeData={canvasData}/>
+        <ResumeCanvas range={displayLabel} widgets={widgets} setWidgets={setWidgets} onSelectWidget={setSelectedWidget} selectedId={selectedWidget?.id ?? null} resumeData={canvasData}/>
       </div>
 
       <div className="flex flex-col flex-5 border-r border-white/10 min-h-0">
         {/* HEADER FIXE */}
-        <div className="flex px-3 pt-4 pb-3 border-l border-white/10 justify-between">
+        <div className="flex shrink-0 px-3 pt-4 pb-3 border-l border-white/10 justify-between">
           <SecondaryButton onClick={exportImage} additional='px-4 py-2 gap-2'>
             <Download size={20}/> {t.resume.download}
           </SecondaryButton>
@@ -182,10 +203,10 @@ export default function ResumePage() {
         </div>
 
         {/* ZONE SCROLLABLE */}
-        <PropertiesView selectedWidget={selectedWidget} setSelectedWidget={setSelectedWidget} setWidgets={setWidgets} exportImage={exportImage}/>
+        <PropertiesView widgets={widgets} selectedWidget={selectedWidget} setSelectedWidget={setSelectedWidget} setWidgets={setWidgets} exportImage={exportImage}/>
 
         {/* FOOTER */}
-        <p className="p-4 bg-vert/10 border border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
+        <p className="shrink-0 p-4 bg-vert/10 border-t border-vert/20 text-[10px] text-vert font-bold uppercase leading-tight">
           {t.resume.selectHint}
         </p>
       </div>

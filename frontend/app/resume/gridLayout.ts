@@ -21,16 +21,25 @@ export const fitsInGrid = ({ index, w, h }: Footprint): boolean => {
   return (index % GRID_COLS) + w <= GRID_COLS && Math.floor(index / GRID_COLS) + h <= GRID_ROWS;
 };
 
-/** Vrai si les deux rectangles partagent au moins une cellule. */
-export const overlaps = (a: Footprint, b: Footprint): boolean => {
-  const aCol = a.index % GRID_COLS, aRow = Math.floor(a.index / GRID_COLS);
-  const bCol = b.index % GRID_COLS, bRow = Math.floor(b.index / GRID_COLS);
-  return aCol < bCol + b.w && bCol < aCol + a.w && aRow < bRow + b.h && bRow < aRow + a.h;
+/**
+ * Ordre d'empilement : l'ordre du tableau `widgets` (le dernier est au-dessus). Les quatre fonctions
+ * sont pures ; sans changement possible (id inconnu, déjà à l'extrémité), elles renvoient le même tableau.
+ */
+const moveTo = (widgets: PlacedWidget[], id: number, target: (from: number, last: number) => number): PlacedWidget[] => {
+  const from = widgets.findIndex((w) => w.id === id);
+  if (from === -1) return widgets;
+  const to = target(from, widgets.length - 1);
+  if (to === from) return widgets;
+  const next = widgets.slice();
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
 };
 
-/** Vrai si `candidate` chevauche l'un des widgets de `others` (le widget d'id `ignoreId` est exclu). */
-export const collides = (candidate: Footprint, others: PlacedWidget[], ignoreId?: number): boolean =>
-  others.some((o) => o.id !== ignoreId && overlaps(candidate, o));
+export const moveToFront = (widgets: PlacedWidget[], id: number): PlacedWidget[] => moveTo(widgets, id, (_f, last) => last);
+export const moveToBack = (widgets: PlacedWidget[], id: number): PlacedWidget[] => moveTo(widgets, id, () => 0);
+export const moveForward = (widgets: PlacedWidget[], id: number): PlacedWidget[] => moveTo(widgets, id, (f, last) => Math.min(last, f + 1));
+export const moveBackward = (widgets: PlacedWidget[], id: number): PlacedWidget[] => moveTo(widgets, id, (f) => Math.max(0, f - 1));
 
 /** Prochain identifiant libre : max(ids) + 1. */
 export const nextWidgetId = (widgets: PlacedWidget[]): number =>
@@ -40,8 +49,8 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
 /**
- * Relit une mise en page sérialisée. Jamais d'exception : JSON invalide, version inconnue ou
- * widget invalide (type inconnu, hors grille, chevauchement, id dupliqué) donnent une liste
+ * Relit une mise en page sérialisée (les chevauchements sont permis : l'ordre du tableau est l'ordre d'empilement). Jamais d'exception : JSON invalide, version inconnue ou
+ * widget invalide (type inconnu, hors grille, id dupliqué) donnent une liste
  * vide ou ignorent simplement le widget fautif.
  */
 export const parseLayout = (raw: string | null): PlacedWidget[] => {
@@ -60,7 +69,6 @@ export const parseLayout = (raw: string | null): PlacedWidget[] => {
     const widget: PlacedWidget = { id, type, index, w, h, settings: isPlainObject(settings) ? settings : {} };
     if (!fitsInGrid(widget)) continue;
     if (result.some((r) => r.id === id)) continue;
-    if (collides(widget, result)) continue;
     result.push(widget);
   }
   return result;

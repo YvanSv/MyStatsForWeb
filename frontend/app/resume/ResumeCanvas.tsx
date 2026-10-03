@@ -4,7 +4,7 @@ import { Trash2 } from 'lucide-react';
 import { useLanguage } from '../context/languageContext';
 import React, { useEffect, useRef, useState } from 'react';
 import { PlacedWidget, ResumeData, SelectedWidget } from './interfaces';
-import { GRID_CELLS, GRID_COLS, GRID_ROWS, collides, fitsInGrid, nextWidgetId } from './gridLayout';
+import { GRID_CELLS, GRID_COLS, GRID_ROWS, fitsInGrid, nextWidgetId } from './gridLayout';
 import { getWidgetDefinition, isWidgetType } from './widgetRegistry';
 
 interface ResumeCanvasProps {
@@ -13,14 +13,18 @@ interface ResumeCanvasProps {
   widgets: PlacedWidget[];
   setWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>;
   onSelectWidget: (w: SelectedWidget | null) => void;
+  /** Sélection pilotée par le parent (liste des calques) ; absente, le canvas la gère seul. */
+  selectedId?: number | null;
 }
 
-export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSelectWidget}:ResumeCanvasProps) {
+export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSelectWidget,selectedId: controlledId}:ResumeCanvasProps) {
   const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [resizingConfig, setResizingConfig] = useState<{id: number, handle: string} | null>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [localId, setSelectedId] = useState<number | null>(null);
+  const selectedId = controlledId !== undefined ? controlledId : localId;
   const gridRef = useRef<HTMLDivElement>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
 
   const deleteWidget = (idToDelete: number) => {
     // Si le widget supprimé est celui sélectionné
@@ -98,11 +102,9 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
       const newIndex = newColStart + (newRowStart * GRID_COLS);
 
       if (newW !== widget.w || newH !== widget.h || newIndex !== widget.index) {
-        // Un redimensionnement ne doit jamais chevaucher un autre widget : taille refusée
+        // Le chevauchement d'un autre widget est permis (empilement) ; les bornes de la grille sont déjà respectées ci-dessus
         const next = { index: newIndex, w: newW, h: newH };
-        setWidgets(prev => (
-          collides(next, prev, id) ? prev : prev.map(w => (w.id === id ? { ...w, ...next } : w))
-        ));
+        setWidgets(prev => prev.map(w => (w.id === id ? { ...w, ...next } : w)));
       }
     };
 
@@ -144,13 +146,25 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
     if (!isWidgetType(type)) return; // type vide ou inconnu : pas de widget fantôme
     const { defaultSize, defaultSettings } = getWidgetDefinition(type);
 
-    // Mise à jour fonctionnelle : id calculé et collision vérifiée sur l'état le plus récent
+    // Mise à jour fonctionnelle : id calculé sur l'état le plus récent. Sur une case occupée, le widget
+    // est ajouté en fin de tableau, donc au-dessus de tous les autres.
     setWidgets(prev => {
       const footprint = { index: targetIndex, ...defaultSize };
-      if (!fitsInGrid(footprint) || collides(footprint, prev)) return prev;
+      if (!fitsInGrid(footprint)) return prev;
       const newWidget: PlacedWidget = { id: nextWidgetId(prev), type, ...footprint, settings: { ...defaultSettings } } as PlacedWidget;
       return [...prev, newWidget];
     });
+  };
+
+  const selectedWidget = widgets.find(w => w.id === selectedId);
+
+  // Un widget recouvre les cases de fond : un dépôt sur lui vise la case située sous le curseur
+  const onDropOnWidget = (e: React.DragEvent) => {
+    const rect = layerRef.current?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) return;
+    const col = Math.min(GRID_COLS - 1, Math.max(0, Math.floor(((e.clientX - rect.left) / rect.width) * GRID_COLS)));
+    const row = Math.min(GRID_ROWS - 1, Math.max(0, Math.floor(((e.clientY - rect.top) / rect.height) * GRID_ROWS)));
+    onDrop(e, row * GRID_COLS + col);
   };
 
   const handleSelect = (w: PlacedWidget) => {
@@ -191,16 +205,14 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
         </div>
 
         {/* 2. LE CALQUE DES WIDGETS (Superposé exactement au dessus) */}
-        <div className="absolute inset-2 grid gap-2 pointer-events-none"
+        <div ref={layerRef} className="absolute inset-2 grid gap-2 pointer-events-none"
           style={{
             gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`,
             // On force la création de toutes les lignes, même si elles sont vides
             gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {widgets.map((w) => {
-            const colStart = (w.index % GRID_COLS) + 1;
-            const rowStart = Math.floor(w.index / GRID_COLS) + 1;
+          {widgets.map((w, position) => {
             const isSelected = selectedId === w.id;
 
             return (
@@ -211,42 +223,45 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
                   handleSelect(w);
                 }}
                 data-selected={isSelected ? "true" : undefined}
-                className={`pointer-events-auto group relative cursor-pointer transition-all duration-200 ${
-                  isSelected ? 'z-50' : 'hover:z-30'
-                }`}
+                onDragOver={onDragOver} onDrop={onDropOnWidget}
+                className="pointer-events-auto group relative cursor-pointer"
                 style={{
-                  gridColumn: `${colStart} / span ${w.w}`,
-                  gridRow: `${rowStart} / span ${w.h}`,
+                  ...gridPlacement(w),
+                  // Ordre d'empilement = ordre du tableau ; la sélection ou le survol ne le modifient jamais
+                  zIndex: position + 1,
                 }}
               >
-                {/* Anneau de sélection : calque séparé pour pouvoir l'exclure de l'export image */}
-                {isSelected && (
-                  <div data-export-ignore="true" aria-hidden="true"
-                    className="absolute inset-0 rounded-md ring-2 ring-vert ring-offset-2 ring-offset-black pointer-events-none"
-                  />
-                )}
                 <div className="w-full h-full rounded-md text-black font-bold text-[10px] flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-white">
                   <WidgetContent widget={w} resumeData={resumeData} />
-
-                  {/* --- BOUTON SUPPRIMER (POUBELLE) --- */}
-                  <button data-export-ignore="true" onClick={(e) => {e.stopPropagation();deleteWidget(w.id)}} title={t.resume.deleteWidget} aria-label={t.resume.deleteWidget}
-                    className="absolute top-1 right-1 p-1.5 rounded-lg bg-black/50 text-white/70 hover:bg-black hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 z-40 active:scale-95"
-                  ><Trash2 size={14} strokeWidth={2.5} /></button>
-                  
-                  {/* --- LES 4 POIGNÉES DE REDIMENSIONNEMENT --- */}
-                  {/* Coin Supérieur Gauche (Top-Left) */}
-                  <ResizeHandle position="top-left" onMouseDown={(e) => startResize(e, w.id, 'top-left')}/>
-                  {/* Coin Supérieur Droit (Top-Right) */}
-                  <ResizeHandle position="top-right" onMouseDown={(e) => startResize(e, w.id, 'top-right')}/>
-                  {/* Coin Inférieur Gauche (Bottom-Left) */}
-                  <ResizeHandle position="bottom-left" onMouseDown={(e) => startResize(e, w.id, 'bottom-left')}/>
-                  {/* Coin Inférieur Droit (Bottom-Right) - L'originale */}
-                  <ResizeHandle position="bottom-right" onMouseDown={(e) => startResize(e, w.id, 'bottom-right')}/>
                 </div>
               </div>
             );
           })}
         </div>
+
+        {/* 3. SURIMPRESSION : au-dessus de tous les widgets, anneau, poubelle et poignées du widget sélectionné
+            (visibles et cliquables même s'il est recouvert). Exclue de l'export image. */}
+        {selectedWidget && (
+          <div data-export-ignore="true" data-testid="selection-overlay" className="absolute inset-2 grid gap-2 pointer-events-none"
+            style={{ zIndex: widgets.length + 1, gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))` }}
+          >
+            <div className="relative" style={gridPlacement(selectedWidget)}>
+              <div data-export-ignore="true" aria-hidden="true"
+                className="absolute inset-0 rounded-md ring-2 ring-vert ring-offset-2 ring-offset-black pointer-events-none"
+              />
+              {/* --- BOUTON SUPPRIMER (POUBELLE) --- */}
+              <button data-export-ignore="true" onClick={(e) => {e.stopPropagation();deleteWidget(selectedWidget.id)}} title={t.resume.deleteWidget} aria-label={t.resume.deleteWidget}
+                className="pointer-events-auto absolute top-1 right-1 p-1.5 rounded-lg bg-black/50 text-white/70 hover:bg-black hover:text-red-500 transition-all active:scale-95"
+              ><Trash2 size={14} strokeWidth={2.5} /></button>
+
+              {/* --- LES 4 POIGNÉES DE REDIMENSIONNEMENT --- */}
+              <ResizeHandle position="top-left" onMouseDown={(e) => startResize(e, selectedWidget.id, 'top-left')}/>
+              <ResizeHandle position="top-right" onMouseDown={(e) => startResize(e, selectedWidget.id, 'top-right')}/>
+              <ResizeHandle position="bottom-left" onMouseDown={(e) => startResize(e, selectedWidget.id, 'bottom-left')}/>
+              <ResizeHandle position="bottom-right" onMouseDown={(e) => startResize(e, selectedWidget.id, 'bottom-right')}/>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* BRANDING */}
@@ -260,9 +275,14 @@ export default function ResumeCanvas({range,resumeData,widgets,setWidgets,onSele
   );
 }
 
+const gridPlacement = (w: Pick<PlacedWidget, 'index' | 'w' | 'h'>) => ({
+  gridColumn: `${(w.index % GRID_COLS) + 1} / span ${w.w}`,
+  gridRow: `${Math.floor(w.index / GRID_COLS) + 1} / span ${w.h}`,
+});
+
 function ResizeHandle({ position, onMouseDown }: { position: string; onMouseDown: (e: React.MouseEvent) => void }) {
   // Styles de base communs à toutes les poignées
-  const baseClass = "absolute w-4 h-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center";
+  const baseClass = "pointer-events-auto absolute w-4 h-4 flex items-center justify-center";
   
   // Styles spécifiques à chaque position (placement et curseur)
   const positionClasses: { [key: string]: string } = {
