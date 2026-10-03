@@ -159,7 +159,7 @@ describe("TopFiveWidget : critère et valeurs par layout", () => {
   });
 
   it("en-tête : titre centré au milieu, critère à droite (3 zones)", () => {
-    for (const [w, h] of [[2, 1], [2, 2], [3, 2], [1, 3], [3, 3]]) {
+    for (const [w, h] of [[2, 2], [3, 2], [1, 3], [3, 3], [3, 4], [3, 5]]) {
       const { container, unmount } = render(<TopFiveWidget w={w} h={h} type="albums" data={five} sort="rating" />);
       const grid = container.querySelector('[class*="max-content"]')!;
       expect(grid).not.toBeNull();
@@ -168,6 +168,26 @@ describe("TopFiveWidget : critère et valeurs par layout", () => {
       expect(grid.children[1].className).toContain("text-center");
       expect(grid.children[2].className).toContain("justify-self-end");
       expect(grid.children[2].textContent).toBe("Rating");
+      unmount();
+    }
+  });
+
+  it("2x1 (2 colonnes, 1 ligne) : titre aligné à gauche, critère à droite", () => {
+    const { container } = render(<TopFiveWidget w={2} h={1} type="albums" data={five} sort="rating" />);
+    const grid = container.querySelector('[class*="grid-cols-[minmax(0,1fr)_auto]"]')!;
+    expect(grid).not.toBeNull();
+    expect(grid.children).toHaveLength(2);
+    expect(grid.children[0].textContent).toMatch(/albums/);
+    expect(grid.children[0].className).toContain("text-left");
+    expect(grid.children[1].className).toContain("justify-self-end");
+  });
+
+  it("rangs 2 à 5 : une ligne de quatre en 3x3 et 3x4, deux lignes de deux en 3x5", () => {
+    for (const [w, h, cols] of [[3, 3, "grid-cols-4"], [3, 4, "grid-cols-4"], [3, 5, "grid-cols-2"]] as const) {
+      const { container, unmount } = render(<TopFiveWidget w={w} h={h} type="albums" data={five} sort="streams" />);
+      const ranks = container.querySelector(".border-t.border-white\\/10")!;
+      expect(ranks.className).toContain(cols);
+      expect(ranks.children).toHaveLength(4);
       unmount();
     }
   });

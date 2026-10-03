@@ -108,6 +108,70 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
   const narrow = makeList(true, true);
   const wide = makeList(false, true);
 
+  /** N°1 en grand puis les rangs 2 à 5 ; `twoRows` : rangs 2 à 5 sur deux lignes (format 3x5). */
+  const bigLayout = (twoRows: boolean) => (
+      <div className="w-full h-full bg-neutral-950 p-3 rounded-2xl flex flex-col border border-white/10 shadow-2xl relative overflow-hidden">
+        {/* Fond flou à partir de la pochette du n°1 */}
+        {first.image && (
+          <div className="absolute inset-0 opacity-20">
+            <img src={first.image} className="w-full h-full object-cover scale-150 blur-3xl" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-transparent" />
+          </div>
+        )}
+
+        {/* N°1 */}
+        <div className="relative flex flex-col items-center justify-center text-center mt-1 mb-3 flex-1 min-h-0 z-10">
+          {/* Titre centré, critère à droite sur la même ligne */}
+          <div className="w-full grid grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 mb-3 min-w-0">
+            <span aria-hidden="true"/>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-center truncate max-w-full" style={{ color }}>
+              {typeLabel}
+            </p>
+            <span className="justify-self-end flex px-2 py-0.5 rounded-full border border-white/10 bg-white/5">{pill("text-[8px]", false, true)}</span>
+          </div>
+          <div className="relative mb-4 shrink-0">
+            <Thumb item={first} round={round} className="w-28 h-28 border-4 text-4xl"/>
+            <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center text-black font-black italic text-xl shadow-xl" style={{ backgroundColor: color }}>
+              1
+            </div>
+          </div>
+          <div className="space-y-1 w-full min-w-0 px-4 overflow-hidden min-h-12">
+            <h3 className="text-xl font-black uppercase text-white tracking-tight line-clamp-2 break-words text-center leading-tight min-w-0">{first.name}</h3>
+            <p className={`text-[10px] font-bold uppercase truncate tracking-widest leading-none tabular-nums ${criterion(first)?.cls || "text-gray-400"}`}>{criterion(first)?.text ?? "–"}</p>
+          </div>
+        </div>
+
+        {/* Rangs 2 à 5 : une ligne de quatre (3x3 et 3x4), ou deux lignes de deux en 3x5 (plus de hauteur) */}
+        {twoRows ? (
+          <div className="relative grid grid-cols-2 gap-x-3 gap-y-2 z-10 border-t border-white/10 pt-3">
+            {items.slice(1, 5).map((item, index) => (
+              <div key={index} className="flex items-center gap-2 min-w-0">
+                <span className="w-3 shrink-0 text-center text-[10px] font-black italic text-white/30 leading-none">{index + 2}</span>
+                <Thumb item={item} round={round} className="w-9 h-9 shrink-0"/>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <p className="text-[9px] font-bold text-white truncate uppercase tracking-tighter leading-tight">{item.name}</p>
+                  <p className={`text-[8px] font-medium truncate uppercase tracking-tighter leading-none opacity-80 tabular-nums ${criterion(item)?.cls || "text-gray-500"}`}>{criterion(item)?.text ?? "–"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="relative grid grid-cols-4 gap-2 z-10 border-t border-white/10 pt-4">
+            {items.slice(1, 5).map((item, index) => (
+              <div key={index} className="flex flex-col items-center text-center gap-1 min-w-0">
+                <span className="text-[10px] font-black italic text-white/30 leading-none">{index + 2}</span>
+                <Thumb item={item} round={round} className="w-10 h-10"/>
+                <div className="w-full overflow-hidden mt-0.5 px-0.5">
+                  <p className="text-[8px] font-bold text-white truncate uppercase tracking-tighter leading-none mb-0.5">{item.name}</p>
+                  <p className={`text-[7px] font-medium truncate uppercase tracking-tighter leading-none opacity-80 tabular-nums ${criterion(item)?.cls || "text-gray-500"}`}>{criterion(item)?.text ?? "–"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+  );
+
   // Clés au format attendu par Widget (`${w}x${h}`)
   const layouts = {
     "1x1":
@@ -128,10 +192,9 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
           {value(first, true, "text-[8px]", "text-white")}
         </div>
         <div className="flex flex-col border border-white/10 bg-white/5 rounded-xl w-[60%] justify-between h-full p-1">
-          {/* Même en-tête 3 zones, en 5px : le titre garde sa place centrale, le critère est tronqué si besoin */}
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-0.5 border-b border-white/10 pb-px min-w-0">
-            <span aria-hidden="true"/>
-            <p className="text-[5px] uppercase tracking-widest italic text-center truncate max-w-full leading-none" style={{ color }}>{typeLabel}</p>
+          {/* En-tête en 5px : titre aligné à gauche, critère à droite (tronqué si besoin) */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-0.5 border-b border-white/10 pb-px min-w-0">
+            <p className="text-[5px] uppercase tracking-widest italic text-left truncate max-w-full leading-none" style={{ color }}>{typeLabel}</p>
             <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[5px]", true)}</span>
           </div>
           {items.slice(1, 4).map((item, i) => (
@@ -167,52 +230,10 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
     "2x2": narrow,
     "3x2": wide,
     "1x3": makeList(true),
-    "3x3":
-      <div className="w-full h-full bg-neutral-950 p-3 rounded-2xl flex flex-col border border-white/10 shadow-2xl relative overflow-hidden">
-        {/* Fond flou à partir de la pochette du n°1 */}
-        {first.image && (
-          <div className="absolute inset-0 opacity-20">
-            <img src={first.image} className="w-full h-full object-cover scale-150 blur-3xl" alt="" />
-            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-transparent" />
-          </div>
-        )}
-
-        {/* N°1 */}
-        <div className="relative flex flex-col items-center justify-center text-center mt-1 mb-3 flex-1 min-h-0 z-10">
-          {/* Titre centré, critère à droite sur la même ligne */}
-          <div className="w-full grid grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 mb-3 min-w-0">
-            <span aria-hidden="true"/>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-center truncate max-w-full" style={{ color }}>
-              {typeLabel}
-            </p>
-            <span className="justify-self-end flex px-2 py-0.5 rounded-full border border-white/10 bg-white/5">{pill("text-[8px]", false, true)}</span>
-          </div>
-          <div className="relative mb-4 shrink-0">
-            <Thumb item={first} round={round} className="w-28 h-28 border-4 text-4xl"/>
-            <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center text-black font-black italic text-xl shadow-xl" style={{ backgroundColor: color }}>
-              1
-            </div>
-          </div>
-          <div className="space-y-1 w-full min-w-0 px-4 overflow-hidden min-h-12">
-            <h3 className="text-xl font-black uppercase text-white tracking-tight line-clamp-2 break-words text-center leading-tight min-w-0">{first.name}</h3>
-            <p className={`text-[10px] font-bold uppercase truncate tracking-widest leading-none tabular-nums ${criterion(first)?.cls || "text-gray-400"}`}>{criterion(first)?.text ?? "–"}</p>
-          </div>
-        </div>
-
-        {/* Rangs 2 à 5 : deux lignes de deux (pochette à gauche, nom et valeur à droite), plus de place pour les noms */}
-        <div className="relative grid grid-cols-2 gap-x-3 gap-y-2 z-10 border-t border-white/10 pt-3">
-          {items.slice(1, 5).map((item, index) => (
-            <div key={index} className="flex items-center gap-2 min-w-0">
-              <span className="w-3 shrink-0 text-center text-[10px] font-black italic text-white/30 leading-none">{index + 2}</span>
-              <Thumb item={item} round={round} className="w-9 h-9 shrink-0"/>
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <p className="text-[9px] font-bold text-white truncate uppercase tracking-tighter leading-tight">{item.name}</p>
-                <p className={`text-[8px] font-medium truncate uppercase tracking-tighter leading-none opacity-80 tabular-nums ${criterion(item)?.cls || "text-gray-500"}`}>{criterion(item)?.text ?? "–"}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>,
+    "3x3": bigLayout(false),
+    // 3 colonnes x 4 lignes : même mise en page que 3x3 (repli explicite) ; 3 x 5 : rangs 2 à 5 sur deux lignes
+    "3x4": bigLayout(false),
+    "3x5": bigLayout(true),
   };
 
   return (
