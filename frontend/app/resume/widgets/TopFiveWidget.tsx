@@ -199,15 +199,15 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
           </div>
         </div>
 
-        {/* Rangs 2 à 5 */}
-        <div className="relative grid grid-cols-4 gap-2 z-10 border-t border-white/10 pt-4">
+        {/* Rangs 2 à 5 : deux lignes de deux (pochette à gauche, nom et valeur à droite), plus de place pour les noms */}
+        <div className="relative grid grid-cols-2 gap-x-3 gap-y-2 z-10 border-t border-white/10 pt-3">
           {items.slice(1, 5).map((item, index) => (
-            <div key={index} className="flex flex-col items-center text-center gap-1 min-w-0">
-              <span className="text-[10px] font-black italic text-white/30 leading-none">{index + 2}</span>
-              <Thumb item={item} round={round} className="w-10 h-10"/>
-              <div className="w-full overflow-hidden mt-0.5 px-0.5">
-                <p className="text-[8px] font-bold text-white truncate uppercase tracking-tighter leading-none mb-0.5">{item.name}</p>
-                <p className={`text-[7px] font-medium truncate uppercase tracking-tighter leading-none opacity-80 tabular-nums ${criterion(item)?.cls || "text-gray-500"}`}>{criterion(item)?.text ?? "–"}</p>
+            <div key={index} className="flex items-center gap-2 min-w-0">
+              <span className="w-3 shrink-0 text-center text-[10px] font-black italic text-white/30 leading-none">{index + 2}</span>
+              <Thumb item={item} round={round} className="w-9 h-9 shrink-0"/>
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <p className="text-[9px] font-bold text-white truncate uppercase tracking-tighter leading-tight">{item.name}</p>
+                <p className={`text-[8px] font-medium truncate uppercase tracking-tighter leading-none opacity-80 tabular-nums ${criterion(item)?.cls || "text-gray-500"}`}>{criterion(item)?.text ?? "–"}</p>
               </div>
             </div>
           ))}
