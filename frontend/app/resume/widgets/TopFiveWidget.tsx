@@ -57,7 +57,7 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
   const label = sort === "minutes" ? t.resume.wListeningTime : sort === "rating" ? t.ranking.sortOptions.rating : t.ranking.sortOptions.play_count;
   /**
    * Valeur de l'élément selon le tri, ou null si absente/invalide (affichée « – »).
-   * `short` : nombres abrégés (k/M) pour les petites cases. Streams sans unité, minutes avec « min ».
+   * `short` : nombres abrégés (k/M) pour les petites cases. Streams sans unité ; minutes avec « min » seulement si `short` est faux (sinon l'unité est dans l'étiquette).
    */
   const criterion = (item: ItemBrief, short = false) => {
     const loc = t.common.locale;
@@ -65,17 +65,18 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
     const raw = finiteOrNull(sort === "minutes" ? item.minutes : item.streams);
     if (raw === null) return null;
     const num = sort === "minutes" ? (short ? formatNumber(Math.round(raw), true, loc) : formatMinutes(raw, loc)) : formatNumber(raw, short, loc);
-    // L'en-tête dit déjà « Streams » : valeur seule ; « Temps d'écoute » ne dit pas l'unité : on garde « min »
-    return { text: sort === "minutes" ? `${num} ${t.resume.unitMinutes}` : num, cls: "" };
+    // Streams : valeur seule. Minutes : « min » collée à la valeur seulement dans les layouts larges ;
+    // en étroit (short) l'unité passe dans l'étiquette du critère (« Temps d'écoute (min) ») pour ne jamais tronquer la valeur.
+    return { text: sort === "minutes" && !short ? `${num} ${t.resume.unitMinutes}` : num, cls: "" };
   };
-  /** Valeur alignée à droite (chiffres tabulaires), « – » quand elle manque. */
+  /** Valeur alignée à droite (chiffres tabulaires), « – » quand elle manque. Jamais tronquée : prioritaire (shrink-0), c'est le nom qui se tronque. */
   const value = (item: ItemBrief, short: boolean, size: string, base = "text-gray-400") => {
     const c = criterion(item, short);
-    return <span className={`shrink-0 max-w-[50%] truncate text-right tabular-nums font-semibold leading-tight ${size} ${c?.cls || base}`}>{c ? c.text : "–"}</span>;
+    return <span className={`shrink-0 whitespace-nowrap text-right tabular-nums font-semibold leading-tight ${size} ${c?.cls || base}`}>{c ? c.text : "–"}</span>;
   };
   /** Pastille du critère actif. */
-  const pill = (size: string) => (
-    <span className={`truncate max-w-full uppercase tracking-wider text-gray-400 leading-none ${size}`}>{label}</span>
+  const pill = (size: string, short = false) => (
+    <span className={`truncate max-w-full uppercase tracking-wider text-gray-400 leading-none ${size}`}>{short && sort === "minutes" ? `${label} (${t.resume.unitMinutes})` : label}</span>
   );
   const items = Array.isArray(data) ? data.slice(0, 5) : [];
   // Sans élément, rien à afficher (les layouts lisent items[0])
@@ -89,7 +90,7 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
       <div className="mb-0.5 border-b border-white/10 pb-0.5 grid grid-cols-[1fr_auto_1fr] items-center gap-1 min-w-0">
         <span aria-hidden="true"/>
         <p className="text-[7px] uppercase tracking-[0.3em] italic text-center truncate max-w-full" style={{ color }}>{typeLabel}</p>
-        <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[6px]")}</span>
+        <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[6px]", short)}</span>
       </div>
       <div className="flex-1 flex flex-col justify-between min-h-0">
         {items.map((item, index) => (
@@ -113,24 +114,24 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
         <p className="truncate max-w-[70px] text-[9px] text-white leading-none">{first.name}</p>
         <Thumb item={first} round={true} className="w-10 h-10"/>
         {/* Valeur seule (abrégée, sans unité) + critère en texte minuscule : tient dans 70px */}
-        <div className="flex flex-col items-center max-w-[70px] gap-0.5">
-          {value(first, true, "text-[7px]", "text-white")}
-          {pill("text-[5px]")}
+        <div className="flex flex-col items-center max-w-[70px] gap-0.5 min-w-0">
+          {value(first, true, "text-[10px]", "text-white")}
+          {pill("text-[5px]", true)}
         </div>
       </div>,
     "2x1":
       <div className="flex justify-center h-full items-center gap-1">
         <div className="flex flex-col items-center justify-between h-[90%]">
-          <p className="truncate max-w-[54px] text-[8px] text-white leading-none">{first.name}</p>
+          <p className="truncate min-w-0 max-w-[54px] text-[8px] text-white leading-none">{first.name}</p>
           <Thumb item={first} round={true} className="w-10 h-10"/>
-          {value(first, true, "text-[6px]", "text-white")}
+          {value(first, true, "text-[8px]", "text-white")}
         </div>
         <div className="flex flex-col border border-white/10 bg-white/5 rounded-xl w-[60%] justify-between h-full p-1">
           {/* Même en-tête 3 zones, en 5px : le titre garde sa place centrale, le critère est tronqué si besoin */}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-0.5 border-b border-white/10 pb-px min-w-0">
             <span aria-hidden="true"/>
             <p className="text-[5px] uppercase tracking-widest italic text-center truncate max-w-full leading-none" style={{ color }}>{typeLabel}</p>
-            <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[5px]")}</span>
+            <span className="justify-self-end min-w-0 max-w-full flex">{pill("text-[5px]", true)}</span>
           </div>
           {items.slice(1, 4).map((item, i) => (
             <div key={i} className="flex items-center gap-1 min-w-0">
@@ -140,6 +141,24 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
               <p className="flex-1 min-w-0 text-[6px] font-semibold text-white leading-tight truncate">{item.name}</p>
               {value(item, true, "text-[5px]")}
               <Thumb item={item} round={true} className="w-4 h-4 shrink-0"/>
+            </div>
+          ))}
+        </div>
+      </div>,
+    // 1 colonne x 2 lignes : liste compacte de 3 éléments, titre à gauche, critère dessous (aligné à gauche)
+    "1x2":
+      <div className="w-full h-full p-1 flex flex-col min-w-0">
+        <div className="mb-0.5 border-b border-white/10 pb-0.5 flex flex-col items-start gap-0.5 min-w-0">
+          <p className="text-[7px] uppercase tracking-[0.2em] italic text-left truncate max-w-full leading-none" style={{ color }}>{typeLabel}</p>
+          {pill("text-[5px]", true)}
+        </div>
+        <div className="flex-1 flex flex-col justify-between min-h-0">
+          {items.slice(0, 3).map((item, index) => (
+            <div key={index} className="flex items-center gap-1 min-w-0">
+              <span className="text-[8px] font-black italic text-white/30 leading-none w-2 shrink-0 text-center">{index + 1}</span>
+              <Thumb item={item} round={round} className="w-5 h-5 shrink-0"/>
+              <span className="flex-1 min-w-0 text-[7px] font-semibold text-white leading-tight truncate text-left">{item.name}</span>
+              {value(item, true, "text-[7px]")}
             </div>
           ))}
         </div>

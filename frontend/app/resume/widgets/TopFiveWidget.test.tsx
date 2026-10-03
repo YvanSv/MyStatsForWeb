@@ -118,20 +118,22 @@ describe("TopFiveWidget", () => {
 });
 
 describe("TopFiveWidget : critère et valeurs par layout", () => {
-  const LAYOUTS: [number, number][] = [[1, 1], [2, 1], [2, 2], [3, 2], [1, 3], [3, 3]];
+  const LAYOUTS: [number, number][] = [[1, 1], [2, 1], [1, 2], [2, 2], [3, 2], [1, 3], [3, 3]];
   const LABELS = { streams: "Streams", minutes: "Temps d'écoute", rating: "Rating" } as const;
+  const labelFor = (w: number, sort: "streams" | "minutes" | "rating") => (sort === "minutes" && w < 3 ? "Temps d'écoute (min)" : LABELS[sort]);
   const SORTS = ["streams", "minutes", "rating"] as const;
   const cases = LAYOUTS.flatMap(([w, h]) => SORTS.map((sort) => [w, h, sort] as const));
 
   it.each(cases)("%ix%i, tri %s : pastille du critère et valeurs rendues", (w, h, sort) => {
     const { container } = render(<TopFiveWidget w={w} h={h} type="tracks" data={five} sort={sort} />);
-    expect(screen.getAllByText(LABELS[sort]).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(labelFor(w, sort)).length).toBeGreaterThan(0);
     const text = container.textContent!;
     // Le n°1 a toujours une valeur ; les listes en ont une par élément
     const full = w === 3; // 3x2 et 3x3 : nombres complets ; autres : abrégés
-    const val = (n: number) => ({ streams: full ? (n * 1000).toLocaleString("fr-FR") : `${n}.0k`, minutes: `${n} min`, rating: `${n}.00` }[sort]);
+    const val = (n: number) => ({ streams: full ? (n * 1000).toLocaleString("fr-FR") : `${n}.0k`, minutes: full ? `${n} min` : `${n}`, rating: `${n}.00` }[sort]);
     expect(text).toContain(val(1));
     if (!(w === 1 && h === 1)) expect(text).toContain(val(3));
+    if (sort === "minutes" && !full) expect(text).not.toMatch(/\d min/);
     if (sort === "streams") expect(text).not.toMatch(/streams/);
     expect(text).not.toMatch(/NaN|undefined/);
   });
@@ -141,7 +143,7 @@ describe("TopFiveWidget : critère et valeurs par layout", () => {
     const v = screen.getByText("3 min");
     expect(v.className).toContain("tabular-nums");
     expect(v.className).toContain("text-right");
-    expect(v.className).toContain("truncate");
+    expect(v.className).not.toContain("truncate");
     render(<TopFiveWidget w={3} h={2} type="tracks" data={five} sort="streams" />);
     expect(screen.queryByText(/streams$/)).toBeNull();
   });
@@ -184,6 +186,57 @@ describe("TopFiveWidget : critère et valeurs par layout", () => {
       expect(container.textContent).not.toMatch(/NaN|undefined|Infinity|null/);
       unmount();
     }
+  });
+});
+
+describe("TopFiveWidget : valeur jamais tronquée (1x1, 2x1, 1x2)", () => {
+  // jsdom ne mesure aucune largeur : on vérifie la structure (classes), pas le rendu réel.
+  const big = [1, 2, 3, 4].map((n) => item(n, { streams: 3100 * n, minutes: 3100 * n }));
+  const noTrunc = (el: HTMLElement) => {
+    expect(el.className).not.toContain("truncate");
+    expect(el.className).not.toMatch(/max-w/);
+    expect(el.className).toContain("shrink-0");
+    expect(el.textContent).not.toContain("…");
+  };
+
+  it.each([[1, 1], [2, 1], [1, 2]])("%ix%i : valeur complète sans truncate/max-w, sans unité collée", (w, h) => {
+    render(<TopFiveWidget w={w} h={h} type="tracks" data={big} sort="minutes" />);
+    const v = screen.getAllByText("3.1k")[0];
+    noTrunc(v);
+    expect(screen.getAllByText("Temps d'écoute (min)").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/\d min/)).toBeNull();
+  });
+
+  it.each([[1, 1], [2, 1], [1, 2]])("%ix%i : le nom se tronque", (w, h) => {
+    render(<TopFiveWidget w={w} h={h} type="tracks" data={big} />);
+    const name = screen.getAllByText("Item 1")[0];
+    expect(name.className).toContain("truncate");
+    if (w !== 1 || h !== 1) expect(name.className).toContain("min-w-0");
+  });
+
+  it.each([[2, 2], [3, 2], [1, 3]])("%ix%i : valeur prioritaire, nom tronquable", (w, h) => {
+    render(<TopFiveWidget w={w} h={h} type="tracks" data={big} />);
+    noTrunc(screen.getAllByText(w === 3 ? fmt(3100).replace(/\s/g, " ") : "3.1k")[0].closest("span")!);
+    expect(screen.getByText("Item 1").className).toMatch(/min-w-0/);
+  });
+
+  it("1x2 : titre à gauche, critère dessous, 3 lignes avec valeurs", () => {
+    const { container } = render(<TopFiveWidget w={1} h={2} type="albums" data={big} sort="rating" />);
+    const title = screen.getByText("albums");
+    expect(title.className).toContain("text-left");
+    expect(title.className).not.toContain("text-center");
+    expect(title.parentElement!.className).toContain("items-start");
+    expect(title.parentElement!.textContent).toContain("Rating");
+    for (const n of [1, 2, 3]) expect(screen.getByText(`Item ${n}`)).toBeInTheDocument();
+    expect(screen.queryByText("Item 4")).toBeNull();
+    for (const n of [1, 2, 3]) expect(screen.getByText(`${n}.00`)).toBeInTheDocument();
+    expect(container.querySelectorAll("img")).toHaveLength(3);
+  });
+
+  it("1x2 : valeurs invalides -> tiret", () => {
+    const { container } = render(<TopFiveWidget w={1} h={2} type="tracks" data={[item(1, { streams: NaN }), item(2, { streams: undefined })]} />);
+    expect(container.textContent).toContain("–");
+    expect(container.textContent).not.toMatch(/NaN|undefined/);
   });
 });
 

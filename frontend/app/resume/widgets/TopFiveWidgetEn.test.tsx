@@ -14,6 +14,10 @@ describe("TopFiveWidget (en)", () => {
     const { container, rerender } = render(<TopFiveWidget w={3} h={2} type="tracks" data={items} sort="minutes" />);
     expect(screen.getAllByText("Listening time").length).toBeGreaterThan(0);
     expect(container.textContent).toContain("1,234 min");
+    rerender(<TopFiveWidget w={1} h={2} type="tracks" data={items} sort="minutes" />);
+    expect(screen.getAllByText("Listening time (min)").length).toBeGreaterThan(0);
+    expect(container.textContent).toContain("1.2k");
+    expect(container.textContent).not.toMatch(/\d min/);
     rerender(<TopFiveWidget w={3} h={2} type="tracks" data={items} sort="streams" />);
     expect(screen.getAllByText("Streams").length).toBeGreaterThan(0);
     expect(container.textContent).toContain("1,234");
