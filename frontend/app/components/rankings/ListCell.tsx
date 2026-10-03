@@ -3,7 +3,7 @@ import { DataInfo } from "@/app/data/DataInfos";
 import { useLanguage } from "@/app/context/languageContext";
 import CellName from "./CellLink";
 import { renderCellSubtitle } from "./CellSubtitle";
-import { getCellDisplay, formatMinutes, formatPercent, formatStat, formatStreams, isValidNumber, ratingColorClass, safeNumber, withUnit } from "./format";
+import { getCellDisplay, formatMinutes, formatPercent, formatRating, formatStreams, isValidNumber, ratingColorClass, safeNumber, withUnit } from "./format";
 
 interface ListCellProps {
   element: DataInfo;
@@ -122,7 +122,7 @@ export default function ListCell({ element, index, sort, linkTo }: ListCellProps
       <div className={LIST_CELL_STYLES.RIGHT_BLOCK}>
         <div className="lg:hidden">{renderMobileStat()}</div>
         <div className={LIST_CELL_STYLES.RATING(safeNumber(element.rating), sort === 'rating')}>
-          {withUnit(formatStat(element.rating, dict.locale), "★")}
+          {withUnit(formatRating(element.rating, dict.locale), "★")}
         </div>
       </div>
     </div>

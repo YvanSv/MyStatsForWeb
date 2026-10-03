@@ -90,7 +90,7 @@ describe.each(["track", "album", "artist"] as ItemType[])("ItemDetailPage (%s)",
     const stats = screen.getByRole("region", { name: dict.statsTitle });
     expect(within(stats).getByText(dict.statStreams).nextSibling).toHaveTextContent(norm(1234));
     expect(within(stats).getByText(dict.statTime).nextSibling).toHaveTextContent(`${norm(5678)} min`);
-    expect(within(stats).getByText(dict.statRating).nextSibling).toHaveTextContent("1,5 ★");
+    expect(within(stats).getByText(dict.statRating).nextSibling).toHaveTextContent("1,50 ★");
     expect(within(stats).getByText(dict.statRating).nextSibling!.firstChild).toHaveClass("text2");
     expect(within(stats).getByText(dict.statFirstPlay).nextSibling).toHaveTextContent("05/03/2024");
     expect(within(stats).getByText(dict.statLastPlay).nextSibling).toHaveTextContent("20/09/2026");

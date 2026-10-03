@@ -1,3 +1,4 @@
+import { formatRating } from "@/app/components/rankings/format";
 import { RATING_GOOD, RATING_AVERAGE } from "@/app/constants/ui";
 import { LoadingSpinner } from "@/app/components/small_elements/CustomSpinner";
 import { useLanguage } from "@/app/context/languageContext";
@@ -50,7 +51,7 @@ export function HorizontalTopSection({ title, items }: { title: string, items: P
 
               {/* Légendes */}
               <p className="text1 font-bold truncate group-hover:text-vert transition-colors text-sm">{item.name}</p>
-              <p className="text3 text-xs truncate opacity-60 font-medium">{item.rating}★</p>
+              <p className="text3 text-xs truncate opacity-60 font-medium">{formatRating(item.rating, t.common.locale)}★</p>
             </div>
           ))}
         </div>
@@ -111,7 +112,7 @@ export function HorizontalTopSection({ title, items }: { title: string, items: P
                     </div>
                     <div className="bg-white/5 p-3 rounded-2xl border border-white/5 col-span-3">
                       <p className={RATING(selectedItem.rating || 0)}>
-                        {(selectedItem.rating || 0).toLocaleString(t.common.locale)}★
+                        {formatRating(selectedItem.rating || 0, t.common.locale)}★
                       </p>
                     </div>
                   </div>

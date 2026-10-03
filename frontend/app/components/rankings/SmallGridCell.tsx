@@ -4,7 +4,7 @@ import Image from "next/image";
 import { renderCellSubtitle } from "./CellSubtitle";
 import CellName from "./CellLink";
 import StatBlocks from "./StatBlock";
-import { getCellDisplay, formatStat, ratingColorClass, withUnit } from "./format";
+import { getCellDisplay, formatRating, ratingColorClass, withUnit } from "./format";
 
 interface SmallGridCellProps {
   element: DataInfo;
@@ -88,7 +88,7 @@ export default function SmallGridCell({ element, index, sort, linkTo }: SmallGri
         {/* Badge Rating */}
         <div className={SMALL_GRID_STYLES.RATING_BADGE(isArtist)}>
           <span className={SMALL_GRID_STYLES.RATING_TEXT(element.rating, sort === "rating")}>
-            {withUnit(formatStat(element.rating, dict.locale), " ★")}
+            {withUnit(formatRating(element.rating, dict.locale), " ★")}
           </span>
         </div>
       </div>

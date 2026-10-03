@@ -13,7 +13,7 @@ vi.mock("@/app/context/languageContext", async () => {
 
 const t = languages.fr;
 const fmt = (n: number) => n.toLocaleString(t.common.locale).replace(/\s/g, " ");
-const ratingEl = (r: number) => screen.getAllByText(`${fmt(r)}★`).find((e) => e.className.includes("text-3xl"))!;
+const ratingEl = (text: string) => screen.getAllByText(`${text}★`).find((e) => e.className.includes("text-3xl"))!;
 
 const item = (o: any = {}) => ({
   name: "Titre A", image_url: "a.jpg", rating: 1.5, count: 1234, minutes: 5678, engagement: 42,
@@ -103,7 +103,7 @@ describe("HorizontalTopSection", () => {
     expect(screen.getByText("#1")).toBeInTheDocument();
     expect(screen.getByText("#2")).toBeInTheDocument();
     expect(screen.getByText("Titre B")).toBeInTheDocument();
-    expect(screen.getByText("0.9★")).toBeInTheDocument();
+    expect(screen.getByText("0,90★")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Titre A" })).toHaveAttribute("src", "a.jpg");
   });
 
@@ -127,7 +127,7 @@ describe("HorizontalTopSection", () => {
     expect(screen.getByText(fmt(1234))).toBeInTheDocument();
     expect(screen.getByText(fmt(5678))).toBeInTheDocument();
     expect(screen.getByText(`${fmt(42)}%`)).toBeInTheDocument();
-    expect(ratingEl(1.5)).toBeInTheDocument();
+    expect(ratingEl("1,50")).toBeInTheDocument();
     expect(screen.getByText(t.common.streams)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: t.ranking.closeBtn })).toBeInTheDocument();
   });
@@ -146,7 +146,7 @@ describe("HorizontalTopSection", () => {
     await user.click(screen.getByText("Titre A"));
     expect(screen.getByText("—")).toBeInTheDocument();
     expect(screen.getByText(`${fmt(0)}%`)).toBeInTheDocument();
-    expect(ratingEl(0)).toBeInTheDocument();
+    expect(ratingEl("0,00")).toBeInTheDocument();
   });
 
   it("affiche « 0 » pour un compteur à 0 (valeur limite)", async () => {
@@ -157,17 +157,28 @@ describe("HorizontalTopSection", () => {
   });
 
   it.each([
-    [1.35, "text2"],
-    [2, "text2"],
-    [1.34, "text-jaune"],
-    [0.8, "text-jaune"],
-    [0.79, "text-rouge"],
-    [0, "text-rouge"],
-  ])("colore la note %s avec %s", async (rating, cls) => {
+    [1.35, "1,35", "text2"],
+    [2, "2,00", "text2"],
+    [1.34, "1,34", "text-jaune"],
+    [0.8, "0,80", "text-jaune"],
+    [0.79, "0,79", "text-rouge"],
+    [0, "0,00", "text-rouge"],
+  ])("colore la note %s (%s) avec %s", async (rating, text, cls) => {
     const user = userEvent.setup();
     render(<HorizontalTopSection title="T" items={[item({ rating })]} />);
     await user.click(screen.getByText("Titre A"));
-    expect(ratingEl(rating)).toHaveClass(cls);
+    expect(ratingEl(text)).toHaveClass(cls);
+  });
+
+  it("affiche toujours 2 décimales : 1.462 et 1.47 donnent « 1,46 » et « 1,47 » (liste et modale)", async () => {
+    const user = userEvent.setup();
+    render(<HorizontalTopSection title="T" items={[item({ rating: 1.462 }), item({ name: "Titre B", rating: 1.47 })]} />);
+    expect(screen.getByText("1,46★")).toBeInTheDocument();
+    expect(screen.getByText("1,47★")).toBeInTheDocument();
+    expect(screen.queryByText(/1,462/)).toBeNull();
+    await user.click(screen.getByText("Titre A"));
+    expect(ratingEl("1,46")).toBeInTheDocument();
+    expect(screen.queryByText(/1,462/)).toBeNull();
   });
 
   it("ferme la modale via le bouton Fermer", async () => {

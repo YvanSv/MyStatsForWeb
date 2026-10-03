@@ -2,7 +2,7 @@ import { Calendar, CalendarDays, Clock, Percent, Play, Star, Timer, Trophy } fro
 import CompactStatCard from "@/app/profile/dashboard/[id]/CompactStatCard";
 import { useLanguage } from "@/app/context/languageContext";
 import type { ItemDetail } from "@/app/hooks/apiTypes";
-import { formatMinutes, formatStat, ratingColorClass, withUnit } from "@/app/components/rankings/format";
+import { formatMinutes, formatRating, formatStat, ratingColorClass, withUnit } from "@/app/components/rankings/format";
 import { formatDate } from "@/app/services/formatDate";
 
 const ICON = "text2 w-4 h-4 lg:w-6 lg:h-6";
@@ -25,7 +25,7 @@ export default function ItemStats({ stats }: { stats: ItemDetail["stats"] }) {
           <CompactStatCard label={dict.statTime} icon={<Timer className={ICON} aria-hidden="true" />}
             value={withUnit(formatMinutes(stats.minutes, locale), ` ${dict.unitMin}`)} />
           <CompactStatCard label={dict.statRating} icon={<Star className={ICON} aria-hidden="true" />}
-            value={<span className={ratingColorClass(stats.rating)}>{withUnit(formatStat(stats.rating, locale), " ★")}</span>} />
+            value={<span className={ratingColorClass(stats.rating)}>{withUnit(formatRating(stats.rating, locale), " ★")}</span>} />
           <CompactStatCard label={dict.statShare} icon={<Percent className={ICON} aria-hidden="true" />}
             value={`${oneDecimal.format(stats.share_of_total_streams)}%`} />
           <CompactStatCard label={dict.statFirstPlay} icon={<Calendar className={ICON} aria-hidden="true" />}

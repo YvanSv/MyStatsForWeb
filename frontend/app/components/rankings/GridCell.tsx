@@ -4,7 +4,7 @@ import Image from "next/image";
 import { renderCellSubtitle } from "./CellSubtitle";
 import CellName from "./CellLink";
 import StatBlocks from "./StatBlock";
-import { getCellDisplay, formatMinutes, formatPercent, formatStat, formatStreams, ratingColorClass, withUnit } from "./format";
+import { getCellDisplay, formatMinutes, formatPercent, formatRating, formatStreams, ratingColorClass, withUnit } from "./format";
 
 interface GridCellProps {
   element: DataInfo;
@@ -92,7 +92,7 @@ export default function GridCell({ element, index, sort, linkTo }: GridCellProps
         {/* Badge Rating */}
         <div className={GRID_CELL_STYLES.RATING_BADGE(isArtist)}>
           <span className={GRID_CELL_STYLES.RATING_TEXT(element.rating, sort === "rating")}>
-            {withUnit(formatStat(element.rating, dict.locale), " ★")}
+            {withUnit(formatRating(element.rating, dict.locale), " ★")}
           </span>
         </div>
       </div>

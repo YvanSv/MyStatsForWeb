@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/app/context/languageContext";
 import type { DetailChild, ItemDetail, ItemType } from "@/app/hooks/apiTypes";
-import { formatMinutes, formatStat, formatStreams, ratingColorClass, withUnit } from "@/app/components/rankings/format";
+import { formatMinutes, formatRating, formatStat, formatStreams, ratingColorClass, withUnit } from "@/app/components/rankings/format";
 import { formatDate } from "@/app/services/formatDate";
 import { itemDetailPath } from "@/app/services/url";
 
@@ -28,7 +28,7 @@ function ChildList({ title, id, type, items }: { title: string; id: string; type
               </Link>
               <span className="text3 text-xs whitespace-nowrap">{formatStreams(item.streams, locale)} {t.rankingcell.unitStreams}</span>
               <span className="text3 text-xs whitespace-nowrap hidden sm:inline">{withUnit(formatMinutes(item.minutes, locale), ` ${t.rankingcell.unitMinutes}`)}</span>
-              <span className={`text-xs w-12 text-right ${ratingColorClass(item.rating)}`}>{withUnit(formatStat(item.rating, locale), "★")}</span>
+              <span className={`text-xs w-12 text-right ${ratingColorClass(item.rating)}`}>{withUnit(formatRating(item.rating, locale), "★")}</span>
             </li>
           ))}
         </ol>

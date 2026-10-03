@@ -6,7 +6,7 @@ import { SegmentedPicker } from "./SegmentedPicker";
 import { COLORS } from "../../constants/ui";
 import { WIDGET_COLORS, finiteOrNull } from "./common";
 import { formatNumber } from "./stats/utils";
-import { formatMinutes, ratingColorClass } from "../../components/rankings/format";
+import { formatMinutes, formatRating, ratingColorClass } from "../../components/rankings/format";
 
 /** Les trois classements : le widget affiche celui du réglage `entity`. */
 export type TopFiveData = Record<TopEntity, ItemBrief[]> & { bySort?: Partial<Record<TopEntity, Partial<Record<SortOption, ItemBrief[]>>>> };
@@ -61,7 +61,7 @@ export function TopFiveWidget({ w, h, type, data, sort = "streams", settings }: 
    */
   const criterion = (item: ItemBrief, short = false) => {
     const loc = t.common.locale;
-    if (sort === "rating") return finiteOrNull(item.rating) === null ? null : { text: item.rating.toFixed(2), cls: ratingColorClass(item.rating) };
+    if (sort === "rating") return finiteOrNull(item.rating) === null ? null : { text: formatRating(item.rating, loc), cls: ratingColorClass(item.rating) };
     const raw = finiteOrNull(sort === "minutes" ? item.minutes : item.streams);
     if (raw === null) return null;
     const num = sort === "minutes" ? (short ? formatNumber(Math.round(raw), true, loc) : formatMinutes(raw, loc)) : formatNumber(raw, short, loc);

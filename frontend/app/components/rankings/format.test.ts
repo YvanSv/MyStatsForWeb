@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  RATING_AVERAGE, RATING_GOOD, formatMinutes, formatPercent, formatStat, formatStreams, getCellDisplay, isValidNumber, ratingColorClass, safeNumber, withUnit,
+  RATING_AVERAGE, RATING_GOOD, formatMinutes, formatPercent, formatRating, formatStat, formatStreams, getCellDisplay, isValidNumber, ratingColorClass, safeNumber, withUnit,
 } from "./format";
 
 describe("isValidNumber", () => {
@@ -105,5 +105,22 @@ describe("getCellDisplay", () => {
   });
   it("repli sur le libellé inconnu et image absente", () => {
     expect(getCellDisplay({ type: "album", cover: null }, "Inconnu")).toEqual({ isArtist: false, displayName: "Inconnu", displayImage: undefined });
+  });
+});
+
+describe("formatRating", () => {
+  it("affiche toujours 2 décimales : « 1,462 » et « 1,47 » ne cohabitent plus", () => {
+    expect(formatRating(1.462, "fr-FR")).toBe("1,46");
+    expect(formatRating(1.47, "fr-FR")).toBe("1,47");
+    expect(formatRating(1.5, "fr-FR")).toBe("1,50");
+    expect(formatRating(2, "fr-FR")).toBe("2,00");
+  });
+
+  it("suit la langue (séparateur décimal)", () => {
+    expect(formatRating(1.462, "en-US")).toBe("1.46");
+  });
+
+  it("renvoie « - » pour une valeur absente ou invalide", () => {
+    for (const v of [null, undefined, NaN, Infinity]) expect(formatRating(v as number, "fr-FR")).toBe("-");
   });
 });

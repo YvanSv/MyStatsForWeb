@@ -55,7 +55,7 @@ describe("GridCell – contenu par type", () => {
     expect(screen.getByRole("heading", { name: "Artiste C" })).toHaveClass("text-center");
     expect(screen.getByAltText("Artiste C")).toHaveAttribute("src", "https://img/artist.jpg");
     expect(container.querySelector("p")).toBeNull();
-    expect(screen.getByText("0,5 ★")).toBeInTheDocument();
+    expect(screen.getByText("0,50 ★")).toBeInTheDocument();
   });
 
   it.each([
@@ -170,23 +170,32 @@ describe("GridCell – statistiques", () => {
 
 describe("GridCell – couleur de la note", () => {
   it.each([
-    [1.35, "text2"],
-    [2, "text2"],
-    [1.34, "text-jaune"],
-    [0.8, "text-jaune"],
-    [0.79, "text-rouge"],
-    [0, "text-rouge"],
-  ])("note %s -> classe %s", (rating, cls) => {
+    [1.35, "1,35", "text2"],
+    [2, "2,00", "text2"],
+    [1.34, "1,34", "text-jaune"],
+    [0.8, "0,80", "text-jaune"],
+    [0.79, "0,79", "text-rouge"],
+    [0, "0,00", "text-rouge"],
+  ])("note %s (%s) -> classe %s", (rating, text, cls) => {
     renderCell({ ...track, rating });
-    expect(screen.getByText(`${rating.toLocaleString("fr-FR")} ★`)).toHaveClass(cls);
+    expect(screen.getByText(`${text} ★`)).toHaveClass(cls);
+  });
+
+  it("affiche toujours 2 décimales : 1.462 et 1.47 donnent « 1,46 » et « 1,47 »", () => {
+    const { unmount } = renderCell({ ...track, rating: 1.462 });
+    expect(screen.getByText("1,46 ★")).toBeInTheDocument();
+    expect(screen.queryByText(/1,462/)).toBeNull();
+    unmount();
+    renderCell({ ...track, rating: 1.47 });
+    expect(screen.getByText("1,47 ★")).toBeInTheDocument();
   });
 
   it("met la note en gras uniquement quand le tri courant est rating", () => {
     const { unmount } = renderCell(track, 0, "rating");
-    expect(screen.getByText("1,5 ★")).toHaveClass("font-black");
+    expect(screen.getByText("1,50 ★")).toHaveClass("font-black");
     unmount();
     renderCell(track, 0, "play_count");
-    expect(screen.getByText("1,5 ★")).toHaveClass("font-medium");
+    expect(screen.getByText("1,50 ★")).toHaveClass("font-medium");
   });
 });
 

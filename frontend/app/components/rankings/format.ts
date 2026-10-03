@@ -8,6 +8,10 @@ export const isValidNumber = (value: unknown): value is number =>
 export const formatStat = (value: number | null | undefined, locale: string): string =>
   isValidNumber(value) ? value.toLocaleString(locale) : "-";
 
+/** Note formatée avec toujours 2 décimales selon la langue (« 1,46 » et non « 1,462 » ou « 1,5 »), ou « - » si absente ou invalide. */
+export const formatRating = (value: number | null | undefined, locale: string): string =>
+  isValidNumber(value) ? value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-";
+
 /** Valeur numérique sûre pour un calcul ou une largeur de barre (0 si absente ou invalide). */
 export const safeNumber = (value: number | null | undefined): number => (isValidNumber(value) ? value : 0);
 

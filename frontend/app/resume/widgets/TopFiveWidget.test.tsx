@@ -112,8 +112,8 @@ describe("TopFiveWidget", () => {
     rerender(<TopFiveWidget w={3} h={3} type="tracks" data={five} sort="minutes" />);
     expect(container.textContent).toContain("1 min");
     rerender(<TopFiveWidget w={3} h={3} type="tracks" data={five} sort="rating" />);
-    expect(container.textContent).toContain("1.00");
-    expect(container.textContent).toContain("5.00");
+    expect(container.textContent).toContain("1,00");
+    expect(container.textContent).toContain("5,00");
   });
 });
 
@@ -130,7 +130,7 @@ describe("TopFiveWidget : critère et valeurs par layout", () => {
     const text = container.textContent!;
     // Le n°1 a toujours une valeur ; les listes en ont une par élément
     const full = w === 3; // 3x2 et 3x3 : nombres complets ; autres : abrégés
-    const val = (n: number) => ({ streams: full ? (n * 1000).toLocaleString("fr-FR") : `${n}.0k`, minutes: full ? `${n} min` : `${n}`, rating: `${n}.00` }[sort]);
+    const val = (n: number) => ({ streams: full ? (n * 1000).toLocaleString("fr-FR") : `${n}.0k`, minutes: full ? `${n} min` : `${n}`, rating: `${n},00` }[sort]);
     expect(text).toContain(val(1));
     if (!(w === 1 && h === 1)) expect(text).toContain(val(3));
     if (sort === "minutes" && !full) expect(text).not.toMatch(/\d min/);
@@ -220,8 +220,8 @@ describe("TopFiveWidget : critère et valeurs par layout", () => {
 
   it("note colorée selon le seuil", () => {
     render(<TopFiveWidget w={2} h={2} type="tracks" data={[item(1, { rating: 9 }), item(2, { rating: 0.5 })]} sort="rating" />);
-    expect(screen.getByText("9.00").className).toContain("text2");
-    expect(screen.getByText("0.50").className).toContain("text-rouge");
+    expect(screen.getByText("9,00").className).toContain("text2");
+    expect(screen.getByText("0,50").className).toContain("text-rouge");
   });
 
   it.each(LAYOUTS)("%ix%i : valeur absente ou invalide -> tiret, jamais NaN/undefined", (w, h) => {
@@ -275,7 +275,7 @@ describe("TopFiveWidget : valeur jamais tronquée (1x1, 2x1, 1x2)", () => {
     expect(title.parentElement!.textContent).toContain("Rating");
     for (const n of [1, 2, 3]) expect(screen.getByText(`Item ${n}`)).toBeInTheDocument();
     expect(screen.queryByText("Item 4")).toBeNull();
-    for (const n of [1, 2, 3]) expect(screen.getByText(`${n}.00`)).toBeInTheDocument();
+    for (const n of [1, 2, 3]) expect(screen.getByText(`${n},00`)).toBeInTheDocument();
     expect(container.querySelectorAll("img")).toHaveLength(3);
   });
 
