@@ -183,6 +183,82 @@ describe("ItemDetailPage – listes", () => {
     expect(within(screen.getByRole("region", { name: dict.topAlbums })).getByRole("link", { name: "Enfant Album" })).toHaveAttribute("href", "/my/albums/31");
   });
 
+  describe("tri des listes", () => {
+    const names = (region: HTMLElement) => within(region).getAllByRole("link").map((l) => l.textContent);
+    const open = () => {
+      const d = makeDetail("album");
+      setData({ ...d, children: { tracks: [
+        { id: 21, name: "Alpha", image: null, streams: 50, minutes: 120, rating: 1.2 },
+        { id: 22, name: "Bravo", image: null, streams: 10, minutes: 300, rating: null },
+        { id: 23, name: "Charlie", image: null, streams: 30, minutes: 200, rating: 1.9 },
+      ], albums: null } });
+      render(<ItemDetailPage type="album" />);
+      return screen.getByRole("region", { name: dict.albumTracks });
+    };
+
+    it("au départ : le tri de base (streams, décroissant) a sa flèche, les deux autres un tiret", () => {
+      const list = open();
+      const buttons = within(within(list).getByRole("group", { name: dict.sortGroup })).getAllByRole("button");
+      expect(buttons.map((b) => b.textContent)).toEqual(["", "–", "–"]);
+      expect(buttons[0].querySelector("svg")).not.toBeNull();
+      expect(within(list).getByRole("button", { name: `${dict.sortByStreams} (${dict.sortDescending})` })).toBeInTheDocument();
+      expect(names(list)).toEqual(["Alpha", "Charlie", "Bravo"]);
+    });
+
+    it("chaque bouton est calé à droite de sa colonne (affichage en flex avec justify-end), minutes comprises", () => {
+      const list = open();
+      for (const b of within(within(list).getByRole("group", { name: dict.sortGroup })).getAllByRole("button")) {
+        expect(b.className).toContain("justify-end");
+        expect(b.className).toMatch(/(^|\s)(flex|sm:flex)(\s|$)/);
+        expect(b.className).not.toMatch(/\bblock\b|sm:block/);
+      }
+    });
+
+    it("premier clic : du plus grand au plus petit, flèche vers le bas ; second clic : sens inverse, flèche vers le haut", async () => {
+      const list = open();
+      await userEvent.click(within(list).getByRole("button", { name: dict.sortByMinutes }));
+      expect(names(list)).toEqual(["Bravo", "Charlie", "Alpha"]);
+      const active = within(list).getByRole("button", { name: `${dict.sortByMinutes} (${dict.sortDescending})` });
+      expect(active.querySelector("svg")).not.toBeNull();
+      await userEvent.click(active);
+      expect(names(list)).toEqual(["Alpha", "Charlie", "Bravo"]);
+      expect(within(list).getByRole("button", { name: `${dict.sortByMinutes} (${dict.sortAscending})` })).toBeInTheDocument();
+    });
+
+    it("un autre tri remet le bouton précédent à un tiret", async () => {
+      const list = open();
+      await userEvent.click(within(list).getByRole("button", { name: dict.sortByMinutes }));
+      await userEvent.click(within(list).getByRole("button", { name: dict.sortByRating }));
+      expect(names(list)).toEqual(["Charlie", "Alpha", "Bravo"]);
+      const buttons = within(within(list).getByRole("group", { name: dict.sortGroup })).getAllByRole("button");
+      expect(buttons.map((b) => b.textContent)).toEqual(["–", "–", ""]); // seul le rating est actif (flèche)
+    });
+
+    it("cliquer sur le tri de base (streams) l'inverse puis le rétablit", async () => {
+      const list = open();
+      await userEvent.click(within(list).getByRole("button", { name: `${dict.sortByStreams} (${dict.sortDescending})` }));
+      expect(names(list)).toEqual(["Bravo", "Charlie", "Alpha"]);
+      await userEvent.click(within(list).getByRole("button", { name: `${dict.sortByStreams} (${dict.sortAscending})` }));
+      expect(names(list)).toEqual(["Alpha", "Charlie", "Bravo"]);
+    });
+
+    it("tri par rating : une note absente reste en dernier", async () => {
+      const list = open();
+      await userEvent.click(within(list).getByRole("button", { name: dict.sortByRating }));
+      expect(names(list)).toEqual(["Charlie", "Alpha", "Bravo"]);
+    });
+
+    it("chaque liste a son propre tri (artiste : titres et albums indépendants)", async () => {
+      setData(makeDetail("artist"));
+      render(<ItemDetailPage type="artist" />);
+      const tracks = screen.getByRole("region", { name: dict.topTracks });
+      const albums = screen.getByRole("region", { name: dict.topAlbums });
+      await userEvent.click(within(tracks).getByRole("button", { name: dict.sortByRating }));
+      expect(within(albums).queryAllByRole("button")).toHaveLength(0); // un seul album : pas de boutons de tri
+      expect(within(tracks).getByRole("button", { name: `${dict.sortByRating} (${dict.sortDescending})` })).toBeInTheDocument();
+    });
+  });
+
   it("liste d'enfants vide : message d'état", () => {
     const d = makeDetail("artist");
     setData({ ...d, children: { tracks: [], albums: [] } });

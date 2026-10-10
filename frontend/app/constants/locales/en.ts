@@ -383,6 +383,12 @@ export const en = {
     unitMin: "min"
   },
   itemDetail: {
+    sortByStreams: "Sort by streams",
+    sortByMinutes: "Sort by listening time",
+    sortByRating: "Sort by rating",
+    sortGroup: "Sort items",
+    sortDescending: "descending",
+    sortAscending: "ascending",
     back: "Back to ranking",
     backTrack: "All my tracks",
     backAlbum: "All my albums",
