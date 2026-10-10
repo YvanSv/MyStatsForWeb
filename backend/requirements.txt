@@ -12,3 +12,4 @@ fastapi-cache2
 ujson
 uvicorn[standard]==0.41.0
 jinja2
+psycopg[binary]
