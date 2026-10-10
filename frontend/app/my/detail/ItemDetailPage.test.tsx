@@ -183,6 +183,17 @@ describe("ItemDetailPage – listes", () => {
     expect(within(screen.getByRole("region", { name: dict.topAlbums })).getByRole("link", { name: "Enfant Album" })).toHaveAttribute("href", "/my/albums/31");
   });
 
+  it("liste défilante : tous les éléments sont affichés (plus de plafond à 10), hauteur bornée", () => {
+    const many = Array.from({ length: 60 }, (_, i) => ({ id: 100 + i, name: `Titre ${i}`, image: null, streams: 60 - i, minutes: 10, rating: 1 }));
+    setData({ ...makeDetail("album"), children: { tracks: many, albums: null } });
+    render(<ItemDetailPage type="album" />);
+    const region = screen.getByRole("region", { name: dict.albumTracks });
+    expect(within(region).getAllByRole("link")).toHaveLength(60);
+    const scroll = within(region).getByTestId("child-scroll");
+    expect(scroll.className).toContain("overflow-y-auto");
+    expect(scroll.className).toMatch(/max-h-\[\d+px\]/);
+  });
+
   describe("tri des listes", () => {
     const names = (region: HTMLElement) => within(region).getAllByRole("link").map((l) => l.textContent);
     const open = () => {

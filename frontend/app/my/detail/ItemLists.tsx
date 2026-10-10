@@ -50,6 +50,8 @@ function ChildList({ title, id, type, items }: { title: string; id: string; type
       {items.length === 0 ? (
         <p role="status" className="text-sm text-gray-500">{dict.emptyList}</p>
       ) : (
+        // Liste défilante : hauteur plafonnée à celle de 10 lignes (54 px + 6 px d'écart, plus le padding), tous les éléments restent accessibles
+        <div data-testid="child-scroll" className="max-h-[602px] overflow-y-auto p-1 custom-scrollbar">
         <ol className="flex flex-col gap-1.5">
           {shown.map((item, i) => (
             <li key={item.id} className="relative flex items-center gap-3 px-2 py-1.5 rounded-2xl bg-bg2/25 border border-white/5 hover:border-vert/30 transition-all">
@@ -66,6 +68,7 @@ function ChildList({ title, id, type, items }: { title: string; id: string; type
             </li>
           ))}
         </ol>
+        </div>
       )}
     </section>
   );
