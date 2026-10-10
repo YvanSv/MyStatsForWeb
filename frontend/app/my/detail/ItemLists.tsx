@@ -32,13 +32,16 @@ function ChildList({ title, id, type, items }: { title: string; id: string; type
               const active = sort.key === key;
               const state = active ? (sort.direction === "desc" ? dict.sortDescending : dict.sortAscending) : null;
               return (
-                <button key={key} type="button" onClick={() => setSort((s) => nextSort(s, key))}
-                  aria-label={state ? `${sortLabels[key]} (${state})` : sortLabels[key]}
-                  className={`${BTN_COL[key]} items-center justify-end h-6 text-xs font-bold rounded-md cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-vert ${active ? "text-vert" : "text-gray-500 hover:text-white"}`}>
-                  {active
-                    ? (sort.direction === "desc" ? <ArrowDown size={14} aria-hidden="true" /> : <ArrowUp size={14} aria-hidden="true" />)
-                    : <span aria-hidden="true">–</span>}
-                </button>
+                // La colonne garde sa largeur (alignement avec les valeurs), mais seul le glyphe est cliquable
+                <div key={key} className={`${BTN_COL[key]} items-center justify-end`}>
+                  <button type="button" onClick={() => setSort((s) => nextSort(s, key))}
+                    aria-label={state ? `${sortLabels[key]} (${state})` : sortLabels[key]}
+                    className={`flex items-center justify-center h-6 min-w-6 px-1 text-xs font-bold rounded-md cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-vert ${active ? "text-vert" : "text-gray-500 hover:text-white"}`}>
+                    {active
+                      ? (sort.direction === "desc" ? <ArrowDown size={14} aria-hidden="true" /> : <ArrowUp size={14} aria-hidden="true" />)
+                      : <span aria-hidden="true">–</span>}
+                  </button>
+                </div>
               );
             })}
           </div>

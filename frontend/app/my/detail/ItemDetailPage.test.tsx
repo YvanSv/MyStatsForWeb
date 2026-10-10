@@ -205,12 +205,16 @@ describe("ItemDetailPage – listes", () => {
       expect(names(list)).toEqual(["Alpha", "Charlie", "Bravo"]);
     });
 
-    it("chaque bouton est calé à droite de sa colonne (affichage en flex avec justify-end), minutes comprises", () => {
+    it("chaque colonne garde sa largeur et son alignement à droite, mais seul le glyphe est cliquable (bouton sans largeur de colonne)", () => {
       const list = open();
       for (const b of within(within(list).getByRole("group", { name: dict.sortGroup })).getAllByRole("button")) {
-        expect(b.className).toContain("justify-end");
-        expect(b.className).toMatch(/(^|\s)(flex|sm:flex)(\s|$)/);
-        expect(b.className).not.toMatch(/\bblock\b|sm:block/);
+        expect(b.className).not.toMatch(/\bw-(12|20|24)\b/); // le bouton ne prend plus la largeur de la colonne
+        expect(b.className).toContain("px-1");
+        const column = b.parentElement!;
+        expect(column.className).toContain("justify-end");
+        expect(column.className).toMatch(/\bw-(12|20|24)\b/);
+        expect(column.className).toMatch(/(^|\s)(flex|sm:flex)(\s|$)/);
+        expect(column.className).not.toMatch(/\bblock\b|sm:block/);
       }
     });
 
