@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytest
+from sqlmodel import select
 
 from app.models import Album, Artist, MusicProvider, Track, TrackHistory
 
@@ -172,3 +173,30 @@ def test_charts_memes_formes_que_le_dashboard(client, setup):
     c = get(client, f"tracks/{s['t1'].id}").json()["charts"]
     assert c["hourly"] == d["clockData"] and c["weekly"] == d["weeklyData"] and c["monthly"] == d["monthlyData"]
     assert c["annual"] == d["annualData"] and c["cumulative"] == d["cumulativeData"]
+
+
+def test_children_sans_plafond(client, db, make_user):
+    """Un artiste avec plus de 10 titres et plus de 10 albums les renvoie tous (liste défilante côté frontend)."""
+    user = make_user(session_id="sid-all")
+    ar = Artist(name="Prolifique")
+    db.add(ar)
+    db.commit()
+    for i in range(60):
+        al = Album(name=f"AL{i}", artist_id=ar.id)
+        db.add(al)
+        db.commit()
+        tr = Track(title=f"T{i}", duration_ms=180000, artist_id=ar.id, album_id=al.id)
+        db.add(tr)
+        db.commit()
+        db.add(TrackHistory(played_at=datetime(2026, 1, 1, 10), ms_played=60000, provider=MusicProvider.SPOTIFY,
+                            user_id=user.id, track_id=tr.id, artist_id=ar.id, album_id=al.id))
+    db.commit()
+    client.cookies.set("session_id", "sid-all")
+    j = client.get(f"/data/my/artists/{ar.id}/detail").json()
+    assert len(j["children"]["tracks"]) == 60
+    assert len(j["children"]["albums"]) == 60
+    ids = [t["id"] for t in j["children"]["tracks"]]
+    assert ids == sorted(ids)  # égalités : départagées par id, ordre stable
+    al_id = db.exec(select(Album).where(Album.name == "AL0")).first().id
+    j = client.get(f"/data/my/albums/{al_id}/detail").json()
+    assert len(j["children"]["tracks"]) == 1

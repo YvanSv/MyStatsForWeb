@@ -157,7 +157,9 @@ def _rank(db: Session, kind: str, item_id: int, period: list, formula) -> Rank:
 
 
 def _children(db: Session, kind: str, item_id: int, period: list, formula) -> Children:
-    def top(group_col, id_col, name_col, image_col, limit, extra_filter, joined_album):
+    """Éléments enfants écoutés sur la période, TOUS (pas de plafond) : le frontend les affiche dans une liste
+    défilante et les trie lui-même. Triés par streams, puis ms, puis id (ordre par défaut de l'affichage)."""
+    def top(group_col, id_col, name_col, image_col, extra_filter, joined_album):
         q = select(id_col.label("id"), name_col.label("name"), image_col.label("image"),
                    func.count(TrackHistory.id).label("streams"),
                    func.sum(TrackHistory.ms_played).label("ms"), formula.label("rating")
@@ -165,17 +167,17 @@ def _children(db: Session, kind: str, item_id: int, period: list, formula) -> Ch
         q = q.outerjoin(Album, Album.id == (Track.album_id if joined_album == "track" else TrackHistory.album_id))
         q = (q.where(*period, extra_filter, group_col.isnot(None))
              .group_by(id_col, name_col, image_col)
-             .order_by(desc(func.count(TrackHistory.id)), desc(func.sum(TrackHistory.ms_played)), id_col).limit(limit))
+             .order_by(desc(func.count(TrackHistory.id)), desc(func.sum(TrackHistory.ms_played)), id_col))
         return [ChildItem(id=r.id, name=r.name, image=r.image, streams=int(r.streams),
                           minutes=int((r.ms or 0) // 60000), rating=float(r.rating or 0.0)) for r in db.exec(q).all()]
 
     if kind == "tracks":
         return Children()
     if kind == "albums":
-        tracks = top(TrackHistory.track_id, Track.id, Track.title, Album.image_url, 50, TrackHistory.album_id == item_id, "track")
+        tracks = top(TrackHistory.track_id, Track.id, Track.title, Album.image_url, TrackHistory.album_id == item_id, "track")
         return Children(tracks=tracks)
-    tracks = top(TrackHistory.track_id, Track.id, Track.title, Album.image_url, 10, TrackHistory.artist_id == item_id, "track")
-    albums = top(TrackHistory.album_id, Album.id, Album.name, Album.image_url, 10, TrackHistory.artist_id == item_id, "history")
+    tracks = top(TrackHistory.track_id, Track.id, Track.title, Album.image_url, TrackHistory.artist_id == item_id, "track")
+    albums = top(TrackHistory.album_id, Album.id, Album.name, Album.image_url, TrackHistory.artist_id == item_id, "history")
     return Children(tracks=tracks, albums=albums)
 
 
